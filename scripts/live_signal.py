@@ -352,10 +352,13 @@ def notify_hold(td, holding: str | None, state: dict, data: dict) -> None:
     """调仓日继续持有 → 推送一条平安通知."""
     total = account_value(state, data, td)
     ret = (total / state["initial_capital"] - 1) * 100
-    holding_name = name_of(holding) if holding else "现金"
+    if holding:
+        holding_disp = f"【{holding}】{name_of(holding)}"
+    else:
+        holding_disp = "现金"
     body = (
         f"📅 {td} 调仓日 · 无操作\n"
-        f"继续持有 {holding_name}\n"
+        f"继续持有 {holding_disp}\n"
         f"💰 账户 {fmt_money(total)} 元 ({ret:+.1f}%)"
     )
     push_bark("😴 七星V3 继续持有", body, level="active")
@@ -368,11 +371,17 @@ def notify_trade(td, sell_order, buy_order, reason: str, state: dict, data: dict
     lines = [f"📅 {td} 调仓日", ""]
     if sell_order:
         code, shares, price, amount = sell_order
-        lines.append(f"① 卖出 {name_of(code)} {shares}股 @{price:.3f} ≈ {fmt_money(amount)}元")
+        lines.append(f"① 卖出 【{code}】{name_of(code)}  {shares}股 @{price:.3f} ≈ {fmt_money(amount)}元")
     if buy_order:
         code, shares, price, amount = buy_order
-        lines.append(f"② 买入 {name_of(code)} {shares}股 @{price:.3f} ≈ {fmt_money(amount)}元")
-    lines += ["", f"💡 {reason}", f"💰 账户 {fmt_money(total)} 元 ({ret:+.1f}%)", "", "👉 在易淘金App下单后, 打开网页填入真实成交并确认"]
+        lines.append(f"② 买入 【{code}】{name_of(code)}  {shares}股 @{price:.3f} ≈ {fmt_money(amount)}元")
+    lines += ["", f"💡 {reason}", f"💰 账户 {fmt_money(total)} 元 ({ret:+.1f}%)", ""]
+    lines.append("👉 易淘金App按代码下单:")
+    if sell_order:
+        lines.append(f"   卖出 {sell_order[0]} ({name_of(sell_order[0])}) {sell_order[1]}股")
+    if buy_order:
+        lines.append(f"   买入 {buy_order[0]} ({name_of(buy_order[0])}) {buy_order[1]}股")
+    lines.append("完成后打开记账网页确认成交")
     push_bark("🔄 七星V3 换仓信号", "\n".join(lines), level="timeSensitive", sound="alarm")
 
 

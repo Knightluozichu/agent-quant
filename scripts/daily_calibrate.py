@@ -1,0 +1,75 @@
+"""每日校准: 收盘后更新数据 + 校准下个调仓日 + 预览调仓数据 + 推送每日状态.
+
+每天15:10由cron运行: 更新到最终收盘数据, 校准下个调仓日及调仓预览, 推送每日校准状态到手机。
+与14:50的信号推送区分: 14:50=调仓日实际信号(timeSensitive); 本脚本=每日校准预告(active)。
+用法: uv run python scripts/daily_calibrate.py
+"""
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).parent))
+
+import run_qixing_v3 as rq  # noqa: E402
+from next_rebalance import find_next_rebalance, preview_trade  # noqa: E402
+from notify import push_bark  # noqa: E402
+from strategy_lab.engine import build_idx_map, get_common_dates  # noqa: E402
+import live_signal as ls  # noqa: E402
+
+
+def main() -> None:
+    data = ls.load_data()
+    data = ls.update_data(data)  # 收盘后更新到最终收盘数据
+
+    state = ls.load_state()
+    if state is None:
+        push_bark("⚠️ 七星V3 校准失败", "账户未初始化, 请检查", level="timeSensitive")
+        return
+
+    trading_dates = get_common_dates(data)
+    latest = trading_dates[-1]
+    last_rb = state.get("last_rebalance_date")
+    holding = state.get("holding")
+
+    next_rb, days_left = find_next_rebalance(trading_dates, last_rb)
+
+    # 基于最新数据预览下个调仓日信号
+    idx_map = build_idx_map(data, latest)
+    target, candidates, best_score, a_share_weak = rq.select_target(data, idx_map, holding)
+
+    # 账户总值
+    total = state["cash"]
+    if holding and holding in data:
+        p = ls.price_on(data, holding, latest)
+        if p:
+            total += state.get("shares", 0) * p
+    ret = (total / state["initial_capital"] - 1) * 100
+
+    # 组装每日校准消息
+    hold_disp = f"【{holding}】{ls.name_of(holding)}" if holding else "空仓"
+    lines = [f"📅 数据更新至: {latest}"]
+    if days_left is not None:
+        if days_left <= 0:
+            lines.append(f"🎯 下个调仓日: {next_rb} (就是今天/即将)")
+        else:
+            lines.append(f"🎯 下个调仓日: {next_rb} (还有{days_left}个交易日)")
+    else:
+        lines.append(f"🎯 下个调仓日: 约{next_rb}")
+    lines.append(f"💼 当前持仓: {hold_disp}")
+    if target == holding:
+        lines.append(f"👉 预计: 继续持有 【{holding}】{ls.name_of(holding)}")
+    else:
+        lines.append(f"👉 预计调仓: → 【{target}】{ls.name_of(target)} (动量{best_score*100:+.1f}%)")
+        lines.append(f"   易淘金搜索代码 {target} 买入")
+    if a_share_weak:
+        lines.append("⚠️ A股走弱, 已排除创业板")
+    lines.append(f"💰 账户: {total/10000:.2f}万 ({ret:+.1f}%)")
+
+    push_bark("📅 七星V3 每日校准", "\n".join(lines), level="active")
+    print("  ✓ 每日校准已推送")
+    print("\n".join("  " + ln for ln in lines))
+
+
+if __name__ == "__main__":
+    main()
