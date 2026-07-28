@@ -136,10 +136,18 @@ def api_status(_: None = Depends(require_token)) -> dict:
     holding_info = None
     if holding:
         entry_date = state.get("entry_date")
-        # 数据日期 < 买入日 → 数据滑后(现价是买入前的价), 用成本价代替, 盈亏待更新
-        price_stale = bool(entry_date and str(td) < str(entry_date))
-        p_raw = ls.price_on(data, holding, td)
-        p = state["entry_price"] if price_stale else p_raw
+        # 优先用实时行情(当日真实价), 失败回退历史价
+        p_realtime = ls.get_realtime_price(holding)
+        p_hist = ls.price_on(data, holding, td)
+        if p_realtime:
+            p = p_realtime
+            price_stale = False
+        else:
+            p = p_hist
+            # 数据日期 < 买入日 → 数据滑后, 用成本价代替, 盈亏待更新
+            price_stale = bool(entry_date and str(td) < str(entry_date))
+            if price_stale:
+                p = state["entry_price"]
         mv = state["shares"] * p if p else 0.0
         if price_stale:
             pnl_pct = 0.0

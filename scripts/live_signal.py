@@ -238,6 +238,28 @@ def price_on(data: dict, code: str, td) -> float | None:
     return float(row.iloc[0]["close"])
 
 
+_REALTIME_CACHE = {"time": 0.0, "prices": {}}
+
+
+def get_realtime_price(code: str) -> float | None:
+    """获取ETF当日实时/最新价(东方财富实时行情), 缓存5分钟。
+
+    用于显示当日真实市值(新浪历史数据有发布延迟, 实时行情能拿到当天价)。
+    失败返回None(回退到历史价)。
+    """
+    import akshare as ak
+    now = time.time()
+    if now - _REALTIME_CACHE["time"] > 300:  # 缓存5分钟
+        try:
+            spot = ak.fund_etf_spot_em()
+            _REALTIME_CACHE["prices"] = dict(
+                zip(spot["代码"].astype(str), spot["最新价"].astype(float)))
+            _REALTIME_CACHE["time"] = now
+        except Exception:  # noqa: BLE001
+            pass
+    return _REALTIME_CACHE["prices"].get(code)
+
+
 def account_value(state: dict, data: dict, td) -> float:
     """账户总值 = 现金 + 持仓市值."""
     total = state["cash"]

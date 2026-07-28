@@ -38,10 +38,12 @@ def main() -> None:
     idx_map = build_idx_map(data, latest)
     target, candidates, best_score, a_share_weak = rq.select_target(data, idx_map, holding)
 
-    # 账户总值
+    # 账户总值 (优先用实时行情当日真实价, 失败回退历史价)
     total = state["cash"]
-    if holding and holding in data:
-        p = ls.price_on(data, holding, latest)
+    if holding:
+        p = ls.get_realtime_price(holding)
+        if p is None and holding in data:
+            p = ls.price_on(data, holding, latest)
         if p:
             total += state.get("shares", 0) * p
     ret = (total / state["initial_capital"] - 1) * 100
