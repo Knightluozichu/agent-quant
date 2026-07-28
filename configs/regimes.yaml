@@ -1,0 +1,99 @@
+# Market Regime Detection Configuration
+# 市场状态识别配置
+
+regimes:
+  version: "1.0"
+  model_type: "rule_based"  # rule_based | hmm | tree
+
+  # 9-state model definition
+  states:
+    # Direction × Oscillation = 9 states
+    - id: smooth_uptrend
+      direction: up
+      oscillation: low
+      description: "平滑上涨"
+      enabled_strategies: [TREND_HOLD]
+
+    - id: staircase_uptrend
+      direction: up
+      oscillation: medium
+      description: "阶梯上涨"
+      enabled_strategies: [TREND_HOLD, PULLBACK_SWING]
+
+    - id: volatile_uptrend
+      direction: up
+      oscillation: high
+      description: "震荡洗盘上涨"
+      enabled_strategies: [PULLBACK_SWING]
+
+    - id: dead_water
+      direction: flat
+      oscillation: low
+      description: "低波死水"
+      enabled_strategies: [CASH_DEFENSE]
+
+    - id: narrow_range
+      direction: flat
+      oscillation: medium
+      description: "窄幅横盘"
+      enabled_strategies: [CASH_DEFENSE]
+
+    - id: wide_range
+      direction: flat
+      oscillation: high
+      description: "宽幅周期震荡"
+      enabled_strategies: [RANGE_MEAN_REVERSION]
+
+    - id: smooth_downtrend
+      direction: down
+      oscillation: low
+      description: "平滑下跌"
+      enabled_strategies: [CASH_DEFENSE]
+
+    - id: staircase_downtrend
+      direction: down
+      oscillation: medium
+      description: "阶梯下跌"
+      enabled_strategies: [CASH_DEFENSE]
+
+    - id: volatile_downtrend
+      direction: down
+      oscillation: high
+      description: "强反弹式震荡下跌"
+      enabled_strategies: [BEAR_REBOUND, CASH_DEFENSE]
+
+  # Feature thresholds for rule-based model
+  rule_thresholds:
+    # Trend detection
+    trend:
+      slope_lookback: 20  # 斜率计算回看期
+      slope_threshold_up: 0.001  # 上涨斜率阈值
+      slope_threshold_down: -0.001  # 下跌斜率阈值
+      efficiency_ratio_threshold: 0.3  # 效率比率阈值
+
+    # Oscillation detection
+    oscillation:
+      atr_percentile_low: 30  # 低波动分位数
+      atr_percentile_high: 70  # 高波动分位数
+      amplitude_threshold: 0.02  # 振幅阈值
+
+    # Market breadth
+    breadth:
+      advance_decline_ratio: 1.0
+      above_ma20_ratio: 0.5
+
+  # Hysteresis - 状态迟滞
+  hysteresis:
+    # 进入新状态需要更高置信度
+    entry_confidence: 0.7
+    # 退出旧状态可以更快
+    exit_confidence: 0.5
+    # 连续确认天数
+    confirmation_days: 2
+    # 不确定时停止新增仓位
+    uncertain_no_new_position: true
+
+  # Transition detection
+  transition:
+    min_days_in_state: 3  # 状态最少持续天数
+    transition_penalty: 0.1  # 状态切换惩罚

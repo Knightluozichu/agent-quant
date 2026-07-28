@@ -1,0 +1,132 @@
+# Risk Management Configuration
+# 风控配置
+
+risk:
+  version: "1.0"
+  profile: paper_conservative
+
+  profiles:
+    # Conservative paper trading profile
+    paper_conservative:
+      description: "保守纸面交易配置"
+
+      # Position sizing - 仓位计算
+      position_sizing:
+        method: "risk_based"  # risk_based | fixed_fraction | kelly
+        trade_risk_pct: 0.01  # 单笔风险 1%
+        max_position_pct: 0.20  # 单标的最大仓位 20%
+        max_strategy_pct: 0.40  # 单策略最大仓位 40%
+        max_industry_pct: 0.30  # 单行业最大暴露 30%
+        max_correlated_pct: 0.50  # 高相关标的总暴露 50%
+        min_cash_buffer_pct: 0.10  # 最低现金缓冲 10%
+
+      # Portfolio limits - 组合约束
+      portfolio_limits:
+        max_total_risk_pct: 0.05  # 总风险预算 5%
+        max_positions: 5  # 最大持仓数量
+        max_daily_turnover_pct: 0.30  # 最大日换手 30%
+        max_daily_orders: 10  # 最大日订单数
+
+      # Drawdown limits - 回撤限制
+      drawdown_limits:
+        daily_warning_pct: 0.02  # 日回撤警戒 2%
+        weekly_warning_pct: 0.05  # 周回撤警戒 5%
+        total_warning_pct: 0.10  # 总回撤警戒 10%
+        daily_halt_pct: 0.03  # 日回撤停止 3%
+        total_halt_pct: 0.15  # 总回撤停止 15%
+
+      # Consecutive loss limits
+      consecutive_losses:
+        warning_count: 3  # 连续亏损警告
+        halt_count: 5  # 连续亏损停止
+        cooldown_days: 5  # 冷却天数
+
+    # Aggressive research profile (for backtesting only)
+    research_aggressive:
+      description: "激进研究配置（仅回测）"
+      position_sizing:
+        method: "risk_based"
+        trade_risk_pct: 0.02
+        max_position_pct: 0.30
+        max_strategy_pct: 0.60
+        max_industry_pct: 0.50
+        max_correlated_pct: 0.70
+        min_cash_buffer_pct: 0.05
+      portfolio_limits:
+        max_total_risk_pct: 0.10
+        max_positions: 10
+        max_daily_turnover_pct: 0.50
+        max_daily_orders: 20
+      drawdown_limits:
+        daily_warning_pct: 0.03
+        weekly_warning_pct: 0.08
+        total_warning_pct: 0.15
+        daily_halt_pct: 0.05
+        total_halt_pct: 0.25
+
+  # Circuit breaker - 熔断机制
+  circuit_breaker:
+    levels:
+      - level: 1
+        name: "禁止新开仓"
+        trigger: "daily_drawdown > 2% OR consecutive_losses >= 3"
+        actions:
+          - no_new_positions: true
+
+      - level: 2
+        name: "降低目标仓位"
+        trigger: "daily_drawdown > 3% OR weekly_drawdown > 5%"
+        actions:
+          - no_new_positions: true
+          - reduce_position_pct: 0.50
+
+      - level: 3
+        name: "关闭高风险策略"
+        trigger: "total_drawdown > 10% OR consecutive_losses >= 5"
+        actions:
+          - no_new_positions: true
+          - disable_strategies: [BEAR_REBOUND]
+          - reduce_position_pct: 0.70
+
+      - level: 4
+        name: "切换现金防御"
+        trigger: "total_drawdown > 12%"
+        actions:
+          - force_cash_defense: true
+          - close_high_risk_positions: true
+
+      - level: 5
+        name: "停止系统"
+        trigger: "total_drawdown > 15% OR system_error"
+        actions:
+          - halt_system: true
+          - require_manual_review: true
+
+    # Recovery rules - 恢复规则
+    recovery:
+      # 熔断解除不能自动满仓恢复
+      auto_recovery: false
+      min_cooldown_days: 3
+      gradual_recovery: true
+      recovery_step_pct: 0.25  # 每次恢复25%仓位
+
+  # Frequency control - 频率控制
+  frequency:
+    # Per-symbol limits per 20 trading days
+    per_symbol_20d:
+      TREND_HOLD: 2
+      PULLBACK_SWING: 3
+      RANGE_MEAN_REVERSION: 4
+      BEAR_REBOUND: 2
+      CASH_DEFENSE: 0
+
+    # Cooldown rules
+    cooldown:
+      after_profit: "signal_reset_required"
+      after_time_stop: "full_retrigger_required"
+      after_structure_stop: "structure_rebuild_required"
+      after_regime_stop: "regime_recovery_required"
+      after_consecutive_stops:
+        count: 2
+        extra_days: 5
+        trigger_review: true

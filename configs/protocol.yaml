@@ -1,0 +1,37 @@
+# Research Protocol Configuration
+# 研究协议配置
+
+protocol:
+  name: "A股家庭量化研究协议"
+  version: "1.0"
+
+  # Time partition for research
+  time_partition:
+    train_start: "20100101"
+    train_end: "20201231"
+    validation_start: "20210101"
+    validation_end: "20221231"
+    locked_test_start: "20230101"
+    locked_test_end: "20241231"
+    # Walk-forward and shadow periods are dynamic
+
+  # Research constraints
+  constraints:
+    no_lookahead: true
+    use_disclosure_date: true  # 财务数据使用披露日
+    use_historical_constituents: true  # 指数成分使用历史时点
+    include_delisted: true  # 包含退市股票
+    conservative_same_bar: true  # 同日触及止损止盈使用保守顺序
+
+  # Multiple testing correction
+  multiple_testing:
+    track_all_attempts: true
+    max_attempts_per_hypothesis: 100
+    apply_bonferroni: false
+    report_pbo: true  # Probability of Backtest Overfitting
+
+  # Minimum sample requirements
+  min_samples:
+    trades_for_significance: 30
+    trades_per_regime: 10
+    days_for_factor_eval: 60

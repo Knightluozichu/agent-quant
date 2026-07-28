@@ -1,0 +1,158 @@
+# A股市场规则配置
+# 必须支持按日期生效的规则，不能把当前规则套用到全部历史
+
+market_rules:
+  version: "1.0"
+  timezone: "Asia/Shanghai"
+
+  # Trading calendar
+  calendar:
+    # 交易日历由数据层提供，此处定义交易时段
+    trading_hours:
+      morning_open: "09:30"
+      morning_close: "11:30"
+      afternoon_open: "13:00"
+      afternoon_close: "15:00"
+    # 集合竞价
+    call_auction_start: "09:15"
+    call_auction_end: "09:25"
+
+  # T+1 Rule - 核心规则
+  t_plus_one:
+    enabled: true
+    description: "T日买入的股票，T+1日才能卖出"
+    # ETF 也适用 T+1（部分跨境ETF除外，第一阶段不处理）
+
+  # Lot size - 交易单位
+  lot_size:
+    stock: 100  # 股票一手100股
+    etf: 100    # ETF一手100份
+    # 科创板可以1股递增，但第一阶段简化处理
+
+  # Price limits - 涨跌幅限制（按日期生效）
+  price_limits:
+    # 历史规则变更
+    rules:
+      - effective_from: "19961216"
+        effective_to: "20100101"
+        description: "早期规则"
+        main_board: 0.10  # 主板 10%
+        gem: null  # 创业板尚未开通
+        star: null  # 科创板尚未开通
+
+      - effective_from: "20100101"
+        effective_to: "20200824"
+        description: "创业板开通后"
+        main_board: 0.10
+        gem: 0.10  # 创业板 10%
+        star: null
+
+      - effective_from: "20200824"
+        effective_to: null  # 当前规则
+        description: "创业板注册制后"
+        main_board: 0.10
+        gem: 0.20  # 创业板 20%
+        star: 0.20  # 科创板 20%
+        bse: 0.30   # 北交所 30%
+        etf: 0.10   # ETF 10%（跟踪标的不同可能有差异）
+
+    # 新股上市初期特殊规则
+    new_listing:
+      first_day_no_limit: true  # 首日不设涨跌幅（注册制）
+      first_5_days_no_limit_star: true  # 科创板前5日不设涨跌幅
+      first_5_days_no_limit_gem: true   # 创业板注册制前5日
+
+    # ST股票特殊规则
+    st_stock:
+      limit: 0.05  # ST股票 5%
+      description: "风险警示股票涨跌幅限制"
+
+  # Suspension - 停牌规则
+  suspension:
+    # 停牌期间订单不得成交
+    order_during_suspension: "reject"
+    # 停牌原因
+    reasons:
+      - major_asset_restructuring  # 重大资产重组
+      - annual_report  # 年报披露
+      - abnormal_fluctuation  # 异常波动
+      - other
+
+  # Delisting - 退市规则
+  delisting:
+    # 退市整理期
+    consolidation_period_days: 15
+    # 退市整理期涨跌幅
+    consolidation_limit: 0.10
+    first_day_no_limit: true
+
+  # Fees - 费用规则（按日期生效）
+  fees:
+    rules:
+      - effective_from: "20080919"
+        effective_to: "20230828"
+        description: "印花税双边改单边后"
+        commission_rate: 0.0003  # 佣金万三（可协商）
+        min_commission: 5.0  # 最低佣金5元
+        stamp_tax_rate: 0.001  # 印花税千一（仅卖出）
+        transfer_fee_rate: 0.00002  # 过户费万分之0.2
+        handling_fee_rate: 0.0000487  # 经手费
+
+      - effective_from: "20230828"
+        effective_to: null
+        description: "2023年8月印花税减半"
+        commission_rate: 0.0003
+        min_commission: 5.0
+        stamp_tax_rate: 0.0005  # 印花税减半至万分之0.5
+        transfer_fee_rate: 0.00001  # 过户费降低
+        handling_fee_rate: 0.0000487
+
+    # ETF 费用差异
+    etf:
+      stamp_tax_rate: 0.0  # ETF 免印花税
+      commission_rate: 0.0003
+      min_commission: 5.0
+
+  # Corporate actions - 公司行为
+  corporate_actions:
+    # 分红送转
+    dividend:
+      # 除权除息日处理
+      adjust_price: true
+      # 红利税（持有期不同税率不同）
+      tax_rules:
+        - holding_days_max: 30
+          tax_rate: 0.20  # 1个月内 20%
+        - holding_days_max: 365
+          tax_rate: 0.10  # 1个月到1年 10%
+        - holding_days_max: null
+          tax_rate: 0.0   # 超过1年免税
+
+    # 配股
+    rights_issue:
+      # 配股处理
+      adjust_position: true
+
+  # Order rules - 订单规则
+  orders:
+    # 订单有效期
+    validity: "day"  # 当日有效
+    # 最小价格变动
+    tick_size:
+      stock: 0.01
+      etf: 0.001
+    # 最大订单数量（单笔）
+    max_order_quantity: 1000000
+
+  # Fill simulation - 成交模拟
+  fill_simulation:
+    # 涨停无卖盘时买单不得假设成交
+    limit_up_no_fill_buy: true
+    # 跌停无买盘时卖单不得假设成交
+    limit_down_no_fill_sell: true
+    # 停牌日订单不得成交
+    suspension_no_fill: true
+    # 跳空越过止损时按实际可获得价格成交
+    gap_fill_at_actual: true
+    # 同日触及止损和止盈时的处理
+    same_bar_stop_and_target: "conservative"  # conservative | optimistic | require_minute_data

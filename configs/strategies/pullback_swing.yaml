@@ -1,0 +1,62 @@
+# PULLBACK_SWING Strategy Configuration
+# 回调波段策略
+
+strategy:
+  id: PULLBACK_SWING
+  name: "回调波段"
+  version: "1.0"
+  description: "回调确认后买入，分层止盈"
+
+  applicable_regimes:
+    - volatile_uptrend
+    - staircase_uptrend
+
+  entry:
+    # 中期趋势向上
+    mid_term_trend_up: true
+    ma20_slope_positive: true
+    # 短期回调
+    short_term_pullback: true
+    pullback_depth_min: 0.03  # 最小回调幅度
+    pullback_depth_max: 0.15  # 最大回调幅度
+    # 回调未破坏抬高低点
+    higher_low_intact: true
+    # 出现重新转强确认
+    confirmation_required: true
+    confirmation_signals:
+      - bullish_candle
+      - volume_increase
+      - ma5_cross_above_ma10
+    # 不在涨停或无法成交状态
+    not_at_limit_up: true
+    min_liquidity_score: 0.5
+
+  stop_loss:
+    method: "structure"
+    # 回调结构低点下方的波动缓冲
+    structure_buffer_atr: 0.5
+    # 上涨状态失效
+    exit_on_trend_break: true
+    # 时间止损
+    time_stop_days: 10
+
+  take_profit:
+    # 分层止盈
+    layers:
+      - target: "ma20_or_channel_mid"
+        close_pct: 0.33
+      - target: "prev_high_or_upper_band"
+        close_pct: 0.33
+      - target: "trailing"
+        close_pct: 0.34
+    trailing_stop:
+      enabled: true
+      atr_multiplier: 2.0
+
+  position:
+    typical_holding_days: [3, 15]
+    max_holding_days: 15
+
+  risk:
+    trade_risk_multiplier: 0.8
+    max_consecutive_stops: 3

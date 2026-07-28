@@ -1,0 +1,21 @@
+{
+  "version": "v5.1",
+  "method": "momentum_top4 + vol_scaling",
+  "params": {
+    "target_vol": 0.12,
+    "vol_lookback": 20,
+    "scale_min": 0.2,
+    "scale_max": 1.0,
+    "top_n": 4
+  },
+  "full_period": {
+    "return": 0.07470112925000216,
+    "ann_return": 0.01915154871182856,
+    "sharpe": 0.16300819024754007,
+    "max_dd": -0.17030113134553843
+  },
+  "2023": {
+    "return": -0.05489430494999936,
+    "max_dd": -0.07687579571162238
+  }
+}

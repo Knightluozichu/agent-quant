@@ -1,0 +1,54 @@
+# Universe Configuration
+# 标的池配置
+
+universe:
+  # Default profile
+  default_profile: liquid_etf_mvp
+
+  profiles:
+    # MVP: Liquid ETFs only
+    liquid_etf_mvp:
+      description: "流动性好的宽基和行业 ETF"
+      security_types:
+        - etf
+      exchanges:
+        - SSE
+        - SZSE
+      min_daily_volume: 10000000  # 最小日成交额 1000万
+      min_listing_days: 60  # 最小上市天数
+      exclude_suspended: true
+      exclude_limit_up_down: true
+      # Specific ETFs can be added here
+      include_symbols: []
+      exclude_symbols: []
+
+    # Extended: ETFs + large cap stocks
+    etf_plus_large_cap:
+      description: "ETF + 大盘股"
+      security_types:
+        - etf
+        - stock
+      exchanges:
+        - SSE
+        - SZSE
+      min_daily_volume: 50000000  # 最小日成交额 5000万
+      min_market_cap: 10000000000  # 最小市值 100亿
+      min_listing_days: 250
+      exclude_st: true  # 排除 ST 股票
+      exclude_suspended: true
+      boards:
+        - main
+        - etf
+
+    # Research: All A-shares for research
+    research_all:
+      description: "全部 A 股（仅研究用）"
+      security_types:
+        - stock
+        - etf
+      exchanges:
+        - SSE
+        - SZSE
+        - BSE
+      include_delisted: true  # 包含退市股票（避免幸存者偏差）
+      min_listing_days: 0

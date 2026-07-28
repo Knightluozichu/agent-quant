@@ -1,0 +1,54 @@
+# RANGE_MEAN_REVERSION Strategy Configuration
+# 区间均值回归策略
+
+strategy:
+  id: RANGE_MEAN_REVERSION
+  name: "区间均值回归"
+  version: "1.0"
+  description: "下沿附近买入，中线和上沿止盈"
+
+  applicable_regimes:
+    - wide_range
+
+  entry:
+    # 趋势斜率接近零
+    trend_slope_near_zero: true
+    max_abs_slope: 0.0005
+    # 上下边界具有足够历史触碰
+    min_boundary_touches: 3
+    boundary_lookback: 60
+    # 当前位于箱体下部
+    position_in_range_max: 0.3  # 位于箱体下30%
+    # 出现回归确认
+    confirmation_required: true
+    # 预期振幅覆盖费用、滑点和破位损失
+    min_expected_range_pct: 0.05
+
+  stop_loss:
+    method: "range_break"
+    # 箱体下沿有效破位
+    break_below_lower_bound: true
+    break_confirmation_days: 2
+    # 均值回归半衰期超时
+    half_life_timeout: true
+    # 状态转入下跌
+    exit_on_downtrend: true
+
+  take_profit:
+    layers:
+      - target: "range_mid"
+        close_pct: 0.5
+      - target: "range_upper"
+        close_pct: 0.5
+    # 向上突破后退出本策略，由路由器重新判断
+    exit_on_breakout: true
+    # 禁止临时改规则
+    no_rule_modification: true
+
+  position:
+    typical_holding_days: [2, 10]
+    max_holding_days: 10
+
+  risk:
+    trade_risk_multiplier: 0.7
+    max_consecutive_stops: 4

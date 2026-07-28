@@ -1,0 +1,55 @@
+# BEAR_REBOUND Strategy Configuration
+# 熊市反弹策略（仅 Challenger，默认关闭真实资金）
+
+strategy:
+  id: BEAR_REBOUND
+  name: "熊市反弹"
+  version: "1.0"
+  description: "严格过滤后的短期反弹，小风险预算"
+  status: challenger  # 仅作为 Challenger，不进入生产
+  allow_live_capital: false  # 默认不允许真实资金
+
+  applicable_regimes:
+    - volatile_downtrend  # 只适用于强震荡下跌，不适用于平滑下跌
+
+  entry:
+    # 市场不是平滑下跌
+    not_smooth_downtrend: true
+    # 超跌后出现重新转强确认
+    oversold_condition: true
+    rsi_threshold: 30
+    # 反弹历史期望扣成本后为正
+    min_historical_edge_pct: 0.01
+    # 风险预算低于其他策略
+    reduced_risk_budget: true
+    # 连续止损后自动暂停
+    auto_pause_after_stops: true
+    max_consecutive_stops: 2
+
+  stop_loss:
+    method: "tight"
+    # 近期低点
+    use_recent_low: true
+    recent_low_lookback: 5
+    # 短时间止损
+    time_stop_days: 3
+    # 不允许补仓摊薄成本
+    no_averaging_down: true
+
+  take_profit:
+    # 短周期均值
+    target_1: "ma5"
+    # 前一个较低反弹高点
+    target_2: "prev_lower_high"
+    # 到期全部退出，不保留底仓
+    exit_all_on_timeout: true
+    no_core_position: true
+
+  position:
+    typical_holding_days: [1, 5]
+    max_holding_days: 5
+
+  risk:
+    trade_risk_multiplier: 0.5  # 风险预算减半
+    max_consecutive_stops: 2
+    pause_days_after_max_stops: 10

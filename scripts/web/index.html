@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>七星V3 实盘记账</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --card:#fff; --line:#eceef1; --txt:#1c2128; --muted:#8a919e;
+    --accent:#2f6bff; --up:#e5484d; --down:#18a058; --warn:#ff9500;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,"PingFang SC","Helvetica Neue",sans-serif;
+    background:var(--bg);color:var(--txt);font-size:15px;line-height:1.5}
+  .wrap{max-width:520px;margin:0 auto;padding:14px 14px 80px}
+  h1{font-size:19px;margin:6px 0 2px}
+  .sub{color:var(--muted);font-size:12px;margin-bottom:14px}
+  .card{background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;
+    box-shadow:0 1px 3px rgba(0,0,0,.04)}
+  .card h2{font-size:15px;margin:0 0 12px;display:flex;align-items:center;gap:6px}
+  .row{display:flex;justify-content:space-between;align-items:center;padding:5px 0}
+  .muted{color:var(--muted)}
+  .big{font-size:26px;font-weight:700}
+  .up{color:var(--up)} .down{color:var(--down)}
+  .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;background:#eef2ff;color:var(--accent)}
+  .tag.pending{background:#fff3e0;color:var(--warn)}
+  .tag.hold{background:#e8f5ee;color:var(--down)}
+  label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+  input,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;
+    font-size:16px;background:#fafbfc;color:var(--txt)}
+  input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  button{width:100%;padding:13px;border:none;border-radius:11px;font-size:16px;font-weight:600;
+    background:var(--accent);color:#fff;margin-top:14px;cursor:pointer}
+  button:active{opacity:.85}
+  button.ghost{background:#f0f2f5;color:var(--txt)}
+  button.sm{width:auto;padding:7px 14px;font-size:13px;margin:0}
+  .tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:6px}
+  .tab{flex:0 0 auto;padding:8px 16px;border-radius:20px;background:#fff;color:var(--muted);
+    font-size:14px;border:1px solid var(--line);cursor:pointer;white-space:nowrap}
+  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .board-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
+  .board-row:last-child{border-bottom:none}
+  .board-rank{width:22px;height:22px;border-radius:50%;background:#f0f2f5;color:var(--muted);
+    display:flex;align-items:center;justify-content:center;font-size:12px;flex:0 0 auto}
+  .board-rank.top{background:var(--up);color:#fff}
+  .board-name{flex:1}
+  .board-score{font-weight:600;font-variant-numeric:tabular-nums}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{text-align:left;padding:8px 4px;border-bottom:1px solid var(--line)}
+  th{color:var(--muted);font-weight:500;font-size:12px}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .hidden{display:none}
+  .login-box{margin-top:60px}
+  .alert{padding:10px 12px;border-radius:10px;font-size:13px;margin-bottom:12px}
+  .alert.warn{background:#fff3e0;color:#b26a00}
+  .alert.ok{background:#e8f5ee;color:#0a7d43}
+  .chk{display:flex;align-items:center;gap:8px;margin:12px 0 4px;font-size:14px;color:var(--txt)}
+  .chk input{width:auto}
+  .chart-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px}
+  .toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:#1c2128;color:#fff;
+    padding:11px 20px;border-radius:22px;font-size:14px;opacity:0;transition:.3s;pointer-events:none;z-index:99}
+  .toast.show{opacity:.95}
+  .pill{font-size:11px;padding:1px 7px;border-radius:6px;background:#f0f2f5;color:var(--muted);margin-left:6px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 登录 -->
+  <div id="login" class="login-box hidden">
+    <h1>七星V3 实盘记账</h1>
+    <div class="sub">填入真实成交, 让持仓状态等于现实</div>
+    <div class="card">
+      <label>访问密码</label>
+      <input id="pwd" type="password" placeholder="请输入密码" autocomplete="current-password">
+      <button onclick="doLogin()">登 录</button>
+      <div id="loginErr" class="alert warn hidden" style="margin-top:12px"></div>
+    </div>
+  </div>
+
+  <!-- 主界面 -->
+  <div id="app" class="hidden">
+    <h1>七星V3 实盘记账</h1>
+    <div class="sub" id="dateLine">—</div>
+
+    <!-- 待确认信号 (置顶) -->
+    <div id="pendingCard" class="card hidden" style="border:2px solid var(--warn)">
+      <h2>🔔 待确认信号 <span class="tag pending" id="pendingDate"></span></h2>
+      <div id="pendingReason" class="muted" style="margin-bottom:10px"></div>
+
+      <div id="sellBlock" class="hidden">
+        <div class="chk"><input type="checkbox" id="sellOn" checked><b>① 卖出 <span id="sellName"></span></b></div>
+        <div class="grid2">
+          <div><label>数量(股)</label><input id="sellShares" type="number" inputmode="numeric"></div>
+          <div><label>成交价</label><input id="sellPrice" type="number" inputmode="decimal" step="0.001"></div>
+        </div>
+      </div>
+
+      <div id="buyBlock" class="hidden">
+        <div class="chk"><input type="checkbox" id="buyOn" checked><b>② 买入</b></div>
+        <label>标的</label><select id="buyCode"></select>
+        <div class="grid2">
+          <div><label>数量(股)</label><input id="buyShares" type="number" inputmode="numeric"></div>
+          <div><label>成交价</label><input id="buyPrice" type="number" inputmode="decimal" step="0.001"></div>
+        </div>
+      </div>
+
+      <button onclick="doConfirm()">✅ 确认成交 (填入真实数据)</button>
+      <button class="ghost" onclick="doSkip()">本次不操作</button>
+    </div>
+
+    <!-- 账户概览 -->
+    <div class="card">
+      <div class="row"><span class="muted">账户总值</span><span class="tag" id="retTag"></span></div>
+      <div class="big" id="totalVal">—</div>
+      <div class="row" style="margin-top:10px"><span class="muted">可用现金</span><span id="cashVal">—</span></div>
+      <div class="row"><span class="muted">当前持仓</span><span id="holdVal">—</span></div>
+    </div>
+
+    <!-- 标签页 -->
+    <div class="tabs">
+      <div class="tab active" data-t="signal" onclick="switchTab('signal')">最新信号</div>
+      <div class="tab" data-t="manual" onclick="switchTab('manual')">手动记账</div>
+      <div class="tab" data-t="history" onclick="switchTab('history')">历史成交</div>
+      <div class="tab" data-t="equity" onclick="switchTab('equity')">收益曲线</div>
+      <div class="tab" data-t="overview" onclick="switchTab('overview')">策略全景</div>
+    </div>
+
+    <!-- 信号 -->
+    <div id="tab-signal" class="card">
+      <h2>📊 动量排行 <span class="pill">每5交易日</span></h2>
+      <div id="targetLine" class="alert ok"></div>
+      <div id="board"></div>
+    </div>
+
+    <!-- 手动记账 -->
+    <div id="tab-manual" class="card hidden">
+      <h2>✍️ 手动记账</h2>
+      <div class="muted" style="font-size:12px;margin-bottom:8px">用于修正或非信号交易</div>
+      <label>操作</label>
+      <select id="mAction"><option value="buy">买入</option><option value="sell">卖出</option></select>
+      <label>标的</label><select id="mCode"></select>
+      <div class="grid2">
+        <div><label>数量(股)</label><input id="mShares" type="number" inputmode="numeric"></div>
+        <div><label>成交价</label><input id="mPrice" type="number" inputmode="decimal" step="0.001"></div>
+      </div>
+      <label>日期 (留空=今天)</label><input id="mDate" type="date">
+      <button onclick="doManual()">记 录</button>
+    </div>
+
+    <!-- 历史 -->
+    <div id="tab-history" class="card hidden">
+      <h2>📜 历史成交</h2>
+      <div id="historyBox"></div>
+    </div>
+
+    <!-- 收益曲线 -->
+    <div id="tab-equity" class="card hidden">
+      <h2>📈 账户净值曲线</h2>
+      <div id="chart"></div>
+    </div>
+
+    <!-- 策略全景 -->
+    <div id="tab-overview" class="card hidden">
+      <h2>🗺️ 策略全景 <span class="pill" id="ovPeriod"></span></h2>
+      <div id="ovMetrics"></div>
+      <div style="font-size:13px;color:var(--muted);margin:14px 0 6px">净值曲线(对数) 与 回撤</div>
+      <div id="ovEquity"></div>
+      <div style="font-size:13px;color:var(--muted);margin:14px 0 6px">逐年收益</div>
+      <div id="ovYearly"></div>
+      <div style="font-size:13px;color:var(--muted);margin:14px 0 6px">持仓时间线</div>
+      <div id="ovHoldings"></div>
+    </div>
+
+    <button class="ghost" style="margin-top:6px" onclick="logout()">退出登录</button>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const RED='#e5484d', GREEN='#18a058';
+const ETF_COLORS={"518880":"#E6B800","159985":"#A0522D","501018":"#2F4F4F","161226":"#9099A0","513100":"#3B6FE0","159915":"#FF6347","511220":"#2E9E5B","511880":"#C8CDD3"};
+let TOKEN = localStorage.getItem('qx_token') || '';
+let ETFS = [];
+
+function fmt(x){ return (x==null?'—':Number(x).toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2})); }
+function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800); }
+
+async function api(path, opts={}){
+  opts.headers = Object.assign({'Content-Type':'application/json'}, opts.headers||{});
+  if(TOKEN) opts.headers['Authorization']='Bearer '+TOKEN;
+  const r = await fetch(path, opts);
+  if(r.status===401){ logout(); throw new Error('未授权'); }
+  const data = await r.json();
+  if(!r.ok) throw new Error(data.detail || ('请求失败 '+r.status));
+  return data;
+}
+
+// ---------- 登录 ----------
+function showLogin(){ document.getElementById('login').classList.remove('hidden'); document.getElementById('app').classList.add('hidden'); }
+async function doLogin(){
+  const pwd=document.getElementById('pwd').value;
+  const err=document.getElementById('loginErr');
+  try{
+    const d=await api('/api/login',{method:'POST',body:JSON.stringify({password:pwd})});
+    TOKEN=d.token; localStorage.setItem('qx_token',TOKEN);
+    err.classList.add('hidden'); enterApp();
+  }catch(e){ err.textContent=e.message; err.classList.remove('hidden'); }
+}
+function logout(){ TOKEN=''; localStorage.removeItem('qx_token'); showLogin(); }
+
+// ---------- 进入主界面 ----------
+async function enterApp(){
+  document.getElementById('login').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  try{
+    const etfData=await api('/api/etfs'); ETFS=etfData.etfs; fillEtfSelects();
+    await loadAll();
+  }catch(e){ toast(e.message); }
+}
+
+function fillEtfSelects(){
+  const opts=ETFS.map(e=>`<option value="${e.code}">${e.name} (${e.code})</option>`).join('');
+  document.getElementById('buyCode').innerHTML=opts;
+  document.getElementById('mCode').innerHTML=opts;
+}
+
+async function loadAll(){
+  const [status, signal, history, equity] = await Promise.all([
+    api('/api/status'), api('/api/signal'), api('/api/history'), api('/api/equity')
+  ]);
+  renderStatus(status); renderPending(status.pending_order);
+  renderSignal(signal); renderHistory(history.trades); renderEquity(equity);
+  document.getElementById('dateLine').textContent='数据日期 '+status.trade_date;
+}
+
+// ---------- 渲染 ----------
+function renderStatus(s){
+  if(!s.initialized){ document.getElementById('totalVal').textContent='账户未初始化'; return; }
+  document.getElementById('totalVal').textContent='¥'+fmt(s.total);
+  const up=s.return_pct>=0;
+  const tag=document.getElementById('retTag');
+  tag.textContent=(up?'+':'')+s.return_pct+'%'; tag.style.color=up?RED:GREEN;
+  document.getElementById('cashVal').textContent='¥'+fmt(s.cash);
+  if(s.holding){
+    const h=s.holding, hu=h.pnl_pct>=0;
+    document.getElementById('holdVal').innerHTML=
+      `${h.name} ${h.shares}股 <span style="color:${hu?RED:GREEN}">${hu?'+':''}${h.pnl_pct}%</span>`;
+  }else{
+    document.getElementById('holdVal').innerHTML='<span class="muted">空仓 (货币基金)</span>';
+  }
+}
+
+function renderPending(p){
+  const card=document.getElementById('pendingCard');
+  if(!p || p.status!=='pending'){ card.classList.add('hidden'); return; }
+  card.classList.remove('hidden');
+  document.getElementById('pendingDate').textContent=p.date;
+  document.getElementById('pendingReason').textContent='💡 '+(p.reason||'');
+  // 卖出
+  const sb=document.getElementById('sellBlock');
+  if(p.sell){
+    sb.classList.remove('hidden');
+    document.getElementById('sellName').textContent=`${p.sell.name} (${p.sell.code})`;
+    document.getElementById('sellShares').value=p.sell.shares;
+    document.getElementById('sellPrice').value=p.sell.price;
+  }else sb.classList.add('hidden');
+  // 买入
+  const bb=document.getElementById('buyBlock');
+  if(p.buy){
+    bb.classList.remove('hidden');
+    document.getElementById('buyCode').value=p.buy.code;
+    document.getElementById('buyShares').value=p.buy.shares;
+    document.getElementById('buyPrice').value=p.buy.price;
+  }else bb.classList.add('hidden');
+}
+
+function renderSignal(sig){
+  const t=sig.target;
+  const isDef = !sig.board.some(b=>b.code===t.code && b.eligible);
+  document.getElementById('targetLine').innerHTML =
+    `本期目标: <b>${t.name} (${t.code})</b>` + (sig.a_share_weak?' · A股走弱防御':'');
+  const html=sig.board.map((b,i)=>{
+    const cls=b.score>=0?'up':'down';
+    const rank=i===0&&b.eligible?'board-rank top':'board-rank';
+    let mark='';
+    if(b.is_holding) mark+='<span class="tag hold">持仓</span>';
+    if(b.is_target) mark+='<span class="tag">目标</span>';
+    if(b.dropped) mark+='<span class="pill">急跌过滤</span>';
+    return `<div class="board-row">
+      <div class="${rank}">${i+1}</div>
+      <div class="board-name">${b.name}<br><span class="muted" style="font-size:11px">${b.code} ${mark}</span></div>
+      <div class="board-score ${cls}">${b.score>=0?'+':''}${b.score}%</div>
+    </div>`;
+  }).join('');
+  document.getElementById('board').innerHTML=html;
+}
+
+function renderHistory(trades){
+  const box=document.getElementById('historyBox');
+  if(!trades.length){ box.innerHTML='<div class="muted">暂无成交记录</div>'; return; }
+  let rows=trades.map(t=>{
+    const sell=t.action==='sell';
+    return `<tr><td>${t.date.slice(5)}<br><span class="muted">${sell?'卖出':'买入'}</span></td>
+      <td>${t.name}</td>
+      <td class="num">${t.shares}股<br><span class="muted">@${t.price.toFixed(3)}</span></td>
+      <td class="num">${fmt(t.amount)}</td></tr>`;
+  }).join('');
+  box.innerHTML=`<table><tr><th>日期</th><th>标的</th><th style="text-align:right">数量</th><th style="text-align:right">金额</th></tr>${rows}</table>`;
+}
+
+function renderEquity(eq){
+  const el=document.getElementById('chart');
+  const curve=eq.curve, init=eq.initial_capital;
+  if(!curve.length){ el.innerHTML='<div class="muted">暂无成交记录, 确认第一笔交易后显示</div>'; return; }
+  const w=340,h=180,pad=10;
+  const vals=curve.map(c=>c.value);
+  const min=Math.min(...vals,init), max=Math.max(...vals,init), range=(max-min)||1;
+  const n=curve.length;
+  const pts=curve.map((c,i)=>{
+    const x=pad+(i/Math.max(n-1,1))*(w-2*pad);
+    const y=h-pad-((c.value-min)/range)*(h-2*pad);
+    return x.toFixed(1)+','+y.toFixed(1);
+  });
+  const last=curve[n-1].value, ret=((last/init-1)*100).toFixed(1);
+  const color=last>=init?RED:GREEN;
+  const baseY=(h-pad-((init-min)/range)*(h-2*pad)).toFixed(1);
+  el.innerHTML=`<svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="display:block">
+    <line x1="${pad}" y1="${baseY}" x2="${w-pad}" y2="${baseY}" stroke="#ddd" stroke-width="1" stroke-dasharray="4 3"/>
+    <polyline fill="none" stroke="${color}" stroke-width="2" points="${pts.join(' ')}"/>
+  </svg>
+  <div class="chart-labels"><span>${curve[0].date}</span>
+    <span style="color:${color};font-weight:600">最新 ¥${fmt(last)} (${ret}%)</span>
+    <span>${curve[n-1].date}</span></div>`;
+}
+
+// ---------- 策略全景 ----------
+let ovLoaded=false;
+async function loadOverview(){
+  const box=document.getElementById('ovMetrics');
+  box.innerHTML='<div class="muted">正在计算回测…</div>';
+  try{ const d=await api('/api/backtest'); renderOverview(d); ovLoaded=true; }
+  catch(e){ box.innerHTML='<div class="muted">加载失败: '+e.message+'</div>'; }
+}
+function renderOverview(d){
+  const m=d.metrics;
+  document.getElementById('ovPeriod').textContent=m.start+' ~ '+m.end+' · '+m.years+'年';
+  document.getElementById('ovMetrics').innerHTML=
+    '<div class="grid2" style="grid-template-columns:1fr 1fr 1fr">'+
+    cell('累计收益','+'+m.total_return+'%','up')+cell('年化收益','+'+m.ann_return+'%','up')+
+    cell('夏普比率',m.sharpe,'')+cell('最大回撤',m.max_drawdown+'%','down')+
+    cell('交易次数',m.n_trades,'')+cell('回测年限',m.years+'年','')+'</div>';
+  drawOvEquity(d.dates,d.values,d.drawdown);
+  drawOvYearly(d.yearly);
+  drawOvHoldings(d.dates,d.holdings,d.etf_names);
+}
+function cell(label,val,cls){return '<div><div class="muted" style="font-size:12px">'+label+'</div><b class="'+cls+'" style="font-size:18px">'+val+'</b></div>';}
+function drawOvEquity(dates,values,dd){
+  const el=document.getElementById('ovEquity');
+  const w=340,h=150,pad=8,n=values.length;
+  const lv=values.map(v=>Math.log10(v));
+  const lmin=Math.min(...lv),lmax=Math.max(...lv),lr=(lmax-lmin)||1;
+  const pts=values.map((v,i)=>(pad+(i/Math.max(n-1,1))*(w-2*pad)).toFixed(1)+','+(h-pad-((Math.log10(v)-lmin)/lr)*(h-2*pad)).toFixed(1));
+  const dh=46,dmin=Math.min(...dd,0),dr=(0-dmin)||1;
+  const baseY=(dh-pad-((0-dmin)/dr)*(dh-2*pad)).toFixed(1);
+  const dpts=dd.map((v,i)=>(pad+(i/Math.max(n-1,1))*(w-2*pad)).toFixed(1)+','+(dh-pad-((v-dmin)/dr)*(dh-2*pad)).toFixed(1));
+  el.innerHTML='<svg width="100%" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" style="display:block">'+
+    '<polyline fill="none" stroke="'+RED+'" stroke-width="1.8" points="'+pts.join(' ')+'"/></svg>'+
+    '<div class="chart-labels"><span>'+dates[0]+'</span><span class="muted">净值(对数)</span><span>'+dates[n-1]+'</span></div>'+
+    '<svg width="100%" viewBox="0 0 '+w+' '+dh+'" preserveAspectRatio="none" style="display:block;margin-top:4px">'+
+    '<line x1="'+pad+'" y1="'+baseY+'" x2="'+(w-pad)+'" y2="'+baseY+'" stroke="#ddd" stroke-width="1"/>'+
+    '<polygon fill="'+GREEN+'" fill-opacity="0.35" points="'+pad+','+baseY+' '+dpts.join(' ')+' '+(w-pad)+','+baseY+'"/></svg>'+
+    '<div class="chart-labels"><span></span><span class="muted">回撤(最深 '+Math.min(...dd).toFixed(1)+'%)</span><span></span></div>';
+}
+function drawOvYearly(yearly){
+  const el=document.getElementById('ovYearly');
+  const w=340,h=140,pad=18;
+  const rets=yearly.map(y=>y.return);
+  const max=Math.max(...rets,0),min=Math.min(...rets,0),range=(max-min)||1;
+  const bw=(w-2*pad)/yearly.length;
+  const zeroY=h-pad-((0-min)/range)*(h-2*pad);
+  let bars='';
+  yearly.forEach((y,i)=>{
+    const x=pad+i*bw+bw*0.15,bwid=bw*0.7;
+    const yv=h-pad-((y.return-min)/range)*(h-2*pad);
+    const top=Math.min(yv,zeroY),bh=Math.abs(yv-zeroY);
+    const color=y.return>=0?RED:GREEN;
+    bars+='<rect x="'+x.toFixed(1)+'" y="'+top.toFixed(1)+'" width="'+bwid.toFixed(1)+'" height="'+bh.toFixed(1)+'" fill="'+color+'"/>';
+    bars+='<text x="'+(x+bwid/2).toFixed(1)+'" y="'+(top-3).toFixed(1)+'" font-size="8" fill="#666" text-anchor="middle">'+(y.return>0?'+':'')+y.return+'</text>';
+    bars+='<text x="'+(x+bwid/2).toFixed(1)+'" y="'+(h-4)+'" font-size="8" fill="#999" text-anchor="middle">'+y.year+'</text>';
+  });
+  el.innerHTML='<svg width="100%" viewBox="0 0 '+w+' '+h+'" style="display:block">'+
+    '<line x1="'+pad+'" y1="'+zeroY.toFixed(1)+'" x2="'+(w-pad)+'" y2="'+zeroY.toFixed(1)+'" stroke="#ccc" stroke-width="1"/>'+bars+'</svg>';
+}
+function drawOvHoldings(dates,holdings,names){
+  const el=document.getElementById('ovHoldings');
+  const w=340,h=24,pad=2,n=holdings.length,cw=(w-2*pad)/n;
+  let rects='';
+  holdings.forEach((c,i)=>{rects+='<rect x="'+(pad+i*cw).toFixed(2)+'" y="2" width="'+(cw+0.3).toFixed(2)+'" height="'+(h-4)+'" fill="'+(ETF_COLORS[c]||'#ccc')+'"/>';});
+  const seen=[...new Set(holdings)];
+  const legend=seen.map(c=>'<span style="display:inline-flex;align-items:center;margin:2px 8px 2px 0;font-size:11px">'+
+    '<span style="width:10px;height:10px;background:'+(ETF_COLORS[c]||'#ccc')+';display:inline-block;border-radius:2px;margin-right:3px"></span>'+(names[c]||c)+'</span>').join('');
+  el.innerHTML='<svg width="100%" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" style="display:block;border-radius:4px;overflow:hidden">'+rects+'</svg>'+
+    '<div style="margin-top:8px;line-height:1.6">'+legend+'</div>'+
+    '<div class="chart-labels"><span>'+dates[0]+'</span><span></span><span>'+dates[n-1]+'</span></div>';
+}
+
+// ---------- 操作 ----------
+async function doConfirm(){
+  const p=curPending; if(!p) return;
+  const payload={sell:null,buy:null};
+  if(p.sell && document.getElementById('sellOn').checked){
+    payload.sell={shares:+document.getElementById('sellShares').value, price:+document.getElementById('sellPrice').value};
+  }
+  if(p.buy && document.getElementById('buyOn').checked){
+    payload.buy={code:document.getElementById('buyCode').value, shares:+document.getElementById('buyShares').value, price:+document.getElementById('buyPrice').value};
+  }
+  if(!payload.sell && !payload.buy){ toast('请至少勾选一笔成交'); return; }
+  try{ await api('/api/confirm',{method:'POST',body:JSON.stringify(payload)}); toast('✅ 已确认成交'); await loadAll(); }
+  catch(e){ toast('❌ '+e.message); }
+}
+async function doSkip(){
+  if(!confirm('确认本次不操作? 信号将标记为已跳过。')) return;
+  try{ await api('/api/skip',{method:'POST'}); toast('已标记为不操作'); await loadAll(); }
+  catch(e){ toast('❌ '+e.message); }
+}
+async function doManual(){
+  const payload={action:document.getElementById('mAction').value, code:document.getElementById('mCode').value,
+    shares:+document.getElementById('mShares').value, price:+document.getElementById('mPrice').value,
+    date:document.getElementById('mDate').value||null};
+  if(!payload.shares||!payload.price){ toast('请填写数量和价格'); return; }
+  try{ await api('/api/trade',{method:'POST',body:JSON.stringify(payload)}); toast('✅ 已记录'); 
+    document.getElementById('mShares').value=''; document.getElementById('mPrice').value=''; await loadAll(); }
+  catch(e){ toast('❌ '+e.message); }
+}
+
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.t===t));
+  ['signal','manual','history','equity','overview'].forEach(k=>{
+    document.getElementById('tab-'+k).classList.toggle('hidden',k!==t);
+  });
+  if(t==='overview' && !ovLoaded){ loadOverview(); }
+}
+
+// 保存当前 pending 供确认时使用
+let curPending=null;
+const _renderPending=renderPending;
+renderPending=function(p){ curPending=p; _renderPending(p); };
+
+// 启动
+if(TOKEN){ enterApp(); } else { showLogin(); }
+</script>
+</body>
+</html>

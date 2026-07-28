@@ -1,0 +1,181 @@
+{
+  "best": {
+    "name": "10+20",
+    "rebalance": 5,
+    "drop_filter": true,
+    "risk_adj": false,
+    "error": 0.25768172964142216,
+    "total": 19.794094637570396
+  },
+  "best_yearly": {
+    "2020": 0.2007918104664892,
+    "2021": 0.29391280697249034,
+    "2022": 0.32781999079842405,
+    "2023": 0.03595797337742046,
+    "2024": 0.6265755214998581,
+    "2025": 1.495902562036501,
+    "2026": 1.3965367223658687
+  },
+  "all_results": [
+    {
+      "name": "10+20",
+      "rebalance": 5,
+      "drop_filter": true,
+      "risk_adj": false,
+      "error": 0.25768172964142216,
+      "total": 19.794094637570396
+    },
+    {
+      "name": "20\u65e5",
+      "rebalance": 5,
+      "drop_filter": true,
+      "risk_adj": false,
+      "error": 0.3572434970155089,
+      "total": 10.294341238669356
+    },
+    {
+      "name": "20\u65e5\u98ce\u9669\u8c03\u6574",
+      "rebalance": 5,
+      "drop_filter": true,
+      "risk_adj": true,
+      "error": 0.3864336977024316,
+      "total": 5.767264941464738
+    },
+    {
+      "name": "10+20",
+      "rebalance": 5,
+      "drop_filter": false,
+      "risk_adj": false,
+      "error": 0.4027116792229588,
+      "total": 10.316060302798713
+    },
+    {
+      "name": "10\u65e5",
+      "rebalance": 10,
+      "drop_filter": true,
+      "risk_adj": false,
+      "error": 0.4259681080739086,
+      "total": 5.6383086873069175
+    },
+    {
+      "name": "10\u65e5",
+      "rebalance": 5,
+      "drop_filter": true,
+      "risk_adj": false,
+      "error": 0.42640605354374056,
+      "total": 5.762998955264391
+    },
+    {
+      "name": "10+20",
+      "rebalance": 10,
+      "drop_filter": true,
+      "risk_adj": false,
+      "error": 0.4278872284681359,
+      "total": 7.5464300650632214
+    },
+    {
+      "name": "20+60+120",
+      "rebalance": 10,
+      "drop_filter": false,
+      "risk_adj": false,
+      "error": 0.4354570599655619,
+      "total": 1.713209431725169
+    },
+    {
+      "name": "20\u65e5\u98ce\u9669\u8c03\u6574",
+      "rebalance": 10,
+      "drop_filter": false,
+      "risk_adj": true,
+      "error": 0.4428140467948615,
+      "total": 3.3204878909293765
+    },
+    {
+      "name": "30\u65e5",
+      "rebalance": 5,
+      "drop_filter": true,
+      "risk_adj": false,
+      "error": 0.4558864403233022,
+      "total": 8.789208072811938
+    },
+    {
+      "name": "20\u65e5\u98ce\u9669\u8c03\u6574",
+      "rebalance": 5,
+      "drop_filter": false,
+      "risk_adj": true,
+      "error": 0.4583342327266006,
+      "total": 2.1763297310403473
+    },
+    {
+      "name": "10\u65e5",
+      "rebalance": 10,
+      "drop_filter": false,
+      "risk_adj": false,
+      "error": 0.458562362964408,
+      "total": 4.67061155365894
+    },
+    {
+      "name": "20\u65e5\u98ce\u9669\u8c03\u6574",
+      "rebalance": 10,
+      "drop_filter": true,
+      "risk_adj": true,
+      "error": 0.46443144477303133,
+      "total": 4.403991003291619
+    },
+    {
+      "name": "20\u65e5",
+      "rebalance": 5,
+      "drop_filter": false,
+      "risk_adj": false,
+      "error": 0.47621883970714496,
+      "total": 5.101129729655278
+    },
+    {
+      "name": "10+20",
+      "rebalance": 10,
+      "drop_filter": false,
+      "risk_adj": false,
+      "error": 0.4784332760502565,
+      "total": 5.008678979063205
+    },
+    {
+      "name": "20+60+120",
+      "rebalance": 10,
+      "drop_filter": true,
+      "risk_adj": false,
+      "error": 0.48716829632329045,
+      "total": 2.9795748615980595
+    },
+    {
+      "name": "30\u65e5",
+      "rebalance": 10,
+      "drop_filter": false,
+      "risk_adj": false,
+      "error": 0.4942646334401828,
+      "total": 4.0134385440483635
+    },
+    {
+      "name": "40\u65e5",
+      "rebalance": 10,
+      "drop_filter": false,
+      "risk_adj": false,
+      "error": 0.4965323783925917,
+      "total": 4.0841962406816785
+    },
+    {
+      "name": "10\u65e5",
+      "rebalance": 5,
+      "drop_filter": false,
+      "risk_adj": false,
+      "error": 0.4978218597065521,
+      "total": 4.0233142332656415
+    },
+    {
+      "name": "40\u65e5",
+      "rebalance": 5,
+      "drop_filter": true,
+      "risk_adj": false,
+      "error": 0.4988236062053953,
+      "total": 3.650705280966209
+    }
+  ]
+}

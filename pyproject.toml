@@ -1,0 +1,176 @@
+[project]
+name = "a-share-quant"
+version = "0.1.0"
+description = "A股家庭量化活体：日频量化系统，支持市场状态识别、策略路由、风控和受控进化"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.12"
+dependencies = [
+    # Data computation
+    "numpy>=1.26",
+    "pandas>=2.2",
+    "pyarrow>=16.0",
+    # Local analytical database
+    "duckdb>=1.0",
+    # Statistics
+    "scipy>=1.13",
+    "statsmodels>=0.14",
+    # Traditional ML
+    "scikit-learn>=1.5",
+    # Configuration
+    "pyyaml>=6.0",
+    "pydantic>=2.7",
+    "pydantic-settings>=2.3",
+    # CLI
+    "typer>=0.12",
+    "rich>=13.7",
+    # Logging
+    "structlog>=24.2",
+    # Charts and reports
+    "plotly>=5.22",
+    "matplotlib>=3.9",
+    "jinja2>=3.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2",
+    "pytest-cov>=5.0",
+    "hypothesis>=6.100",
+    "ruff>=0.5",
+    "mypy>=1.10",
+    "pandas-stubs>=2.2",
+]
+data-joinquant = [
+    "jqdatasdk>=1.9",
+]
+data-tushare = [
+    "tushare>=1.4",
+]
+data-akshare = [
+    "akshare>=1.14",
+]
+viz = [
+    "dash>=2.17",
+    "dash-bootstrap-components>=1.6",
+]
+server = [
+    "fastapi>=0.111",
+    "uvicorn[standard]>=0.30",
+]
+
+[project.scripts]
+quant = "a_share_quant.cli.main:app"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/a_share_quant"]
+
+# ---------------------------------------------------------------------------
+# Ruff
+# ---------------------------------------------------------------------------
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # pyflakes
+    "I",   # isort
+    "N",   # pep8-naming
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "S",   # flake8-bandit
+    "A",   # flake8-builtins
+    "C4",  # flake8-comprehensions
+    "DTZ", # flake8-datetimez
+    "T20", # flake8-print
+    "RET", # flake8-return
+    "SIM", # flake8-simplify
+    "TCH", # flake8-type-checking
+    "ARG", # flake8-unused-arguments
+    "PTH", # flake8-use-pathlib
+    "RUF", # Ruff-specific
+]
+ignore = [
+    "S101",  # assert used in tests
+    "S104",  # bind to all interfaces (dev only)
+    "S311",  # pseudo-random in non-security context
+    "ARG002", # unused method argument (Protocol implementations)
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["a_share_quant"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "ARG", "DTZ"]
+
+# ---------------------------------------------------------------------------
+# mypy
+# ---------------------------------------------------------------------------
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+show_error_codes = true
+namespace_packages = true
+explicit_package_bases = true
+mypy_path = "src"
+
+[[tool.mypy.overrides]]
+module = [
+    "jqdatasdk.*",
+    "tushare.*",
+    "akshare.*",
+    "plotly.*",
+    "statsmodels.*",
+]
+ignore_missing_imports = true
+
+# ---------------------------------------------------------------------------
+# pytest
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = [
+    "-q",
+    "--strict-markers",
+    "--strict-config",
+]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "property: Property-based tests (Hypothesis)",
+    "golden: Golden scenario tests",
+    "regression: Regression tests",
+    "slow: Slow tests",
+]
+
+# ---------------------------------------------------------------------------
+# Coverage
+# ---------------------------------------------------------------------------
+[tool.coverage.run]
+source = ["src/a_share_quant"]
+branch = true
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.",
+    "@abstractmethod",
+]
+fail_under = 60

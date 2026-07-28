@@ -1,0 +1,66 @@
+# TREND_HOLD Strategy Configuration
+# 趋势持有策略
+
+strategy:
+  id: TREND_HOLD
+  name: "趋势持有"
+  version: "1.0"
+  description: "顺势持有，使用移动止盈"
+
+  # Applicable regimes
+  applicable_regimes:
+    - smooth_uptrend
+    - staircase_uptrend
+
+  # Entry conditions
+  entry:
+    # Market conditions
+    market_trend_required: true
+    min_market_confidence: 0.6
+
+    # Stock conditions
+    stock_trend_alignment: true  # 个股趋势与市场一致
+    min_efficiency_ratio: 0.4  # 趋势效率
+    min_liquidity_score: 0.5
+
+    # Signal conditions
+    trend_slope_positive: true
+    price_above_ma20: true
+    ma20_above_ma60: true
+
+    # Expected edge must cover costs
+    min_expected_edge_pct: 0.02
+
+  # Stop loss
+  stop_loss:
+    method: "structure_or_atr"  # structure | atr | combined
+    structure_lookback: 10  # 结构低点回看期
+    atr_multiplier: 2.0
+    # 若止损过宽导致最小仓位超出风险预算，跳过
+    skip_if_risk_exceeds_budget: true
+
+  # Take profit
+  take_profit:
+    # 不使用狭窄固定目标
+    use_fixed_target: false
+    # 使用移动止盈
+    trailing_stop:
+      enabled: true
+      atr_multiplier: 2.5
+      use_structure: true
+      only_moves_up: true
+    # 状态失效时退出
+    exit_on_regime_change: true
+
+  # Position management
+  position:
+    typical_holding_days: [10, 60]
+    max_holding_days: 60
+    # 底仓和波段仓
+    core_position_pct: 0.6  # 底仓比例
+    swing_position_pct: 0.4  # 波段仓比例
+
+  # Risk budget
+  risk:
+    trade_risk_multiplier: 1.0  # 相对于基准风险
+    max_consecutive_stops: 3

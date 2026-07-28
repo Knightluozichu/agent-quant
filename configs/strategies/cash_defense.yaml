@@ -1,0 +1,67 @@
+# CASH_DEFENSE Strategy Configuration
+# 现金防御策略
+
+strategy:
+  id: CASH_DEFENSE
+  name: "现金防御"
+  version: "1.0"
+  description: "现金是正式策略，不是'什么都没做'"
+
+  applicable_regimes:
+    - smooth_downtrend
+    - dead_water
+    - narrow_range
+    - staircase_downtrend
+    # 也适用于状态不明、数据异常、组合熔断、策略失效
+
+  # 触发条件
+  triggers:
+    # 市场状态
+    regime_based:
+      - smooth_downtrend
+      - dead_water
+      - narrow_range
+    # 状态不确定
+    uncertain_regime: true
+    min_confidence_for_trading: 0.5
+    # 数据异常
+    data_anomaly: true
+    # 组合熔断
+    circuit_breaker: true
+    # 策略失效
+    strategy_disabled: true
+    # 生产模型版本不可验证
+    unverifiable_model: true
+
+  # 行为
+  behavior:
+    # 不开新仓
+    no_new_positions: true
+    # 现有持仓处理
+    existing_positions:
+      # 根据持仓策略的退出规则处理
+      follow_strategy_exit_rules: true
+      # 高风险持仓可以主动退出
+      close_high_risk: true
+    # 现金管理
+    cash_management:
+      # 保持现金缓冲
+      maintain_buffer: true
+
+  # 退出条件（何时可以重新交易）
+  exit_conditions:
+    # 市场状态恢复到可交易状态
+    regime_recovery: true
+    # 置信度恢复
+    confidence_recovery: true
+    min_confidence: 0.6
+    # 熔断解除
+    circuit_breaker_cleared: true
+    # 数据质量恢复
+    data_quality_restored: true
+
+  # 这不是一个"空"策略
+  metadata:
+    is_active_strategy: true
+    requires_monitoring: true
+    generates_reports: true
