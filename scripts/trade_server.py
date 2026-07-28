@@ -135,8 +135,18 @@ def api_status(_: None = Depends(require_token)) -> dict:
     holding = state["holding"]
     holding_info = None
     if holding:
-        p = ls.price_on(data, holding, td)
+        entry_date = state.get("entry_date")
+        # 数据日期 < 买入日 → 数据滑后(现价是买入前的价), 用成本价代替, 盈亏待更新
+        price_stale = bool(entry_date and str(td) < str(entry_date))
+        p_raw = ls.price_on(data, holding, td)
+        p = state["entry_price"] if price_stale else p_raw
         mv = state["shares"] * p if p else 0.0
+        if price_stale:
+            pnl_pct = 0.0
+        elif p and state["entry_price"]:
+            pnl_pct = round((p / state["entry_price"] - 1) * 100, 2)
+        else:
+            pnl_pct = 0.0
         holding_info = {
             "code": holding,
             "name": ls.name_of(holding),
@@ -144,8 +154,8 @@ def api_status(_: None = Depends(require_token)) -> dict:
             "entry_price": state["entry_price"],
             "price": round(p, 3) if p else None,
             "market_value": round(mv, 2),
-            "pnl_pct": round((p / state["entry_price"] - 1) * 100, 2)
-            if (p and state["entry_price"]) else 0.0,
+            "pnl_pct": pnl_pct,
+            "price_stale": price_stale,
         }
     total = state["cash"] + (holding_info["market_value"] if holding_info else 0.0)
     ret = (total / state["initial_capital"] - 1) * 100

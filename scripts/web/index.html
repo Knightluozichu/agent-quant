@@ -246,9 +246,15 @@ function renderStatus(s){
   tag.textContent=(up?'+':'')+s.return_pct+'%'; tag.style.color=up?RED:GREEN;
   document.getElementById('cashVal').textContent='¥'+fmt(s.cash);
   if(s.holding){
-    const h=s.holding, hu=h.pnl_pct>=0;
-    document.getElementById('holdVal').innerHTML=
-      `${h.name} ${h.shares}股 <span style="color:${hu?RED:GREEN}">${hu?'+':''}${h.pnl_pct}%</span>`;
+    const h=s.holding;
+    if(h.price_stale){
+      document.getElementById('holdVal').innerHTML=
+        `${h.name} ${h.shares}股 <span class="muted">盈亏待数据更新</span>`;
+    }else{
+      const hu=h.pnl_pct>=0;
+      document.getElementById('holdVal').innerHTML=
+        `${h.name} ${h.shares}股 <span style="color:${hu?RED:GREEN}">${hu?'+':''}${h.pnl_pct}%</span>`;
+    }
   }else{
     document.getElementById('holdVal').innerHTML='<span class="muted">空仓 (货币基金)</span>';
   }
