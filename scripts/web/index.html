@@ -234,7 +234,9 @@ async function loadAll(){
   ]);
   renderStatus(status); renderPending(status.pending_order);
   renderSignal(signal); renderHistory(history.trades); renderEquity(equity);
-  document.getElementById('dateLine').textContent='数据日期 '+status.trade_date;
+  let dateTxt='数据截至 '+status.trade_date;
+  if(status.holding){ dateTxt += status.realtime?' · 市值实时估算':' · 市值按收盘估算'; }
+  document.getElementById('dateLine').textContent=dateTxt;
 }
 
 // ---------- 渲染 ----------
@@ -289,7 +291,8 @@ function renderSignal(sig){
   const isDef = !sig.board.some(b=>b.code===t.code && b.eligible);
   document.getElementById('targetLine').innerHTML =
     `本期目标: <b>${t.name} (${t.code})</b>` + (sig.a_share_weak?' · A股走弱防御':'');
-  const html=sig.board.map((b,i)=>{
+  const html=`<div class="board-row" style="border-bottom:1px solid var(--line);padding:4px 0 6px"><div style="width:22px"></div><div class="board-name muted" style="font-size:11px">ETF (代码)</div><div class="board-score muted" style="font-size:11px;font-weight:400">动量(10+20日)</div></div>`+
+  sig.board.map((b,i)=>{
     const cls=b.score>=0?'up':'down';
     const rank=i===0&&b.eligible?'board-rank top':'board-rank';
     let mark='';

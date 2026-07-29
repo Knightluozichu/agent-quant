@@ -1,0 +1,739 @@
+{
+  "A_Base(8)": {
+    "pool": {
+      "518880": "黄金ETF",
+      "159985": "豆粕ETF",
+      "501018": "南方原油",
+      "161226": "白银LOF",
+      "513100": "纳指ETF",
+      "159915": "创业板ETF",
+      "511220": "城投债ETF"
+    },
+    "is_oos": {
+      "IS": {
+        "total_return": 0.8354,
+        "ann_return": 0.4892,
+        "ann_vol": 0.2837,
+        "sharpe": 1.724,
+        "max_drawdown": -0.1283,
+        "calmar": 3.813,
+        "n_trades": 33,
+        "turnover_ann": 21.6,
+        "span_years": 1.52,
+        "yearly": {
+          "2020": {
+            "return": 0.2843,
+            "max_dd": -0.1283
+          },
+          "2021": {
+            "return": 0.4291,
+            "max_dd": -0.1102
+          }
+        }
+      },
+      "OOS": {
+        "total_return": 6.2471,
+        "ann_return": 0.6407,
+        "ann_vol": 0.4981,
+        "sharpe": 1.286,
+        "max_drawdown": -0.4093,
+        "calmar": 1.565,
+        "n_trades": 129,
+        "turnover_ann": 32.2,
+        "span_years": 4.0,
+        "yearly": {
+          "2022": {
+            "return": 0.162,
+            "max_dd": -0.0798
+          },
+          "2023": {
+            "return": 0.1899,
+            "max_dd": -0.1161
+          },
+          "2024": {
+            "return": 0.2156,
+            "max_dd": -0.2136
+          },
+          "2025": {
+            "return": 1.291,
+            "max_dd": -0.0659
+          },
+          "2026": {
+            "return": 0.882,
+            "max_dd": -0.4093
+          }
+        }
+      },
+      "passed": "True"
+    },
+    "rolling": {
+      "windows": {
+        "W1": {
+          "total_return": 1.1175,
+          "ann_return": 0.4274,
+          "ann_vol": 0.2761,
+          "sharpe": 1.548,
+          "max_drawdown": -0.1828,
+          "calmar": 2.339,
+          "n_trades": 59,
+          "turnover_ann": 28.0,
+          "span_years": 2.11,
+          "yearly": {
+            "2020": {
+              "return": 0.2843,
+              "max_dd": -0.1283
+            },
+            "2021": {
+              "return": 0.4291,
+              "max_dd": -0.1102
+            },
+            "2022": {
+              "return": 0.1537,
+              "max_dd": -0.1828
+            }
+          }
+        },
+        "W2": {
+          "total_return": 0.1172,
+          "ann_return": 0.0463,
+          "ann_vol": 0.2011,
+          "sharpe": 0.23,
+          "max_drawdown": -0.2836,
+          "calmar": 0.163,
+          "n_trades": 83,
+          "turnover_ann": 33.9,
+          "span_years": 2.45,
+          "yearly": {
+            "2023": {
+              "return": 0.1676,
+              "max_dd": -0.1303
+            },
+            "2024": {
+              "return": 0.0446,
+              "max_dd": -0.1906
+            },
+            "2025": {
+              "return": -0.084,
+              "max_dd": -0.222
+            }
+          }
+        },
+        "W3": {
+          "total_return": 0.465,
+          "ann_return": 1.4174,
+          "ann_vol": 0.6641,
+          "sharpe": 2.134,
+          "max_drawdown": -0.2171,
+          "calmar": 6.528,
+          "n_trades": 25,
+          "turnover_ann": 57.8,
+          "span_years": 0.43,
+          "yearly": {
+            "2026": {
+              "return": 0.465,
+              "max_dd": -0.2171
+            }
+          }
+        }
+      },
+      "positive": 3,
+      "passed": true
+    },
+    "full": {
+      "total_return": 19.7453,
+      "ann_return": 0.6454,
+      "ann_vol": 0.3757,
+      "sharpe": 1.718,
+      "max_drawdown": -0.1963,
+      "calmar": 3.287,
+      "n_trades": 197,
+      "turnover_ann": 32.4,
+      "span_years": 6.09,
+      "yearly": {
+        "2020": {
+          "return": 0.2843,
+          "max_dd": -0.1283
+        },
+        "2021": {
+          "return": 0.4291,
+          "max_dd": -0.1102
+        },
+        "2022": {
+          "return": 0.296,
+          "max_dd": -0.1828
+        },
+        "2023": {
+          "return": 0.0429,
+          "max_dd": -0.1617
+        },
+        "2024": {
+          "return": 0.4269,
+          "max_dd": -0.1567
+        },
+        "2025": {
+          "return": 1.5519,
+          "max_dd": -0.1628
+        },
+        "2026": {
+          "return": 1.2964,
+          "max_dd": -0.1963
+        }
+      }
+    }
+  },
+  "B_Ext10(+标普+国债)": {
+    "pool": {
+      "518880": "黄金ETF",
+      "159985": "豆粕ETF",
+      "501018": "南方原油",
+      "161226": "白银LOF",
+      "513100": "纳指ETF",
+      "159915": "创业板ETF",
+      "511220": "城投债ETF",
+      "513500": "标普500ETF",
+      "511260": "十年国债ETF"
+    },
+    "is_oos": {
+      "IS": {
+        "total_return": 0.9525,
+        "ann_return": 0.5508,
+        "ann_vol": 0.2837,
+        "sharpe": 1.942,
+        "max_drawdown": -0.1283,
+        "calmar": 4.294,
+        "n_trades": 31,
+        "turnover_ann": 20.3,
+        "span_years": 1.52,
+        "yearly": {
+          "2020": {
+            "return": 0.2843,
+            "max_dd": -0.1283
+          },
+          "2021": {
+            "return": 0.5203,
+            "max_dd": -0.1102
+          }
+        }
+      },
+      "OOS": {
+        "total_return": 8.9869,
+        "ann_return": 0.7777,
+        "ann_vol": 0.416,
+        "sharpe": 1.87,
+        "max_drawdown": -0.1866,
+        "calmar": 4.167,
+        "n_trades": 135,
+        "turnover_ann": 33.8,
+        "span_years": 4.0,
+        "yearly": {
+          "2022": {
+            "return": 0.1147,
+            "max_dd": -0.0722
+          },
+          "2023": {
+            "return": 0.0406,
+            "max_dd": -0.1635
+          },
+          "2024": {
+            "return": 0.4342,
+            "max_dd": -0.1086
+          },
+          "2025": {
+            "return": 1.5508,
+            "max_dd": -0.1627
+          },
+          "2026": {
+            "return": 1.3534,
+            "max_dd": -0.1763
+          }
+        }
+      },
+      "passed": "True"
+    },
+    "rolling": {
+      "windows": {
+        "W1": {
+          "total_return": 0.9642,
+          "ann_return": 0.3797,
+          "ann_vol": 0.2885,
+          "sharpe": 1.316,
+          "max_drawdown": -0.2146,
+          "calmar": 1.77,
+          "n_trades": 53,
+          "turnover_ann": 25.3,
+          "span_years": 2.1,
+          "yearly": {
+            "2020": {
+              "return": 0.2843,
+              "max_dd": -0.1283
+            },
+            "2021": {
+              "return": 0.5203,
+              "max_dd": -0.1102
+            },
+            "2022": {
+              "return": 0.006,
+              "max_dd": -0.2146
+            }
+          }
+        },
+        "W2": {
+          "total_return": 0.1429,
+          "ann_return": 0.056,
+          "ann_vol": 0.1975,
+          "sharpe": 0.284,
+          "max_drawdown": -0.2626,
+          "calmar": 0.213,
+          "n_trades": 81,
+          "turnover_ann": 33.1,
+          "span_years": 2.45,
+          "yearly": {
+            "2023": {
+              "return": 0.1676,
+              "max_dd": -0.1303
+            },
+            "2024": {
+              "return": 0.0684,
+              "max_dd": -0.1324
+            },
+            "2025": {
+              "return": -0.0839,
+              "max_dd": -0.222
+            }
+          }
+        },
+        "W3": {
+          "total_return": 0.4557,
+          "ann_return": 1.382,
+          "ann_vol": 0.6648,
+          "sharpe": 2.079,
+          "max_drawdown": -0.2171,
+          "calmar": 6.365,
+          "n_trades": 25,
+          "turnover_ann": 57.8,
+          "span_years": 0.43,
+          "yearly": {
+            "2026": {
+              "return": 0.4557,
+              "max_dd": -0.2171
+            }
+          }
+        }
+      },
+      "positive": 3,
+      "passed": true
+    },
+    "full": {
+      "total_return": 7.1285,
+      "ann_return": 0.4105,
+      "ann_vol": 0.3769,
+      "sharpe": 1.089,
+      "max_drawdown": -0.2784,
+      "calmar": 1.475,
+      "n_trades": 189,
+      "turnover_ann": 31.0,
+      "span_years": 6.09,
+      "yearly": {
+        "2020": {
+          "return": 0.2843,
+          "max_dd": -0.1283
+        },
+        "2021": {
+          "return": 0.5203,
+          "max_dd": -0.1102
+        },
+        "2022": {
+          "return": 0.1901,
+          "max_dd": -0.2146
+        },
+        "2023": {
+          "return": 0.1492,
+          "max_dd": -0.1303
+        },
+        "2024": {
+          "return": 0.0683,
+          "max_dd": -0.1325
+        },
+        "2025": {
+          "return": 0.3701,
+          "max_dd": -0.2784
+        },
+        "2026": {
+          "return": 1.0795,
+          "max_dd": -0.1054
+        }
+      }
+    }
+  },
+  "C_Ext11(+标普+国债+德国)": {
+    "pool": {
+      "518880": "黄金ETF",
+      "159985": "豆粕ETF",
+      "501018": "南方原油",
+      "161226": "白银LOF",
+      "513100": "纳指ETF",
+      "159915": "创业板ETF",
+      "511220": "城投债ETF",
+      "513500": "标普500ETF",
+      "511260": "十年国债ETF",
+      "513030": "德国ETF"
+    },
+    "is_oos": {
+      "IS": {
+        "total_return": 0.8066,
+        "ann_return": 0.4738,
+        "ann_vol": 0.2757,
+        "sharpe": 1.719,
+        "max_drawdown": -0.1283,
+        "calmar": 3.693,
+        "n_trades": 31,
+        "turnover_ann": 20.3,
+        "span_years": 1.52,
+        "yearly": {
+          "2020": {
+            "return": 0.3038,
+            "max_dd": -0.1283
+          },
+          "2021": {
+            "return": 0.3856,
+            "max_dd": -0.1101
+          }
+        }
+      },
+      "OOS": {
+        "total_return": 5.2918,
+        "ann_return": 0.5833,
+        "ann_vol": 0.436,
+        "sharpe": 1.338,
+        "max_drawdown": -0.2784,
+        "calmar": 2.095,
+        "n_trades": 141,
+        "turnover_ann": 35.2,
+        "span_years": 4.0,
+        "yearly": {
+          "2022": {
+            "return": 0.1893,
+            "max_dd": -0.0722
+          },
+          "2023": {
+            "return": 0.1089,
+            "max_dd": -0.1494
+          },
+          "2024": {
+            "return": 0.391,
+            "max_dd": -0.1085
+          },
+          "2025": {
+            "return": 0.6497,
+            "max_dd": -0.2784
+          },
+          "2026": {
+            "return": 1.0792,
+            "max_dd": -0.1054
+          }
+        }
+      },
+      "passed": "True"
+    },
+    "rolling": {
+      "windows": {
+        "W1": {
+          "total_return": 0.8173,
+          "ann_return": 0.3295,
+          "ann_vol": 0.2825,
+          "sharpe": 1.166,
+          "max_drawdown": -0.2146,
+          "calmar": 1.535,
+          "n_trades": 53,
+          "turnover_ann": 25.3,
+          "span_years": 2.1,
+          "yearly": {
+            "2020": {
+              "return": 0.3038,
+              "max_dd": -0.1283
+            },
+            "2021": {
+              "return": 0.3856,
+              "max_dd": -0.1101
+            },
+            "2022": {
+              "return": 0.0059,
+              "max_dd": -0.2146
+            }
+          }
+        },
+        "W2": {
+          "total_return": 0.365,
+          "ann_return": 0.1352,
+          "ann_vol": 0.2045,
+          "sharpe": 0.661,
+          "max_drawdown": -0.1958,
+          "calmar": 0.691,
+          "n_trades": 79,
+          "turnover_ann": 32.2,
+          "span_years": 2.45,
+          "yearly": {
+            "2023": {
+              "return": 0.2189,
+              "max_dd": -0.1213
+            },
+            "2024": {
+              "return": 0.0623,
+              "max_dd": -0.1416
+            },
+            "2025": {
+              "return": 0.0542,
+              "max_dd": -0.1417
+            }
+          }
+        },
+        "W3": {
+          "total_return": 0.3493,
+          "ann_return": 0.999,
+          "ann_vol": 0.6598,
+          "sharpe": 1.514,
+          "max_drawdown": -0.2171,
+          "calmar": 4.601,
+          "n_trades": 25,
+          "turnover_ann": 57.8,
+          "span_years": 0.43,
+          "yearly": {
+            "2026": {
+              "return": 0.3493,
+              "max_dd": -0.2171
+            }
+          }
+        }
+      },
+      "positive": 3,
+      "passed": true
+    },
+    "full": {
+      "total_return": 15.2757,
+      "ann_return": 0.5805,
+      "ann_vol": 0.3248,
+      "sharpe": 1.787,
+      "max_drawdown": -0.2146,
+      "calmar": 2.705,
+      "n_trades": 175,
+      "turnover_ann": 28.7,
+      "span_years": 6.09,
+      "yearly": {
+        "2020": {
+          "return": 0.3038,
+          "max_dd": -0.1283
+        },
+        "2021": {
+          "return": 0.3856,
+          "max_dd": -0.1101
+        },
+        "2022": {
+          "return": 0.1357,
+          "max_dd": -0.2146
+        },
+        "2023": {
+          "return": 0.2546,
+          "max_dd": -0.1214
+        },
+        "2024": {
+          "return": 0.0619,
+          "max_dd": -0.142
+        },
+        "2025": {
+          "return": 1.9279,
+          "max_dd": -0.1418
+        },
+        "2026": {
+          "return": 1.0337,
+          "max_dd": -0.1217
+        }
+      }
+    }
+  },
+  "D_Ext12(+标普+国债+德国+能化)": {
+    "pool": {
+      "518880": "黄金ETF",
+      "159985": "豆粕ETF",
+      "501018": "南方原油",
+      "161226": "白银LOF",
+      "513100": "纳指ETF",
+      "159915": "创业板ETF",
+      "511220": "城投债ETF",
+      "513500": "标普500ETF",
+      "511260": "十年国债ETF",
+      "513030": "德国ETF",
+      "159981": "能源化工ETF"
+    },
+    "is_oos": {
+      "IS": {
+        "total_return": 0.5122,
+        "ann_return": 0.344,
+        "ann_vol": 0.4025,
+        "sharpe": 0.854,
+        "max_drawdown": -0.2835,
+        "calmar": 1.213,
+        "n_trades": 43,
+        "turnover_ann": 30.7,
+        "span_years": 1.4,
+        "yearly": {
+          "2020": {
+            "return": 0.1021,
+            "max_dd": -0.1283
+          },
+          "2021": {
+            "return": 0.3722,
+            "max_dd": -0.2835
+          }
+        }
+      },
+      "OOS": {
+        "total_return": 5.4515,
+        "ann_return": 0.5932,
+        "ann_vol": 0.4359,
+        "sharpe": 1.361,
+        "max_drawdown": -0.2784,
+        "calmar": 2.131,
+        "n_trades": 139,
+        "turnover_ann": 34.7,
+        "span_years": 4.0,
+        "yearly": {
+          "2022": {
+            "return": 0.1893,
+            "max_dd": -0.0722
+          },
+          "2023": {
+            "return": 0.1697,
+            "max_dd": -0.1428
+          },
+          "2024": {
+            "return": 0.3115,
+            "max_dd": -0.1086
+          },
+          "2025": {
+            "return": 0.6499,
+            "max_dd": -0.2784
+          },
+          "2026": {
+            "return": 1.1432,
+            "max_dd": -0.1054
+          }
+        }
+      },
+      "passed": "True"
+    },
+    "rolling": {
+      "windows": {
+        "W1": {
+          "total_return": 0.5177,
+          "ann_return": 0.2357,
+          "ann_vol": 0.3759,
+          "sharpe": 0.627,
+          "max_drawdown": -0.2835,
+          "calmar": 0.831,
+          "n_trades": 67,
+          "turnover_ann": 34.0,
+          "span_years": 1.97,
+          "yearly": {
+            "2020": {
+              "return": 0.1021,
+              "max_dd": -0.1283
+            },
+            "2021": {
+              "return": 0.3722,
+              "max_dd": -0.2835
+            },
+            "2022": {
+              "return": 0.0036,
+              "max_dd": -0.2148
+            }
+          }
+        },
+        "W2": {
+          "total_return": 0.2756,
+          "ann_return": 0.1043,
+          "ann_vol": 0.2041,
+          "sharpe": 0.511,
+          "max_drawdown": -0.2373,
+          "calmar": 0.44,
+          "n_trades": 79,
+          "turnover_ann": 32.2,
+          "span_years": 2.45,
+          "yearly": {
+            "2023": {
+              "return": 0.2012,
+              "max_dd": -0.1534
+            },
+            "2024": {
+              "return": 0.0076,
+              "max_dd": -0.1689
+            },
+            "2025": {
+              "return": 0.0539,
+              "max_dd": -0.1417
+            }
+          }
+        },
+        "W3": {
+          "total_return": 0.3802,
+          "ann_return": 1.1063,
+          "ann_vol": 0.6598,
+          "sharpe": 1.677,
+          "max_drawdown": -0.2171,
+          "calmar": 5.096,
+          "n_trades": 25,
+          "turnover_ann": 57.8,
+          "span_years": 0.43,
+          "yearly": {
+            "2026": {
+              "return": 0.3802,
+              "max_dd": -0.2171
+            }
+          }
+        }
+      },
+      "positive": 3,
+      "passed": true
+    },
+    "full": {
+      "total_return": 12.912,
+      "ann_return": 0.5544,
+      "ann_vol": 0.3588,
+      "sharpe": 1.545,
+      "max_drawdown": -0.2835,
+      "calmar": 1.956,
+      "n_trades": 191,
+      "turnover_ann": 32.0,
+      "span_years": 5.97,
+      "yearly": {
+        "2020": {
+          "return": 0.1021,
+          "max_dd": -0.1283
+        },
+        "2021": {
+          "return": 0.3722,
+          "max_dd": -0.2835
+        },
+        "2022": {
+          "return": 0.1331,
+          "max_dd": -0.2148
+        },
+        "2023": {
+          "return": 0.2365,
+          "max_dd": -0.1534
+        },
+        "2024": {
+          "return": 0.0072,
+          "max_dd": -0.1693
+        },
+        "2025": {
+          "return": 1.9276,
+          "max_dd": -0.1418
+        },
+        "2026": {
+          "return": 1.2268,
+          "max_dd": -0.1216
+        }
+      }
+    }
+  }
+}

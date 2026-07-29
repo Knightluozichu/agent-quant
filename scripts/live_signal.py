@@ -7,6 +7,7 @@
   uv run python scripts/live_signal.py                 # 每日: 更新数据+生成信号
   uv run python scripts/live_signal.py --status        # 查看当前持仓(不更新数据)
   uv run python scripts/live_signal.py --dry-run       # 预演今日信号(不改动状态)
+  uv run python scripts/live_signal.py --sync-only     # 仅更新行情(夜间补齐当日K线, 不出信号)
 
 推荐工作流:
   每个交易日 14:50 后运行 → 若为调仓日且有换仓信号 → 15:00 收盘前执行
@@ -118,8 +119,36 @@ def update_data(data: dict) -> dict:
     if updated:
         print(f"  数据更新: {', '.join(updated)}")
     else:
-        print("  数据已是最新")
+        _td = get_trading_dates(data)
+        print(f"  数据已是最新 (最新数据: {_td[-1] if _td else '无'})")
+    check_data_freshness(data)
     return data
+
+
+def check_data_freshness(data: dict) -> None:
+    """数据新鲜度检查: 若缺失上一个已完成交易日的数据则告警.
+
+    新浪等数据源的当日K线有发布延迟。若上一交易日数据缺失,
+    信号将基于过期数据, 此处打印告警(不阻断)供日志排查。
+    """
+    try:
+        import akshare as ak
+        cal = ak.tool_trade_date_hist_sina()
+        cal_dates = sorted(pd.to_datetime(cal["trade_date"]).dt.date)
+        today = date.today()
+        past = [d for d in cal_dates if d < today]
+        if not past:
+            return
+        expected = past[-1]  # 上一个已完成交易日
+        trading_dates = get_trading_dates(data)
+        if not trading_dates:
+            return
+        latest = trading_dates[-1]
+        if latest < expected:
+            print(f"  ⚠️  数据滞后: 最新数据 {latest}, 缺失上一交易日 {expected} 的数据!")
+            print(f"      信号将基于过期数据, 请检查数据源 (可能为发布延迟)")
+    except Exception as e:  # noqa: BLE001
+        print(f"  (数据新鲜度检查跳过: {e})")
 
 
 # 已知份额拆分 (前复权: 拆分前 OHLC 除以比例, 与回测缓存一致)
@@ -242,14 +271,14 @@ _REALTIME_CACHE = {"time": 0.0, "prices": {}}
 
 
 def get_realtime_price(code: str) -> float | None:
-    """获取ETF当日实时/最新价(东方财富实时行情), 缓存5分钟。
+    """获取ETF当日实时/最新价(东方财富实时行情), 缓存1分钟。
 
     用于显示当日真实市值(新浪历史数据有发布延迟, 实时行情能拿到当天价)。
     失败返回None(回退到历史价)。
     """
     import akshare as ak
     now = time.time()
-    if now - _REALTIME_CACHE["time"] > 300:  # 缓存5分钟
+    if now - _REALTIME_CACHE["time"] > 60:  # 缓存1分钟
         try:
             spot = ak.fund_etf_spot_em()
             _REALTIME_CACHE["prices"] = dict(
@@ -408,6 +437,79 @@ def notify_trade(td, sell_order, buy_order, reason: str, state: dict, data: dict
 
 
 # --------------------------------------------------------------------------- #
+# 实时行情注入 (解决14:50信号看不到当天数据的问题)
+# --------------------------------------------------------------------------- #
+def inject_realtime(data: dict) -> dict:
+    """将当日实时行情注入内存数据 (不写parquet, 仅用于信号计算).
+
+    新浪日K收盘后才发布, 14:50拿不到当天数据.
+    用东财实时行情(fund_etf_spot_em)构造当天K线, 追加到内存.
+    这样动量计算/急跌过滤/MA判断全部包含当天数据.
+    """
+    import akshare as ak
+    today = date.today()
+
+    # 检查是否已有今天数据
+    sample_code = next(iter(data))
+    if data[sample_code]["trade_date"].max() >= today:
+        return data  # 已有今天数据, 无需注入
+
+    try:
+        spot = ak.fund_etf_spot_em()
+        spot_map = {}
+        for _, row in spot.iterrows():
+            code = str(row["代码"])
+            spot_map[code] = {
+                "price": float(row["最新价"]),
+                "open": float(row.get("今开", 0) or row["最新价"]),
+                "high": float(row.get("最高", 0) or row["最新价"]),
+                "low": float(row.get("最低", 0) or row["最新价"]),
+                "volume": float(row.get("成交量", 0) or 0),
+            }
+    except Exception as e:  # noqa: BLE001
+        print(f"  ⚠️  实时行情获取失败: {e}, 回退到历史数据")
+        return data
+
+    injected = []
+    for code in list(data.keys()):
+        df = data[code]
+        if code in spot_map:
+            s = spot_map[code]
+            if s["price"] <= 0:
+                continue
+            new_row = {
+                "trade_date": today,
+                "open": s["open"],
+                "close": s["price"],
+                "high": s["high"],
+                "low": s["low"],
+                "volume": s["volume"],
+            }
+        else:
+            # 非ETF品种(LOF/QDII)东财spot不返回, 用昨日收盘价填充
+            last_row = df.iloc[-1]
+            new_row = {
+                "trade_date": today,
+                "open": float(last_row["close"]),
+                "close": float(last_row["close"]),
+                "high": float(last_row["close"]),
+                "low": float(last_row["close"]),
+                "volume": 0.0,
+            }
+        if "symbol" in df.columns:
+            new_row["symbol"] = code
+        df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
+        df = df.sort_values("trade_date").drop_duplicates("trade_date").reset_index(drop=True)
+        data[code] = df
+        injected.append(code)
+
+    if injected:
+        print(f"  ⚡ 已注入当日实时行情 ({today}): {len(injected)}只ETF")
+        print(f"     注: 使用14:50实时价作为当日收盘, 与回测(真实收盘)有微小差异")
+    return data
+
+
+# --------------------------------------------------------------------------- #
 # 主流程
 # --------------------------------------------------------------------------- #
 def run(dry_run: bool = False) -> None:
@@ -425,8 +527,11 @@ def run(dry_run: bool = False) -> None:
     if not dry_run:
         data = update_data(data)
 
+    # 注入当日实时行情 (解决14:50拿不到当天数据的问题)
+    data = inject_realtime(data)
+
     trading_dates = get_trading_dates(data)
-    td = trading_dates[-1]  # 最新交易日
+    td = trading_dates[-1]  # 最新交易日 (注入后=今天)
 
     print_header(td)
 
@@ -437,25 +542,61 @@ def run(dry_run: bool = False) -> None:
         print("\n  (如需强制重算, 使用 --dry-run 预演)")
         return
 
-    # 是否为调仓日: 距上次调仓 >= 5 个交易日
-    last_rb = state.get("last_rebalance_date")
-    if last_rb is None:
+    # 是否为调仓日: 绝对网格 (与回测一致: trading_dates[warmup:][::5])
+    # 回测逻辑: 从公共日期第130天起, 每隔5天为一个调仓日
+    # 实盘必须用同一网格, 否则调仓日会与回测逐渐错位
+    WARMUP = 130
+    all_trading = trading_dates  # 公共交易日历
+    if len(all_trading) > WARMUP:
+        post_warmup = all_trading[WARMUP:]  # 与回测 trading_dates 一致
+        rebalance_grid = set(post_warmup[::REBALANCE_DAYS])  # 绝对网格
+        is_rebalance = td in rebalance_grid
+        # 计算距下次调仓还有几天
+        if is_rebalance:
+            days_since = REBALANCE_DAYS
+        else:
+            try:
+                td_idx = post_warmup.index(td)
+                days_since = td_idx % REBALANCE_DAYS
+            except ValueError:
+                days_since = 0
+                is_rebalance = True  # 找不到就当作调仓日
+    else:
         is_rebalance = True
         days_since = REBALANCE_DAYS
-    else:
-        # 找上次调仓日在交易日历中的位置
-        try:
-            idx_last = trading_dates.index(last_rb)
-        except ValueError:
-            idx_last = max(i for i, d in enumerate(trading_dates) if str(d) <= str(last_rb))
-        days_since = (len(trading_dates) - 1) - idx_last
-        is_rebalance = days_since >= REBALANCE_DAYS
 
     holding = state["holding"]
 
     # === 核心决策 (与回测同一函数) ===
     idx_map = build_etf_data_at_date(data, td)
     target, candidates, best_score, a_share_weak = select_target(data, idx_map, holding)
+
+    # === 实时急跌保护: 14:50信号时检查当天盘中是否已暴跌>3% ===
+    # 新浪日K在收盘后才发布, 14:50拿不到当天数据, 但实时行情能拿到
+    realtime_dropped = []
+    for code, score in candidates:
+        rt_price = get_realtime_price(code)
+        if rt_price is None:
+            continue
+        # 用昨天收盘价作为基准
+        prev_close = price_on(data, code, td)
+        if prev_close and prev_close > 0:
+            intraday_ret = (rt_price - prev_close) / prev_close
+            if intraday_ret < -0.03:
+                realtime_dropped.append((code, intraday_ret))
+    if realtime_dropped:
+        dropped_codes = {c for c, _ in realtime_dropped}
+        for code, ret in realtime_dropped:
+            print(f"  ⚡ 实时急跌: {name_of(code)} 当日{ret:+.1%}, 已排除")
+        print(f"     注: 此过滤为实盘保护, 回测中不存在(回测用真实收盘价自然触发)")
+        # 从candidates中移除, 重新选目标
+        candidates = [(c, s) for c, s in candidates if c not in dropped_codes]
+        if candidates:
+            target = candidates[0][0]
+            best_score = candidates[0][1]
+        else:
+            target = DEFENSE
+            best_score = 0
 
     print_account(state, data, td)
     print_momentum_board(data, td, holding, target)
@@ -594,6 +735,21 @@ def show_status() -> None:
             arrow = "卖出" if t["action"] == "sell" else "买入"
             print(f"    {t['date']}  {arrow} {t['name']} "
                   f"{t['shares']}股 @ {t['price']:.3f} ≈ {fmt_money(t['amount'])}元")
+
+
+def sync_only() -> None:
+    """仅更新行情数据 (不生成信号/不改账户状态), 供夜间定时任务补齐当日K线.
+
+    新浪当日K线在收盘后才陆续发布, 14:50/16:30 的定时任务拿不到当日数据。
+    本函数幂等 (只追加新交易日), 可由夜间 cron 安全重跑。
+    """
+    print("  加载数据...")
+    data = load_data()
+    if not data:
+        print("  ❌ 无数据缓存, 请先运行: uv run python scripts/live_signal.py --bootstrap")
+        return
+    update_data(data)  # 内部已写回 parquet
+    print("  ✓ 数据同步完成")
 
 
 # --------------------------------------------------------------------------- #
@@ -778,6 +934,7 @@ def main() -> None:
     parser.add_argument("--set-bark", metavar="KEY", help="设置 Bark 设备 Key (开启手机推送)")
     parser.add_argument("--notify-test", action="store_true", help="发送一条测试推送")
     parser.add_argument("--bootstrap", action="store_true", help="全量拉取历史数据 (服务器首次部署)")
+    parser.add_argument("--sync-only", action="store_true", help="仅更新行情数据 (夜间补齐当日K线, 不生成信号)")
     parser.add_argument("--paper-mode", metavar="on/off",
                         help="模拟记账: on=信号按理论价自动记账, off=网页确认真实成交")
     args = parser.parse_args()
@@ -798,6 +955,8 @@ def main() -> None:
         init_account(args.init)
     elif args.status:
         show_status()
+    elif args.sync_only:
+        sync_only()
     else:
         run(dry_run=args.dry_run)
 
