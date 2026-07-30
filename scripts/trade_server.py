@@ -134,6 +134,7 @@ def api_status(_: None = Depends(require_token)) -> dict:
     td = ls.get_trading_dates(data)[-1]
     holding = state["holding"]
     holding_info = None
+    used_realtime = False
     if holding:
         entry_date = state.get("entry_date")
         # 优先用实时行情(当日真实价), 失败回退历史价
@@ -142,6 +143,7 @@ def api_status(_: None = Depends(require_token)) -> dict:
         if p_realtime:
             p = p_realtime
             price_stale = False
+            used_realtime = True
         else:
             p = p_hist
             # 数据日期 < 买入日 → 数据滑后, 用成本价代替, 盈亏待更新
@@ -170,6 +172,7 @@ def api_status(_: None = Depends(require_token)) -> dict:
     return {
         "initialized": True,
         "trade_date": str(td),
+        "realtime": used_realtime,
         "cash": round(state["cash"], 2),
         "holding": holding_info,
         "total": round(total, 2),
@@ -183,6 +186,8 @@ def api_status(_: None = Depends(require_token)) -> dict:
 def api_signal(_: None = Depends(require_token)) -> dict:
     state = ls.load_state()
     data = get_data()
+    # 注入当日实时行情 (解决parquet没有今天数据的问题)
+    data = ls.inject_realtime(data)
     td = ls.get_trading_dates(data)[-1]
     holding = state["holding"] if state else None
     idx_map = ls.build_etf_data_at_date(data, td)
