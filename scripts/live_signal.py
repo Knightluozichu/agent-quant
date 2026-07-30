@@ -442,11 +442,10 @@ def notify_trade(td, sell_order, buy_order, reason: str, state: dict, data: dict
 def inject_realtime(data: dict) -> dict:
     """将当日实时行情注入内存数据 (不写parquet, 仅用于信号计算).
 
-    新浪日K收盘后才发布, 14:50拿不到当天数据.
-    用东财实时行情(fund_etf_spot_em)构造当天K线, 追加到内存.
-    这样动量计算/急跌过滤/MA判断全部包含当天数据.
+    数据源: 腾讯行情接口 qt.gtimg.cn (免费/无认证/覆盖全部场内ETF+LOF+QDII).
+    一次HTTP请求获取所有品种实时价, 比akshare的fund_etf_spot_em更可靠(后者不覆盖LOF).
     """
-    import akshare as ak
+    import requests
     today = date.today()
 
     # 检查是否已有今天数据
@@ -454,39 +453,54 @@ def inject_realtime(data: dict) -> dict:
     if data[sample_code]["trade_date"].max() >= today:
         return data  # 已有今天数据, 无需注入
 
+    # 腾讯行情: 一次请求拉全部
+    tencent_codes = []
+    code_list = list(data.keys())
+    for c in code_list:
+        prefix = "sh" if c.startswith(("5", "6")) else "sz"
+        tencent_codes.append(f"{prefix}{c}")
+    url = f"http://qt.gtimg.cn/q={','.join(tencent_codes)}"
+
     try:
-        spot = ak.fund_etf_spot_em()
-        spot_map = {}
-        for _, row in spot.iterrows():
-            code = str(row["代码"])
-            spot_map[code] = {
-                "price": float(row["最新价"]),
-                "open": float(row.get("今开", 0) or row["最新价"]),
-                "high": float(row.get("最高", 0) or row["最新价"]),
-                "low": float(row.get("最低", 0) or row["最新价"]),
-                "volume": float(row.get("成交量", 0) or 0),
-            }
+        resp = requests.get(url, timeout=10)
+        resp.encoding = "gbk"
     except Exception as e:  # noqa: BLE001
         print(f"  ⚠️  实时行情获取失败: {e}, 回退到历史数据")
         return data
 
+    # 解析腾讯行情格式: v_sh518880="51~黄金ETF~518880~8.404~8.392~..."
+    spot_map = {}
+    for line in resp.text.strip().split(";"):
+        if "~" not in line:
+            continue
+        parts = line.split("~")
+        if len(parts) < 5:
+            continue
+        code = parts[2]
+        price = float(parts[3]) if parts[3] else 0
+        prev_close = float(parts[4]) if parts[4] else 0
+        if price > 0:
+            spot_map[code] = {"price": price, "prev_close": prev_close}
+
+    if not spot_map:
+        print("  ⚠️  腾讯行情解析失败, 回退到历史数据")
+        return data
+
     injected = []
-    for code in list(data.keys()):
+    for code in code_list:
         df = data[code]
         if code in spot_map:
             s = spot_map[code]
-            if s["price"] <= 0:
-                continue
             new_row = {
                 "trade_date": today,
-                "open": s["open"],
-                "close": s["price"],
-                "high": s["high"],
-                "low": s["low"],
-                "volume": s["volume"],
+                "open": s["prev_close"],  # 用昨收近似开盘
+                "close": s["price"],       # 实时价作为当天收盘
+                "high": max(s["price"], s["prev_close"]),
+                "low": min(s["price"], s["prev_close"]),
+                "volume": 0.0,
             }
         else:
-            # 非ETF品种(LOF/QDII)东财spot不返回, 用昨日收盘价填充
+            # 拉不到的用昨日收盘价填充
             last_row = df.iloc[-1]
             new_row = {
                 "trade_date": today,
@@ -504,8 +518,8 @@ def inject_realtime(data: dict) -> dict:
         injected.append(code)
 
     if injected:
-        print(f"  ⚡ 已注入当日实时行情 ({today}): {len(injected)}只ETF")
-        print(f"     注: 使用14:50实时价作为当日收盘, 与回测(真实收盘)有微小差异")
+        print(f"  ⚡ 已注入当日实时行情 ({today}): {len(injected)}只ETF [腾讯源]")
+        print(f"     注: 使用实时价作为当日收盘, 与回测(真实收盘)有微小差异")
     return data
 
 
