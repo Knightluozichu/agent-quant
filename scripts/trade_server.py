@@ -19,20 +19,21 @@ from __future__ import annotations
 import argparse
 import hashlib
 import hmac
+import math
 import secrets
 import sys
 import time
+from datetime import datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from fastapi import Depends, FastAPI, HTTPException, Request, Response  # noqa: E402
-from fastapi.responses import FileResponse, JSONResponse  # noqa: E402
-from pydantic import BaseModel, Field, field_validator  # noqa: E402
-
-import live_signal as ls  # noqa: E402
-import run_qixing_v3 as rq  # noqa: E402
-from notify import load_config, save_config  # noqa: E402
+import live_signal as ls
+import run_qixing_v3 as rq
+from fastapi import Depends, FastAPI, HTTPException, Request, Response
+from fastapi.responses import FileResponse
+from notify import load_config, save_config
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 WEB_DIR = Path(__file__).parent / "web"
 
@@ -49,6 +50,12 @@ TOKEN_TTL = 86400
 _LOGIN_ATTEMPTS: dict[str, list[float]] = {}
 _LOGIN_RATE_LIMIT = 5
 _LOGIN_WINDOW = 60.0
+
+# 幂等去重: 已处理的 idempotency_key (内存, 保留 1 小时)
+_IDEMPOTENCY_STORE: dict[str, float] = {}
+_IDEMPOTENCY_TTL = 3600.0
+# 金额/数量安全上限 (拒绝超大值, 防输入错误/注入)
+MAX_TRADE_AMOUNT = 1e9
 
 
 def get_data() -> dict:
@@ -263,7 +270,7 @@ def api_status(_: None = Depends(require_token)) -> dict:
             price_stale = False
             used_realtime = True
         else:
-            p = p_hist
+            p = p_hist or 0.0
             # 数据日期 < 买入日 → 数据滑后, 用成本价代替, 盈亏待更新
             price_stale = bool(entry_date and str(td) < str(entry_date))
             if price_stale:
@@ -309,7 +316,7 @@ def api_signal(_: None = Depends(require_token)) -> dict:
     td = ls.get_trading_dates(data)[-1]
     holding = state["holding"] if state else None
     idx_map = ls.build_etf_data_at_date(data, td)
-    target, candidates, _best, a_share_weak = ls.select_target(data, idx_map, holding)
+    target, _candidates, _best, a_share_weak = ls.select_target(data, idx_map, holding)
     board = ls.momentum_board_data(data, td, holding, target)
     return {
         "trade_date": str(td),
@@ -358,7 +365,7 @@ def api_backtest(_: None = Depends(require_token)) -> dict:
     )
     if _BACKTEST_CACHE is None or mtime > _BACKTEST_TIME:
         data = rq.load_data()
-        result = rq.run_qixing_v3(data)
+        result = rq.run_qixing_v3_no_lookahead(data)
         eq = result["equity_curve"]
         cummax = eq["equity"].cummax()
         dd = ((eq["equity"] - cummax) / cummax * 100)
@@ -370,9 +377,12 @@ def api_backtest(_: None = Depends(require_token)) -> dict:
                 "sharpe": round(result["sharpe"], 2),
                 "max_drawdown": round(result["max_drawdown"] * 100, 1),
                 "n_trades": result["n_trades"],
+                "n_cancelled": result.get("n_cancelled", 0),
                 "start": str(eq["trade_date"].iloc[0])[:7],
                 "end": str(eq["trade_date"].iloc[-1])[:7],
                 "years": round(span, 1),
+                "param_hash": result.get("param_hash", ""),
+                "data_hash": result.get("data_hash", ""),
             },
             "dates": eq["trade_date"].dt.strftime("%Y-%m-%d").tolist(),
             "values": [round(float(v), 0) for v in eq["equity"]],
@@ -392,10 +402,141 @@ def api_backtest(_: None = Depends(require_token)) -> dict:
 # --------------------------------------------------------------------------- #
 # 写接口 (记账)
 # --------------------------------------------------------------------------- #
+class _SellLeg(BaseModel):
+    """卖出腿 (确认成交用)."""
+    model_config = ConfigDict(extra="forbid")
+    shares: int = Field(gt=0)
+    price: float = Field(gt=0)
+
+    @field_validator("shares")
+    @classmethod
+    def _shares_bound(cls, v: int) -> int:
+        if v > MAX_TRADE_AMOUNT:
+            raise ValueError("卖出数量超限")
+        return v
+
+    @field_validator("price")
+    @classmethod
+    def _price_finite(cls, v: float) -> float:
+        if not math.isfinite(v) or v > MAX_TRADE_AMOUNT:
+            raise ValueError("价格非法 (NaN/Infinity/超大金额)")
+        return v
+
+
+class _BuyLeg(BaseModel):
+    """买入腿 (确认成交用)."""
+    model_config = ConfigDict(extra="forbid")
+    code: str = Field(min_length=6, max_length=6)
+    shares: int = Field(gt=0)
+    price: float = Field(gt=0)
+
+    @field_validator("shares")
+    @classmethod
+    def _shares_bound(cls, v: int) -> int:
+        if v > MAX_TRADE_AMOUNT:
+            raise ValueError("买入数量超限")
+        return v
+
+    @field_validator("price")
+    @classmethod
+    def _price_finite(cls, v: float) -> float:
+        if not math.isfinite(v) or v > MAX_TRADE_AMOUNT:
+            raise ValueError("价格非法 (NaN/Infinity/超大金额)")
+        return v
+
+
+class ConfirmRequest(BaseModel):
+    """确认待确认订单 (用真实成交数据)."""
+    model_config = ConfigDict(extra="forbid")
+    sell: _SellLeg | None = None
+    buy: _BuyLeg | None = None
+    idempotency_key: str | None = Field(default=None, max_length=128)
+
+    @model_validator(mode="after")
+    def _at_least_one_leg(self) -> ConfirmRequest:
+        if self.sell is None and self.buy is None:
+            raise ValueError("sell 和 buy 至少需提供其一")
+        return self
+
+
+class TradeRequest(BaseModel):
+    """手动记账 (买入/卖出)."""
+    model_config = ConfigDict(extra="forbid")
+    action: str
+    code: str = Field(min_length=6, max_length=6)
+    shares: int = Field(gt=0)
+    price: float = Field(gt=0)
+    date: str | None = Field(default=None)
+    idempotency_key: str | None = Field(default=None, max_length=128)
+
+    @field_validator("action")
+    @classmethod
+    def _valid_action(cls, v: str) -> str:
+        if v not in ("buy", "sell"):
+            raise ValueError("action 必须为 buy 或 sell")
+        return v
+
+    @field_validator("shares")
+    @classmethod
+    def _shares_bound(cls, v: int) -> int:
+        if v > MAX_TRADE_AMOUNT:
+            raise ValueError("数量超限")
+        return v
+
+    @field_validator("price")
+    @classmethod
+    def _price_finite(cls, v: float) -> float:
+        if not math.isfinite(v) or v > MAX_TRADE_AMOUNT:
+            raise ValueError("价格非法 (NaN/Infinity/超大金额)")
+        return v
+
+    @field_validator("date")
+    @classmethod
+    def _valid_date(cls, v: str | None) -> str | None:
+        if not v:
+            return None
+        try:
+            datetime.strptime(v, "%Y-%m-%d")
+        except ValueError as e:
+            raise ValueError("日期格式非法, 应为 YYYY-MM-DD") from e
+        return v
+
+
+def _check_idempotency(key: str | None) -> None:
+    """幂等去重: 相同 idempotency_key 在 TTL 内重复提交 → 409."""
+    now = time.time()
+    # 清理过期记录
+    for k in [k for k, t in _IDEMPOTENCY_STORE.items() if now - t > _IDEMPOTENCY_TTL]:
+        _IDEMPOTENCY_STORE.pop(k, None)
+    if key is None:
+        return
+    if key in _IDEMPOTENCY_STORE:
+        raise HTTPException(
+            status_code=409, detail="重复提交 (idempotency_key 已处理)"
+        )
+    _IDEMPOTENCY_STORE[key] = now
+
+
 @app.post("/api/confirm")
-def api_confirm(payload: dict, _: None = Depends(require_token)) -> dict:
+def api_confirm(payload: ConfirmRequest, _: None = Depends(require_token)) -> dict:
+    _check_idempotency(payload.idempotency_key)
+    state = ls.load_state()
+    if state is None:
+        raise HTTPException(status_code=400, detail="账户未初始化")
+    pending = state.get("pending_order")
+    if not pending:
+        raise HTTPException(status_code=400, detail="无待确认订单")
+    # 订单必须处于 pending 状态, 拒绝重复确认
+    if pending.get("status") != "pending":
+        raise HTTPException(
+            status_code=409,
+            detail=f"订单已处理 (状态: {pending.get('status')}), 不可重复确认",
+        )
     try:
-        state = ls.confirm_order(payload.get("sell"), payload.get("buy"))
+        state = ls.confirm_order(
+            payload.sell.model_dump() if payload.sell else None,
+            payload.buy.model_dump() if payload.buy else None,
+        )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
     return {"ok": True, "cash": round(state["cash"], 2), "holding": state["holding"]}
@@ -408,11 +549,59 @@ def api_skip(_: None = Depends(require_token)) -> dict:
 
 
 @app.post("/api/trade")
-def api_trade(payload: dict, _: None = Depends(require_token)) -> dict:
+def api_trade(payload: TradeRequest, _: None = Depends(require_token)) -> dict:
+    _check_idempotency(payload.idempotency_key)
+    state = ls.load_state()
+    if state is None:
+        raise HTTPException(status_code=400, detail="账户未初始化")
+
+    # 代码必须在交易池内 (ETF_POOL + DEFENSE)
+    allowed_codes = set(ls.ETF_POOL.keys()) | {ls.DEFENSE}
+    if payload.code not in allowed_codes:
+        raise HTTPException(
+            status_code=400, detail=f"非法代码 {payload.code}, 不在交易池"
+        )
+
+    if payload.action == "buy":
+        # 数量须为 100 的整数倍
+        if payload.shares % 100 != 0:
+            raise HTTPException(
+                status_code=400, detail="买入数量必须为 100 的整数倍"
+            )
+        # 现金充足 (含手续费+滑点)
+        cost = payload.shares * payload.price * (1 + ls.FEE + ls.SLIPPAGE)
+        if cost > state["cash"]:
+            raise HTTPException(
+                status_code=400,
+                detail=f"现金不足 (需 {cost:.2f}, 可用 {state['cash']:.2f})",
+            )
+        # 买入前必须空仓
+        if state["holding"]:
+            raise HTTPException(
+                status_code=400,
+                detail=f"已有持仓 {state['holding']}, 请先卖出再买入",
+            )
+    else:  # sell
+        # 空仓不可卖出
+        if not state["holding"]:
+            raise HTTPException(status_code=400, detail="当前空仓, 无法卖出")
+        # 卖出代码必须匹配当前持仓
+        if payload.code != state["holding"]:
+            raise HTTPException(
+                status_code=400,
+                detail=f"卖出代码 {payload.code} 与当前持仓 {state['holding']} 不匹配",
+            )
+        # 卖出数量不得超过持仓
+        if payload.shares > state["shares"]:
+            raise HTTPException(
+                status_code=400,
+                detail=f"卖出数量 {payload.shares} 超过持仓 {state['shares']}",
+            )
+
     try:
         state = ls.record_manual_trade(
-            payload["action"], payload["code"], int(payload["shares"]),
-            float(payload["price"]), payload.get("date"),
+            payload.action, payload.code, payload.shares,
+            payload.price, payload.date,
         )
     except (ValueError, KeyError) as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
@@ -453,7 +642,7 @@ def main() -> None:
     import uvicorn
 
     print(f"  🚀 七星V3 记账网页启动: http://{args.host}:{args.port}")
-    print("     手机浏览器访问 http://<服务器IP>:%d" % args.port)
+    print(f"     手机浏览器访问 http://<服务器IP>:{args.port}")
     uvicorn.run(app, host=args.host, port=args.port)
 
 

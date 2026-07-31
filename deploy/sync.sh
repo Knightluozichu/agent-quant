@@ -41,8 +41,8 @@ EXCLUDES=(
     --exclude 'deploy/.DEPLOYED_MANIFEST'
 )
 
-echo "=== 1/4: dry-run 预检 ==="
-if ! rsync -avz --dry-run "${EXCLUDES[@]}" --perms \
+echo "=== 1/4: dry-run 预检 (--checksum) ==="
+if ! rsync -avzc --dry-run "${EXCLUDES[@]}" --perms \
     "$PROJECT_ROOT/" "${SERVER}:${REMOTE_DIR}/" >/tmp/rsync_dryrun.log 2>&1; then
     echo "  ❌ dry-run 预检失败!"
     cat /tmp/rsync_dryrun.log

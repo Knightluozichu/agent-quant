@@ -106,7 +106,7 @@ def push_bark(
                 return True
             print(f"  ⚠️  Bark 返回异常: {result}")
             return False
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         print(f"  ⚠️  Bark 推送失败: {e}")
         return False
 

@@ -310,3 +310,20 @@ class DrawdownController:
     def should_exit_all(self, current_drawdown: float) -> bool:
         """Check if all positions should be exited."""
         return current_drawdown >= self.halt_level
+
+
+# =============================================================================
+# P3-E4: Risk alerts (NON-auto-trading) — advisory only
+# Re-exports for convenience: ``from a_share_quant.risk import RiskMonitor``.
+# (noqa: E402 = import not at top of module; F401 = re-export, intentionally
+# exposed as the package public API.)
+# =============================================================================
+from a_share_quant.risk.alerts import (  # noqa: E402, F401
+    HUMAN_CONFIRM_DISCLAIMER,
+    RiskAlert,
+    RiskAlertLevel,
+    RiskMonitor,
+    generate_suggestion,
+    send_alert_bark,
+)
+from a_share_quant.risk.checker import RiskChecker  # noqa: E402, F401

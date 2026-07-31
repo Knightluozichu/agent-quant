@@ -2,10 +2,13 @@
 
 from datetime import date
 
-import numpy as np
 import pandas as pd
 import pytest
 
+from a_share_quant.attribution import (
+    ResearchAttributionEngine,
+    analyze_failures,
+)
 from a_share_quant.research import (
     BuyAndHoldBaseline,
     CashBaseline,
@@ -14,11 +17,6 @@ from a_share_quant.research import (
     RandomBaseline,
     ResearchProtocol,
     WalkForwardValidator,
-)
-from a_share_quant.attribution import (
-    AttributionEngine,
-    FailureAnalysis,
-    analyze_failures,
 )
 
 
@@ -42,7 +40,7 @@ class TestResearchProtocol:
         assert train.days == pytest.approx(total * 0.6, rel=0.05)
 
     def test_invalid_ratios(self):
-        with pytest.raises(ValueError, match="sum to 1.0"):
+        with pytest.raises(ValueError, match=r"sum to 1\.0"):
             ResearchProtocol(
                 full_start=date(2020, 1, 1),
                 full_end=date(2024, 12, 31),
@@ -151,7 +149,7 @@ class TestAttributionEngine:
     """Tests for attribution engine."""
 
     def test_attribute_trade(self):
-        engine = AttributionEngine()
+        engine = ResearchAttributionEngine()
         attr = engine.attribute_trade(
             entry_price=100,
             exit_price=110,
@@ -166,7 +164,7 @@ class TestAttributionEngine:
         assert attr.costs == 50
 
     def test_mfe_mae(self):
-        engine = AttributionEngine()
+        engine = ResearchAttributionEngine()
         prices = pd.Series([100, 105, 115, 108, 110])  # Max 115, min 100
         attr = engine.attribute_trade(
             entry_price=100,

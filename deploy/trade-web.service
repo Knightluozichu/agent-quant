@@ -8,6 +8,8 @@ StartLimitBurst=3
 Type=simple
 User=root
 WorkingDirectory=/opt/quant
+# 启动前检查端口未被占用 (防止重复启动)
+ExecStartPre=/bin/bash -c '! /usr/bin/ss -tlnp | grep -q ":8090 "'
 ExecStart=/opt/quant/.venv/bin/python scripts/trade_server.py --host 127.0.0.1 --port 8090
 Restart=on-failure
 RestartSec=5

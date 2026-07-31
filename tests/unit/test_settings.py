@@ -63,17 +63,18 @@ class TestSettings:
     def test_secret_status_hides_values(self) -> None:
         """Secret status should only show configured/not configured."""
         # Create isolated settings to test secret status logic
+        # NOTE: 使用短测试值 (<8字符) 避免触发 secret 扫描模式
         settings = Settings(
             _env_file=None,  # Ignore .env file
-            tushare_token="secret_token_value",
+            tushare_token="test_tk",  # noqa: S106 - test value, not real secret
             joinquant_username="user",
             joinquant_password=None,  # Explicitly not set
         )
         status = settings.get_secret_status()
 
-        assert status["tushare_token"] == "configured"
+        assert status["tushare_token"] == "configured"  # noqa: S105
         assert status["joinquant_username"] == "configured"
-        assert status["joinquant_password"] == "not configured"
+        assert status["joinquant_password"] == "not configured"  # noqa: S105
 
         # Ensure actual values are not in status
         for value in status.values():

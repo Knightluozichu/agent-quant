@@ -1,0 +1,70 @@
+{
+  "manifest_version": "1.0",
+  "created_at": "2026-07-31",
+  "description": "验证集状态 manifest — 标记已污染期间, 登记参数尝试",
+  "contaminated_periods": [
+    {
+      "period": "2023-01-01 ~ 2024-12-31",
+      "label": "已污染验证集",
+      "reason": "2023-2024 数据已多次参与参数扫描 (DROP_LOOKBACK=5, A_SHARE_MA=15 均在此基础上选定), 不能再称为 Locked Test",
+      "usage": "仅用于 nested walk-forward / 稳健性估计, 不可作为最终验收依据"
+    }
+  ],
+  "forward_shadow_set": {
+    "start_date": "2026-07-31",
+    "label": "未观察 forward/shadow 集",
+    "description": "从当前日期之后建立真正未观察的 forward/shadow 集, 之前数据均视为已观察"
+  },
+  "parameter_attempts": [
+    {
+      "timestamp": "2026-07-31",
+      "params": {
+        "DROP_LOOKBACK": 5,
+        "A_SHARE_MA": 20
+      },
+      "result": "baseline",
+      "sharpe": 2.03,
+      "note": "原始参数, lookahead bias 版本"
+    },
+    {
+      "timestamp": "2026-07-31",
+      "params": {
+        "DROP_LOOKBACK": 5,
+        "A_SHARE_MA": 15
+      },
+      "result": "conservative_optimization",
+      "sharpe": 2.03,
+      "note": "保守优化, 基于 2023-2024 已污染数据"
+    },
+    {
+      "timestamp": "2026-07-31",
+      "params": {
+        "DROP_LOOKBACK": 5,
+        "A_SHARE_MA": 15
+      },
+      "result": "no_lookahead_r1",
+      "sharpe": 1.33,
+      "note": "R1 修复后 (T+1开盘成交), 真实性能基线",
+      "total_return": 0.1033,
+      "max_drawdown": -0.407
+    }
+  ],
+  "hashes": {
+    "param_hash": "9ce4ed0fc6ae402d",
+    "data_hash": "eb4b9ec92ee7481b",
+    "note": "Hash 来自 R1 无未来函数回测, 确保可复现"
+  },
+  "locked_test_policy": {
+    "rule": "2023-2024 不可作为 Locked Test",
+    "reason": "已多次参与参数扫描",
+    "true_locked_test": "仅 2026-07-31 之后的 forward/shadow 数据可作 Locked Test",
+    "minimum_trades": 30,
+    "minimum_period": "3 个月或覆盖 30 笔交易"
+  },
+  "walk_forward": {
+    "segments": 4,
+    "pbo": 0.333,
+    "clean_avg_sharpe": 3.560104505872891,
+    "timestamp": "2026-07-31"
+  }
+}

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>七星V3 盈亏归因报告</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    margin: 0; padding: 24px; background: #f5f6f8; color: #1f2933; font-size: 14px;
+  }
+  h1 { margin: 0 0 4px; font-size: 22px; }
+  .sub { color: #6b7280; font-size: 13px; margin-bottom: 20px; }
+  .cards { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 24px; }
+  .card {
+    background: #fff; border-radius: 8px; padding: 14px 16px; min-width: 150px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .card .label { font-size: 12px; color: #6b7280; }
+  .card .value { font-size: 20px; font-weight: 600; margin-top: 4px; }
+  .pos { color: #16a34a; }
+  .neg { color: #dc2626; }
+  section {
+    background: #fff; border-radius: 8px; padding: 16px 20px; margin-bottom: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  h2 {
+    font-size: 15px; margin: 0 0 14px; border-left: 3px solid #2563eb;
+    padding-left: 8px; font-weight: 600;
+  }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { padding: 7px 8px; text-align: right; border-bottom: 1px solid #eef0f3; }
+  th { color: #6b7280; font-weight: 600; background: #fafbfc; position: sticky; top: 0; }
+  td.l, th.l { text-align: left; }
+  tbody tr:hover { background: #fafbfc; }
+  .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .bar-label { width: 140px; font-size: 13px; }
+  .bar-track { flex: 1; background: #eef0f3; border-radius: 4px; height: 20px; }
+  .bar-fill { height: 100%; border-radius: 4px; }
+  .bar-val { width: 110px; font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; }
+  .scroll { max-height: 460px; overflow-y: auto; }
+  .footer { color: #9ca3af; font-size: 11px; text-align: center; margin-top: 12px; }
+  .empty { color: #9ca3af; font-size: 13px; padding: 8px 0; }
+</style>
+</head>
+<body>
+  <h1>七星V3 盈亏归因报告</h1>
+  <div class="sub">
+    回测区间: {{ report.period_start }} ~ {{ report.period_end }} ·
+    交易笔数: {{ report.n_trades }} · 胜率: {{ report.win_rate | fmt_pct }}
+  </div>
+
+  <div class="cards">
+    <div class="card">
+      <div class="label">总收益</div>
+      <div class="value {{ 'pos' if report.total_return >= 0 else 'neg' }}">{{ report.total_return | fmt_pct }}</div>
+    </div>
+    <div class="card">
+      <div class="label">择时超额</div>
+      <div class="value {{ 'pos' if report.timing_return >= 0 else 'neg' }}">{{ report.timing_return | fmt_pct }}</div>
+    </div>
+    <div class="card">
+      <div class="label">买入持有基准</div>
+      <div class="value">{{ report.buy_hold_return | fmt_pct }}</div>
+    </div>
+    <div class="card">
+      <div class="label">成本拖累</div>
+      <div class="value neg">{{ report.cost_drag | fmt_money }}</div>
+    </div>
+    <div class="card">
+      <div class="label">已实现盈亏</div>
+      <div class="value {{ 'pos' if report.total_pnl >= 0 else 'neg' }}">{{ report.total_pnl | fmt_money }}</div>
+    </div>
+  </div>
+
+  <section>
+    <h2>因子贡献 (动量分解)</h2>
+    {% for name, value in report.factor_returns.items() %}
+      {% set width = ((value | abs) / factor_max * 100) if factor_max > 0 else 0.0 %}
+      <div class="bar-row">
+        <div class="bar-label">{{ name }}</div>
+        <div class="bar-track">
+          <div class="bar-fill"
+               style="width: {{ width }}%; background: {{ '#16a34a' if value >= 0 else '#dc2626' }};"></div>
+        </div>
+        <div class="bar-val {{ 'pos' if value >= 0 else 'neg' }}">{{ value | fmt_money }}</div>
+      </div>
+    {% else %}
+      <div class="empty">无因子贡献数据</div>
+    {% endfor %}
+  </section>
+
+  <section>
+    <h2>月度归因</h2>
+    <table>
+      <thead>
+        <tr>
+          <th class="l">月份</th>
+          <th>收益</th>
+          <th>因子贡献</th>
+          <th>择时</th>
+          <th>成本</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m, row in report.monthly_summary.items() %}
+        <tr>
+          <td class="l">{{ m }}</td>
+          <td class="{{ 'pos' if row['return'] >= 0 else 'neg' }}">{{ row['return'] | fmt_pct }}</td>
+          <td class="{{ 'pos' if row.factor_contrib >= 0 else 'neg' }}">{{ row.factor_contrib | fmt_money }}</td>
+          <td class="{{ 'pos' if row.timing >= 0 else 'neg' }}">{{ row.timing | fmt_pct }}</td>
+          <td class="neg">{{ row.cost | fmt_money }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="empty">无月度数据</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>交易明细 (MFE / MAE)</h2>
+    <div class="scroll">
+      <table>
+        <thead>
+          <tr>
+            <th class="l">代码</th>
+            <th>入场</th>
+            <th>出场</th>
+            <th>持有天数</th>
+            <th>盈亏</th>
+            <th>MFE</th>
+            <th>MAE</th>
+            <th>入场价</th>
+            <th>出场价</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in report.trades %}
+          <tr>
+            <td class="l">{{ t.code }}</td>
+            <td>{{ t.entry_date }}</td>
+            <td>{{ t.exit_date }}</td>
+            <td>{{ t.holding_days }}</td>
+            <td class="{{ 'pos' if t.pnl >= 0 else 'neg' }}">{{ t.pnl | fmt_money }}</td>
+            <td class="pos">{{ t.mfe | fmt_money }}</td>
+            <td class="neg">{{ t.mae | fmt_money }}</td>
+            <td>{{ t.entry_price | fmt_num }}</td>
+            <td>{{ t.exit_price | fmt_num }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="9" class="empty">无交易记录</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="footer">七星V3 盈亏归因引擎 · P3-E3 · 自动生成</div>
+</body>
+</html>

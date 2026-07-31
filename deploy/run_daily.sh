@@ -6,30 +6,79 @@
 #   - 更新最新行情
 #   - 判断是否调仓日, 生成信号
 #   - 调仓日推送买卖指令到 iPhone (Bark)
+#
+# 防重入: flock -n 确保同一时间只有一个实例运行
+# 退出码: 显式保存 rc, 失败时非零退出 + Bark 告警
+# 结构化日志: SUMMARY 行含 start/end/exit/duration/data_date
 # ---------------------------------------------------------------------------
 set -uo pipefail
 export TZ=Asia/Shanghai
+
+# 防重入: 获取文件锁, 已有实例运行则直接退出
+LOCK_FILE="/tmp/quant_daily.lock"
+exec 9>"$LOCK_FILE"
+if ! flock -n 9; then
+    echo "[daily] $(date '+%Y-%m-%d %H:%M:%S') 已有实例运行, 跳过"
+    exit 0
+fi
 
 # 定位项目根目录 (本脚本在 deploy/ 下)
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
-# 确保 uv 在 PATH 里 (cron 环境精简, 需手动加)
-export PATH="$HOME/.local/bin:$HOME/.cargo/bin:/usr/local/bin:$PATH"
+# 直接使用 venv python (避免 uv run 每次检查环境, cron 环境精简)
+PYTHON="${PROJECT_ROOT}/.venv/bin/python"
+if [ ! -x "$PYTHON" ]; then
+    # 回退: 本地开发环境可能没有 .venv
+    PYTHON="uv run python"
+fi
 
 LOG_DIR="data/live"
 mkdir -p "$LOG_DIR"
 LOG="$LOG_DIR/cron.log"
 
+TASK_NAME="[daily]"
+RC=0
+START_TS=$(date '+%s')
+START_ISO=$(date '+%Y-%m-%dT%H:%M:%S')
+DATA_DATE=""
+
 {
     echo ""
-    echo "========== $(date '+%Y-%m-%d %H:%M:%S %Z') =========="
-    uv run python scripts/live_signal.py
-    EXIT_CODE=$?
-    if [ $EXIT_CODE -ne 0 ]; then
-        echo "❌ 信号生成失败 (exit=$EXIT_CODE), 请检查上方日志"
+    echo "$TASK_NAME ========== $(date '+%Y-%m-%d %H:%M:%S %Z') =========="
+    $PYTHON scripts/live_signal.py
+    RC=$?
+    # 提取数据日期 (从最新 parquet 文件)
+    DATA_DATE=$($PYTHON -c "
+import pandas as pd, glob
+dates = []
+for f in glob.glob('data/cross_asset/*.parquet'):
+    try:
+        df = pd.read_parquet(f, columns=['trade_date'])
+        if len(df): dates.append(str(df['trade_date'].max())[:10])
+    except: pass
+print(max(dates) if dates else 'unknown')
+" 2>/dev/null || echo "unknown")
+
+    END_TS=$(date '+%s')
+    DURATION=$((END_TS - START_TS))
+
+    if [ $RC -ne 0 ]; then
+        echo "$TASK_NAME ❌ 信号生成失败 (exit=$RC), 请检查上方日志"
+        echo "$TASK_NAME SUMMARY start=${START_ISO} end=$(date '+%Y-%m-%dT%H:%M:%S') exit=${RC} duration=${DURATION}s data_date=${DATA_DATE}"
+        # Bark 告警 (失败时推送)
+        $PYTHON -c "
+from notify import load_config, push_bark
+cfg = load_config()
+push_bark(cfg, '七星V3 信号生成失败', f'exit=${RC}, 请检查 cron.log')
+" 2>/dev/null || true
+    else
+        echo "$TASK_NAME ✅ 信号生成完成"
+        echo "$TASK_NAME SUMMARY start=${START_ISO} end=$(date '+%Y-%m-%dT%H:%M:%S') exit=0 duration=${DURATION}s data_date=${DATA_DATE}"
     fi
 } >> "$LOG" 2>&1
 
-# 日志只保留最近 500 行, 防止无限增长
-tail -n 500 "$LOG" > "$LOG.tmp" && mv "$LOG.tmp" "$LOG"
+# 30天日志滚动 (按修改时间清理)
+find "$LOG_DIR" -name "*.log" -mtime +30 -delete 2>/dev/null || true
+
+exit "$RC"

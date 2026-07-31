@@ -12,11 +12,14 @@ Decomposes returns into:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date
-from typing import Optional
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
-import pandas as pd
+
+if TYPE_CHECKING:
+    from datetime import date
+
+    import pandas as pd
 
 
 # =============================================================================
@@ -40,7 +43,7 @@ class AttributionBreakdown:
     total_pnl: float = 0.0
     explanation_ratio: float = 0.0  # How much is explained
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, float]:
         return {
             "market": self.market_attribution,
             "sector": self.sector_attribution,
@@ -78,8 +81,13 @@ class AttributionBreakdown:
 # =============================================================================
 
 @dataclass
-class TradeAttribution:
-    """Attribution for a single trade."""
+class ResearchTradeAttribution:
+    """Attribution for a single trade (legacy research-grade model).
+
+    This is the original trade-level attribution dataclass used by the
+    research protocol tests.  For the 七星V3 strategy attribution engine
+    see :class:`a_share_quant.attribution.engine.TradeAttribution`.
+    """
 
     trade_id: str
     symbol: str
@@ -103,15 +111,20 @@ class TradeAttribution:
     mae: float = 0.0  # Max loss during trade
     mfe_capture: float = 0.0  # How much of MFE was captured
 
-    breakdown: Optional[AttributionBreakdown] = None
+    breakdown: AttributionBreakdown | None = None
 
 
 # =============================================================================
 # Attribution Engine
 # =============================================================================
 
-class AttributionEngine:
-    """Calculate P&L attribution."""
+class ResearchAttributionEngine:
+    """Calculate P&L attribution (legacy research-grade engine).
+
+    This is the original trade-level attribution engine used by the
+    research protocol tests.  For the 七星V3 strategy attribution engine
+    see :class:`a_share_quant.attribution.engine.AttributionEngine`.
+    """
 
     def __init__(self, benchmark_returns: pd.Series | None = None):
         self._benchmark = benchmark_returns
@@ -126,7 +139,7 @@ class AttributionEngine:
         costs: float,
         prices_during_hold: pd.Series | None = None,
         benchmark_during_hold: pd.Series | None = None,
-    ) -> TradeAttribution:
+    ) -> ResearchTradeAttribution:
         """Attribute a single trade."""
         # Basic P&L
         gross_pnl = (exit_price - entry_price) * quantity
@@ -167,7 +180,7 @@ class AttributionEngine:
         if mfe > 0:
             exit_score = mfe_capture * 2 - 1  # Map 0-1 to -1 to 1
 
-        return TradeAttribution(
+        return ResearchTradeAttribution(
             trade_id=f"{entry_date}_{exit_date}",
             symbol="",
             entry_date=entry_date,
@@ -187,7 +200,7 @@ class AttributionEngine:
 
     def attribute_portfolio(
         self,
-        trades: list[TradeAttribution],
+        trades: list[ResearchTradeAttribution],
     ) -> AttributionBreakdown:
         """Aggregate attribution across all trades."""
         if not trades:
@@ -261,10 +274,10 @@ class FailureAnalysis:
     def top_failure_reason(self) -> str:
         if not self.failure_reasons:
             return "NONE"
-        return max(self.failure_reasons, key=self.failure_reasons.get)
+        return max(self.failure_reasons, key=lambda k: self.failure_reasons[k])
 
 
-def analyze_failures(trades: list[dict]) -> FailureAnalysis:
+def analyze_failures(trades: list[dict[str, Any]]) -> FailureAnalysis:
     """Analyze trade failures."""
     if not trades:
         return FailureAnalysis(0, 0, 0)
@@ -291,3 +304,28 @@ def analyze_failures(trades: list[dict]) -> FailureAnalysis:
         failure_reasons=reasons,
         avg_loss_by_reason=avg_loss,
     )
+
+
+# =============================================================================
+# 七星V3 Strategy Attribution (P3-E3: 盈亏归因引擎)
+# =============================================================================
+
+from a_share_quant.attribution.engine import (  # noqa: E402
+    AttributionEngine,
+    AttributionReport,
+    TradeAttribution,
+    generate_html_report,
+)
+
+__all__ = [
+    "FAILURE_REASONS",
+    "AttributionBreakdown",
+    "AttributionEngine",
+    "AttributionReport",
+    "FailureAnalysis",
+    "ResearchAttributionEngine",
+    "ResearchTradeAttribution",
+    "TradeAttribution",
+    "analyze_failures",
+    "generate_html_report",
+]

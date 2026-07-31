@@ -62,6 +62,9 @@
 - [x] P3-009 账户和持仓账本
 - [ ] P3-010 故障注入
 - [ ] P3-011 golden 场景
+- [x] P3-E1 七星V3 参数化架构统一 (config/strategy_params.yaml + pydantic StrategyParams + qixing_v3 桥接模块)
+- [x] P3-E4 风控告警-非自动交易 (risk/alerts.py + risk/checker.py: RiskAlertLevel/RiskAlert/RiskMonitor/RiskChecker, 4项检查+ Bark推送+人工确认建议, 28项单元测试全通过)
+- [x] P3-E3 盈亏归因引擎 (attribution/engine.py: AttributionEngine.analyze 因子贡献+择时+成本+MFE/MAE, AttributionReport/TradeAttribution Pydantic模型, generate_html_report Jinja2模板, 13项单元测试全通过)
 
 ## Phase 4: 因子和状态识别
 
@@ -141,15 +144,15 @@
 
 - [ ] P9-001 事前信号解释
 - [ ] P9-002 市场和行业归因
-- [ ] P9-003 因子贡献
-- [ ] P9-004 择时贡献
+- [x] P9-003 因子贡献 (attribution/engine.py: 10d/20d 动量信号加权分解)
+- [x] P9-004 择时贡献 (attribution/engine.py: rebalance vs buy-and-hold 超额收益)
 - [ ] P9-005 退出贡献
-- [ ] P9-006 成本贡献
-- [ ] P9-007 失败原因码
-- [ ] P9-008 MFE/MAE
+- [x] P9-006 成本贡献 (attribution/engine.py: fees + slippage 拖累)
+- [x] P9-007 失败原因码 (attribution/__init__.py: FAILURE_REASONS + analyze_failures)
+- [x] P9-008 MFE/MAE (attribution/engine.py: 每笔交易最大有利/不利偏移)
 - [ ] P9-009 消融框架
 - [ ] P9-010 因子状态评分
-- [ ] P9-011 归因报告
+- [x] P9-011 归因报告 (attribution/engine.py: generate_html_report + Jinja2模板)
 
 ## Phase 10: 自进化治理
 
@@ -159,12 +162,12 @@
 - [ ] P10-004 因子漂移
 - [ ] P10-005 表现漂移
 - [ ] P10-006 候选生成预算
-- [ ] P10-007 多重尝试登记
+- [x] P10-007 多重尝试登记
 - [x] P10-008 晋升评分 (_calculate_score)
-- [ ] P10-009 Shadow
+- [x] P10-009 Shadow
 - [ ] P10-010 Canary
 - [x] P10-011 promote (promote_challenger)
-- [ ] P10-012 rollback
+- [x] P10-012 rollback
 - [x] P10-013 冻结 hash regression (config_hash)
 - [ ] P10-014 evolution report
 

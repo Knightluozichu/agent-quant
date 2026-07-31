@@ -30,6 +30,8 @@ dependencies = [
     "plotly>=5.22",
     "matplotlib>=3.9",
     "jinja2>=3.1",
+    # HTTP requests (实时行情接口)
+    "requests>=2.31",
 ]
 
 [project.optional-dependencies]
@@ -103,6 +105,9 @@ ignore = [
     "S104",  # bind to all interfaces (dev only)
     "S311",  # pseudo-random in non-security context
     "ARG002", # unused method argument (Protocol implementations)
+    "RUF001", # ambiguous unicode char in string (Chinese text is intentional)
+    "RUF002", # ambiguous unicode char in docstring (Chinese text is intentional)
+    "RUF003", # ambiguous unicode char in comment (Chinese text is intentional)
 ]
 
 [tool.ruff.lint.isort]
@@ -110,6 +115,15 @@ known-first-party = ["a_share_quant"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "ARG", "DTZ"]
+"scripts/**" = [
+    "T201",   # print found (CLI tools use print intentionally)
+    "S108",   # insecure temp file (lock file in /tmp is intentional)
+    "DTZ",    # datetime timezone (TZ set via env var Asia/Shanghai)
+    "PTH123", # open() vs Path.open() (acceptable in scripts)
+    "RUF001", # ambiguous unicode char in string (Chinese text is intentional)
+    "RUF002", # ambiguous unicode char in docstring (Chinese text is intentional)
+    "S310",   # suspicious url open (known safe data sources)
+]
 
 # ---------------------------------------------------------------------------
 # mypy
@@ -139,6 +153,14 @@ module = [
     "statsmodels.*",
 ]
 ignore_missing_imports = true
+
+# scripts/ 是 CLI 脚本, 使用 sys.path.insert 而非正式包结构
+# 放宽类型检查: 允许无类型参数的 dict, 允许无注解的 main()
+[[tool.mypy.overrides]]
+module = ["run_qixing_v3", "live_signal", "trade_server", "notify", "daily_calibrate"]
+disallow_untyped_defs = false
+warn_return_any = false
+disable_error_code = ["type-arg", "no-untyped-call", "no-untyped-def", "attr-defined"]
 
 # ---------------------------------------------------------------------------
 # pytest

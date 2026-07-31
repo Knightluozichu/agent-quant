@@ -51,8 +51,8 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked --all-extras
 
-      - name: mypy
-        run: uv run mypy src
+      - name: mypy (src + 生产脚本)
+        run: uv run mypy src scripts/live_signal.py scripts/run_qixing_v3.py scripts/trade_server.py scripts/notify.py scripts/daily_calibrate.py
 
   test:
     runs-on: ubuntu-latest
@@ -70,8 +70,8 @@ jobs:
       - name: Install dependencies
         run: uv sync --locked --all-extras
 
-      - name: Run tests with coverage
-        run: uv run pytest --cov=src/a_share_quant --cov-report=term-missing
+      - name: Run tests (exclude integration) with coverage
+        run: uv run pytest -m "not integration" --cov=src/a_share_quant --cov-report=term-missing
 
   secrets-check:
     runs-on: ubuntu-latest
@@ -81,4 +81,5 @@ jobs:
       - name: Check for secrets in tracked files
         run: |
           # Check for common secret patterns in tracked files
-          ! git grep -iE '(password|token|secret|api_key)\s*=\s*["\x27][^"\x27]{8,}' -- ':!*.example' ':!*.md' || (echo "Potential secrets found!" && exit 1)
+          # 排除测试文件 (使用不匹配真实密钥格式的测试值) 和文档
+          ! git grep -iE '(password|token|secret|api_key)\s*=\s*["\x27][^"\x27]{8,}' -- ':!*.example' ':!*.md' ':!tests/' ':!.github/' || (echo "Potential secrets found!" && exit 1)

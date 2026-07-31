@@ -63,3 +63,35 @@
 - **决策**: A股与场内 ETF，只做多，不融资、不融券、不使用期货期权
 - **理由**: 降低复杂度和风险，适合家庭量化起步
 - **影响**: 全部策略和执行模块
+
+### D-007: 参数版本化采用独立 ParamRegistry + Pydantic 模型
+- **日期**: 2026-07-31
+- **状态**: 已决定
+- **背景**: P3-E2 参数版本化+回滚，需要为七星V3策略提供可复盘、可回滚的参数治理
+- **决策**: 新建 `evolution/param_versioning.py`，使用 Pydantic v2 模型 (`ParamVersion`/`PromotionMetrics`/`ShadowTrade`) 与 `ParamRegistry`/`ShadowTracker` 类；注册表持久化到 `data/evolution/param_registry.json`，与既有 `EvolutionManager` (dataclass, 策略级) 并存
+- **理由**: Pydantic 模型提供严格 Schema 与 JSON 序列化；参数级版本化与策略级版本化关注点不同，独立模块职责清晰；晋升门槛保守 (≥30 笔交易、OOS Sharpe CI 下界 > champion、成本压力测试、回撤不劣化、人工批准)，符合"绝不把一次盈利当作因子有效证据"原则
+- **影响**: evolution 模块；P10-007/P10-009/P10-012
+
+### D-008: 七星V3 策略参数提取为 YAML + Pydantic 校验 (架构统一)
+- **日期**: 2026-07-31
+- **状态**: 已决定
+- **背景**: scripts/run_qixing_v3.py 以模块级常量硬编码全部策略参数，无法被包内代码复用、校验或版本化，阻碍 P3-E2 参数治理与后续迁移
+- **决策**: P3-E1 架构统一。新建 `config/strategy_params.yaml` 作为参数单一事实来源；新建 `src/a_share_quant/strategies/params.py` 用 Pydantic v2 `StrategyParams` (含嵌套子模型与 field/model 校验器) 加载并校验；新建 `src/a_share_quant/strategies/qixing_v3.py` 桥接模块，通过 importlib 按路径加载脚本并重新导出函数与常量，支持渐进迁移
+- **理由**: 配置与实现分离，无约束 dict 不进入核心接口 (符合 AGENTS.md)；Pydantic 校验在加载期拦截非法参数 (负费率、权重不和为1等)；桥接模式不破坏现有脚本，可平滑迁移；不修改 scripts/run_qixing_v3.py 保证回测可复现性
+- **影响**: strategies 模块；为 P3-E2 参数版本化提供输入；后续任务可将脚本函数改造为接受 StrategyParams 参数
+
+### D-009: 风控告警模块为纯建议, 绝不自动交易 (P3-E4)
+- **日期**: 2026-07-31
+- **状态**: 已决定
+- **背景**: FIX_PLAN E4 要求实现风控告警, 但 Phase 14 自动交易当前未授权 (ALLOW_LIVE_TRADING=false)。需要在不自动执行交易的前提下提供风控监控能力
+- **决策**: 实现 `src/a_share_quant/risk/alerts.py` (RiskAlertLevel/RiskAlert/RiskMonitor) 和 `risk/checker.py` (RiskChecker)。四项检查: 日内回撤>5% (WARNING+Bark)、周回撤>3% (WARNING+减仓建议)、月回撤>8% (CRITICAL+全切现金建议)、单标的集中度<80% (INFO)。所有建议字符串包含 "此为建议, 需人工确认后手动执行"。Bark 推送委托 scripts/notify.py, notify 不可用时静默降级
+- **理由**: 符合 FIX_PLAN "删除任何未单独授权的自动实盘交易设计" 硬约束；告警与建议分离于执行层, 可被 cron/web 调用但不触达券商接口；pending_action 字段为机器可读标签, 供未来独立授权后可选接入
+- **影响**: risk 模块；可被 trade_server /api/status 或 cron 调用；为未来独立授权的自动交易提供前置风控判断输入
+
+### D-010: 盈亏归因引擎采用独立 engine.py + Pydantic 模型 (P3-E3)
+- **日期**: 2026-07-31
+- **状态**: 已决定
+- **背景**: 七星V3 策略需要 P&L 归因能力 (Phase 9), 原有 `attribution/__init__.py` 中已有 ResearchAttributionEngine (交易级通用归因), 但缺乏针对七星V3 动量因子分解、择时贡献、成本拖累和 MFE/MAE 的专用引擎
+- **决策**: 创建 `src/a_share_quant/attribution/engine.py`, 包含新的 `AttributionEngine` (analyze 方法)、`AttributionReport`/`TradeAttribution` Pydantic 模型和 `generate_html_report` Jinja2 渲染。将原有 `__init__.py` 中的 `AttributionEngine` 重命名为 `ResearchAttributionEngine`、`TradeAttribution` 重命名为 `ResearchTradeAttribution`, 避免命名冲突。`__init__.py` 重新导出新引擎类作为包级 API
+- **理由**: 七星V3 归因需求 (10d/20d 动量分解、rebalance vs buy-and-hold 择时、fee+slippage 成本、MFE/MAE) 与原有通用交易归因 (market/sector/factor/timing/exit 多维分解) 关注点不同, 独立引擎更清晰；Pydantic 模型提供结构化输出和 JSON 序列化, 便于报告生成和 API 返回；重命名而非覆盖保留原有测试不破坏
+- **影响**: attribution 模块；tests/unit/test_attribution.py (13 项测试) + test_research_attribution.py 更新导入；覆盖 Phase 9 的 P9-003/004/006/007/008/011
