@@ -32,6 +32,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).parent))
 from run_qixing_v3 import (  # noqa: E402
     A_SHARE_ETF,
+    A_SHARE_MA,
     DATA_DIR,
     DEFENSE,
     DROP_LOOKBACK,
@@ -400,7 +401,7 @@ def print_momentum_board(data: dict, td, holding: str | None, target: str) -> No
         for i in range(-DROP_LOOKBACK, 0):
             r = (close[i] - close[i - 1]) / close[i - 1]
             if r < DROP_THRESHOLD:
-                drop_flag = "⛔近期暴跌"
+                drop_flag = f"⛔近{DROP_LOOKBACK}日暴跌"
                 break
         rows.append((code, score, drop_flag))
     rows.sort(key=lambda x: -x[1])
@@ -623,7 +624,7 @@ def run(dry_run: bool = False) -> None:
     print_momentum_board(data, td, holding, target)
 
     if a_share_weak:
-        print("\n  ⚠️  A股走弱 (创业板<MA20), 已排除创业板ETF")
+        print(f"\n  ⚠️  A股走弱 (创业板<MA{A_SHARE_MA}), 已排除创业板ETF")
 
     if not is_rebalance:
         wait = REBALANCE_DAYS - days_since
