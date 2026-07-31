@@ -61,6 +61,8 @@ data/raw/
 data/bronze/
 data/silver/
 data/gold/
+data/qixing_results/
+data/stock_cache/
 *.duckdb
 *.duckdb.wal
 *.parquet

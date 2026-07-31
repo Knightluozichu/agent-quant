@@ -25,13 +25,11 @@ import time
 from datetime import date, datetime
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 # === 保证与回测100%一致: 直接复用回测的核心逻辑 ===
 sys.path.insert(0, str(Path(__file__).parent))
 from run_qixing_v3 import (  # noqa: E402
-    A_SHARE_ETF,
     A_SHARE_MA,
     DATA_DIR,
     DEFENSE,
@@ -39,6 +37,8 @@ from run_qixing_v3 import (  # noqa: E402
     DROP_THRESHOLD,
     ETF_POOL,
     FEE,
+    MOM_PERIODS,
+    MOM_WEIGHTS,
     REBALANCE_DAYS,
     SLIPPAGE,
     calc_momentum_score,
@@ -149,7 +149,7 @@ def check_data_freshness(data: dict) -> None:
         latest = trading_dates[-1]
         if latest < expected:
             print(f"  ⚠️  数据滞后: 最新数据 {latest}, 缺失上一交易日 {expected} 的数据!")
-            print(f"      信号将基于过期数据, 请检查数据源 (可能为发布延迟)")
+            print("      信号将基于过期数据, 请检查数据源 (可能为发布延迟)")
     except Exception as e:  # noqa: BLE001
         print(f"  (数据新鲜度检查跳过: {e})")
 
@@ -406,7 +406,8 @@ def print_momentum_board(data: dict, td, holding: str | None, target: str) -> No
         rows.append((code, score, drop_flag))
     rows.sort(key=lambda x: -x[1])
 
-    print(f"\n  【动量排行】(10日×0.5 + 20日×0.5)")
+    w_label = "+".join(f"{p}日×{w}" for p, w in zip(MOM_PERIODS, MOM_WEIGHTS))
+    print(f"\n  【动量排行】({w_label})")
     for rank, (code, score, flag) in enumerate(rows, 1):
         tag = ""
         if code == holding:
@@ -527,7 +528,7 @@ def inject_realtime(data: dict) -> dict:
 
     if injected:
         print(f"  ⚡ 已注入当日实时行情 ({today}): {len(injected)}只ETF [腾讯源]")
-        print(f"     注: 使用实时价作为当日收盘, 与回测(真实收盘)有微小差异")
+        print("     注: 使用实时价作为当日收盘, 与回测(真实收盘)有微小差异")
     return data
 
 
@@ -610,7 +611,7 @@ def run(dry_run: bool = False) -> None:
         dropped_codes = {c for c, _ in realtime_dropped}
         for code, ret in realtime_dropped:
             print(f"  ⚡ 实时急跌: {name_of(code)} 当日{ret:+.1%}, 已排除")
-        print(f"     注: 此过滤为实盘保护, 回测中不存在(回测用真实收盘价自然触发)")
+        print("     注: 此过滤为实盘保护, 回测中不存在(回测用真实收盘价自然触发)")
         # 从candidates中移除, 重新选目标
         candidates = [(c, s) for c, s in candidates if c not in dropped_codes]
         if candidates:
@@ -945,7 +946,7 @@ def init_account(capital: float) -> None:
     save_state(state)
     print(f"  ✓ 账户已初始化: 本金 {fmt_money(capital)} 元")
     print(f"    状态文件: {STATE_FILE}")
-    print(f"\n  下一步: 运行 uv run python scripts/live_signal.py 生成首个信号")
+    print("\n  下一步: 运行 uv run python scripts/live_signal.py 生成首个信号")
 
 
 def main() -> None:

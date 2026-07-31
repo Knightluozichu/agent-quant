@@ -7,7 +7,7 @@
 #   - 校准下个调仓日 + 预览调仓数据
 #   - 推送每日校准状态到 iPhone (Bark)
 # ---------------------------------------------------------------------------
-set -euo pipefail
+set -uo pipefail
 export TZ=Asia/Shanghai
 
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -23,6 +23,10 @@ LOG="$LOG_DIR/calibrate.log"
     echo ""
     echo "========== 校准 $(date '+%Y-%m-%d %H:%M:%S %Z') =========="
     uv run python scripts/daily_calibrate.py
+    EXIT_CODE=$?
+    if [ $EXIT_CODE -ne 0 ]; then
+        echo "❌ 校准失败 (exit=$EXIT_CODE), 请检查上方日志"
+    fi
 } >> "$LOG" 2>&1
 
 # 日志只保留最近 300 行
