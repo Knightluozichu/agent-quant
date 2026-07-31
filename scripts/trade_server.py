@@ -131,6 +131,7 @@ def api_status(_: None = Depends(require_token)) -> dict:
     if state is None:
         return {"initialized": False}
     data = get_data()
+    data = ls.inject_realtime(data)  # 注入当日实时行情, 盘中也能显示今天
     td = ls.get_trading_dates(data)[-1]
     holding = state["holding"]
     holding_info = None
