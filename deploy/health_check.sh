@@ -129,15 +129,16 @@ echo ""
 echo "=== 七星V3 健康检查 $(date '+%Y-%m-%d %H:%M:%S') ==="
 echo ""
 echo -e "$REPORT"
-echo "总计: $((6 - FAILURES))/6 通过, $FAILURES 失败"
+TOTAL_CHECKS=5
+echo "总计: $((TOTAL_CHECKS - FAILURES))/${TOTAL_CHECKS} 通过, $FAILURES 失败"
 
 # 失败时推送 Bark
 if [ $FAILURES -gt 0 ] && [ "$SEND_BARK" = "--bark" ]; then
     $PYTHON -c "
-from notify import load_config, push_bark
-cfg = load_config()
-push_bark(cfg, '七星V3 健康检查告警', '${FAILURES}项检查失败, 请查看 health_check 输出')
-" 2>/dev/null || true
+import sys; sys.path.insert(0, 'scripts')
+from notify import push_bark
+push_bark('七星V3 健康检查告警', '${FAILURES}项检查失败, 请查看 health_check 输出')
+" 2>&1 || echo "⚠️ Bark 推送失败"
 fi
 
 exit $FAILURES

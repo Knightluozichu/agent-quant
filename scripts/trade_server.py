@@ -23,7 +23,7 @@ import math
 import secrets
 import sys
 import time
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -314,12 +314,42 @@ def api_signal(_: None = Depends(require_token)) -> dict:
     # 注入当日实时行情 (解决parquet没有今天数据的问题)
     data = ls.inject_realtime(data)
     td = ls.get_trading_dates(data)[-1]
+    today = date.today()
+
+    # fail-closed: 非交易日标记但不阻断展示
+    is_trading = ls.is_trading_day(today)
+
+    # fail-closed: 实时行情注入失败 (数据停在昨日)
+    if td < today:
+        return {
+            "status": "DATA_UNAVAILABLE",
+            "reason": f"实时行情注入失败 (数据停在 {td}), 信号不可用",
+            "trade_date": str(td),
+            "is_trading_day": is_trading,
+            "holding": state["holding"] if state else None,
+            "pending_order": state.get("pending_order") if state else None,
+        }
+
+    # fail-closed: 数据完整性检查 (所有ETF必须有当日数据)
+    ok, missing = ls.check_data_availability(data, td)
+    if not ok:
+        return {
+            "status": "DATA_UNAVAILABLE",
+            "reason": f"数据缺失: {', '.join(missing)}",
+            "trade_date": str(td),
+            "is_trading_day": is_trading,
+            "holding": state["holding"] if state else None,
+            "pending_order": state.get("pending_order") if state else None,
+        }
+
     holding = state["holding"] if state else None
     idx_map = ls.build_etf_data_at_date(data, td)
     target, _candidates, _best, a_share_weak = ls.select_target(data, idx_map, holding)
     board = ls.momentum_board_data(data, td, holding, target)
     return {
+        "status": "OK",
         "trade_date": str(td),
+        "is_trading_day": is_trading,
         "target": {"code": target, "name": ls.name_of(target)},
         "holding": holding,
         "a_share_weak": bool(a_share_weak),

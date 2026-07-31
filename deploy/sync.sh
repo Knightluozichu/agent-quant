@@ -38,11 +38,12 @@ EXCLUDES=(
     --exclude '*.bak'
     --exclude '*~'
     --exclude '.DS_Store'
+    --exclude '.qoder'
     --exclude 'deploy/.DEPLOYED_MANIFEST'
 )
 
 echo "=== 1/4: dry-run 预检 (--checksum) ==="
-if ! rsync -avzc --dry-run "${EXCLUDES[@]}" --perms \
+if ! rsync -avzc --dry-run --no-owner --no-group "${EXCLUDES[@]}" --perms \
     "$PROJECT_ROOT/" "${SERVER}:${REMOTE_DIR}/" >/tmp/rsync_dryrun.log 2>&1; then
     echo "  ❌ dry-run 预检失败!"
     cat /tmp/rsync_dryrun.log
@@ -53,7 +54,8 @@ echo "  ✓ 预检通过 (${CHANGED} 个文件待同步)"
 
 echo ""
 echo "=== 2/4: 同步代码 ==="
-if ! rsync -avz --delete "${EXCLUDES[@]}" --perms \
+# --no-owner --no-group: 不同步属主/属组, 避免每次 dry-run 显示大量 ownership 变化
+if ! rsync -avz --delete --no-owner --no-group "${EXCLUDES[@]}" --perms \
     "$PROJECT_ROOT/" "${SERVER}:${REMOTE_DIR}/"; then
     echo "  ❌ 同步失败!"
     exit 1
@@ -89,20 +91,33 @@ param_hash=${PARAM_HASH}
 deploy_time=$(date '+%Y-%m-%d %H:%M:%S')
 EOF
 
-# 同步 manifest 到服务器并比较
-scp -q "${MANIFEST}" "${SERVER}:${REMOTE_DIR}/deploy/.DEPLOYED_MANIFEST"
-REMOTE_HASH=$(ssh "${SERVER}" "sha256sum ${REMOTE_DIR}/deploy/.DEPLOYED_MANIFEST" | cut -c1-16)
-LOCAL_HASH=$(sha256sum "${MANIFEST}" | cut -c1-16)
+# 在远端重新计算代码哈希 (而非复制本地 manifest 文件比较)
+REMOTE_CODE_HASH=$(ssh "${SERVER}" "find ${REMOTE_DIR}/scripts -name '*.py' -exec cat {} + 2>/dev/null | sha256sum | cut -c1-16" 2>/dev/null || echo "ssh-failed")
+REMOTE_LOCK_HASH=$(ssh "${SERVER}" "sha256sum ${REMOTE_DIR}/uv.lock 2>/dev/null | cut -c1-16" 2>/dev/null || echo "ssh-failed")
+REMOTE_PARAM_HASH=$(ssh "${SERVER}" "grep -E '^(DROP_LOOKBACK|A_SHARE_MA|MOM_PERIODS|MOM_WEIGHTS|REBALANCE_DAYS) ' ${REMOTE_DIR}/scripts/run_qixing_v3.py 2>/dev/null | sha256sum | cut -c1-16" 2>/dev/null || echo "ssh-failed")
 
-if [ "${LOCAL_HASH}" = "${REMOTE_HASH}" ]; then
-    echo "  ✓ manifest 一致"
-    echo "    git:    ${GIT_HASH:0:8}"
-    echo "    code:   ${CODE_HASH}"
-    echo "    lock:   ${LOCK_HASH}"
-    echo "    params: ${PARAM_HASH}"
+# 同步 manifest 到服务器 (归档用, 不用于比较)
+scp -q "${MANIFEST}" "${SERVER}:${REMOTE_DIR}/deploy/.DEPLOYED_MANIFEST" 2>/dev/null || true
+
+# 逐项比较本地 vs 远端实际哈希
+ALL_MATCH=true
+for pair in "code:${CODE_HASH}:${REMOTE_CODE_HASH}" "lock:${LOCK_HASH}:${REMOTE_LOCK_HASH}" "params:${PARAM_HASH}:${REMOTE_PARAM_HASH}"; do
+    label=$(echo "$pair" | cut -d: -f1)
+    local_val=$(echo "$pair" | cut -d: -f2)
+    remote_val=$(echo "$pair" | cut -d: -f3)
+    if [ "${local_val}" = "${remote_val}" ]; then
+        echo "  ✓ ${label} 一致: ${local_val}"
+    else
+        echo "  ❌ ${label} 不一致! 本地 ${local_val} ≠ 远端 ${remote_val}"
+        ALL_MATCH=false
+    fi
+done
+echo "    git: ${GIT_HASH:0:8}"
+
+if [ "$ALL_MATCH" = "true" ]; then
+    echo "  ✓ manifest 验证通过 (远端实际哈希)"
 else
-    echo "  ⚠️  manifest 不一致! 本地 ${LOCAL_HASH} ≠ 远端 ${REMOTE_HASH}"
-    echo "      请检查网络或手动验证"
+    echo "  ⚠️  manifest 不一致! 请检查同步结果"
 fi
 
 echo ""

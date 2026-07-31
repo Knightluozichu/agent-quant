@@ -64,10 +64,10 @@ print(max(dates) if dates else 'unknown')
         echo "$TASK_NAME ❌ 校准失败 (exit=$RC), 请检查上方日志"
         echo "$TASK_NAME SUMMARY start=${START_ISO} end=$(date '+%Y-%m-%dT%H:%M:%S') exit=${RC} duration=${DURATION}s data_date=${DATA_DATE}"
         $PYTHON -c "
-from notify import load_config, push_bark
-cfg = load_config()
-push_bark(cfg, '七星V3 校准失败', f'exit=${RC}, 请检查 calibrate.log')
-" 2>/dev/null || true
+import sys; sys.path.insert(0, 'scripts')
+from notify import push_bark
+push_bark('七星V3 校准失败', f'exit=${RC}, 请检查 calibrate.log')
+" 2>&1 || echo "$TASK_NAME ⚠️ Bark 推送失败"
     else
         echo "$TASK_NAME ✅ 校准完成"
         echo "$TASK_NAME SUMMARY start=${START_ISO} end=$(date '+%Y-%m-%dT%H:%M:%S') exit=0 duration=${DURATION}s data_date=${DATA_DATE}"

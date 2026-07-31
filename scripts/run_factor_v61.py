@@ -675,4 +675,11 @@ STRATEGY_NAMES = {
 
 def main():
     print("=" * 70)
-    print("
+    print("V6.1 因子分析 — 60天训练 + 扩展窗口 + 周频调仓")
+    print("=" * 70)
+    print("  注意: 本脚本为实验性因子分析工具, 非生产策略组件。")
+    print("  用法: uv run python scripts/run_factor_v61.py")
+
+
+if __name__ == "__main__":
+    main()

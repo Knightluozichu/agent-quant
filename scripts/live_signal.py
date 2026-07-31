@@ -21,6 +21,7 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import fcntl
 import json
 import os
@@ -56,7 +57,7 @@ LIVE_DIR = DATA_DIR.parent / "live"
 LIVE_DIR.mkdir(parents=True, exist_ok=True)
 STATE_FILE = LIVE_DIR / "state.json"
 STATE_TMP_FILE = STATE_FILE.parent / (STATE_FILE.name + ".tmp")
-LOCK_FILE = Path("/tmp/quant_state.lock")
+LOCK_FILE = LIVE_DIR / "quant_state.lock"
 MAX_BACKUPS = 7
 
 ALL_CODES = [*list(ETF_POOL.keys()), DEFENSE]
@@ -277,7 +278,7 @@ def save_state_atomic(state: dict) -> None:
     """原子写状态文件 (事务锁 + 临时文件 + fsync + 原子替换 + 自动备份).
 
     流程:
-      1. fcntl.flock 锁定 /tmp/quant_state.lock (跨进程互斥)
+      1. fcntl.flock 锁定 data/live/quant_state.lock (跨进程互斥, 不受 PrivateTmp 隔离)
       2. 轮转备份 (保留最多 7 个)
       3. 写临时文件 state.json.tmp → flush + fsync
       4. os.replace 原子替换 state.json
@@ -289,6 +290,50 @@ def save_state_atomic(state: dict) -> None:
     lock_fd = os.open(str(LOCK_FILE), os.O_CREAT | os.O_RDWR, 0o644)
     try:
         fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        _rotate_backups()
+        with open(STATE_TMP_FILE, "w") as f:
+            json.dump(state, f, indent=2, ensure_ascii=False, default=str)
+            f.flush()
+            os.fsync(f.fileno())
+        STATE_TMP_FILE.replace(STATE_FILE)
+        _fsync_dir(STATE_FILE.parent)
+    finally:
+        fcntl.flock(lock_fd, fcntl.LOCK_UN)
+        os.close(lock_fd)
+
+
+
+
+@contextlib.contextmanager
+def state_transaction():
+    """完整事务: 加锁 → 读取 → 校验版本 → (调用方修改) → 原子写入 → 解锁.
+
+    用法:
+        with state_transaction() as state:
+            state["cash"] -= 100
+            # 退出 with 块时自动原子写入
+    """
+    LOCK_FILE.parent.mkdir(parents=True, exist_ok=True)
+    lock_fd = os.open(str(LOCK_FILE), os.O_CREAT | os.O_RDWR, 0o644)
+    try:
+        fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        # 在锁内读取最新状态
+        if not STATE_FILE.exists():
+            raise ValueError("账户未初始化")
+        with open(STATE_FILE) as f:
+            state = json.load(f)
+        state.setdefault("_version", 0)
+        old_version = state["_version"]
+
+        yield state
+
+        # 校验版本未被其他进程修改
+        if state["_version"] != old_version:
+            raise RuntimeError(
+                f"状态版本冲突: 期望 {old_version}, 实际 {state['_version']}"
+            )
+        # 原子写入
+        state["_version"] = old_version + 1
         _rotate_backups()
         with open(STATE_TMP_FILE, "w") as f:
             json.dump(state, f, indent=2, ensure_ascii=False, default=str)
@@ -874,8 +919,8 @@ def run(dry_run: bool = False) -> int:
         print(f"\n  😴 今日非调仓日 (距下次还有 {wait} 个交易日)")
         print(f"     继续持有 {name_of(holding) if holding else '现金'}, 无操作")
         if not dry_run:
-            state["last_run_date"] = str(td)
-            save_state(state)
+            with state_transaction() as st:
+                st["last_run_date"] = str(td)
         return 0
 
     # === 调仓日 ===
@@ -884,9 +929,10 @@ def run(dry_run: bool = False) -> int:
     if target == holding:
         print(f"     信号: 继续持有 {name_of(target) if target else '现金'}, 无操作")
         if not dry_run:
-            state["last_rebalance_date"] = str(td)
-            state["last_run_date"] = str(td)
-            save_state(state)
+            with state_transaction() as st:
+                st["last_rebalance_date"] = str(td)
+                st["last_run_date"] = str(td)
+                state = st
             notify_hold(td, target, state, data)
         return 0
 
@@ -929,55 +975,58 @@ def run(dry_run: bool = False) -> int:
 
     # === 模拟记账模式: 信号按理论价自动成交 (尚无法真实下单的阶段) ===
     if is_paper_mode():
-        if sell_order:
-            state["cash"] += sell_order[3]
-            state["trade_log"].append({
-                "date": str(td), "action": "sell", "code": holding,
-                "name": name_of(holding), "shares": state["shares"],
-                "price": sell_order[2], "amount": sell_order[3],
-            })
-            state["holding"] = None
-            state["shares"] = 0
-            state["entry_price"] = 0.0
-        if buy_order:
-            state["cash"] -= buy_order[3]
-            state["holding"] = target
-            state["shares"] = buy_order[1]
-            state["entry_price"] = buy_order[2]
-            state["entry_date"] = str(td)
-            state["trade_log"].append({
-                "date": str(td), "action": "buy", "code": target,
-                "name": name_of(target), "shares": buy_order[1],
-                "price": buy_order[2], "amount": buy_order[3],
-            })
-        state["pending_order"] = None
-        state["last_rebalance_date"] = str(td)
-        state["last_run_date"] = str(td)
-        save_state(state)
+        with state_transaction() as st:
+            if sell_order:
+                st["cash"] += sell_order[3]
+                st["trade_log"].append({
+                    "date": str(td), "action": "sell", "code": holding,
+                    "name": name_of(holding), "shares": st["shares"],
+                    "price": sell_order[2], "amount": sell_order[3],
+                })
+                st["holding"] = None
+                st["shares"] = 0
+                st["entry_price"] = 0.0
+            if buy_order:
+                st["cash"] -= buy_order[3]
+                st["holding"] = target
+                st["shares"] = buy_order[1]
+                st["entry_price"] = buy_order[2]
+                st["entry_date"] = str(td)
+                st["trade_log"].append({
+                    "date": str(td), "action": "buy", "code": target,
+                    "name": name_of(target), "shares": buy_order[1],
+                    "price": buy_order[2], "amount": buy_order[3],
+                })
+            st["pending_order"] = None
+            st["last_rebalance_date"] = str(td)
+            st["last_run_date"] = str(td)
+            state = st
         print(f"\n  ✓ [模拟记账] 已按理论价自动记录: {STATE_FILE}")
         notify_trade(td, sell_order, buy_order, reason + " [模拟记账]", state, data)
         return 0
 
     # === 保存为【待确认】订单 (不自动成交, 以用户在网页填入的真实成交为准) ===
-    state["pending_order"] = {
-        "date": str(td),
-        "sell": {
-            "code": sell_order[0], "name": name_of(sell_order[0]),
-            "shares": sell_order[1], "price": sell_order[2], "amount": sell_order[3],
-        } if sell_order else None,
-        "buy": {
-            "code": buy_order[0], "name": name_of(buy_order[0]),
-            "shares": buy_order[1], "price": buy_order[2], "amount": buy_order[3],
-        } if buy_order else None,
-        "reason": reason,
-        "status": "pending",
-        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-    }
-    state["last_rebalance_date"] = str(td)
-    state["last_run_date"] = str(td)
-    save_state(state)
-    print(f"\n  ✓ 信号已保存为【待确认】: {STATE_FILE}")
-    print("    👉 请在网页填入真实成交后确认 (持仓状态以网页确认为准)")
+    if not dry_run:
+        with state_transaction() as st:
+            st["pending_order"] = {
+                "date": str(td),
+                "sell": {
+                    "code": sell_order[0], "name": name_of(sell_order[0]),
+                    "shares": sell_order[1], "price": sell_order[2], "amount": sell_order[3],
+                } if sell_order else None,
+                "buy": {
+                    "code": buy_order[0], "name": name_of(buy_order[0]),
+                    "shares": buy_order[1], "price": buy_order[2], "amount": buy_order[3],
+                } if buy_order else None,
+                "reason": reason,
+                "status": "pending",
+                "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+            }
+            st["last_rebalance_date"] = str(td)
+            st["last_run_date"] = str(td)
+            state = st
+        print(f"\n  ✓ 信号已保存为【待确认】: {STATE_FILE}")
+        print("    👉 请在网页填入真实成交后确认 (持仓状态以网页确认为准)")
 
     # === 推送换仓指令到手机 ===
     notify_trade(td, sell_order, buy_order, reason, state, data)
@@ -1030,94 +1079,148 @@ def confirm_order(real_sell: dict | None, real_buy: dict | None) -> dict:
 
     real_sell: {"shares": int, "price": float} 或 None (卖出当前持仓)
     real_buy:  {"code": str, "shares": int, "price": float} 或 None
+
+    校验:
+      - pending_order 必须存在且 status=pending
+      - 卖出: code 必须匹配当前持仓, shares ≤ 持仓数, price > 0
+      - 买入: code 必须匹配 pending_order 的 buy_code, shares > 0, price > 0, 现金充足
+      - 部分卖出: 保留剩余持仓, 不清零
     """
-    state = load_state()
-    if state is None:
-        raise ValueError("账户未初始化")
-    pending = state.get("pending_order")
-    td = pending["date"] if pending else str(date.today())
+    with state_transaction() as state:
+        pending = state.get("pending_order")
+        if not pending:
+            raise ValueError("无待确认订单")
+        if pending.get("status") != "pending":
+            raise ValueError(f"订单状态非 pending: {pending.get('status')}")
+        td = pending["date"]
 
-    if real_sell and state["holding"]:
-        code = state["holding"]
-        shares = int(real_sell["shares"])
-        price = float(real_sell["price"])
-        amount = shares * price * (1 - FEE - SLIPPAGE)
-        state["cash"] += amount
-        state["trade_log"].append({
-            "date": td, "action": "sell", "code": code, "name": name_of(code),
-            "shares": shares, "price": price, "amount": amount,
-        })
-        state["holding"] = None
-        state["shares"] = 0
-        state["entry_price"] = 0.0
+        if real_sell and state["holding"]:
+            code = state["holding"]
+            shares = int(real_sell["shares"])
+            price = float(real_sell["price"])
+            if price <= 0:
+                raise ValueError(f"卖出价格必须 > 0, 实际: {price}")
+            if shares <= 0:
+                raise ValueError(f"卖出数量必须 > 0, 实际: {shares}")
+            if shares > state["shares"]:
+                raise ValueError(
+                    f"卖出数量 {shares} 超过持仓 {state['shares']}"
+                )
+            amount = shares * price * (1 - FEE - SLIPPAGE)
+            state["cash"] += amount
+            state["trade_log"].append({
+                "date": td, "action": "sell", "code": code, "name": name_of(code),
+                "shares": shares, "price": price, "amount": amount,
+            })
+            # 部分卖出: 保留剩余持仓
+            remaining = state["shares"] - shares
+            if remaining > 0:
+                state["shares"] = remaining
+                # holding 和 entry_price 保持不变
+            else:
+                state["holding"] = None
+                state["shares"] = 0
+                state["entry_price"] = 0.0
 
-    if real_buy:
-        code = real_buy["code"]
-        shares = int(real_buy["shares"])
-        price = float(real_buy["price"])
-        amount = shares * price * (1 + FEE + SLIPPAGE)
-        state["cash"] -= amount
-        state["holding"] = code
-        state["shares"] = shares
-        state["entry_price"] = price
-        state["entry_date"] = td
-        state["trade_log"].append({
-            "date": td, "action": "buy", "code": code, "name": name_of(code),
-            "shares": shares, "price": price, "amount": amount,
-        })
+        if real_buy:
+            code = real_buy["code"]
+            shares = int(real_buy["shares"])
+            price = float(real_buy["price"])
+            if price <= 0:
+                raise ValueError(f"买入价格必须 > 0, 实际: {price}")
+            if shares <= 0:
+                raise ValueError(f"买入数量必须 > 0, 实际: {shares}")
+            # 校验买入代码匹配 pending_order
+            expected_code = pending.get("buy_code") or pending.get("target")
+            if expected_code and code != expected_code:
+                raise ValueError(
+                    f"买入代码 {code} 与待确认订单 {expected_code} 不匹配"
+                )
+            amount = shares * price * (1 + FEE + SLIPPAGE)
+            if state["cash"] - amount < 0:
+                raise ValueError(
+                    f"现金不足: 需要 {amount:.2f}, 可用 {state['cash']:.2f}"
+                )
+            state["cash"] -= amount
+            state["holding"] = code
+            state["shares"] = shares
+            state["entry_price"] = price
+            state["entry_date"] = td
+            state["trade_log"].append({
+                "date": td, "action": "buy", "code": code, "name": name_of(code),
+                "shares": shares, "price": price, "amount": amount,
+            })
 
-    if pending:
         pending["status"] = "confirmed"
         pending["confirmed_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    save_state_atomic(state)
     return state
 
 
 def skip_pending() -> dict:
     """标记待确认订单为'本次不操作'."""
-    state = load_state()
-    if state is None:
-        raise ValueError("账户未初始化")
-    pending = state.get("pending_order")
-    if pending:
-        pending["status"] = "skipped"
-    save_state_atomic(state)
+    with state_transaction() as state:
+        pending = state.get("pending_order")
+        if pending:
+            pending["status"] = "skipped"
     return state
 
 
 def record_manual_trade(action: str, code: str, shares: int, price: float,
                         td: str | None = None) -> dict:
-    """手动记录一笔成交 (用于修正或非信号交易)."""
-    state = load_state()
-    if state is None:
-        raise ValueError("账户未初始化")
-    td = td or str(date.today())
-    shares = int(shares)
-    price = float(price)
-    if action == "sell":
-        amount = shares * price * (1 - FEE - SLIPPAGE)
-        state["cash"] += amount
-        state["trade_log"].append({
-            "date": td, "action": "sell", "code": code, "name": name_of(code),
-            "shares": shares, "price": price, "amount": amount,
-        })
-        state["holding"] = None
-        state["shares"] = 0
-        state["entry_price"] = 0.0
-    elif action == "buy":
-        amount = shares * price * (1 + FEE + SLIPPAGE)
-        state["cash"] -= amount
-        state["holding"] = code
-        state["shares"] = shares
-        state["entry_price"] = price
-        state["entry_date"] = td
-        state["trade_log"].append({
-            "date": td, "action": "buy", "code": code, "name": name_of(code),
-            "shares": shares, "price": price, "amount": amount,
-        })
-    else:
-        raise ValueError(f"未知操作: {action}")
-    save_state_atomic(state)
+    """手动记录一笔成交 (用于修正或非信号交易).
+
+    校验:
+      - 卖出: code 必须匹配持仓, shares ≤ 持仓数, price > 0, 部分卖出保留剩余
+      - 买入: shares > 0, price > 0, 现金充足
+    """
+    with state_transaction() as state:
+        td = td or str(date.today())
+        shares = int(shares)
+        price = float(price)
+        if price <= 0:
+            raise ValueError(f"价格必须 > 0, 实际: {price}")
+        if shares <= 0:
+            raise ValueError(f"数量必须 > 0, 实际: {shares}")
+
+        if action == "sell":
+            if state["holding"] != code:
+                raise ValueError(
+                    f"卖出代码 {code} 与持仓 {state['holding']} 不匹配"
+                )
+            if shares > state["shares"]:
+                raise ValueError(
+                    f"卖出数量 {shares} 超过持仓 {state['shares']}"
+                )
+            amount = shares * price * (1 - FEE - SLIPPAGE)
+            state["cash"] += amount
+            state["trade_log"].append({
+                "date": td, "action": "sell", "code": code, "name": name_of(code),
+                "shares": shares, "price": price, "amount": amount,
+            })
+            remaining = state["shares"] - shares
+            if remaining > 0:
+                state["shares"] = remaining
+            else:
+                state["holding"] = None
+                state["shares"] = 0
+                state["entry_price"] = 0.0
+        elif action == "buy":
+            amount = shares * price * (1 + FEE + SLIPPAGE)
+            if state["cash"] - amount < 0:
+                raise ValueError(
+                    f"现金不足: 需要 {amount:.2f}, 可用 {state['cash']:.2f}"
+                )
+            state["cash"] -= amount
+            state["holding"] = code
+            state["shares"] = shares
+            state["entry_price"] = price
+            state["entry_date"] = td
+            state["trade_log"].append({
+                "date": td, "action": "buy", "code": code, "name": name_of(code),
+                "shares": shares, "price": price, "amount": amount,
+            })
+        else:
+            raise ValueError(f"未知操作: {action}")
     return state
 
 
