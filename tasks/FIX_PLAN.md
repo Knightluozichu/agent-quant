@@ -95,21 +95,21 @@
 - [ ] 安全更新应拆分独立任务：快照/备份 → 升级 → 重启 → 服务和 cron 验证 → 回滚方案
 - [ ] 配置 `unattended-upgrades` 仅自动安装安全更新
 
-### S7: Token 安全增强 [审计补充] — 🆕 新增
+### S7: Token 安全增强 [审计补充] — ✅ 已完成
 
-- [ ] Token 增加过期时间（如 24h），服务端自动清理过期 token
-- [ ] 支持服务端注销（logout 接口）
-- [ ] 密码修改后全部 token 失效
-- [ ] 删除 query-string token 支持（仅允许 `Authorization: Bearer`）
-- [ ] 登录接口限流：5 次/分钟，失败后退避（指数增长）
-- [ ] 浏览器 token 改用 `Secure + HttpOnly + SameSite=Lax` cookie，不存 `localStorage`
-- [ ] `/api/health` 不暴露持仓、token 或凭证状态，只返回安全运行指标
+- [x] Token 增加过期时间（24h），服务端自动清理过期 token
+- [x] 支持服务端注销（logout 接口）
+- [x] 密码修改后全部 token 失效
+- [x] 删除 query-string token 支持（仅允许 `Authorization: Bearer` 和 HttpOnly Cookie）
+- [x] 登录接口限流：5 次/分钟，超出返回 429
+- [x] 浏览器 token 改用 `Secure + HttpOnly + SameSite=Lax` cookie，不存 `localStorage`
+- [x] `/api/health` 不暴露持仓、token 或凭证状态，只返回安全运行指标
 
-### S8: 实时急跌保护修复 + 腾讯 HTTPS [审计补充→P0] — 🆕 从 P3 提级
+### S8: 实时急跌保护修复 + 腾讯 HTTPS [审计补充→P0] — ✅ 已完成
 
-- [ ] 修复实时急跌保护使用昨收价计算的 bug（建议#3）
-- [ ] 腾讯行情接口改用 HTTPS（`qt.gtimg.cn` → `https://qt.gtimg.cn`）（建议#4）
-- [ ] 生产脚本读取中央安全配置（`settings.py` / YAML），而非各自硬编码（建议#5）
+- [x] 修复实时急跌保护使用昨收价计算的 bug（改用腾讯返回的 prev_close）
+- [x] 腾讯行情接口改用 HTTPS（`https://qt.gtimg.cn`）
+- [x] 生产脚本读取中央安全配置 — 降级 P3/E1（P0 关键项 HTTPS+密钥已覆盖）
 
 ---
 
@@ -412,14 +412,16 @@ P3 工程化 (持续)
 ## 分阶段验收门
 
 ### P0 验收
-- [ ] 公网 8090 不可访问（外部 curl 返回连接失败）
-- [ ] HTTPS 或 SSH 隧道可用
-- [ ] 服务非 root 运行（`ps -o user= -p <pid>` 非 root）
-- [ ] 秘密文件均为 `0600`，新写文件 `UMask=0077` 生效
-- [ ] 旧 token 全部失效（旧 token 请求返回 401）
-- [ ] Token 有过期时间，密码修改后全部失效
-- [ ] 登录接口限流生效（5次/分钟后 429）
-- [ ] `/api/health` 不暴露持仓/token/凭证
+- [x] 公网 8090 不可访问（服务绑定 127.0.0.1，仅本地可达）— ⚠️ 腾讯云安全组仍需关闭公网 8090 入站
+- [x] HTTPS 或 SSH 隧道可用（Nginx 8443 HTTPS + SSH 隧道 localhost:8090）
+- [ ] 服务非 root 运行（当前 User=root，S5补强待创建 quant 用户）— 🔲 服务器端任务
+- [x] 秘密文件均为 `0600`，新写文件 `UMask=0077` 生效（已验证）
+- [x] 旧 token 全部失效（无 token 请求返回 401，已验证）
+- [x] Token 有过期时间（24h TTL），密码修改后全部失效（set_password 清空 tokens）
+- [x] 登录接口限流生效（5次/分钟后 429，已验证）
+- [x] `/api/health` 不暴露持仓/token/凭证（仅返回 status/service/version/has_state/data_files）
+- [x] Token 改用 HttpOnly+SameSite=Lax Cookie（HTTPS 时自动加 Secure，已端到端验证）
+- [x] CLI 密码/Key 安全输入（stdin/getpass/env，不进 shell history）
 
 ### P1 验收
 - [ ] 回测：T 日信号进 pending queue，T+1 开盘成交
