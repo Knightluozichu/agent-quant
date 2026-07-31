@@ -267,26 +267,58 @@ def price_on(data: dict, code: str, td) -> float | None:
     return float(row.iloc[0]["close"])
 
 
-_REALTIME_CACHE = {"time": 0.0, "prices": {}}
+_REALTIME_CACHE = {"time": 0.0, "spot": {}}
+
+
+def _fetch_tencent_spot() -> dict[str, dict]:
+    """腾讯实时行情 (qt.gtimg.cn), 覆盖全部场内ETF+LOF+QDII, 缓存1分钟。
+
+    东方财富 fund_etf_spot_em 不覆盖 LOF (如501018南方原油),
+    腾讯源无此限制。返回 {code: {"price": float, "prev_close": float}}。
+    """
+    import requests
+    now = time.time()
+    if _REALTIME_CACHE["spot"] and (now - _REALTIME_CACHE["time"]) <= 60:
+        return _REALTIME_CACHE["spot"]
+
+    tencent_codes = [
+        f"{'sh' if c.startswith(('5', '6')) else 'sz'}{c}" for c in ALL_CODES
+    ]
+    url = f"http://qt.gtimg.cn/q={','.join(tencent_codes)}"
+    try:
+        resp = requests.get(url, timeout=10)
+        resp.encoding = "gbk"
+    except Exception as e:  # noqa: BLE001
+        print(f"  ⚠️  腾讯行情获取失败: {e}")
+        return _REALTIME_CACHE["spot"]
+
+    spot: dict[str, dict] = {}
+    for line in resp.text.strip().split(";"):
+        if "~" not in line:
+            continue
+        parts = line.split("~")
+        if len(parts) < 5:
+            continue
+        code = parts[2]
+        price = float(parts[3]) if parts[3] else 0
+        prev_close = float(parts[4]) if parts[4] else 0
+        if price > 0:
+            spot[code] = {"price": price, "prev_close": prev_close}
+
+    if spot:
+        _REALTIME_CACHE["spot"] = spot
+        _REALTIME_CACHE["time"] = now
+    return spot
 
 
 def get_realtime_price(code: str) -> float | None:
-    """获取ETF当日实时/最新价(东方财富实时行情), 缓存1分钟。
+    """获取ETF/LOF当日实时价 (腾讯源, 覆盖全部品种含LOF, 缓存1分钟)。
 
-    用于显示当日真实市值(新浪历史数据有发布延迟, 实时行情能拿到当天价)。
+    用于实时急跌保护: 盘中急跌>3%时排除候选。
     失败返回None(回退到历史价)。
     """
-    import akshare as ak
-    now = time.time()
-    if now - _REALTIME_CACHE["time"] > 60:  # 缓存1分钟
-        try:
-            spot = ak.fund_etf_spot_em()
-            _REALTIME_CACHE["prices"] = dict(
-                zip(spot["代码"].astype(str), spot["最新价"].astype(float)))
-            _REALTIME_CACHE["time"] = now
-        except Exception:  # noqa: BLE001
-            pass
-    return _REALTIME_CACHE["prices"].get(code)
+    info = _fetch_tencent_spot().get(code)
+    return info["price"] if info else None
 
 
 def account_value(state: dict, data: dict, td) -> float:
@@ -443,9 +475,8 @@ def inject_realtime(data: dict) -> dict:
     """将当日实时行情注入内存数据 (不写parquet, 仅用于信号计算).
 
     数据源: 腾讯行情接口 qt.gtimg.cn (免费/无认证/覆盖全部场内ETF+LOF+QDII).
-    一次HTTP请求获取所有品种实时价, 比akshare的fund_etf_spot_em更可靠(后者不覆盖LOF).
+    复用 _fetch_tencent_spot(), 与实时急跌保护同源, 保证一致性。
     """
-    import requests
     today = date.today()
 
     # 检查是否已有今天数据
@@ -453,37 +484,11 @@ def inject_realtime(data: dict) -> dict:
     if data[sample_code]["trade_date"].max() >= today:
         return data  # 已有今天数据, 无需注入
 
-    # 腾讯行情: 一次请求拉全部
-    tencent_codes = []
+    # 腾讯实时行情 (复用 _fetch_tencent_spot, 与急跌保护同源)
+    spot_map = _fetch_tencent_spot()
     code_list = list(data.keys())
-    for c in code_list:
-        prefix = "sh" if c.startswith(("5", "6")) else "sz"
-        tencent_codes.append(f"{prefix}{c}")
-    url = f"http://qt.gtimg.cn/q={','.join(tencent_codes)}"
-
-    try:
-        resp = requests.get(url, timeout=10)
-        resp.encoding = "gbk"
-    except Exception as e:  # noqa: BLE001
-        print(f"  ⚠️  实时行情获取失败: {e}, 回退到历史数据")
-        return data
-
-    # 解析腾讯行情格式: v_sh518880="51~黄金ETF~518880~8.404~8.392~..."
-    spot_map = {}
-    for line in resp.text.strip().split(";"):
-        if "~" not in line:
-            continue
-        parts = line.split("~")
-        if len(parts) < 5:
-            continue
-        code = parts[2]
-        price = float(parts[3]) if parts[3] else 0
-        prev_close = float(parts[4]) if parts[4] else 0
-        if price > 0:
-            spot_map[code] = {"price": price, "prev_close": prev_close}
-
     if not spot_map:
-        print("  ⚠️  腾讯行情解析失败, 回退到历史数据")
+        print("  ⚠️  腾讯行情获取失败, 回退到历史数据")
         return data
 
     injected = []
