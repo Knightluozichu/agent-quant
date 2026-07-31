@@ -1,6 +1,8 @@
 [Unit]
 Description=七星V3 实盘记账网页 (FastAPI)
 After=network.target
+StartLimitIntervalSec=60
+StartLimitBurst=3
 
 [Service]
 Type=simple
@@ -9,8 +11,6 @@ WorkingDirectory=/opt/quant
 ExecStart=/opt/quant/.venv/bin/python scripts/trade_server.py --host 127.0.0.1 --port 8090
 Restart=on-failure
 RestartSec=5
-StartLimitIntervalSec=60
-StartLimitBurst=3
 Environment=TZ=Asia/Shanghai
 UMask=0077
 
