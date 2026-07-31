@@ -6,7 +6,8 @@ StartLimitBurst=3
 
 [Service]
 Type=simple
-User=root
+User=quant
+Group=quant
 WorkingDirectory=/opt/quant
 # 启动前检查端口未被占用 (防止重复启动)
 ExecStartPre=/bin/bash -c '! /usr/bin/ss -tlnp | grep -q ":8090 "'
@@ -16,11 +17,12 @@ RestartSec=5
 Environment=TZ=Asia/Shanghai
 UMask=0077
 
-# 安全加固 (read-only home to allow venv symlink access)
+# 安全加固 (quant 用户无需访问 /root, 可用 strict)
 NoNewPrivileges=yes
 PrivateTmp=yes
-ProtectHome=read-only
-ProtectSystem=full
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/opt/quant/data/live
 ProtectKernelTunables=yes
 ProtectKernelModules=yes
 ProtectControlGroups=yes
