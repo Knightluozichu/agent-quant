@@ -22,10 +22,19 @@ rsync -avz --delete \
     --exclude '__pycache__' \
     --exclude '*.pyc' \
     --exclude '.pytest_cache' \
+    --exclude '.env' \
+    --exclude '.env.*' \
     --exclude 'data/live' \
     --exclude 'data/cross_asset' \
     --exclude 'data/qixing_results' \
+    --exclude 'data/stock_cache' \
+    --chmod=Du=rwx,Dgo=rx,Fu=rw,Fgo=r \
+    --perms \
     "$PROJECT_ROOT/" "${SERVER}:${REMOTE_DIR}/"
+
+# 确保 deploy 脚本有执行权限
+echo "  确保部署脚本执行权限..."
+ssh "${SERVER}" "chmod +x ${REMOTE_DIR}/deploy/*.sh"
 
 echo ""
 echo "  ✓ 代码已同步到生产服务器"

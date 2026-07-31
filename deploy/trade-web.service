@@ -6,10 +6,21 @@ After=network.target
 Type=simple
 User=root
 WorkingDirectory=/opt/quant
-ExecStart=/opt/quant/.venv/bin/python scripts/trade_server.py --port 8090
+ExecStart=/opt/quant/.venv/bin/python scripts/trade_server.py --host 127.0.0.1 --port 8090
 Restart=always
 RestartSec=5
 Environment=TZ=Asia/Shanghai
+
+# 安全加固 (read-only home to allow venv symlink access)
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectHome=read-only
+ProtectSystem=full
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
 
 [Install]
 WantedBy=multi-user.target
