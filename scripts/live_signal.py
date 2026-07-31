@@ -34,6 +34,8 @@ from run_qixing_v3 import (  # noqa: E402
     A_SHARE_ETF,
     DATA_DIR,
     DEFENSE,
+    DROP_LOOKBACK,
+    DROP_THRESHOLD,
     ETF_POOL,
     FEE,
     REBALANCE_DAYS,
@@ -395,10 +397,10 @@ def print_momentum_board(data: dict, td, holding: str | None, target: str) -> No
         score = calc_momentum_score(close)
         # 单日跌幅过滤状态
         drop_flag = ""
-        for i in range(-3, 0):
+        for i in range(-DROP_LOOKBACK, 0):
             r = (close[i] - close[i - 1]) / close[i - 1]
-            if r < -0.03:
-                drop_flag = "⛔近3日暴跌"
+            if r < DROP_THRESHOLD:
+                drop_flag = "⛔近期暴跌"
                 break
         rows.append((code, score, drop_flag))
     rows.sort(key=lambda x: -x[1])
@@ -883,9 +885,9 @@ def momentum_board_data(data: dict, td, holding: str | None, target: str) -> lis
             continue
         score = calc_momentum_score(close)
         dropped = False
-        for i in range(-3, 0):
+        for i in range(-DROP_LOOKBACK, 0):
             r = (close[i] - close[i - 1]) / close[i - 1]
-            if r < -0.03:
+            if r < DROP_THRESHOLD:
                 dropped = True
                 break
         rows.append({

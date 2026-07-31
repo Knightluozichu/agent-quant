@@ -4,7 +4,7 @@
   1. 加权动量评分: 20日×0.4 + 60日×0.3 + 120日×0.3
   2. 短期动量过滤: 近10日年化<0 → 排除
   3. 放量过滤: 年化>100%时, 当日量>5日均量×2.5 → 排除
-  4. 单日跌幅过滤: 近3日有单日跌>3% → 排除
+  4. 单日跌幅过滤: 近5日有单日跌>3% → 排除
   5. 盈利保护: 持仓从买入后最高点回撤>5% → 卖出切货币
   6. A股走弱回避: 创业板<MA20时, 排除创业板ETF
   7. 全部不通过 → 切货币基金(511880)
@@ -61,7 +61,7 @@ MOM_PERIODS = (10, 20)
 SHORT_MOM_DAYS = 10              # 短期动量过滤
 VOL_SPIKE_RATIO = 2.5            # 放量阈值
 DROP_THRESHOLD = -0.03           # 单日跌幅阈值
-DROP_LOOKBACK = 3                # 跌幅检查天数
+DROP_LOOKBACK = 5                # 跌幅检查天数
 PROFIT_PROTECTION_DD = 0.05      # 盈利保护回撤5%(原版参数)
 A_SHARE_MA = 20                  # A股走弱判断MA
 USE_SHORT_MOM_FILTER = False     # 关闭短期动量过滤(商品波动大,误杀太多)
@@ -119,7 +119,7 @@ def check_volume_spike(volume: np.ndarray, close: np.ndarray) -> bool:
 
 
 def check_single_day_drop(close: np.ndarray) -> bool:
-    """近3日有单日跌>3% → 排除."""
+    """近5日有单日跌>3% → 排除."""
     if len(close) < DROP_LOOKBACK + 1:
         return True
     for i in range(-DROP_LOOKBACK, 0):
