@@ -174,7 +174,7 @@
       <div id="ovHoldings"></div>
     </div>
 
-    <button class="ghost" style="margin-top:6px" onclick="logout()">退出登录</button>
+    <button class="ghost" style="margin-top:6px" onclick="doLogout()">退出登录</button>
   </div>
 </div>
 
@@ -183,7 +183,6 @@
 <script>
 const RED='#e5484d', GREEN='#18a058';
 const ETF_COLORS={"518880":"#E6B800","159985":"#A0522D","501018":"#2F4F4F","161226":"#9099A0","513100":"#3B6FE0","159915":"#FF6347","511220":"#2E9E5B","511880":"#C8CDD3"};
-let TOKEN = localStorage.getItem('qx_token') || '';
 let ETFS = [];
 
 function fmt(x){ return (x==null?'—':Number(x).toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2})); }
@@ -191,7 +190,7 @@ function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg
 
 async function api(path, opts={}){
   opts.headers = Object.assign({'Content-Type':'application/json'}, opts.headers||{});
-  if(TOKEN) opts.headers['Authorization']='Bearer '+TOKEN;
+  opts.credentials = 'same-origin';  // 自动发送 HttpOnly cookie
   const r = await fetch(path, opts);
   if(r.status===401){ logout(); throw new Error('未授权'); }
   const data = await r.json();
@@ -205,12 +204,15 @@ async function doLogin(){
   const pwd=document.getElementById('pwd').value;
   const err=document.getElementById('loginErr');
   try{
-    const d=await api('/api/login',{method:'POST',body:JSON.stringify({password:pwd})});
-    TOKEN=d.token; localStorage.setItem('qx_token',TOKEN);
+    await api('/api/login',{method:'POST',body:JSON.stringify({password:pwd})});
     err.classList.add('hidden'); enterApp();
   }catch(e){ err.textContent=e.message; err.classList.remove('hidden'); }
 }
-function logout(){ TOKEN=''; localStorage.removeItem('qx_token'); showLogin(); }
+function logout(){ showLogin(); }
+async function doLogout(){
+  try{ await api('/api/logout',{method:'POST'}); }catch(e){}
+  showLogin();
+}
 
 // ---------- 进入主界面 ----------
 async function enterApp(){
@@ -459,8 +461,15 @@ let curPending=null;
 const _renderPending=renderPending;
 renderPending=function(p){ curPending=p; _renderPending(p); };
 
-// 启动
-if(TOKEN){ enterApp(); } else { showLogin(); }
+// 启动: 检查 cookie 是否仍有效 (已登录则直接进入主界面)
+(async()=>{
+  try{
+    await api('/api/etfs');  // 需要 token 的轻量接口, 验证 cookie 是否有效
+    enterApp();
+  }catch(e){
+    showLogin();
+  }
+})();
 </script>
 </body>
 </html>

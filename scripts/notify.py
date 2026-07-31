@@ -3,7 +3,8 @@
 Bark 是 iOS 上的开源推送 App:
   1. App Store 搜索 "Bark" 安装
   2. 打开 App, 首页显示你的设备 Key (一串字符)
-  3. 用 `uv run python scripts/live_signal.py --set-bark <你的KEY>` 配置
+  3. 用 `uv run python scripts/live_signal.py --set-bark` 配置 (交互式输入, 不进 shell history)
+     或: `BARK_KEY=xxx uv run python scripts/live_signal.py --set-bark`
 
 支持环境变量 BARK_KEY 覆盖配置文件.
 """
@@ -77,7 +78,7 @@ def push_bark(
     key = get_bark_key()
     if not key:
         print("  ⚠️  未配置 Bark Key, 跳过推送")
-        print("     配置方法: uv run python scripts/live_signal.py --set-bark <你的KEY>")
+        print("     配置方法: uv run python scripts/live_signal.py --set-bark")
         return False
 
     payload: dict = {
@@ -115,7 +116,7 @@ def test_push() -> bool:
     key = get_bark_key()
     if not key:
         print("  ❌ 尚未配置 Bark Key")
-        print("     配置方法: uv run python scripts/live_signal.py --set-bark <你的KEY>")
+        print("     配置方法: uv run python scripts/live_signal.py --set-bark")
         return False
     print(f"  正在推送到 Bark (Key: {key[:6]}***)...")
     ok = push_bark(

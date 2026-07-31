@@ -8,6 +8,8 @@
   uv run python scripts/live_signal.py --status        # 查看当前持仓(不更新数据)
   uv run python scripts/live_signal.py --dry-run       # 预演今日信号(不改动状态)
   uv run python scripts/live_signal.py --sync-only     # 仅更新行情(夜间补齐当日K线, 不出信号)
+  uv run python scripts/live_signal.py --set-bark      # 设置Bark推送(交互式输入)
+     或: BARK_KEY=xxx uv run python scripts/live_signal.py --set-bark
 
 推荐工作流:
   每个交易日 14:50 后运行 → 若为调仓日且有换仓信号 → 15:00 收盘前执行
@@ -287,7 +289,7 @@ def _fetch_tencent_spot() -> dict[str, dict]:
     tencent_codes = [
         f"{'sh' if c.startswith(('5', '6')) else 'sz'}{c}" for c in ALL_CODES
     ]
-    url = f"http://qt.gtimg.cn/q={','.join(tencent_codes)}"
+    url = f"https://qt.gtimg.cn/q={','.join(tencent_codes)}"
     try:
         resp = requests.get(url, timeout=10)
         resp.encoding = "gbk"
@@ -596,13 +598,16 @@ def run(dry_run: bool = False) -> None:
 
     # === 实时急跌保护: 14:50信号时检查当天盘中是否已暴跌>3% ===
     # 新浪日K在收盘后才发布, 14:50拿不到当天数据, 但实时行情能拿到
+    # 注意: 必须用腾讯返回的 prev_close (上一交易日收盘), 不能用 price_on(data, code, td)
+    # 因为 inject_realtime 后 td=今天, price_on 返回的是当天实时价而非昨收
+    spot_map = _fetch_tencent_spot()
     realtime_dropped = []
     for code, score in candidates:
-        rt_price = get_realtime_price(code)
-        if rt_price is None:
+        spot = spot_map.get(code)
+        if not spot:
             continue
-        # 用昨天收盘价作为基准
-        prev_close = price_on(data, code, td)
+        rt_price = spot["price"]
+        prev_close = spot["prev_close"]
         if prev_close and prev_close > 0:
             intraday_ret = (rt_price - prev_close) / prev_close
             if intraday_ret < -0.03:
@@ -954,7 +959,8 @@ def main() -> None:
     parser.add_argument("--init", type=float, metavar="CAPITAL", help="初始化账户本金")
     parser.add_argument("--status", action="store_true", help="查看当前持仓状态")
     parser.add_argument("--dry-run", action="store_true", help="预演信号(不改动状态)")
-    parser.add_argument("--set-bark", metavar="KEY", help="设置 Bark 设备 Key (开启手机推送)")
+    parser.add_argument("--set-bark", action="store_true",
+                        help="设置 Bark 设备 Key (从 stdin 或 BARK_KEY 环境变量读取)")
     parser.add_argument("--notify-test", action="store_true", help="发送一条测试推送")
     parser.add_argument("--bootstrap", action="store_true", help="全量拉取历史数据 (服务器首次部署)")
     parser.add_argument("--sync-only", action="store_true", help="仅更新行情数据 (夜间补齐当日K线, 不生成信号)")
@@ -965,7 +971,15 @@ def main() -> None:
     if args.bootstrap:
         bootstrap_data()
     elif args.set_bark:
-        set_bark_key(args.set_bark)
+        import os
+        key = os.environ.get("BARK_KEY", "").strip()
+        if not key:
+            import getpass
+            key = getpass.getpass("请输入 Bark 设备 Key: ").strip()
+        if not key:
+            print("  ❌ Key 不能为空")
+            sys.exit(1)
+        set_bark_key(key)
         print("  ✓ Bark Key 已保存")
         print("    下一步: uv run python scripts/live_signal.py --notify-test 验证能否收到")
     elif args.notify_test:

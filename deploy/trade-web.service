@@ -7,9 +7,12 @@ Type=simple
 User=root
 WorkingDirectory=/opt/quant
 ExecStart=/opt/quant/.venv/bin/python scripts/trade_server.py --host 127.0.0.1 --port 8090
-Restart=always
+Restart=on-failure
 RestartSec=5
+StartLimitIntervalSec=60
+StartLimitBurst=3
 Environment=TZ=Asia/Shanghai
+UMask=0077
 
 # 安全加固 (read-only home to allow venv symlink access)
 NoNewPrivileges=yes

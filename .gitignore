@@ -39,6 +39,7 @@ data/live/
 .idea/
 .vscode/
 .qoder/
+.codegraph/
 *.swp
 *.swo
 *~
@@ -78,6 +79,7 @@ data/stock_cache/
 # ---------------------------------------------------------------------------
 artifacts/
 reports/
+deploy/.DEPLOYED_MANIFEST
 
 # ---------------------------------------------------------------------------
 # Jupyter

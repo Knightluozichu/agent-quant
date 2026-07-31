@@ -9,8 +9,9 @@
 
 启动:
   uv run python scripts/trade_server.py --port 8090
-首次设置访问密码:
-  uv run python scripts/trade_server.py --set-password <你的密码>
+首次设置访问密码 (交互式输入, 不进 shell history):
+  uv run python scripts/trade_server.py --set-password
+  或: WEB_PASSWORD=xxx uv run python scripts/trade_server.py --set-password
 """
 
 from __future__ import annotations
@@ -25,8 +26,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from fastapi import Depends, FastAPI, HTTPException, Request  # noqa: E402
-from fastapi.responses import FileResponse  # noqa: E402
+from fastapi import Depends, FastAPI, HTTPException, Request, Response  # noqa: E402
+from fastapi.responses import FileResponse, JSONResponse  # noqa: E402
+from pydantic import BaseModel, Field, field_validator  # noqa: E402
 
 import live_signal as ls  # noqa: E402
 import run_qixing_v3 as rq  # noqa: E402
@@ -39,6 +41,14 @@ app = FastAPI(title="七星V3 实盘记账")
 # 行情数据内存缓存 (带 mtime 失效: cron 14:50 更新数据后自动重载)
 _DATA_CACHE: dict | None = None
 _DATA_CACHE_TIME: float = 0.0
+
+# Token 过期时间 (秒): 24 小时
+TOKEN_TTL = 86400
+
+# 登录限流: 每分钟最多 5 次尝试
+_LOGIN_ATTEMPTS: dict[str, list[float]] = {}
+_LOGIN_RATE_LIMIT = 5
+_LOGIN_WINDOW = 60.0
 
 
 def get_data() -> dict:
@@ -58,7 +68,7 @@ def refresh_data() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# 鉴权: 密码哈希 + token
+# 鉴权: 密码哈希 + token (带过期 + 限流)
 # --------------------------------------------------------------------------- #
 def _hash_password(pwd: str, salt: str) -> str:
     return hashlib.pbkdf2_hmac("sha256", pwd.encode(), salt.encode(), 100_000).hex()
@@ -69,7 +79,8 @@ def set_password(pwd: str) -> None:
     salt = secrets.token_hex(8)
     cfg["web_salt"] = salt
     cfg["web_password"] = _hash_password(pwd, salt)
-    cfg.setdefault("web_tokens", [])
+    # 密码修改后全部 token 失效
+    cfg["web_tokens"] = []
     save_config(cfg)
 
 
@@ -82,16 +93,62 @@ def verify_password(pwd: str) -> bool:
     return hmac.compare_digest(_hash_password(pwd, salt), expected)
 
 
-def require_token(request: Request) -> None:
-    cfg = load_config()
+def _cleanup_expired_tokens(cfg: dict) -> dict:
+    """清除过期 token, 返回更新后的 cfg."""
+    now = time.time()
     tokens = cfg.get("web_tokens", [])
+    # 兼容旧格式 (纯字符串 token) → 迁移为带时间戳的 dict
+    cleaned = []
+    for t in tokens:
+        if isinstance(t, str):
+            # 旧格式 token 无过期时间, 保留但标记为即将过期
+            cleaned.append({"token": t, "expires": now + 3600})
+        elif isinstance(t, dict) and t.get("expires", 0) > now:
+            cleaned.append(t)
+    cfg["web_tokens"] = cleaned
+    return cfg
+
+
+def _extract_token(request: Request) -> str:
+    """从 Bearer header 或 HttpOnly cookie 中提取 token."""
     auth = request.headers.get("Authorization", "")
     if auth.startswith("Bearer "):
-        token = auth[7:]
-    else:
-        token = request.query_params.get("token", "")
-    if token not in tokens:
-        raise HTTPException(status_code=401, detail="未授权, 请先登录")
+        return auth[7:]
+    return request.cookies.get("qx_token", "")
+
+
+def require_token(request: Request) -> None:
+    cfg = load_config()
+    cfg = _cleanup_expired_tokens(cfg)
+    save_config(cfg)
+    tokens = {t["token"] for t in cfg.get("web_tokens", [])}
+    token = _extract_token(request)
+    if not token or token not in tokens:
+        raise HTTPException(status_code=401, detail="未授权或 token 已过期")
+
+
+def _check_login_rate(client_ip: str) -> None:
+    """登录限流: 每分钟最多 5 次, 超出返回 429."""
+    now = time.time()
+    attempts = _LOGIN_ATTEMPTS.get(client_ip, [])
+    recent = [t for t in attempts if now - t < _LOGIN_WINDOW]
+    if len(recent) >= _LOGIN_RATE_LIMIT:
+        raise HTTPException(
+            status_code=429,
+            detail="登录尝试过于频繁, 请稍后再试",
+        )
+    _LOGIN_ATTEMPTS[client_ip] = recent
+
+
+class LoginRequest(BaseModel):
+    password: str = Field(min_length=1, max_length=128)
+
+    @field_validator("password")
+    @classmethod
+    def password_not_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError("密码不能为空")
+        return v
 
 
 # --------------------------------------------------------------------------- #
@@ -106,20 +163,80 @@ def index() -> FileResponse:
 # 鉴权接口
 # --------------------------------------------------------------------------- #
 @app.post("/api/login")
-def login(payload: dict) -> dict:
+def login(payload: LoginRequest, request: Request, response: Response) -> dict:
+    client_ip = request.client.host if request.client else "unknown"
+    _check_login_rate(client_ip)
+
     if not load_config().get("web_password"):
         raise HTTPException(
             status_code=503,
             detail="尚未设置访问密码, 请在服务器运行: "
-            "uv run python scripts/trade_server.py --set-password <密码>",
+            "python scripts/trade_server.py --set-password",
         )
-    if not verify_password(payload.get("password", "")):
+    if not verify_password(payload.password):
+        # 记录失败尝试
+        now = time.time()
+        attempts = _LOGIN_ATTEMPTS.get(client_ip, [])
+        attempts.append(now)
+        _LOGIN_ATTEMPTS[client_ip] = attempts
         raise HTTPException(status_code=401, detail="密码错误")
+
+    # 登录成功, 清除该 IP 的失败记录
+    _LOGIN_ATTEMPTS.pop(client_ip, None)
+
     token = secrets.token_hex(16)
     cfg = load_config()
-    cfg.setdefault("web_tokens", []).append(token)
+    cfg = _cleanup_expired_tokens(cfg)
+    cfg.setdefault("web_tokens", []).append({
+        "token": token,
+        "expires": time.time() + TOKEN_TTL,
+        "created": time.time(),
+    })
     save_config(cfg)
-    return {"token": token}
+
+    # 设置 HttpOnly cookie (浏览器自动管理, JS 无法读取, 防 XSS 窃取)
+    is_https = (
+        request.url.scheme == "https"
+        or request.headers.get("x-forwarded-proto") == "https"
+    )
+    response.set_cookie(
+        key="qx_token",
+        value=token,
+        max_age=TOKEN_TTL,
+        httponly=True,
+        samesite="lax",
+        secure=is_https,
+        path="/",
+    )
+    return {"token": token, "expires_in": TOKEN_TTL}
+
+
+@app.post("/api/logout")
+def logout(request: Request, response: Response) -> dict:
+    """注销当前 token (同时清除 cookie 和服务端记录)."""
+    token = _extract_token(request)
+    if token:
+        cfg = load_config()
+        cfg["web_tokens"] = [
+            t for t in cfg.get("web_tokens", [])
+            if isinstance(t, dict) and t.get("token") != token
+        ]
+        save_config(cfg)
+    response.delete_cookie(key="qx_token", path="/")
+    return {"ok": True}
+
+
+@app.get("/api/health")
+def api_health() -> dict:
+    """健康检查: 只返回安全的运行指标, 不暴露持仓/token/凭证."""
+    state = ls.load_state()
+    return {
+        "status": "ok" if state else "uninitialized",
+        "service": "qixing-v3",
+        "version": "3.0",
+        "has_state": state is not None,
+        "data_files": len(list(ls.DATA_DIR.glob("*.parquet"))),
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -311,12 +428,25 @@ def api_refresh(_: None = Depends(require_token)) -> dict:
 def main() -> None:
     parser = argparse.ArgumentParser(description="七星V3 实盘记账网页")
     parser.add_argument("--port", type=int, default=8090, help="监听端口 (默认8090)")
-    parser.add_argument("--host", default="0.0.0.0", help="监听地址")
-    parser.add_argument("--set-password", metavar="PWD", help="设置网页访问密码")
+    parser.add_argument("--host", default="127.0.0.1", help="监听地址 (默认 127.0.0.1, 仅本地访问)")
+    parser.add_argument("--set-password", action="store_true",
+                        help="设置网页访问密码 (从 stdin 或 WEB_PASSWORD 环境变量读取)")
     args = parser.parse_args()
 
     if args.set_password:
-        set_password(args.set_password)
+        import os
+        pwd = os.environ.get("WEB_PASSWORD", "").strip()
+        if not pwd:
+            import getpass
+            pwd = getpass.getpass("请输入新密码: ").strip()
+            if not pwd:
+                print("  ❌ 密码不能为空")
+                sys.exit(1)
+            confirm = getpass.getpass("再次输入确认: ").strip()
+            if pwd != confirm:
+                print("  ❌ 两次输入不一致")
+                sys.exit(1)
+        set_password(pwd)
         print("  ✓ 访问密码已设置")
         return
 
