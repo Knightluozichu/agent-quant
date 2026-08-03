@@ -731,6 +731,194 @@ def run_qixing_v3_no_lookahead(
     }
 
 
+def run_qixing_v3_same_day(
+    data: dict, initial_capital: float = 100_000.0, cost_multiplier: float = 1.0
+) -> dict:
+    """同日收盘成交回测 (对齐实盘 14:50 执行口径).
+
+    实盘流程: 调仓日 14:30 实时快照生成信号 → 14:50~15:00 执行成交。
+    信号时刻早于成交时刻, 无未来函数; 日线数据下用 T 日收盘价同时近似
+    14:30 信号价与 14:50 成交价。
+
+    与 run_qixing_v3_no_lookahead (T+1开盘成交) 的唯一区别是成交时点,
+    其余规则(涨跌停检查/卖出失败不买/每日净值采样)保持一致。
+    """
+    common_dates: set = set()
+    for code in ETF_POOL:
+        if code not in data:
+            continue
+        dates = data[code]["trade_date"].tolist()
+        if not common_dates:
+            common_dates = set(dates)
+        else:
+            common_dates &= set(dates)
+    if DEFENSE in data:
+        common_dates &= set(data[DEFENSE]["trade_date"].tolist())
+
+    all_dates = sorted(common_dates)
+    warmup = 130
+    trading_dates = all_dates[warmup:]
+    rebalance_dates = trading_dates[::REBALANCE_DAYS]
+    rebalance_set = set(rebalance_dates)
+
+    fee = FEE * cost_multiplier
+    slippage = SLIPPAGE * cost_multiplier
+
+    cash = initial_capital
+    holding: str | None = None
+    holding_shares = 0
+    equity_history: list[dict] = []
+    trade_log: list[dict] = []
+    decision_log: list[dict] = []
+    signal_counter = 0
+
+    def _check_close_tradable(code: str, td) -> tuple[bool, str]:
+        """收盘口径可交易检查: 有数据 + 未涨跌停(收盘价 vs 昨收)."""
+        df = data[code]
+        row = df[df["trade_date"] == td]
+        if row.empty:
+            return (False, f"{code} 在 {td} 无数据")
+        price = float(row.iloc[0]["close"])
+        if price <= 0:
+            return (False, f"{code} 在 {td} 收盘价无效")
+        hist = df[df["trade_date"] < td]
+        if not hist.empty:
+            prev_close = float(hist.iloc[-1]["close"])
+            if prev_close > 0 and abs(price / prev_close - 1) >= 0.099:
+                return (False, f"{code} 在 {td} 收盘涨跌停")
+        return (True, "")
+
+    for td in trading_dates:
+        # === 调仓日: T日信号 → T日收盘成交 ===
+        if td in rebalance_set:
+            etf_data_at_date = {}
+            for code in [*list(ETF_POOL.keys()), DEFENSE]:
+                if code not in data:
+                    continue
+                df = data[code]
+                mask = df["trade_date"] <= td
+                if mask.sum() < warmup:
+                    continue
+                etf_data_at_date[code] = mask.sum() - 1
+
+            target, candidates, _best_score, a_share_weak = select_target(
+                data, etf_data_at_date, holding
+            )
+
+            signal_counter += 1
+            sig_id = f"SIG-{signal_counter:06d}"
+            decision_log.append({
+                "date": str(td), "signal_id": sig_id,
+                "target": target,
+                "target_name": ETF_POOL.get(target, "货币基金"),
+                "n_candidates": len(candidates),
+                "a_share_weak": a_share_weak,
+            })
+
+            if target != holding:
+                sell_ok = True
+                if holding and holding in data:
+                    can_sell, reason = _check_close_tradable(holding, td)
+                    if not can_sell:
+                        sell_ok = False
+                        trade_log.append({
+                            "signal_id": sig_id, "date": str(td),
+                            "action": "sell", "code": holding,
+                            "status": "cancelled", "reason": f"卖出失败: {reason}",
+                        })
+                    else:
+                        price = float(
+                            data[holding][data[holding]["trade_date"] == td].iloc[0]["close"]
+                        )
+                        amount = holding_shares * price * (1 - fee - slippage)
+                        cash += amount
+                        trade_log.append({
+                            "signal_id": sig_id, "date": str(td),
+                            "action": "sell", "code": holding,
+                            "shares": holding_shares, "price": price,
+                            "amount": round(amount, 2),
+                            "status": "executed", "reason": "",
+                        })
+                        holding = None
+                        holding_shares = 0
+
+                if sell_ok and target and target in data:
+                    can_buy, reason = _check_close_tradable(target, td)
+                    if not can_buy:
+                        trade_log.append({
+                            "signal_id": sig_id, "date": str(td),
+                            "action": "buy", "code": target,
+                            "status": "cancelled", "reason": f"买入失败: {reason}",
+                        })
+                    else:
+                        price = float(
+                            data[target][data[target]["trade_date"] == td].iloc[0]["close"]
+                        )
+                        shares = int(cash * 0.99 / price / 100) * 100
+                        if shares > 0:
+                            cost = shares * price * (1 + fee + slippage)
+                            cash -= cost
+                            holding = target
+                            holding_shares = shares
+                            trade_log.append({
+                                "signal_id": sig_id, "date": str(td),
+                                "action": "buy", "code": target,
+                                "shares": shares, "price": price,
+                                "amount": round(cost, 2),
+                                "status": "executed", "reason": "",
+                            })
+
+        # === 每日净值 ===
+        equity = cash
+        if holding and holding in data:
+            row = data[holding][data[holding]["trade_date"] == td]
+            if not row.empty:
+                equity += holding_shares * float(row.iloc[0]["close"])
+        equity_history.append({"trade_date": td, "equity": equity, "holding": holding or DEFENSE})
+
+    if not equity_history:
+        return {"error": "no data"}
+
+    eq_df = pd.DataFrame(equity_history)
+    eq_df["trade_date"] = pd.to_datetime(eq_df["trade_date"])
+    eq_df["year"] = eq_df["trade_date"].dt.year
+
+    total_return = (eq_df["equity"].iloc[-1] / initial_capital) - 1
+    daily_rets = eq_df["equity"].pct_change().dropna()
+    ann_vol = daily_rets.std() * np.sqrt(252) if len(daily_rets) > 1 else 0.0
+    span_days = (eq_df["trade_date"].iloc[-1] - eq_df["trade_date"].iloc[0]).days
+    span_years = max(span_days / 365.25, 1e-9)
+    ann_ret = (1 + total_return) ** (1 / span_years) - 1
+    sharpe = ann_ret / ann_vol if ann_vol > 0 else 0.0
+    cummax = eq_df["equity"].cummax()
+    max_dd = ((eq_df["equity"] - cummax) / cummax).min()
+
+    yearly = {}
+    prev_val = initial_capital
+    for year in sorted(eq_df["year"].unique()):
+        ydf = eq_df[eq_df["year"] == year]
+        if ydf.empty:
+            continue
+        end_val = ydf["equity"].iloc[-1]
+        yr = (end_val / prev_val) - 1
+        cm = ydf["equity"].cummax()
+        dd = ((ydf["equity"] - cm) / cm).min()
+        yearly[int(year)] = {"return": yr, "max_dd": dd}
+        prev_val = end_val
+
+    n_executed = sum(1 for t in trade_log if t.get("status") == "executed")
+    n_cancelled = sum(1 for t in trade_log if t.get("status") == "cancelled")
+
+    return {
+        "total_return": total_return, "ann_return": ann_ret,
+        "sharpe": sharpe, "max_drawdown": max_dd,
+        "yearly": yearly, "n_trades": n_executed,
+        "n_cancelled": n_cancelled,
+        "equity_curve": eq_df, "decision_log": decision_log,
+        "trade_log": trade_log,
+    }
+
+
 def run_cost_stress_test(data: dict, initial_capital: float = 100_000.0) -> dict:
     """成本压力测试: 基础/2x/3x 三档成本对比."""
     results = {}

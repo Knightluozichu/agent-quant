@@ -111,8 +111,8 @@ else
     check "持仓状态" "fail" "state.json 字段缺失或文件不存在"
 fi
 
-# 5. 最近 cron SUMMARY
-LATEST_SUMMARY=$(grep 'SUMMARY' data/live/cron.log 2>/dev/null | tail -1 || echo "")
+# 5. 最近 cron SUMMARY (cron.log 无 SUMMARY 行, 实际记录在 sync.log/calibrate.log)
+LATEST_SUMMARY=$(grep -h 'SUMMARY' data/live/*.log 2>/dev/null | LC_ALL=C sort | tail -1 || echo "")
 if [ -n "$LATEST_SUMMARY" ]; then
     LAST_EXIT=$(echo "$LATEST_SUMMARY" | grep -oP 'exit=\K[0-9]+' || echo "?")
     if [ "$LAST_EXIT" = "0" ]; then
