@@ -78,7 +78,8 @@ echo ""
 echo "=== 4/4: 生成并比较 manifest ==="
 # 生成本地 manifest
 GIT_HASH=$(cd "${PROJECT_ROOT}" && git rev-parse HEAD 2>/dev/null || echo "no-git")
-CODE_HASH=$(find "${PROJECT_ROOT}/scripts" -name '*.py' -exec cat {} + 2>/dev/null | sha256sum | cut -c1-16)
+# 排序后拼接, 保证 macOS/Linux 两端哈希可比 (find 顺序不确定)
+CODE_HASH=$(cd "${PROJECT_ROOT}" && find scripts -name '*.py' | LC_ALL=C sort | xargs cat 2>/dev/null | sha256sum | cut -c1-16)
 LOCK_HASH=$(sha256sum "${PROJECT_ROOT}/uv.lock" 2>/dev/null | cut -c1-16 || echo "no-lock")
 PARAM_HASH=$(grep -E '^(DROP_LOOKBACK|A_SHARE_MA|MOM_PERIODS|MOM_WEIGHTS|REBALANCE_DAYS) ' \
     "${PROJECT_ROOT}/scripts/run_qixing_v3.py" 2>/dev/null | sha256sum | cut -c1-16 || echo "no-params")
@@ -92,7 +93,7 @@ deploy_time=$(date '+%Y-%m-%d %H:%M:%S')
 EOF
 
 # 在远端重新计算代码哈希 (而非复制本地 manifest 文件比较)
-REMOTE_CODE_HASH=$(ssh "${SERVER}" "find ${REMOTE_DIR}/scripts -name '*.py' -exec cat {} + 2>/dev/null | sha256sum | cut -c1-16" 2>/dev/null || echo "ssh-failed")
+REMOTE_CODE_HASH=$(ssh "${SERVER}" "cd ${REMOTE_DIR} && find scripts -name '*.py' | LC_ALL=C sort | xargs cat 2>/dev/null | sha256sum | cut -c1-16" 2>/dev/null || echo "ssh-failed")
 REMOTE_LOCK_HASH=$(ssh "${SERVER}" "sha256sum ${REMOTE_DIR}/uv.lock 2>/dev/null | cut -c1-16" 2>/dev/null || echo "ssh-failed")
 REMOTE_PARAM_HASH=$(ssh "${SERVER}" "grep -E '^(DROP_LOOKBACK|A_SHARE_MA|MOM_PERIODS|MOM_WEIGHTS|REBALANCE_DAYS) ' ${REMOTE_DIR}/scripts/run_qixing_v3.py 2>/dev/null | sha256sum | cut -c1-16" 2>/dev/null || echo "ssh-failed")
 
