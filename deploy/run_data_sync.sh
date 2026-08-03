@@ -26,6 +26,9 @@ fi
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
+# crontab 自愈守护: 检查三个定时任务是否被外部覆盖丢失 (幂等, 缺失时自动补回+告警)
+bash "${PROJECT_ROOT}/deploy/ensure_cron.sh" 2>/dev/null || true
+
 # 直接使用 venv python (避免 uv run 每次检查环境, cron 环境精简)
 PYTHON="${PROJECT_ROOT}/.venv/bin/python"
 if [ ! -x "$PYTHON" ]; then
