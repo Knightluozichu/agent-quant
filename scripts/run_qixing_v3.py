@@ -732,13 +732,19 @@ def run_qixing_v3_no_lookahead(
 
 
 def run_qixing_v3_same_day(
-    data: dict, initial_capital: float = 100_000.0, cost_multiplier: float = 1.0
+    data: dict, initial_capital: float = 100_000.0, cost_multiplier: float = 1.0,
+    live_mirror: bool = False,
 ) -> dict:
     """同日收盘成交回测 (对齐实盘 14:50 执行口径).
 
     实盘流程: 调仓日 14:30 实时快照生成信号 → 14:50~15:00 执行成交。
     信号时刻早于成交时刻, 无未来函数; 日线数据下用 T 日收盘价同时近似
     14:30 信号价与 14:50 成交价。
+
+    Args:
+        live_mirror: 实盘镜像模式 - 额外复刻 live_signal.py 的实时急跌保护
+            (信号日盘中跌>3%的候选剔除后重选目标, 全剔除切货币)。
+            日线近似: 信号日 收盘/昨收 - 1 < -3%。
 
     与 run_qixing_v3_no_lookahead (T+1开盘成交) 的唯一区别是成交时点,
     其余规则(涨跌停检查/卖出失败不买/每日净值采样)保持一致。
@@ -770,6 +776,7 @@ def run_qixing_v3_same_day(
     equity_history: list[dict] = []
     trade_log: list[dict] = []
     decision_log: list[dict] = []
+    rt_filter_log: list[dict] = []  # 实时急跌保护剔除记录 (live_mirror)
     signal_counter = 0
 
     def _check_close_tradable(code: str, td) -> tuple[bool, str]:
@@ -804,6 +811,27 @@ def run_qixing_v3_same_day(
             target, candidates, _best_score, a_share_weak = select_target(
                 data, etf_data_at_date, holding
             )
+
+            # === 实盘镜像: 实时急跌保护 (1:1 复刻 live_signal.py run() 语义) ===
+            # 实盘: 候选当日盘中跌>3% (实时价 vs 昨收) → 剔除后重选Top1, 全剔除切货币
+            # 日线近似: 信号日收盘/昨收 - 1 < -3%
+            if live_mirror and candidates:
+                dropped = set()
+                for code, _s in candidates:
+                    idx = etf_data_at_date[code]
+                    close = data[code]["close"].values[: idx + 1].astype(float)
+                    if len(close) >= 2 and close[-2] > 0:
+                        intraday = (close[-1] - close[-2]) / close[-2]
+                        if intraday < -0.03:
+                            dropped.add(code)
+                            rt_filter_log.append({
+                                "date": str(td), "code": code,
+                                "name": ETF_POOL.get(code, "货币基金"),
+                                "intraday_ret": round(float(intraday), 4),
+                            })
+                if dropped:
+                    candidates = [(c, s) for c, s in candidates if c not in dropped]
+                    target = candidates[0][0] if candidates else DEFENSE
 
             signal_counter += 1
             sig_id = f"SIG-{signal_counter:06d}"
@@ -916,6 +944,7 @@ def run_qixing_v3_same_day(
         "n_cancelled": n_cancelled,
         "equity_curve": eq_df, "decision_log": decision_log,
         "trade_log": trade_log,
+        "rt_filter_log": rt_filter_log,
     }
 
 
