@@ -2,7 +2,15 @@
 
 from __future__ import annotations
 
+import importlib.util
+
 import pytest
+
+# viz 模块依赖可选依赖 dash, 未安装时整体跳过 (uv sync --extra viz)
+pytestmark = pytest.mark.skipif(
+    importlib.util.find_spec("dash") is None,
+    reason="dash not installed (uv sync --extra viz)",
+)
 
 
 class TestDataLoader:

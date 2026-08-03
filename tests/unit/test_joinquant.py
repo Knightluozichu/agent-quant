@@ -1,5 +1,6 @@
 """Tests for JoinQuant data provider."""
 
+import importlib.util
 from datetime import date
 
 import pytest
@@ -8,6 +9,12 @@ from a_share_quant.data.providers.joinquant import (
     QuotaTracker,
     from_jq_symbol,
     to_jq_symbol,
+)
+
+_HAS_JQDATASDK = importlib.util.find_spec("jqdatasdk") is not None
+requires_jqdatasdk = pytest.mark.skipif(
+    not _HAS_JQDATASDK,
+    reason="jqdatasdk not installed (uv sync --extra data-joinquant)",
 )
 
 
@@ -65,6 +72,7 @@ class TestJoinQuantProviderIntegration:
     """
 
     @pytest.mark.integration
+    @requires_jqdatasdk
     def test_authentication(self):
         """Test JQData authentication."""
         from a_share_quant.data.providers.joinquant import JoinQuantProvider
@@ -74,6 +82,7 @@ class TestJoinQuantProviderIntegration:
         assert provider._authenticated
 
     @pytest.mark.integration
+    @requires_jqdatasdk
     def test_get_trading_calendar(self):
         """Test trading calendar retrieval."""
         from a_share_quant.data.providers.joinquant import JoinQuantProvider
@@ -85,6 +94,7 @@ class TestJoinQuantProviderIntegration:
         assert "trade_date" in cal.columns
 
     @pytest.mark.integration
+    @requires_jqdatasdk
     def test_get_daily_bars(self):
         """Test daily bars retrieval."""
         from a_share_quant.data.providers.joinquant import JoinQuantProvider
@@ -96,6 +106,7 @@ class TestJoinQuantProviderIntegration:
         assert "close" in df.columns
 
     @pytest.mark.integration
+    @requires_jqdatasdk
     def test_quota_info(self):
         """Test quota info retrieval."""
         from a_share_quant.data.providers.joinquant import JoinQuantProvider

@@ -127,4 +127,4 @@ echo "  ⚠️  若本次改了 scripts/ 下的代码, 记账网页(常驻服务
 echo "      ssh ${SERVER} 'systemctl restart trade-web'"
 echo ""
 echo "  ⚠️  若本次改了 pyproject.toml/uv.lock (动了依赖), 需在服务器重跑:"
-echo "      ssh ${SERVER} 'cd ${REMOTE_DIR} && uv sync --extra data-akshare --extra server'"
+echo "      ssh ${SERVER} 'cd ${REMOTE_DIR} && uv sync --no-default-groups --extra data-akshare --extra server'"

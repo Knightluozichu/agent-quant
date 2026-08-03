@@ -47,14 +47,6 @@ data-joinquant = [
 data-tushare = [
     { name = "tushare" },
 ]
-dev = [
-    { name = "hypothesis" },
-    { name = "mypy" },
-    { name = "pandas-stubs" },
-    { name = "pytest" },
-    { name = "pytest-cov" },
-    { name = "ruff" },
-]
 server = [
     { name = "fastapi" },
     { name = "uvicorn", extra = ["standard"] },
@@ -64,6 +56,16 @@ viz = [
     { name = "dash-bootstrap-components" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "hypothesis" },
+    { name = "mypy" },
+    { name = "pandas-stubs" },
+    { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "ruff" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "akshare", marker = "extra == 'data-akshare'", specifier = ">=1.14" },
@@ -71,24 +73,18 @@ requires-dist = [
     { name = "dash-bootstrap-components", marker = "extra == 'viz'", specifier = ">=1.6" },
     { name = "duckdb", specifier = ">=1.0" },
     { name = "fastapi", marker = "extra == 'server'", specifier = ">=0.111" },
-    { name = "hypothesis", marker = "extra == 'dev'", specifier = ">=6.100" },
     { name = "jinja2", specifier = ">=3.1" },
     { name = "jqdatasdk", marker = "extra == 'data-joinquant'", specifier = ">=1.9" },
     { name = "matplotlib", specifier = ">=3.9" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.10" },
     { name = "numpy", specifier = ">=1.26" },
     { name = "pandas", specifier = ">=2.2" },
-    { name = "pandas-stubs", marker = "extra == 'dev'", specifier = ">=2.2" },
     { name = "plotly", specifier = ">=5.22" },
     { name = "pyarrow", specifier = ">=16.0" },
     { name = "pydantic", specifier = ">=2.7" },
     { name = "pydantic-settings", specifier = ">=2.3" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.2" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0" },
     { name = "pyyaml", specifier = ">=6.0" },
     { name = "requests", specifier = ">=2.31" },
     { name = "rich", specifier = ">=13.7" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.5" },
     { name = "scikit-learn", specifier = ">=1.5" },
     { name = "scipy", specifier = ">=1.13" },
     { name = "statsmodels", specifier = ">=0.14" },
@@ -97,7 +93,17 @@ requires-dist = [
     { name = "typer", specifier = ">=0.12" },
     { name = "uvicorn", extras = ["standard"], marker = "extra == 'server'", specifier = ">=0.30" },
 ]
-provides-extras = ["dev", "data-joinquant", "data-tushare", "data-akshare", "viz", "server"]
+provides-extras = ["data-joinquant", "data-tushare", "data-akshare", "viz", "server"]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "hypothesis", specifier = ">=6.100" },
+    { name = "mypy", specifier = ">=1.10" },
+    { name = "pandas-stubs", specifier = ">=2.2" },
+    { name = "pytest", specifier = ">=8.2" },
+    { name = "pytest-cov", specifier = ">=5.0" },
+    { name = "ruff", specifier = ">=0.5" },
+]
 
 [[package]]
 name = "akracer"

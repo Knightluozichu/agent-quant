@@ -35,14 +35,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = [
-    "pytest>=8.2",
-    "pytest-cov>=5.0",
-    "hypothesis>=6.100",
-    "ruff>=0.5",
-    "mypy>=1.10",
-    "pandas-stubs>=2.2",
-]
 data-joinquant = [
     "jqdatasdk>=1.9",
 ]
@@ -59,6 +51,18 @@ viz = [
 server = [
     "fastapi>=0.111",
     "uvicorn[standard]>=0.30",
+]
+
+# 开发依赖: dependency-groups 使 `uv sync` 默认安装 (无需 --extra dev)
+# 生产服务器用 `uv sync --no-default-groups --extra ...` 排除
+[dependency-groups]
+dev = [
+    "pytest>=8.2",
+    "pytest-cov>=5.0",
+    "hypothesis>=6.100",
+    "ruff>=0.5",
+    "mypy>=1.10",
+    "pandas-stubs>=2.2",
 ]
 
 [project.scripts]
