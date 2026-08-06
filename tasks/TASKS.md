@@ -228,4 +228,4 @@
 - [x] V32-004 git commit (8fb09e4) + scp 定向部署 (cron 无需重启, trade-web 已 restart)
 - [x] V32-005 服务器验证 (风控层加载 OK / --status 旧 state 兼容 / trade-web active)
 - [ ] V32-006 paper_mode 试运行 ≥1月 (验收: 信号偏差<1%, 误杀率≤30%)
-- [ ] V32-007 audit_risk.py 月度误杀审计脚本
+- [x] V32-007 audit_risk.py 误杀审计脚本 (本地测试+服务器部署, 逻辑验证通过)
