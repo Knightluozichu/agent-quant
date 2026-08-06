@@ -32,6 +32,10 @@ dependencies = [
     "jinja2>=3.1",
     # HTTP requests (实时行情接口)
     "requests>=2.31",
+    "xgboost>=3.4.0",
+    "lightgbm>=4.7.0",
+    "torch>=2.13.0",
+    "torchvision>=0.28.0",
 ]
 
 [project.optional-dependencies]
@@ -161,7 +165,7 @@ ignore_missing_imports = true
 # scripts/ 是 CLI 脚本, 使用 sys.path.insert 而非正式包结构
 # 放宽类型检查: 允许无类型参数的 dict, 允许无注解的 main()
 [[tool.mypy.overrides]]
-module = ["run_qixing_v3", "live_signal", "trade_server", "notify", "daily_calibrate"]
+module = ["run_qixing_v3", "live_signal", "trade_server", "notify", "daily_calibrate", "risk_overrides"]
 disallow_untyped_defs = false
 warn_return_any = false
 disable_error_code = ["type-arg", "no-untyped-call", "no-untyped-def", "attr-defined"]

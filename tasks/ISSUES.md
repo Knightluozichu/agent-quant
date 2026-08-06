@@ -39,3 +39,12 @@
 - **描述**: 第一阶段不接入真实券商，Phase 14 默认 NOT_AUTHORIZED
 - **影响**: Phase 14 全部任务
 - **解决方案**: 完成 PaperBroker 和 CSV 人工下单路径
+
+## I-V32 尾部风控实盘落地问题
+
+- [ ] I-V32-01 mypy 配置漂移: pyproject overrides 的 module section 报 "unused"
+      (notify/run_qixing_v3/live_signal 均 import-not-found), 既有问题非本次引入,
+      live_signal 54 个 mypy 错误集中在既有代码区, 需统一修复 mypy 配置
+- [ ] I-V32-02 511260 十年国债口径: 回测 load_data 不含 511260 → 防御序列实际
+      511220→511880; 本地 511260 尾部缺 5 交易日, 服务器无文件 (sync 排除 cross_asset);
+      本期两端一致不启用 (DEFENSE_SEQ 自动跳过), 二期数据就绪后再启用并重验

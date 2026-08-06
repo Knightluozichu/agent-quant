@@ -36,6 +36,7 @@ import pandas as pd
 # === 保证与回测100%一致: 直接复用回测的核心逻辑 ===
 sys.path.insert(0, str(Path(__file__).parent))
 from notify import load_config, push_bark, save_config, set_bark_key, test_push
+from risk_overrides import assess as risk_assess
 from run_qixing_v3 import (
     A_SHARE_MA,
     DATA_DIR,
@@ -230,6 +231,11 @@ def default_state(capital: float) -> dict:
         "last_run_date": None,
         "pending_order": None,
         "trade_log": [],
+        # V32 尾部风控状态 (与回测 risk_overrides 同构)
+        "peak_equity": capital,
+        "risk_exposure": 1.0,
+        "cooldown_until": None,
+        "risk_log": [],
     }
 
 
@@ -240,6 +246,11 @@ def load_state() -> dict | None:
         state = json.load(f)
     # 版本号兼容: 旧状态文件无 _version 字段, 视为 0
     state.setdefault("_version", 0)
+    # V32 风控字段兼容 (旧 state.json 无这些键)
+    state.setdefault("peak_equity", state.get("initial_capital", 0.0))
+    state.setdefault("risk_exposure", 1.0)
+    state.setdefault("cooldown_until", None)
+    state.setdefault("risk_log", [])
     return state
 
 
@@ -908,6 +919,24 @@ def run(dry_run: bool = False) -> int:
         else:
             target = DEFENSE
 
+    # === V32 尾部风控层 (与回测 risk_overrides 同一纯函数, 零副作用) ===
+    cur_val = account_value(state, data, td)
+    if cur_val > state.get("peak_equity", 0.0):
+        state["peak_equity"] = cur_val
+    risk = risk_assess(
+        target=target, holding=holding, state=state,
+        data=data, td=td, idx_map=idx_map,
+        is_rebalance=is_rebalance, common_dates=trading_dates,
+        spot_map=spot_map,
+    )
+    if risk.events:
+        for ev in risk.events:
+            print(f"  🛡️ 风控: {ev['type']} | {ev.get('reason', '')}")
+    if risk.action == "emergency_defense":
+        print(f"  🛡️ 组合熔断: 强制切换防御 {risk.final_target} (非调仓日也执行)")
+        target = risk.final_target
+        is_rebalance = True  # 复用既有调仓交易链路
+
     print_account(state, data, td)
     print_momentum_board(data, td, holding, target)
 
@@ -921,6 +950,11 @@ def run(dry_run: bool = False) -> int:
         if not dry_run:
             with state_transaction() as st:
                 st["last_run_date"] = str(td)
+                st["peak_equity"] = state.get("peak_equity", st["initial_capital"])
+                st["risk_exposure"] = risk.exposure
+                st["cooldown_until"] = str(risk.cooldown_until) if risk.cooldown_until else None
+                if risk.events:
+                    st.setdefault("risk_log", []).extend(risk.events)
         return 0
 
     # === 调仓日 ===
@@ -932,6 +966,11 @@ def run(dry_run: bool = False) -> int:
             with state_transaction() as st:
                 st["last_rebalance_date"] = str(td)
                 st["last_run_date"] = str(td)
+                st["peak_equity"] = state.get("peak_equity", st["initial_capital"])
+                st["risk_exposure"] = risk.exposure
+                st["cooldown_until"] = str(risk.cooldown_until) if risk.cooldown_until else None
+                if risk.events:
+                    st.setdefault("risk_log", []).extend(risk.events)
                 state = st
             notify_hold(td, target, state, data)
         return 0
@@ -949,11 +988,11 @@ def run(dry_run: bool = False) -> int:
             sell_order = (holding, state["shares"], p_sell, amount)
             cash += amount
 
-    # 2. 买入目标 (预留1%现金, 按100股整数)
+    # 2. 买入目标 (预留1%现金, 按100股整数; V32风控: 按 exposure 折算降仓)
     if target:
         p_buy = price_on(data, target, td)
         if p_buy:
-            shares = int(cash * 0.99 / p_buy / 100) * 100
+            shares = int(cash * risk.exposure * 0.99 / p_buy / 100) * 100
             if shares > 0:
                 cost = shares * p_buy * (1 + FEE + SLIPPAGE)
                 buy_order = (target, shares, p_buy, cost)
@@ -1000,6 +1039,11 @@ def run(dry_run: bool = False) -> int:
             st["pending_order"] = None
             st["last_rebalance_date"] = str(td)
             st["last_run_date"] = str(td)
+            st["peak_equity"] = state.get("peak_equity", st["initial_capital"])
+            st["risk_exposure"] = 1.0  # 交易后重置 (与回测 exposure=1.0 语义一致)
+            st["cooldown_until"] = str(risk.cooldown_until) if risk.cooldown_until else None
+            if risk.events:
+                st.setdefault("risk_log", []).extend(risk.events)
             state = st
         print(f"\n  ✓ [模拟记账] 已按理论价自动记录: {STATE_FILE}")
         notify_trade(td, sell_order, buy_order, reason + " [模拟记账]", state, data)
@@ -1024,6 +1068,11 @@ def run(dry_run: bool = False) -> int:
             }
             st["last_rebalance_date"] = str(td)
             st["last_run_date"] = str(td)
+            st["peak_equity"] = state.get("peak_equity", st["initial_capital"])
+            st["risk_exposure"] = 1.0  # 交易后重置
+            st["cooldown_until"] = str(risk.cooldown_until) if risk.cooldown_until else None
+            if risk.events:
+                st.setdefault("risk_log", []).extend(risk.events)
             state = st
         print(f"\n  ✓ 信号已保存为【待确认】: {STATE_FILE}")
         print("    👉 请在网页填入真实成交后确认 (持仓状态以网页确认为准)")
