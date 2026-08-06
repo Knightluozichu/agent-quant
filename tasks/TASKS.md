@@ -225,7 +225,7 @@
 - [x] V32-001 提炼 risk_overrides.py 纯函数风控层 (ruff/mypy 全绿)
 - [x] V32-002 live_signal.py 最小注入 (git diff 53行: 51插入+2删除, 零逻辑破坏)
 - [x] V32-003 口径一致性抽查 (2026-02 白银段 assess 触发与回测一致)
-- [ ] V32-004 git commit + sync.sh 部署 (cron 无需重启, trade-web 需 restart)
-- [ ] V32-005 服务器验证 (--dry-run 看风控日志 / --status 状态兼容)
+- [x] V32-004 git commit (8fb09e4) + scp 定向部署 (cron 无需重启, trade-web 已 restart)
+- [x] V32-005 服务器验证 (风控层加载 OK / --status 旧 state 兼容 / trade-web active)
 - [ ] V32-006 paper_mode 试运行 ≥1月 (验收: 信号偏差<1%, 误杀率≤30%)
 - [ ] V32-007 audit_risk.py 月度误杀审计脚本
