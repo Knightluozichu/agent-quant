@@ -204,6 +204,7 @@ def assess(
         if vol_t > VOL_HV_THR and decay_triple:
             exposure = min(exposure, EXPO_REDUCE)
             events.append({"date": str(td), "type": "改进-高波动衰减降仓",
+                           "asset": target,
                            "reason": f"vol={vol_t:.2f} delta_s={delta_s:.4f} s={s_score:.3f}"})
         # 目标不可交易 → 切防御
         if not _tradable(target):
