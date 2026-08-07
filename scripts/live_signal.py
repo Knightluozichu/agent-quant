@@ -932,6 +932,17 @@ def run(dry_run: bool = False) -> int:
     if risk.events:
         for ev in risk.events:
             print(f"  🛡️ 风控: {ev['type']} | {ev.get('reason', '')}")
+        # V32: 降仓类事件 Bark 二级告警 (含降仓比例; 熔断走既有 notify_trade 链路不重复推)
+        if risk.action != "emergency_defense":
+            try:
+                evs_txt = "; ".join(e["type"] for e in risk.events[:3])
+                body = (f"{evs_txt}\n"
+                        f"暴露降至 {risk.exposure:.0%} (下次调仓日按此比例买入)\n"
+                        f"非调仓日仅记录, 不立即交易")
+                push_bark("⚠️ 七星V3 降仓提示", body,
+                          level="timeSensitive", sound="alarm")
+            except Exception as e:
+                print(f"  ⚠️ 降仓 Bark 推送失败: {e}")
     if risk.action == "emergency_defense":
         print(f"  🛡️ 组合熔断: 强制切换防御 {risk.final_target} (非调仓日也执行)")
         target = risk.final_target
