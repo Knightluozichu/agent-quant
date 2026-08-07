@@ -216,6 +216,15 @@ def bootstrap_data() -> None:
     print("  ✓ 数据初始化完成")
 
 
+
+def _append_risk_log(state: dict, events: list) -> None:
+    """追加风控事件到 risk_log, 保留最近 500 条防膨胀 (R3 二期)."""
+    log = state.setdefault("risk_log", [])
+    log.extend(events)
+    if len(log) > 500:
+        del log[:-500]
+
+
 # --------------------------------------------------------------------------- #
 # 状态管理
 # --------------------------------------------------------------------------- #
@@ -965,7 +974,7 @@ def run(dry_run: bool = False) -> int:
                 st["risk_exposure"] = risk.exposure
                 st["cooldown_until"] = str(risk.cooldown_until) if risk.cooldown_until else None
                 if risk.events:
-                    st.setdefault("risk_log", []).extend(risk.events)
+                    _append_risk_log(st, risk.events)
         return 0
 
     # === 调仓日 ===
@@ -983,7 +992,7 @@ def run(dry_run: bool = False) -> int:
                 st["risk_exposure"] = risk.exposure
                 st["cooldown_until"] = str(risk.cooldown_until) if risk.cooldown_until else None
                 if risk.events:
-                    st.setdefault("risk_log", []).extend(risk.events)
+                    _append_risk_log(st, risk.events)
                 state = st
             notify_hold(td, target, state, data)
         return 0
@@ -1062,7 +1071,7 @@ def run(dry_run: bool = False) -> int:
             st["risk_exposure"] = 1.0  # 交易后重置 (与回测 exposure=1.0 语义一致)
             st["cooldown_until"] = str(risk.cooldown_until) if risk.cooldown_until else None
             if risk.events:
-                st.setdefault("risk_log", []).extend(risk.events)
+                _append_risk_log(st, risk.events)
             state = st
         print(f"\n  ✓ [模拟记账] 已按理论价自动记录: {STATE_FILE}")
         notify_trade(td, sell_order, buy_order, reason + " [模拟记账]", state, data)
@@ -1091,7 +1100,7 @@ def run(dry_run: bool = False) -> int:
             st["risk_exposure"] = 1.0  # 交易后重置
             st["cooldown_until"] = str(risk.cooldown_until) if risk.cooldown_until else None
             if risk.events:
-                st.setdefault("risk_log", []).extend(risk.events)
+                _append_risk_log(st, risk.events)
             state = st
         print(f"\n  ✓ 信号已保存为【待确认】: {STATE_FILE}")
         print("    👉 请在网页填入真实成交后确认 (持仓状态以网页确认为准)")
