@@ -1,0 +1,634 @@
+{
+  "meta": {
+    "period": "2020-08-03 ~ 2026-08-03",
+    "n_samples": 9695,
+    "features": [
+      "mom3",
+      "mom5",
+      "mom10",
+      "mom20",
+      "mom60",
+      "vol5",
+      "vol20",
+      "vol60",
+      "mom_short_dev",
+      "up_streak",
+      "dn_streak",
+      "dist_high20",
+      "dist_low20",
+      "dist_high60",
+      "vol_ratio",
+      "ret_vol5",
+      "cyb_ma_state",
+      "pool_mom5",
+      "a_share_ret5",
+      "cat_rel_mom5",
+      "pool_rel_mom5"
+    ],
+    "fwd_days": 5,
+    "up_rate": 0.5519,
+    "dn_rate": 0.4372,
+    "models": [
+      "RandomForest",
+      "GBDT(HistGB)",
+      "XGBoost",
+      "LightGBM"
+    ]
+  },
+  "splits": [
+    {
+      "fold": 1,
+      "train_span": [
+        "2020-11-03",
+        "2021-12-21"
+      ],
+      "test_span": [
+        "2021-12-22",
+        "2023-02-16"
+      ],
+      "n_train": 1939,
+      "n_test": 1939,
+      "models": {
+        "RandomForest": {
+          "up": {
+            "auc": 0.4936,
+            "accuracy": 0.5101,
+            "pos_rate": 0.509
+          },
+          "dn": {
+            "auc": 0.4891,
+            "accuracy": 0.5023,
+            "pos_rate": 0.4817
+          }
+        },
+        "GBDT(HistGB)": {
+          "up": {
+            "auc": 0.5199,
+            "accuracy": 0.5142,
+            "pos_rate": 0.509
+          },
+          "dn": {
+            "auc": 0.5227,
+            "accuracy": 0.5178,
+            "pos_rate": 0.4817
+          }
+        },
+        "XGBoost": {
+          "up": {
+            "auc": 0.5108,
+            "accuracy": 0.5095,
+            "pos_rate": 0.509
+          },
+          "dn": {
+            "auc": 0.5144,
+            "accuracy": 0.5162,
+            "pos_rate": 0.4817
+          }
+        },
+        "LightGBM": {
+          "up": {
+            "auc": 0.5125,
+            "accuracy": 0.5101,
+            "pos_rate": 0.509
+          },
+          "dn": {
+            "auc": 0.5252,
+            "accuracy": 0.5193,
+            "pos_rate": 0.4817
+          }
+        }
+      },
+      "baselines": {
+        "mom_rule_up": {
+          "auc": 0.5092,
+          "accuracy": 0.5095,
+          "pos_rate": 0.509
+        },
+        "mom_rule_dn": {
+          "auc": 0.5081,
+          "accuracy": 0.509,
+          "pos_rate": 0.4817
+        }
+      }
+    },
+    {
+      "fold": 2,
+      "train_span": [
+        "2020-11-03",
+        "2023-02-16"
+      ],
+      "test_span": [
+        "2023-02-17",
+        "2024-04-09"
+      ],
+      "n_train": 3878,
+      "n_test": 1939,
+      "models": {
+        "RandomForest": {
+          "up": {
+            "auc": 0.5329,
+            "accuracy": 0.557,
+            "pos_rate": 0.5807
+          },
+          "dn": {
+            "auc": 0.5319,
+            "accuracy": 0.5823,
+            "pos_rate": 0.4069
+          }
+        },
+        "GBDT(HistGB)": {
+          "up": {
+            "auc": 0.4645,
+            "accuracy": 0.4905,
+            "pos_rate": 0.5807
+          },
+          "dn": {
+            "auc": 0.4693,
+            "accuracy": 0.4941,
+            "pos_rate": 0.4069
+          }
+        },
+        "XGBoost": {
+          "up": {
+            "auc": 0.4634,
+            "accuracy": 0.4915,
+            "pos_rate": 0.5807
+          },
+          "dn": {
+            "auc": 0.4709,
+            "accuracy": 0.4987,
+            "pos_rate": 0.4069
+          }
+        },
+        "LightGBM": {
+          "up": {
+            "auc": 0.4716,
+            "accuracy": 0.4982,
+            "pos_rate": 0.5807
+          },
+          "dn": {
+            "auc": 0.4658,
+            "accuracy": 0.5018,
+            "pos_rate": 0.4069
+          }
+        }
+      },
+      "baselines": {
+        "mom_rule_up": {
+          "auc": 0.5314,
+          "accuracy": 0.5467,
+          "pos_rate": 0.5807
+        },
+        "mom_rule_dn": {
+          "auc": 0.5315,
+          "accuracy": 0.5503,
+          "pos_rate": 0.4069
+        }
+      }
+    },
+    {
+      "fold": 3,
+      "train_span": [
+        "2020-11-03",
+        "2024-04-09"
+      ],
+      "test_span": [
+        "2024-04-10",
+        "2025-06-03"
+      ],
+      "n_train": 5817,
+      "n_test": 1939,
+      "models": {
+        "RandomForest": {
+          "up": {
+            "auc": 0.5494,
+            "accuracy": 0.524,
+            "pos_rate": 0.541
+          },
+          "dn": {
+            "auc": 0.5561,
+            "accuracy": 0.5369,
+            "pos_rate": 0.4502
+          }
+        },
+        "GBDT(HistGB)": {
+          "up": {
+            "auc": 0.5344,
+            "accuracy": 0.5199,
+            "pos_rate": 0.541
+          },
+          "dn": {
+            "auc": 0.5269,
+            "accuracy": 0.5162,
+            "pos_rate": 0.4502
+          }
+        },
+        "XGBoost": {
+          "up": {
+            "auc": 0.5173,
+            "accuracy": 0.5137,
+            "pos_rate": 0.541
+          },
+          "dn": {
+            "auc": 0.5312,
+            "accuracy": 0.5245,
+            "pos_rate": 0.4502
+          }
+        },
+        "LightGBM": {
+          "up": {
+            "auc": 0.526,
+            "accuracy": 0.5147,
+            "pos_rate": 0.541
+          },
+          "dn": {
+            "auc": 0.5292,
+            "accuracy": 0.5281,
+            "pos_rate": 0.4502
+          }
+        }
+      },
+      "baselines": {
+        "mom_rule_up": {
+          "auc": 0.4975,
+          "accuracy": 0.4997,
+          "pos_rate": 0.541
+        },
+        "mom_rule_dn": {
+          "auc": 0.495,
+          "accuracy": 0.4982,
+          "pos_rate": 0.4502
+        }
+      }
+    },
+    {
+      "fold": 4,
+      "train_span": [
+        "2020-11-03",
+        "2025-06-03"
+      ],
+      "test_span": [
+        "2025-06-04",
+        "2026-07-27"
+      ],
+      "n_train": 7756,
+      "n_test": 1939,
+      "models": {
+        "RandomForest": {
+          "up": {
+            "auc": 0.5578,
+            "accuracy": 0.558,
+            "pos_rate": 0.5678
+          },
+          "dn": {
+            "auc": 0.5641,
+            "accuracy": 0.5699,
+            "pos_rate": 0.4188
+          }
+        },
+        "GBDT(HistGB)": {
+          "up": {
+            "auc": 0.5443,
+            "accuracy": 0.5456,
+            "pos_rate": 0.5678
+          },
+          "dn": {
+            "auc": 0.5492,
+            "accuracy": 0.5616,
+            "pos_rate": 0.4188
+          }
+        },
+        "XGBoost": {
+          "up": {
+            "auc": 0.5501,
+            "accuracy": 0.5503,
+            "pos_rate": 0.5678
+          },
+          "dn": {
+            "auc": 0.5555,
+            "accuracy": 0.5601,
+            "pos_rate": 0.4188
+          }
+        },
+        "LightGBM": {
+          "up": {
+            "auc": 0.5428,
+            "accuracy": 0.54,
+            "pos_rate": 0.5678
+          },
+          "dn": {
+            "auc": 0.5454,
+            "accuracy": 0.5477,
+            "pos_rate": 0.4188
+          }
+        }
+      },
+      "baselines": {
+        "mom_rule_up": {
+          "auc": 0.5271,
+          "accuracy": 0.5405,
+          "pos_rate": 0.5678
+        },
+        "mom_rule_dn": {
+          "auc": 0.5251,
+          "accuracy": 0.542,
+          "pos_rate": 0.4188
+        }
+      }
+    }
+  ],
+  "models": {
+    "RandomForest": {
+      "up": [
+        {
+          "auc": 0.4936,
+          "accuracy": 0.5101,
+          "pos_rate": 0.509
+        },
+        {
+          "auc": 0.5329,
+          "accuracy": 0.557,
+          "pos_rate": 0.5807
+        },
+        {
+          "auc": 0.5494,
+          "accuracy": 0.524,
+          "pos_rate": 0.541
+        },
+        {
+          "auc": 0.5578,
+          "accuracy": 0.558,
+          "pos_rate": 0.5678
+        }
+      ],
+      "dn": [
+        {
+          "auc": 0.4891,
+          "accuracy": 0.5023,
+          "pos_rate": 0.4817
+        },
+        {
+          "auc": 0.5319,
+          "accuracy": 0.5823,
+          "pos_rate": 0.4069
+        },
+        {
+          "auc": 0.5561,
+          "accuracy": 0.5369,
+          "pos_rate": 0.4502
+        },
+        {
+          "auc": 0.5641,
+          "accuracy": 0.5699,
+          "pos_rate": 0.4188
+        }
+      ]
+    },
+    "GBDT(HistGB)": {
+      "up": [
+        {
+          "auc": 0.5199,
+          "accuracy": 0.5142,
+          "pos_rate": 0.509
+        },
+        {
+          "auc": 0.4645,
+          "accuracy": 0.4905,
+          "pos_rate": 0.5807
+        },
+        {
+          "auc": 0.5344,
+          "accuracy": 0.5199,
+          "pos_rate": 0.541
+        },
+        {
+          "auc": 0.5443,
+          "accuracy": 0.5456,
+          "pos_rate": 0.5678
+        }
+      ],
+      "dn": [
+        {
+          "auc": 0.5227,
+          "accuracy": 0.5178,
+          "pos_rate": 0.4817
+        },
+        {
+          "auc": 0.4693,
+          "accuracy": 0.4941,
+          "pos_rate": 0.4069
+        },
+        {
+          "auc": 0.5269,
+          "accuracy": 0.5162,
+          "pos_rate": 0.4502
+        },
+        {
+          "auc": 0.5492,
+          "accuracy": 0.5616,
+          "pos_rate": 0.4188
+        }
+      ]
+    },
+    "XGBoost": {
+      "up": [
+        {
+          "auc": 0.5108,
+          "accuracy": 0.5095,
+          "pos_rate": 0.509
+        },
+        {
+          "auc": 0.4634,
+          "accuracy": 0.4915,
+          "pos_rate": 0.5807
+        },
+        {
+          "auc": 0.5173,
+          "accuracy": 0.5137,
+          "pos_rate": 0.541
+        },
+        {
+          "auc": 0.5501,
+          "accuracy": 0.5503,
+          "pos_rate": 0.5678
+        }
+      ],
+      "dn": [
+        {
+          "auc": 0.5144,
+          "accuracy": 0.5162,
+          "pos_rate": 0.4817
+        },
+        {
+          "auc": 0.4709,
+          "accuracy": 0.4987,
+          "pos_rate": 0.4069
+        },
+        {
+          "auc": 0.5312,
+          "accuracy": 0.5245,
+          "pos_rate": 0.4502
+        },
+        {
+          "auc": 0.5555,
+          "accuracy": 0.5601,
+          "pos_rate": 0.4188
+        }
+      ]
+    },
+    "LightGBM": {
+      "up": [
+        {
+          "auc": 0.5125,
+          "accuracy": 0.5101,
+          "pos_rate": 0.509
+        },
+        {
+          "auc": 0.4716,
+          "accuracy": 0.4982,
+          "pos_rate": 0.5807
+        },
+        {
+          "auc": 0.526,
+          "accuracy": 0.5147,
+          "pos_rate": 0.541
+        },
+        {
+          "auc": 0.5428,
+          "accuracy": 0.54,
+          "pos_rate": 0.5678
+        }
+      ],
+      "dn": [
+        {
+          "auc": 0.5252,
+          "accuracy": 0.5193,
+          "pos_rate": 0.4817
+        },
+        {
+          "auc": 0.4658,
+          "accuracy": 0.5018,
+          "pos_rate": 0.4069
+        },
+        {
+          "auc": 0.5292,
+          "accuracy": 0.5281,
+          "pos_rate": 0.4502
+        },
+        {
+          "auc": 0.5454,
+          "accuracy": 0.5477,
+          "pos_rate": 0.4188
+        }
+      ]
+    }
+  },
+  "summary": {
+    "baseline_mom_rule": {
+      "up_auc": 0.5163,
+      "dn_auc": 0.5149
+    },
+    "RandomForest": {
+      "up_auc": 0.5334,
+      "dn_auc": 0.5353
+    },
+    "GBDT(HistGB)": {
+      "up_auc": 0.5158,
+      "dn_auc": 0.517
+    },
+    "XGBoost": {
+      "up_auc": 0.5104,
+      "dn_auc": 0.518
+    },
+    "LightGBM": {
+      "up_auc": 0.5132,
+      "dn_auc": 0.5164
+    }
+  },
+  "feature_importance": {
+    "涨": [
+      {
+        "feature": "pool_mom5",
+        "importance": 212.0
+      },
+      {
+        "feature": "dist_low20",
+        "importance": 173.0
+      },
+      {
+        "feature": "a_share_ret5",
+        "importance": 169.0
+      },
+      {
+        "feature": "vol_ratio",
+        "importance": 134.52454
+      },
+      {
+        "feature": "vol20",
+        "importance": 118.05795
+      },
+      {
+        "feature": "vol60",
+        "importance": 108.38229
+      },
+      {
+        "feature": "mom60",
+        "importance": 89.70314
+      },
+      {
+        "feature": "vol5",
+        "importance": 67.72482
+      },
+      {
+        "feature": "mom10",
+        "importance": 66.03774
+      },
+      {
+        "feature": "dist_high60",
+        "importance": 58.03548
+      }
+    ],
+    "跌": [
+      {
+        "feature": "vol_ratio",
+        "importance": 270.0
+      },
+      {
+        "feature": "pool_mom5",
+        "importance": 216.0
+      },
+      {
+        "feature": "a_share_ret5",
+        "importance": 181.0
+      },
+      {
+        "feature": "dist_low20",
+        "importance": 163.0
+      },
+      {
+        "feature": "vol20",
+        "importance": 105.06004
+      },
+      {
+        "feature": "vol60",
+        "importance": 104.71808
+      },
+      {
+        "feature": "mom60",
+        "importance": 84.70491
+      },
+      {
+        "feature": "vol5",
+        "importance": 68.71871
+      },
+      {
+        "feature": "dist_high60",
+        "importance": 57.70189
+      },
+      {
+        "feature": "mom10",
+        "importance": 53.70128
+      }
+    ]
+  }
+}

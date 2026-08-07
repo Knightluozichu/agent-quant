@@ -1,0 +1,5992 @@
+{
+  "meta": {
+    "note": "日频guard/boost动态层 + 周频V3引擎; 4段OOS段前训练RF(无未来函数)",
+    "grid": {
+      "guard": [
+        0.5,
+        0.55,
+        0.6
+      ],
+      "boost": [
+        0.55,
+        0.6,
+        0.65
+      ],
+      "quantiles": [
+        0.85,
+        0.9,
+        0.95
+      ],
+      "rf_depth": [
+        4,
+        6,
+        8
+      ],
+      "rf_leaf": [
+        25,
+        50,
+        100
+      ]
+    },
+    "evaluation": "全周期复权优先: 4段期末金额合计, 参考夏普/回撤"
+  },
+  "main_configs": {
+    "V3基线": {
+      "name": "V3基线",
+      "avg_ann": 0.532,
+      "final_avg": 155412.0,
+      "final_sum": 621648.0,
+      "sharpe_avg": 1.604,
+      "dd_avg": -0.1844,
+      "trades_avg": 32.5,
+      "events_total": 0
+    },
+    "V3+Guard(0.55)": {
+      "name": "V3+Guard(0.55)",
+      "avg_ann": 0.4395,
+      "final_avg": 145697.0,
+      "final_sum": 582787.0,
+      "sharpe_avg": 1.545,
+      "dd_avg": -0.1599,
+      "trades_avg": 39.8,
+      "events_total": 20
+    },
+    "V3+Boost(0.60)": {
+      "name": "V3+Boost(0.60)",
+      "avg_ann": 0.532,
+      "final_avg": 155412.0,
+      "final_sum": 621648.0,
+      "sharpe_avg": 1.604,
+      "dd_avg": -0.1844,
+      "trades_avg": 32.5,
+      "events_total": 0
+    },
+    "V3+GB(0.55,0.60)": {
+      "name": "V3+GB(0.55,0.60)",
+      "avg_ann": 0.4016,
+      "final_avg": 141733.0,
+      "final_sum": 566931.0,
+      "sharpe_avg": 1.414,
+      "dd_avg": -0.1717,
+      "trades_avg": 46.2,
+      "events_total": 34
+    },
+    "V3+GB(动态q90)": {
+      "name": "V3+GB(动态q90)",
+      "avg_ann": -0.4136,
+      "final_avg": 58340.0,
+      "final_sum": 233362.0,
+      "sharpe_avg": -0.324,
+      "dd_avg": -0.566,
+      "trades_avg": 51.2,
+      "events_total": 54
+    },
+    "V3+GB(动态q85)": {
+      "name": "V3+GB(动态q85)",
+      "avg_ann": -0.653,
+      "final_avg": 34301.0,
+      "final_sum": 137203.0,
+      "sharpe_avg": -0.577,
+      "dd_avg": -0.7312,
+      "trades_avg": 62.8,
+      "events_total": 86
+    }
+  },
+  "threshold_grid": {
+    "0.50x0.55": {
+      "name": "GB(0.50,0.55)",
+      "avg_ann": -0.4137,
+      "final_avg": 58553.0,
+      "final_sum": 234212.0,
+      "sharpe_avg": -0.222,
+      "dd_avg": -0.5655,
+      "trades_avg": 67.5,
+      "events_total": 96
+    },
+    "0.50x0.60": {
+      "name": "GB(0.50,0.60)",
+      "avg_ann": -0.3958,
+      "final_avg": 60245.0,
+      "final_sum": 240979.0,
+      "sharpe_avg": -0.215,
+      "dd_avg": -0.5555,
+      "trades_avg": 67.0,
+      "events_total": 95
+    },
+    "0.50x0.65": {
+      "name": "GB(0.50,0.65)",
+      "avg_ann": -0.1226,
+      "final_avg": 87842.0,
+      "final_sum": 351368.0,
+      "sharpe_avg": 0.214,
+      "dd_avg": -0.369,
+      "trades_avg": 59.8,
+      "events_total": 78
+    },
+    "0.55x0.55": {
+      "name": "GB(0.55,0.55)",
+      "avg_ann": 0.4009,
+      "final_avg": 141654.0,
+      "final_sum": 566615.0,
+      "sharpe_avg": 1.411,
+      "dd_avg": -0.1717,
+      "trades_avg": 46.8,
+      "events_total": 35
+    },
+    "0.55x0.60": {
+      "name": "GB(0.55,0.60)",
+      "avg_ann": 0.4016,
+      "final_avg": 141733.0,
+      "final_sum": 566931.0,
+      "sharpe_avg": 1.414,
+      "dd_avg": -0.1717,
+      "trades_avg": 46.2,
+      "events_total": 34
+    },
+    "0.55x0.65": {
+      "name": "GB(0.55,0.65)",
+      "avg_ann": 0.4128,
+      "final_avg": 142887.0,
+      "final_sum": 571549.0,
+      "sharpe_avg": 1.448,
+      "dd_avg": -0.171,
+      "trades_avg": 44.8,
+      "events_total": 31
+    },
+    "0.60x0.55": {
+      "name": "GB(0.60,0.55)",
+      "avg_ann": 0.2202,
+      "final_avg": 123786.0,
+      "final_sum": 495144.0,
+      "sharpe_avg": 1.099,
+      "dd_avg": -0.3757,
+      "trades_avg": 32.2,
+      "events_total": 2
+    },
+    "0.60x0.60": {
+      "name": "GB(0.60,0.60)",
+      "avg_ann": 0.2202,
+      "final_avg": 123786.0,
+      "final_sum": 495144.0,
+      "sharpe_avg": 1.099,
+      "dd_avg": -0.3757,
+      "trades_avg": 32.2,
+      "events_total": 2
+    },
+    "0.60x0.65": {
+      "name": "GB(0.60,0.65)",
+      "avg_ann": 0.5364,
+      "final_avg": 155866.0,
+      "final_sum": 623462.0,
+      "sharpe_avg": 1.619,
+      "dd_avg": -0.1844,
+      "trades_avg": 32.5,
+      "events_total": 1
+    }
+  },
+  "rf_hyperparam": {
+    "d4l25": {
+      "name": "d4l25",
+      "avg_ann": 0.4983,
+      "final_avg": 151905.0,
+      "final_sum": 607619.0,
+      "sharpe_avg": 1.493,
+      "dd_avg": -0.2035,
+      "trades_avg": 34.5,
+      "events_total": 5
+    },
+    "d4l50": {
+      "name": "d4l50",
+      "avg_ann": 0.532,
+      "final_avg": 155412.0,
+      "final_sum": 621648.0,
+      "sharpe_avg": 1.604,
+      "dd_avg": -0.1844,
+      "trades_avg": 32.5,
+      "events_total": 0
+    },
+    "d4l100": {
+      "name": "d4l100",
+      "avg_ann": 0.532,
+      "final_avg": 155412.0,
+      "final_sum": 621648.0,
+      "sharpe_avg": 1.604,
+      "dd_avg": -0.1844,
+      "trades_avg": 32.5,
+      "events_total": 0
+    },
+    "d6l25": {
+      "name": "d6l25",
+      "avg_ann": 0.0169,
+      "final_avg": 102480.0,
+      "final_sum": 409919.0,
+      "sharpe_avg": 0.707,
+      "dd_avg": -0.3683,
+      "trades_avg": 37.2,
+      "events_total": 15
+    },
+    "d6l50": {
+      "name": "d6l50",
+      "avg_ann": 0.5364,
+      "final_avg": 155866.0,
+      "final_sum": 623462.0,
+      "sharpe_avg": 1.619,
+      "dd_avg": -0.1844,
+      "trades_avg": 32.5,
+      "events_total": 1
+    },
+    "d6l100": {
+      "name": "d6l100",
+      "avg_ann": 0.532,
+      "final_avg": 155412.0,
+      "final_sum": 621648.0,
+      "sharpe_avg": 1.604,
+      "dd_avg": -0.1844,
+      "trades_avg": 32.5,
+      "events_total": 0
+    },
+    "d8l25": {
+      "name": "d8l25",
+      "avg_ann": 0.4471,
+      "final_avg": 146467.0,
+      "final_sum": 585868.0,
+      "sharpe_avg": 1.622,
+      "dd_avg": -0.1525,
+      "trades_avg": 38.2,
+      "events_total": 18
+    },
+    "d8l50": {
+      "name": "d8l50",
+      "avg_ann": 0.2201,
+      "final_avg": 123782.0,
+      "final_sum": 495127.0,
+      "sharpe_avg": 1.099,
+      "dd_avg": -0.3758,
+      "trades_avg": 32.8,
+      "events_total": 2
+    },
+    "d8l100": {
+      "name": "d8l100",
+      "avg_ann": 0.532,
+      "final_avg": 155412.0,
+      "final_sum": 621648.0,
+      "sharpe_avg": 1.604,
+      "dd_avg": -0.1844,
+      "trades_avg": 32.5,
+      "events_total": 0
+    }
+  },
+  "best_grid": "0.60x0.65",
+  "best_hyperparam": "d6l50",
+  "w4_guard_events": [],
+  "all_events": {
+    "V3基线": [],
+    "V3+Guard(0.55)": [
+      {
+        "date": "2022-03-10",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.557,
+        "idx": 386,
+        "on_reb": false,
+        "fwd5": 0.0139,
+        "fwd20": -0.0183
+      },
+      {
+        "date": "2022-03-22",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.554,
+        "idx": 394,
+        "on_reb": false,
+        "fwd5": -0.0401,
+        "fwd20": -0.0383
+      },
+      {
+        "date": "2022-03-24",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.572,
+        "idx": 396,
+        "on_reb": false,
+        "fwd5": -0.0575,
+        "fwd20": -0.0794
+      },
+      {
+        "date": "2022-04-18",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.553,
+        "idx": 411,
+        "on_reb": false,
+        "fwd5": -0.053,
+        "fwd20": 0.0498
+      },
+      {
+        "date": "2022-05-19",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.584,
+        "idx": 431,
+        "on_reb": false,
+        "fwd5": 0.0143,
+        "fwd20": 0.0776
+      },
+      {
+        "date": "2022-06-06",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.562,
+        "idx": 442,
+        "on_reb": false,
+        "fwd5": 0.0155,
+        "fwd20": -0.0522
+      },
+      {
+        "date": "2022-07-19",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.579,
+        "idx": 473,
+        "on_reb": false,
+        "fwd5": -0.0135,
+        "fwd20": -0.0067
+      },
+      {
+        "date": "2022-07-22",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.551,
+        "idx": 476,
+        "on_reb": false,
+        "fwd5": 0.0242,
+        "fwd20": 0.0704
+      },
+      {
+        "date": "2022-09-15",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.563,
+        "idx": 514,
+        "on_reb": false,
+        "fwd5": 0.0249,
+        "fwd20": 0.0098
+      },
+      {
+        "date": "2022-10-27",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.576,
+        "idx": 539,
+        "on_reb": false,
+        "fwd5": 0.0365,
+        "fwd20": -0.0132
+      },
+      {
+        "date": "2023-01-10",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.56,
+        "idx": 591,
+        "on_reb": false,
+        "fwd5": 0.0287,
+        "fwd20": 0.0371
+      },
+      {
+        "date": "2024-08-20",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.57,
+        "idx": 981,
+        "on_reb": false,
+        "fwd5": -0.0177,
+        "fwd20": -0.0191
+      },
+      {
+        "date": "2025-08-25",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.55,
+        "idx": 1226,
+        "on_reb": false,
+        "fwd5": 0.0694,
+        "fwd20": 0.1261
+      },
+      {
+        "date": "2025-09-15",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.561,
+        "idx": 1241,
+        "on_reb": false,
+        "fwd5": 0.0148,
+        "fwd20": 0.0082
+      },
+      {
+        "date": "2025-09-24",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.556,
+        "idx": 1248,
+        "on_reb": false,
+        "fwd5": 0.0237,
+        "fwd20": 0.025
+      },
+      {
+        "date": "2025-10-16",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.552,
+        "idx": 1258,
+        "on_reb": false,
+        "fwd5": -0.0941,
+        "fwd20": 0.0097
+      },
+      {
+        "date": "2025-12-03",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.558,
+        "idx": 1292,
+        "on_reb": false,
+        "fwd5": 0.081,
+        "fwd20": 0.3407
+      },
+      {
+        "date": "2025-12-10",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.555,
+        "idx": 1297,
+        "on_reb": false,
+        "fwd5": 0.2281,
+        "fwd20": 0.3939
+      },
+      {
+        "date": "2025-12-16",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.551,
+        "idx": 1301,
+        "on_reb": false,
+        "fwd5": 0.3976,
+        "fwd20": 0.515
+      },
+      {
+        "date": "2025-12-23",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.573,
+        "idx": 1306,
+        "on_reb": false,
+        "fwd5": -0.161,
+        "fwd20": 0.3678
+      }
+    ],
+    "V3+Boost(0.60)": [],
+    "V3+GB(0.55,0.60)": [
+      {
+        "date": "2022-03-10",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.557,
+        "idx": 386,
+        "on_reb": false,
+        "fwd5": 0.0139,
+        "fwd20": -0.0183
+      },
+      {
+        "date": "2022-03-11",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.612,
+        "idx": 387,
+        "on_reb": false,
+        "fwd5": 0.0201,
+        "fwd20": -0.0554
+      },
+      {
+        "date": "2022-03-22",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.554,
+        "idx": 394,
+        "on_reb": false,
+        "fwd5": -0.0401,
+        "fwd20": -0.0383
+      },
+      {
+        "date": "2022-03-24",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.572,
+        "idx": 396,
+        "on_reb": false,
+        "fwd5": -0.0575,
+        "fwd20": -0.0794
+      },
+      {
+        "date": "2022-03-25",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.646,
+        "idx": 397,
+        "on_reb": false,
+        "fwd5": 0.0058,
+        "fwd20": -0.1867
+      },
+      {
+        "date": "2022-04-18",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.553,
+        "idx": 411,
+        "on_reb": false,
+        "fwd5": -0.053,
+        "fwd20": 0.0498
+      },
+      {
+        "date": "2022-04-19",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.678,
+        "idx": 412,
+        "on_reb": false,
+        "fwd5": -0.1224,
+        "fwd20": -0.0126
+      },
+      {
+        "date": "2022-05-19",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.584,
+        "idx": 431,
+        "on_reb": false,
+        "fwd5": 0.0143,
+        "fwd20": 0.0776
+      },
+      {
+        "date": "2022-05-20",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.668,
+        "idx": 432,
+        "on_reb": false,
+        "fwd5": 0.0061,
+        "fwd20": 0.0064
+      },
+      {
+        "date": "2022-06-06",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.562,
+        "idx": 442,
+        "on_reb": false,
+        "fwd5": 0.0155,
+        "fwd20": -0.0522
+      },
+      {
+        "date": "2022-06-07",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.612,
+        "idx": 443,
+        "on_reb": false,
+        "fwd5": 0.0013,
+        "fwd20": -0.007
+      },
+      {
+        "date": "2022-07-19",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.579,
+        "idx": 473,
+        "on_reb": false,
+        "fwd5": -0.0135,
+        "fwd20": -0.0067
+      },
+      {
+        "date": "2022-07-20",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.648,
+        "idx": 474,
+        "on_reb": false,
+        "fwd5": 0.0029,
+        "fwd20": 0.0075
+      },
+      {
+        "date": "2022-09-15",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.563,
+        "idx": 514,
+        "on_reb": false,
+        "fwd5": 0.0249,
+        "fwd20": 0.0098
+      },
+      {
+        "date": "2022-10-27",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.576,
+        "idx": 539,
+        "on_reb": false,
+        "fwd5": 0.0365,
+        "fwd20": -0.0132
+      },
+      {
+        "date": "2023-01-10",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.56,
+        "idx": 591,
+        "on_reb": false,
+        "fwd5": 0.0287,
+        "fwd20": 0.0371
+      },
+      {
+        "date": "2023-01-11",
+        "type": "boost",
+        "asset": "501018",
+        "prob": 0.603,
+        "idx": 592,
+        "on_reb": false,
+        "fwd5": 0.0448,
+        "fwd20": 0.0278
+      },
+      {
+        "date": "2024-08-20",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.57,
+        "idx": 981,
+        "on_reb": false,
+        "fwd5": -0.0177,
+        "fwd20": -0.0191
+      },
+      {
+        "date": "2024-08-21",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.662,
+        "idx": 982,
+        "on_reb": false,
+        "fwd5": -0.0017,
+        "fwd20": 0.0002
+      },
+      {
+        "date": "2025-08-25",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.55,
+        "idx": 1226,
+        "on_reb": false,
+        "fwd5": 0.0694,
+        "fwd20": 0.1261
+      },
+      {
+        "date": "2025-08-26",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.716,
+        "idx": 1227,
+        "on_reb": false,
+        "fwd5": 0.0016,
+        "fwd20": -0.0149
+      },
+      {
+        "date": "2025-09-15",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.561,
+        "idx": 1241,
+        "on_reb": false,
+        "fwd5": 0.0148,
+        "fwd20": 0.0082
+      },
+      {
+        "date": "2025-09-16",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.688,
+        "idx": 1242,
+        "on_reb": false,
+        "fwd5": -0.0163,
+        "fwd20": -0.013
+      },
+      {
+        "date": "2025-09-24",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.556,
+        "idx": 1248,
+        "on_reb": false,
+        "fwd5": 0.0237,
+        "fwd20": 0.025
+      },
+      {
+        "date": "2025-10-16",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.552,
+        "idx": 1258,
+        "on_reb": false,
+        "fwd5": -0.0941,
+        "fwd20": 0.0097
+      },
+      {
+        "date": "2025-10-17",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.63,
+        "idx": 1259,
+        "on_reb": false,
+        "fwd5": 0.0796,
+        "fwd20": 0.0611
+      },
+      {
+        "date": "2025-12-03",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.558,
+        "idx": 1292,
+        "on_reb": false,
+        "fwd5": 0.081,
+        "fwd20": 0.3407
+      },
+      {
+        "date": "2025-12-04",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.619,
+        "idx": 1293,
+        "on_reb": false,
+        "fwd5": 0.0022,
+        "fwd20": 0.0024
+      },
+      {
+        "date": "2025-12-10",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.555,
+        "idx": 1297,
+        "on_reb": false,
+        "fwd5": 0.2281,
+        "fwd20": 0.3939
+      },
+      {
+        "date": "2025-12-11",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.687,
+        "idx": 1298,
+        "on_reb": false,
+        "fwd5": -0.0009,
+        "fwd20": 0.0009
+      },
+      {
+        "date": "2025-12-16",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.551,
+        "idx": 1301,
+        "on_reb": false,
+        "fwd5": 0.3976,
+        "fwd20": 0.515
+      },
+      {
+        "date": "2025-12-17",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.615,
+        "idx": 1302,
+        "on_reb": false,
+        "fwd5": 0.0017,
+        "fwd20": 0.0043
+      },
+      {
+        "date": "2025-12-23",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.573,
+        "idx": 1306,
+        "on_reb": false,
+        "fwd5": -0.161,
+        "fwd20": 0.3678
+      },
+      {
+        "date": "2025-12-24",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.687,
+        "idx": 1307,
+        "on_reb": false,
+        "fwd5": 0.0011,
+        "fwd20": 0.0042
+      }
+    ],
+    "V3+GB(动态q90)": [
+      {
+        "date": "2022-02-25",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.541,
+        "idx": 377,
+        "on_reb": false,
+        "fwd5": -0.0013,
+        "fwd20": 0.1145
+      },
+      {
+        "date": "2022-02-28",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.654,
+        "idx": 378,
+        "on_reb": false,
+        "fwd5": 0.0007,
+        "fwd20": -0.0147
+      },
+      {
+        "date": "2022-03-04",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.545,
+        "idx": 382,
+        "on_reb": false,
+        "fwd5": 0.0496,
+        "fwd20": -0.0168
+      },
+      {
+        "date": "2022-03-07",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.674,
+        "idx": 383,
+        "on_reb": false,
+        "fwd5": -0.0208,
+        "fwd20": 0.0028
+      },
+      {
+        "date": "2022-03-10",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.557,
+        "idx": 386,
+        "on_reb": false,
+        "fwd5": 0.0139,
+        "fwd20": -0.0183
+      },
+      {
+        "date": "2022-03-22",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.554,
+        "idx": 394,
+        "on_reb": false,
+        "fwd5": -0.0401,
+        "fwd20": -0.0383
+      },
+      {
+        "date": "2022-03-24",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.572,
+        "idx": 396,
+        "on_reb": false,
+        "fwd5": -0.0575,
+        "fwd20": -0.0794
+      },
+      {
+        "date": "2022-03-25",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.646,
+        "idx": 397,
+        "on_reb": false,
+        "fwd5": 0.0058,
+        "fwd20": -0.1867
+      },
+      {
+        "date": "2022-04-18",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.553,
+        "idx": 411,
+        "on_reb": false,
+        "fwd5": -0.053,
+        "fwd20": 0.0498
+      },
+      {
+        "date": "2022-04-19",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.678,
+        "idx": 412,
+        "on_reb": false,
+        "fwd5": -0.1224,
+        "fwd20": -0.0126
+      },
+      {
+        "date": "2022-05-19",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.584,
+        "idx": 431,
+        "on_reb": false,
+        "fwd5": 0.0143,
+        "fwd20": 0.0776
+      },
+      {
+        "date": "2022-05-20",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.668,
+        "idx": 432,
+        "on_reb": false,
+        "fwd5": 0.0061,
+        "fwd20": 0.0064
+      },
+      {
+        "date": "2022-05-27",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.541,
+        "idx": 437,
+        "on_reb": false,
+        "fwd5": 0.0298,
+        "fwd20": -0.0218
+      },
+      {
+        "date": "2022-05-30",
+        "type": "boost",
+        "asset": "161226",
+        "prob": 0.672,
+        "idx": 438,
+        "on_reb": false,
+        "fwd5": -0.0044,
+        "fwd20": -0.0408
+      },
+      {
+        "date": "2022-06-02",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.532,
+        "idx": 441,
+        "on_reb": false,
+        "fwd5": 0.065,
+        "fwd20": -0.038
+      },
+      {
+        "date": "2022-06-24",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.534,
+        "idx": 456,
+        "on_reb": false,
+        "fwd5": -0.0142,
+        "fwd20": -0.0318
+      },
+      {
+        "date": "2022-06-27",
+        "type": "boost",
+        "asset": "159985",
+        "prob": 0.666,
+        "idx": 457,
+        "on_reb": false,
+        "fwd5": -0.0007,
+        "fwd20": -0.0093
+      },
+      {
+        "date": "2022-07-19",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.579,
+        "idx": 473,
+        "on_reb": false,
+        "fwd5": -0.0135,
+        "fwd20": -0.0067
+      },
+      {
+        "date": "2022-07-20",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.648,
+        "idx": 474,
+        "on_reb": false,
+        "fwd5": 0.0029,
+        "fwd20": 0.0075
+      },
+      {
+        "date": "2022-09-14",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.536,
+        "idx": 513,
+        "on_reb": false,
+        "fwd5": 0.0074,
+        "fwd20": -0.0086
+      },
+      {
+        "date": "2022-09-15",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.691,
+        "idx": 514,
+        "on_reb": false,
+        "fwd5": -0.0413,
+        "fwd20": -0.0051
+      },
+      {
+        "date": "2022-10-27",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.576,
+        "idx": 539,
+        "on_reb": false,
+        "fwd5": 0.0365,
+        "fwd20": -0.0132
+      },
+      {
+        "date": "2023-01-10",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.56,
+        "idx": 591,
+        "on_reb": false,
+        "fwd5": 0.0287,
+        "fwd20": 0.0371
+      },
+      {
+        "date": "2023-01-12",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.657,
+        "idx": 593,
+        "on_reb": false,
+        "fwd5": -0.0002,
+        "fwd20": 0.0072
+      },
+      {
+        "date": "2024-02-20",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.505,
+        "idx": 857,
+        "on_reb": false,
+        "fwd5": 0.0054,
+        "fwd20": 0.0077
+      },
+      {
+        "date": "2024-02-21",
+        "type": "boost",
+        "asset": "518880",
+        "prob": 0.625,
+        "idx": 858,
+        "on_reb": false,
+        "fwd5": 0.0006,
+        "fwd20": 0.0513
+      },
+      {
+        "date": "2024-04-30",
+        "type": "guard",
+        "asset": "518880",
+        "prob": 0.507,
+        "idx": 905,
+        "on_reb": true,
+        "fwd5": 0.0157,
+        "fwd20": 0.0108
+      },
+      {
+        "date": "2024-05-09",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.674,
+        "idx": 909,
+        "on_reb": false,
+        "fwd5": 0.001,
+        "fwd20": 0.0043
+      },
+      {
+        "date": "2024-05-20",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.508,
+        "idx": 916,
+        "on_reb": false,
+        "fwd5": -0.0213,
+        "fwd20": -0.03
+      },
+      {
+        "date": "2024-05-23",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.634,
+        "idx": 919,
+        "on_reb": false,
+        "fwd5": 0.0018,
+        "fwd20": 0.0034
+      },
+      {
+        "date": "2024-07-19",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.506,
+        "idx": 959,
+        "on_reb": false,
+        "fwd5": -0.0662,
+        "fwd20": -0.0746
+      },
+      {
+        "date": "2024-08-20",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.57,
+        "idx": 981,
+        "on_reb": false,
+        "fwd5": -0.0177,
+        "fwd20": -0.0191
+      },
+      {
+        "date": "2024-08-21",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.662,
+        "idx": 982,
+        "on_reb": false,
+        "fwd5": -0.0017,
+        "fwd20": 0.0002
+      },
+      {
+        "date": "2024-09-26",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.544,
+        "idx": 1006,
+        "on_reb": false,
+        "fwd5": 0.2894,
+        "fwd20": 0.2586
+      },
+      {
+        "date": "2024-10-22",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.513,
+        "idx": 1019,
+        "on_reb": false,
+        "fwd5": -0.0121,
+        "fwd20": -0.0665
+      },
+      {
+        "date": "2025-01-14",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.515,
+        "idx": 1078,
+        "on_reb": false,
+        "fwd5": 0.0223,
+        "fwd20": 0.0155
+      },
+      {
+        "date": "2025-06-16",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.509,
+        "idx": 1176,
+        "on_reb": false,
+        "fwd5": 0.1112,
+        "fwd20": -0.0479
+      },
+      {
+        "date": "2025-06-17",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.734,
+        "idx": 1177,
+        "on_reb": false,
+        "fwd5": 0.0003,
+        "fwd20": 0.0017
+      },
+      {
+        "date": "2025-08-22",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.536,
+        "idx": 1225,
+        "on_reb": true,
+        "fwd5": 0.0763,
+        "fwd20": 0.1503
+      },
+      {
+        "date": "2025-08-25",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.735,
+        "idx": 1226,
+        "on_reb": false,
+        "fwd5": 0.0012,
+        "fwd20": -0.0143
+      },
+      {
+        "date": "2025-09-01",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.549,
+        "idx": 1231,
+        "on_reb": false,
+        "fwd5": -0.0065,
+        "fwd20": 0.0977
+      },
+      {
+        "date": "2025-09-02",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.683,
+        "idx": 1232,
+        "on_reb": false,
+        "fwd5": -0.0003,
+        "fwd20": -0.0167
+      },
+      {
+        "date": "2025-09-15",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.561,
+        "idx": 1241,
+        "on_reb": false,
+        "fwd5": 0.0148,
+        "fwd20": 0.0082
+      },
+      {
+        "date": "2025-09-16",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.688,
+        "idx": 1242,
+        "on_reb": false,
+        "fwd5": -0.0163,
+        "fwd20": -0.013
+      },
+      {
+        "date": "2025-09-22",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.526,
+        "idx": 1246,
+        "on_reb": false,
+        "fwd5": 0.0425,
+        "fwd20": 0.0399
+      },
+      {
+        "date": "2025-10-16",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.552,
+        "idx": 1258,
+        "on_reb": false,
+        "fwd5": -0.0941,
+        "fwd20": 0.0097
+      },
+      {
+        "date": "2025-12-02",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.548,
+        "idx": 1291,
+        "on_reb": false,
+        "fwd5": 0.0615,
+        "fwd20": 0.4764
+      },
+      {
+        "date": "2025-12-03",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.658,
+        "idx": 1292,
+        "on_reb": false,
+        "fwd5": 0.0005,
+        "fwd20": 0.0021
+      },
+      {
+        "date": "2025-12-09",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.526,
+        "idx": 1296,
+        "on_reb": false,
+        "fwd5": 0.1861,
+        "fwd20": 0.4628
+      },
+      {
+        "date": "2025-12-10",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.65,
+        "idx": 1297,
+        "on_reb": false,
+        "fwd5": -0.0012,
+        "fwd20": 0.0014
+      },
+      {
+        "date": "2025-12-16",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.551,
+        "idx": 1301,
+        "on_reb": false,
+        "fwd5": 0.3976,
+        "fwd20": 0.515
+      },
+      {
+        "date": "2025-12-19",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.657,
+        "idx": 1304,
+        "on_reb": false,
+        "fwd5": 0.0003,
+        "fwd20": 0.0036
+      },
+      {
+        "date": "2025-12-23",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.573,
+        "idx": 1306,
+        "on_reb": false,
+        "fwd5": -0.161,
+        "fwd20": 0.3678
+      },
+      {
+        "date": "2025-12-24",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.687,
+        "idx": 1307,
+        "on_reb": false,
+        "fwd5": 0.0011,
+        "fwd20": 0.0042
+      }
+    ],
+    "V3+GB(动态q85)": [
+      {
+        "date": "2022-02-09",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.531,
+        "idx": 365,
+        "on_reb": true,
+        "fwd5": 0.0149,
+        "fwd20": 0.4836
+      },
+      {
+        "date": "2022-02-10",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.677,
+        "idx": 366,
+        "on_reb": false,
+        "fwd5": 0.0015,
+        "fwd20": -0.0704
+      },
+      {
+        "date": "2022-02-22",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.517,
+        "idx": 374,
+        "on_reb": false,
+        "fwd5": 0.008,
+        "fwd20": 0.1374
+      },
+      {
+        "date": "2022-02-24",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.522,
+        "idx": 376,
+        "on_reb": false,
+        "fwd5": -0.0421,
+        "fwd20": 0.0759
+      },
+      {
+        "date": "2022-02-25",
+        "type": "boost",
+        "asset": "513100",
+        "prob": 0.63,
+        "idx": 377,
+        "on_reb": false,
+        "fwd5": 0.0089,
+        "fwd20": 0.0772
+      },
+      {
+        "date": "2022-03-01",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.544,
+        "idx": 379,
+        "on_reb": false,
+        "fwd5": -0.0729,
+        "fwd20": 0.0642
+      },
+      {
+        "date": "2022-03-03",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.515,
+        "idx": 381,
+        "on_reb": false,
+        "fwd5": 0.0657,
+        "fwd20": -0.0609
+      },
+      {
+        "date": "2022-03-07",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.674,
+        "idx": 383,
+        "on_reb": false,
+        "fwd5": -0.0208,
+        "fwd20": 0.0028
+      },
+      {
+        "date": "2022-03-10",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.557,
+        "idx": 386,
+        "on_reb": false,
+        "fwd5": 0.0139,
+        "fwd20": -0.0183
+      },
+      {
+        "date": "2022-03-14",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.627,
+        "idx": 388,
+        "on_reb": false,
+        "fwd5": 0.0586,
+        "fwd20": -0.0386
+      },
+      {
+        "date": "2022-03-18",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.517,
+        "idx": 392,
+        "on_reb": false,
+        "fwd5": 0.0201,
+        "fwd20": -0.0323
+      },
+      {
+        "date": "2022-03-24",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.572,
+        "idx": 396,
+        "on_reb": false,
+        "fwd5": -0.0575,
+        "fwd20": -0.0794
+      },
+      {
+        "date": "2022-03-25",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.646,
+        "idx": 397,
+        "on_reb": false,
+        "fwd5": 0.0058,
+        "fwd20": -0.1867
+      },
+      {
+        "date": "2022-03-31",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.529,
+        "idx": 401,
+        "on_reb": false,
+        "fwd5": -0.0549,
+        "fwd20": -0.0712
+      },
+      {
+        "date": "2022-04-07",
+        "type": "boost",
+        "asset": "161226",
+        "prob": 0.637,
+        "idx": 404,
+        "on_reb": false,
+        "fwd5": 0.0526,
+        "fwd20": -0.0388
+      },
+      {
+        "date": "2022-04-18",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.553,
+        "idx": 411,
+        "on_reb": false,
+        "fwd5": -0.053,
+        "fwd20": 0.0498
+      },
+      {
+        "date": "2022-04-19",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.678,
+        "idx": 412,
+        "on_reb": false,
+        "fwd5": -0.1224,
+        "fwd20": -0.0126
+      },
+      {
+        "date": "2022-04-25",
+        "type": "guard",
+        "asset": "518880",
+        "prob": 0.527,
+        "idx": 416,
+        "on_reb": false,
+        "fwd5": 0.0013,
+        "fwd20": -0.0059
+      },
+      {
+        "date": "2022-04-26",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.635,
+        "idx": 417,
+        "on_reb": false,
+        "fwd5": 0.0436,
+        "fwd20": 0.0791
+      },
+      {
+        "date": "2022-05-11",
+        "type": "guard",
+        "asset": "518880",
+        "prob": 0.515,
+        "idx": 425,
+        "on_reb": true,
+        "fwd5": -0.0139,
+        "fwd20": -0.0023
+      },
+      {
+        "date": "2022-05-12",
+        "type": "boost",
+        "asset": "161226",
+        "prob": 0.674,
+        "idx": 426,
+        "on_reb": false,
+        "fwd5": -0.0088,
+        "fwd20": -0.0146
+      },
+      {
+        "date": "2022-05-19",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.584,
+        "idx": 431,
+        "on_reb": false,
+        "fwd5": 0.0143,
+        "fwd20": 0.0776
+      },
+      {
+        "date": "2022-05-20",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.668,
+        "idx": 432,
+        "on_reb": false,
+        "fwd5": 0.0061,
+        "fwd20": 0.0064
+      },
+      {
+        "date": "2022-05-27",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.541,
+        "idx": 437,
+        "on_reb": false,
+        "fwd5": 0.0298,
+        "fwd20": -0.0218
+      },
+      {
+        "date": "2022-05-30",
+        "type": "boost",
+        "asset": "161226",
+        "prob": 0.672,
+        "idx": 438,
+        "on_reb": false,
+        "fwd5": -0.0044,
+        "fwd20": -0.0408
+      },
+      {
+        "date": "2022-06-02",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.532,
+        "idx": 441,
+        "on_reb": false,
+        "fwd5": 0.065,
+        "fwd20": -0.038
+      },
+      {
+        "date": "2022-06-24",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.534,
+        "idx": 456,
+        "on_reb": false,
+        "fwd5": -0.0142,
+        "fwd20": -0.0318
+      },
+      {
+        "date": "2022-06-27",
+        "type": "boost",
+        "asset": "159985",
+        "prob": 0.666,
+        "idx": 457,
+        "on_reb": false,
+        "fwd5": -0.0007,
+        "fwd20": -0.0093
+      },
+      {
+        "date": "2022-07-15",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.518,
+        "idx": 471,
+        "on_reb": false,
+        "fwd5": -0.0108,
+        "fwd20": -0.025
+      },
+      {
+        "date": "2022-07-18",
+        "type": "boost",
+        "asset": "161226",
+        "prob": 0.665,
+        "idx": 472,
+        "on_reb": false,
+        "fwd5": 0.0,
+        "fwd20": 0.0825
+      },
+      {
+        "date": "2022-07-22",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.551,
+        "idx": 476,
+        "on_reb": false,
+        "fwd5": 0.0242,
+        "fwd20": 0.0704
+      },
+      {
+        "date": "2022-07-25",
+        "type": "boost",
+        "asset": "161226",
+        "prob": 0.656,
+        "idx": 477,
+        "on_reb": false,
+        "fwd5": 0.0606,
+        "fwd20": 0.0253
+      },
+      {
+        "date": "2022-07-28",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.537,
+        "idx": 480,
+        "on_reb": true,
+        "fwd5": 0.0211,
+        "fwd20": -0.0016
+      },
+      {
+        "date": "2022-08-01",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.625,
+        "idx": 482,
+        "on_reb": false,
+        "fwd5": 0.0007,
+        "fwd20": 0.0015
+      },
+      {
+        "date": "2022-09-13",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.515,
+        "idx": 512,
+        "on_reb": false,
+        "fwd5": -0.0085,
+        "fwd20": -0.0119
+      },
+      {
+        "date": "2022-09-14",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.686,
+        "idx": 513,
+        "on_reb": false,
+        "fwd5": -0.0683,
+        "fwd20": -0.0313
+      },
+      {
+        "date": "2022-09-19",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.519,
+        "idx": 516,
+        "on_reb": false,
+        "fwd5": 0.0035,
+        "fwd20": 0.0115
+      },
+      {
+        "date": "2022-09-20",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.674,
+        "idx": 517,
+        "on_reb": false,
+        "fwd5": 0.0039,
+        "fwd20": -0.0244
+      },
+      {
+        "date": "2022-10-25",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.521,
+        "idx": 537,
+        "on_reb": false,
+        "fwd5": 0.0334,
+        "fwd20": 0.0151
+      },
+      {
+        "date": "2022-10-26",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.625,
+        "idx": 538,
+        "on_reb": false,
+        "fwd5": 0.0013,
+        "fwd20": -0.0143
+      },
+      {
+        "date": "2023-01-10",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.56,
+        "idx": 591,
+        "on_reb": false,
+        "fwd5": 0.0287,
+        "fwd20": 0.0371
+      },
+      {
+        "date": "2023-01-11",
+        "type": "boost",
+        "asset": "501018",
+        "prob": 0.603,
+        "idx": 592,
+        "on_reb": false,
+        "fwd5": 0.0448,
+        "fwd20": 0.0278
+      },
+      {
+        "date": "2023-03-07",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.507,
+        "idx": 626,
+        "on_reb": false,
+        "fwd5": -0.0356,
+        "fwd20": 0.0573
+      },
+      {
+        "date": "2023-03-08",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.623,
+        "idx": 627,
+        "on_reb": false,
+        "fwd5": 0.0027,
+        "fwd20": 0.0045
+      },
+      {
+        "date": "2023-04-06",
+        "type": "guard",
+        "asset": "518880",
+        "prob": 0.515,
+        "idx": 647,
+        "on_reb": false,
+        "fwd5": 0.0037,
+        "fwd20": 0.0109
+      },
+      {
+        "date": "2023-04-07",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.621,
+        "idx": 648,
+        "on_reb": false,
+        "fwd5": 0.005,
+        "fwd20": 0.0245
+      },
+      {
+        "date": "2023-05-16",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.505,
+        "idx": 672,
+        "on_reb": false,
+        "fwd5": 0.0475,
+        "fwd20": 0.1457
+      },
+      {
+        "date": "2023-05-17",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.636,
+        "idx": 673,
+        "on_reb": false,
+        "fwd5": 0.0023,
+        "fwd20": 0.0058
+      },
+      {
+        "date": "2023-05-29",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.51,
+        "idx": 681,
+        "on_reb": false,
+        "fwd5": 0.0155,
+        "fwd20": 0.0562
+      },
+      {
+        "date": "2023-05-30",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.605,
+        "idx": 682,
+        "on_reb": false,
+        "fwd5": -0.0002,
+        "fwd20": -0.0054
+      },
+      {
+        "date": "2024-02-07",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.496,
+        "idx": 854,
+        "on_reb": false,
+        "fwd5": 0.0195,
+        "fwd20": 0.0352
+      },
+      {
+        "date": "2024-02-19",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.504,
+        "idx": 856,
+        "on_reb": false,
+        "fwd5": 0.0054,
+        "fwd20": 0.0115
+      },
+      {
+        "date": "2024-02-20",
+        "type": "boost",
+        "asset": "518880",
+        "prob": 0.604,
+        "idx": 857,
+        "on_reb": false,
+        "fwd5": 0.0009,
+        "fwd20": 0.0491
+      },
+      {
+        "date": "2024-04-29",
+        "type": "guard",
+        "asset": "518880",
+        "prob": 0.503,
+        "idx": 904,
+        "on_reb": false,
+        "fwd5": -0.0083,
+        "fwd20": 0.0043
+      },
+      {
+        "date": "2024-05-06",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.585,
+        "idx": 906,
+        "on_reb": false,
+        "fwd5": -0.0194,
+        "fwd20": -0.0383
+      },
+      {
+        "date": "2024-05-07",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.605,
+        "idx": 907,
+        "on_reb": false,
+        "fwd5": 0.0012,
+        "fwd20": 0.0043
+      },
+      {
+        "date": "2024-05-20",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.508,
+        "idx": 916,
+        "on_reb": false,
+        "fwd5": -0.0213,
+        "fwd20": -0.03
+      },
+      {
+        "date": "2024-05-21",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.616,
+        "idx": 917,
+        "on_reb": false,
+        "fwd5": 0.0011,
+        "fwd20": 0.0035
+      },
+      {
+        "date": "2024-07-19",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.506,
+        "idx": 959,
+        "on_reb": false,
+        "fwd5": -0.0662,
+        "fwd20": -0.0746
+      },
+      {
+        "date": "2024-08-20",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.57,
+        "idx": 981,
+        "on_reb": false,
+        "fwd5": -0.0177,
+        "fwd20": -0.0191
+      },
+      {
+        "date": "2024-08-21",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.662,
+        "idx": 982,
+        "on_reb": false,
+        "fwd5": -0.0017,
+        "fwd20": 0.0002
+      },
+      {
+        "date": "2024-09-02",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.499,
+        "idx": 990,
+        "on_reb": true,
+        "fwd5": -0.0321,
+        "fwd20": 0.0275
+      },
+      {
+        "date": "2024-09-03",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.778,
+        "idx": 991,
+        "on_reb": false,
+        "fwd5": 0.0019,
+        "fwd20": -0.0163
+      },
+      {
+        "date": "2024-09-26",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.544,
+        "idx": 1006,
+        "on_reb": false,
+        "fwd5": 0.2894,
+        "fwd20": 0.2586
+      },
+      {
+        "date": "2024-10-22",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.513,
+        "idx": 1019,
+        "on_reb": false,
+        "fwd5": -0.0121,
+        "fwd20": -0.0665
+      },
+      {
+        "date": "2025-01-10",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.5,
+        "idx": 1076,
+        "on_reb": false,
+        "fwd5": 0.0,
+        "fwd20": 0.0
+      },
+      {
+        "date": "2025-01-13",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.625,
+        "idx": 1077,
+        "on_reb": false,
+        "fwd5": -0.0017,
+        "fwd20": -0.0014
+      },
+      {
+        "date": "2025-06-16",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.509,
+        "idx": 1176,
+        "on_reb": false,
+        "fwd5": 0.1112,
+        "fwd20": -0.0479
+      },
+      {
+        "date": "2025-06-17",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.734,
+        "idx": 1177,
+        "on_reb": false,
+        "fwd5": 0.0003,
+        "fwd20": 0.0017
+      },
+      {
+        "date": "2025-08-22",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.536,
+        "idx": 1225,
+        "on_reb": true,
+        "fwd5": 0.0763,
+        "fwd20": 0.1503
+      },
+      {
+        "date": "2025-08-25",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.735,
+        "idx": 1226,
+        "on_reb": false,
+        "fwd5": 0.0012,
+        "fwd20": -0.0143
+      },
+      {
+        "date": "2025-09-01",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.549,
+        "idx": 1231,
+        "on_reb": false,
+        "fwd5": -0.0065,
+        "fwd20": 0.0977
+      },
+      {
+        "date": "2025-09-02",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.683,
+        "idx": 1232,
+        "on_reb": false,
+        "fwd5": -0.0003,
+        "fwd20": -0.0167
+      },
+      {
+        "date": "2025-09-15",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.561,
+        "idx": 1241,
+        "on_reb": false,
+        "fwd5": 0.0148,
+        "fwd20": 0.0082
+      },
+      {
+        "date": "2025-09-16",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.688,
+        "idx": 1242,
+        "on_reb": false,
+        "fwd5": -0.0163,
+        "fwd20": -0.013
+      },
+      {
+        "date": "2025-09-22",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.526,
+        "idx": 1246,
+        "on_reb": false,
+        "fwd5": 0.0425,
+        "fwd20": 0.0399
+      },
+      {
+        "date": "2025-10-15",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.501,
+        "idx": 1257,
+        "on_reb": false,
+        "fwd5": -0.0685,
+        "fwd20": 0.0014
+      },
+      {
+        "date": "2025-10-16",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.621,
+        "idx": 1258,
+        "on_reb": false,
+        "fwd5": 0.0028,
+        "fwd20": 0.0068
+      },
+      {
+        "date": "2025-12-02",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.548,
+        "idx": 1291,
+        "on_reb": false,
+        "fwd5": 0.0615,
+        "fwd20": 0.4764
+      },
+      {
+        "date": "2025-12-03",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.658,
+        "idx": 1292,
+        "on_reb": false,
+        "fwd5": 0.0005,
+        "fwd20": 0.0021
+      },
+      {
+        "date": "2025-12-09",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.526,
+        "idx": 1296,
+        "on_reb": false,
+        "fwd5": 0.1861,
+        "fwd20": 0.4628
+      },
+      {
+        "date": "2025-12-10",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.65,
+        "idx": 1297,
+        "on_reb": false,
+        "fwd5": -0.0012,
+        "fwd20": 0.0014
+      },
+      {
+        "date": "2025-12-16",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.551,
+        "idx": 1301,
+        "on_reb": false,
+        "fwd5": 0.3976,
+        "fwd20": 0.515
+      },
+      {
+        "date": "2025-12-17",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.615,
+        "idx": 1302,
+        "on_reb": false,
+        "fwd5": 0.0017,
+        "fwd20": 0.0043
+      },
+      {
+        "date": "2025-12-23",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.573,
+        "idx": 1306,
+        "on_reb": false,
+        "fwd5": -0.161,
+        "fwd20": 0.3678
+      },
+      {
+        "date": "2025-12-24",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.687,
+        "idx": 1307,
+        "on_reb": false,
+        "fwd5": 0.0011,
+        "fwd20": 0.0042
+      }
+    ],
+    "0.50x0.55": [
+      {
+        "date": "2021-10-12",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.51,
+        "idx": 286,
+        "on_reb": false,
+        "fwd5": 0.0268,
+        "fwd20": -0.0011
+      },
+      {
+        "date": "2021-10-13",
+        "type": "boost",
+        "asset": "159985",
+        "prob": 0.676,
+        "idx": 287,
+        "on_reb": false,
+        "fwd5": 0.0034,
+        "fwd20": -0.0338
+      },
+      {
+        "date": "2022-01-07",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.506,
+        "idx": 348,
+        "on_reb": false,
+        "fwd5": -0.0154,
+        "fwd20": 0.1588
+      },
+      {
+        "date": "2022-01-10",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.68,
+        "idx": 349,
+        "on_reb": false,
+        "fwd5": 0.0163,
+        "fwd20": -0.0907
+      },
+      {
+        "date": "2022-02-07",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.502,
+        "idx": 363,
+        "on_reb": false,
+        "fwd5": 0.0165,
+        "fwd20": 0.2696
+      },
+      {
+        "date": "2022-02-08",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.671,
+        "idx": 364,
+        "on_reb": false,
+        "fwd5": -0.0116,
+        "fwd20": -0.091
+      },
+      {
+        "date": "2022-02-10",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.516,
+        "idx": 366,
+        "on_reb": false,
+        "fwd5": -0.0102,
+        "fwd20": 0.0805
+      },
+      {
+        "date": "2022-02-11",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.678,
+        "idx": 367,
+        "on_reb": false,
+        "fwd5": 0.0297,
+        "fwd20": -0.0289
+      },
+      {
+        "date": "2022-02-22",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.517,
+        "idx": 374,
+        "on_reb": false,
+        "fwd5": 0.008,
+        "fwd20": 0.1374
+      },
+      {
+        "date": "2022-02-24",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.522,
+        "idx": 376,
+        "on_reb": false,
+        "fwd5": -0.0421,
+        "fwd20": 0.0759
+      },
+      {
+        "date": "2022-02-25",
+        "type": "boost",
+        "asset": "513100",
+        "prob": 0.63,
+        "idx": 377,
+        "on_reb": false,
+        "fwd5": 0.0089,
+        "fwd20": 0.0772
+      },
+      {
+        "date": "2022-03-01",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.544,
+        "idx": 379,
+        "on_reb": false,
+        "fwd5": -0.0729,
+        "fwd20": 0.0642
+      },
+      {
+        "date": "2022-03-03",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.515,
+        "idx": 381,
+        "on_reb": false,
+        "fwd5": 0.0657,
+        "fwd20": -0.0609
+      },
+      {
+        "date": "2022-03-04",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.582,
+        "idx": 382,
+        "on_reb": false,
+        "fwd5": -0.0297,
+        "fwd20": -0.0308
+      },
+      {
+        "date": "2022-03-10",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.557,
+        "idx": 386,
+        "on_reb": false,
+        "fwd5": 0.0139,
+        "fwd20": -0.0183
+      },
+      {
+        "date": "2022-03-11",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.612,
+        "idx": 387,
+        "on_reb": false,
+        "fwd5": 0.0201,
+        "fwd20": -0.0554
+      },
+      {
+        "date": "2022-03-17",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.503,
+        "idx": 391,
+        "on_reb": false,
+        "fwd5": 0.0511,
+        "fwd20": -0.0349
+      },
+      {
+        "date": "2022-03-18",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.587,
+        "idx": 392,
+        "on_reb": false,
+        "fwd5": -0.0067,
+        "fwd20": 0.0035
+      },
+      {
+        "date": "2022-03-24",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.572,
+        "idx": 396,
+        "on_reb": false,
+        "fwd5": -0.0575,
+        "fwd20": -0.0794
+      },
+      {
+        "date": "2022-03-25",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.646,
+        "idx": 397,
+        "on_reb": false,
+        "fwd5": 0.0058,
+        "fwd20": -0.1867
+      },
+      {
+        "date": "2022-03-31",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.529,
+        "idx": 401,
+        "on_reb": false,
+        "fwd5": -0.0549,
+        "fwd20": -0.0712
+      },
+      {
+        "date": "2022-04-01",
+        "type": "boost",
+        "asset": "159985",
+        "prob": 0.608,
+        "idx": 402,
+        "on_reb": false,
+        "fwd5": 0.0273,
+        "fwd20": 0.0426
+      },
+      {
+        "date": "2022-04-18",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.553,
+        "idx": 411,
+        "on_reb": false,
+        "fwd5": -0.053,
+        "fwd20": 0.0498
+      },
+      {
+        "date": "2022-04-19",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.678,
+        "idx": 412,
+        "on_reb": false,
+        "fwd5": -0.1224,
+        "fwd20": -0.0126
+      },
+      {
+        "date": "2022-04-25",
+        "type": "guard",
+        "asset": "518880",
+        "prob": 0.527,
+        "idx": 416,
+        "on_reb": false,
+        "fwd5": 0.0013,
+        "fwd20": -0.0059
+      },
+      {
+        "date": "2022-04-26",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.635,
+        "idx": 417,
+        "on_reb": false,
+        "fwd5": 0.0436,
+        "fwd20": 0.0791
+      },
+      {
+        "date": "2022-05-09",
+        "type": "guard",
+        "asset": "518880",
+        "prob": 0.505,
+        "idx": 423,
+        "on_reb": false,
+        "fwd5": -0.0223,
+        "fwd20": -0.0216
+      },
+      {
+        "date": "2022-05-10",
+        "type": "boost",
+        "asset": "513100",
+        "prob": 0.645,
+        "idx": 424,
+        "on_reb": false,
+        "fwd5": 0.0047,
+        "fwd20": 0.0129
+      },
+      {
+        "date": "2022-05-19",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.584,
+        "idx": 431,
+        "on_reb": false,
+        "fwd5": 0.0143,
+        "fwd20": 0.0776
+      },
+      {
+        "date": "2022-05-20",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.668,
+        "idx": 432,
+        "on_reb": false,
+        "fwd5": 0.0061,
+        "fwd20": 0.0064
+      },
+      {
+        "date": "2022-05-27",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.541,
+        "idx": 437,
+        "on_reb": false,
+        "fwd5": 0.0298,
+        "fwd20": -0.0218
+      },
+      {
+        "date": "2022-05-30",
+        "type": "boost",
+        "asset": "161226",
+        "prob": 0.672,
+        "idx": 438,
+        "on_reb": false,
+        "fwd5": -0.0044,
+        "fwd20": -0.0408
+      },
+      {
+        "date": "2022-06-02",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.532,
+        "idx": 441,
+        "on_reb": false,
+        "fwd5": 0.065,
+        "fwd20": -0.038
+      },
+      {
+        "date": "2022-06-06",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.618,
+        "idx": 442,
+        "on_reb": false,
+        "fwd5": 0.0017,
+        "fwd20": -0.0066
+      },
+      {
+        "date": "2022-06-14",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.506,
+        "idx": 448,
+        "on_reb": false,
+        "fwd5": -0.0636,
+        "fwd20": -0.1441
+      },
+      {
+        "date": "2022-06-15",
+        "type": "boost",
+        "asset": "513100",
+        "prob": 0.633,
+        "idx": 449,
+        "on_reb": false,
+        "fwd5": -0.0012,
+        "fwd20": 0.0224
+      },
+      {
+        "date": "2022-06-17",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.522,
+        "idx": 451,
+        "on_reb": false,
+        "fwd5": 0.0596,
+        "fwd20": 0.0372
+      },
+      {
+        "date": "2022-06-20",
+        "type": "boost",
+        "asset": "513100",
+        "prob": 0.668,
+        "idx": 452,
+        "on_reb": false,
+        "fwd5": 0.0515,
+        "fwd20": 0.0565
+      },
+      {
+        "date": "2022-06-24",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.534,
+        "idx": 456,
+        "on_reb": false,
+        "fwd5": -0.0142,
+        "fwd20": -0.0318
+      },
+      {
+        "date": "2022-06-27",
+        "type": "boost",
+        "asset": "159985",
+        "prob": 0.666,
+        "idx": 457,
+        "on_reb": false,
+        "fwd5": -0.0007,
+        "fwd20": -0.0093
+      },
+      {
+        "date": "2022-07-15",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.518,
+        "idx": 471,
+        "on_reb": false,
+        "fwd5": -0.0108,
+        "fwd20": -0.025
+      },
+      {
+        "date": "2022-07-18",
+        "type": "boost",
+        "asset": "161226",
+        "prob": 0.665,
+        "idx": 472,
+        "on_reb": false,
+        "fwd5": 0.0,
+        "fwd20": 0.0825
+      },
+      {
+        "date": "2022-07-22",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.551,
+        "idx": 476,
+        "on_reb": false,
+        "fwd5": 0.0242,
+        "fwd20": 0.0704
+      },
+      {
+        "date": "2022-07-25",
+        "type": "boost",
+        "asset": "161226",
+        "prob": 0.656,
+        "idx": 477,
+        "on_reb": false,
+        "fwd5": 0.0606,
+        "fwd20": 0.0253
+      },
+      {
+        "date": "2022-07-28",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.537,
+        "idx": 480,
+        "on_reb": true,
+        "fwd5": 0.0211,
+        "fwd20": -0.0016
+      },
+      {
+        "date": "2022-07-29",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.617,
+        "idx": 481,
+        "on_reb": false,
+        "fwd5": 0.0009,
+        "fwd20": 0.0039
+      },
+      {
+        "date": "2022-09-13",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.515,
+        "idx": 512,
+        "on_reb": false,
+        "fwd5": -0.0085,
+        "fwd20": -0.0119
+      },
+      {
+        "date": "2022-09-14",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.686,
+        "idx": 513,
+        "on_reb": false,
+        "fwd5": -0.0683,
+        "fwd20": -0.0313
+      },
+      {
+        "date": "2022-09-19",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.519,
+        "idx": 516,
+        "on_reb": false,
+        "fwd5": 0.0035,
+        "fwd20": 0.0115
+      },
+      {
+        "date": "2022-09-20",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.674,
+        "idx": 517,
+        "on_reb": false,
+        "fwd5": 0.0039,
+        "fwd20": -0.0244
+      },
+      {
+        "date": "2022-10-21",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.507,
+        "idx": 535,
+        "on_reb": true,
+        "fwd5": 0.0075,
+        "fwd20": 0.0264
+      },
+      {
+        "date": "2022-10-24",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.622,
+        "idx": 536,
+        "on_reb": false,
+        "fwd5": -0.0282,
+        "fwd20": 0.0234
+      },
+      {
+        "date": "2023-01-10",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.56,
+        "idx": 591,
+        "on_reb": false,
+        "fwd5": 0.0287,
+        "fwd20": 0.0371
+      },
+      {
+        "date": "2023-01-11",
+        "type": "boost",
+        "asset": "501018",
+        "prob": 0.603,
+        "idx": 592,
+        "on_reb": false,
+        "fwd5": 0.0448,
+        "fwd20": 0.0278
+      },
+      {
+        "date": "2023-03-07",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.507,
+        "idx": 626,
+        "on_reb": false,
+        "fwd5": -0.0356,
+        "fwd20": 0.0573
+      },
+      {
+        "date": "2023-03-08",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.623,
+        "idx": 627,
+        "on_reb": false,
+        "fwd5": 0.0027,
+        "fwd20": 0.0045
+      },
+      {
+        "date": "2023-04-06",
+        "type": "guard",
+        "asset": "518880",
+        "prob": 0.515,
+        "idx": 647,
+        "on_reb": false,
+        "fwd5": 0.0037,
+        "fwd20": 0.0109
+      },
+      {
+        "date": "2023-04-07",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.621,
+        "idx": 648,
+        "on_reb": false,
+        "fwd5": 0.005,
+        "fwd20": 0.0245
+      },
+      {
+        "date": "2023-05-16",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.505,
+        "idx": 672,
+        "on_reb": false,
+        "fwd5": 0.0475,
+        "fwd20": 0.1457
+      },
+      {
+        "date": "2023-05-17",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.636,
+        "idx": 673,
+        "on_reb": false,
+        "fwd5": 0.0023,
+        "fwd20": 0.0058
+      },
+      {
+        "date": "2023-05-29",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.51,
+        "idx": 681,
+        "on_reb": false,
+        "fwd5": 0.0155,
+        "fwd20": 0.0562
+      },
+      {
+        "date": "2023-05-30",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.605,
+        "idx": 682,
+        "on_reb": false,
+        "fwd5": -0.0002,
+        "fwd20": -0.0054
+      },
+      {
+        "date": "2024-02-19",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.504,
+        "idx": 856,
+        "on_reb": false,
+        "fwd5": 0.0054,
+        "fwd20": 0.0115
+      },
+      {
+        "date": "2024-02-20",
+        "type": "boost",
+        "asset": "518880",
+        "prob": 0.604,
+        "idx": 857,
+        "on_reb": false,
+        "fwd5": 0.0009,
+        "fwd20": 0.0491
+      },
+      {
+        "date": "2024-04-29",
+        "type": "guard",
+        "asset": "518880",
+        "prob": 0.503,
+        "idx": 904,
+        "on_reb": false,
+        "fwd5": -0.0083,
+        "fwd20": 0.0043
+      },
+      {
+        "date": "2024-05-06",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.585,
+        "idx": 906,
+        "on_reb": false,
+        "fwd5": -0.0194,
+        "fwd20": -0.0383
+      },
+      {
+        "date": "2024-05-07",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.605,
+        "idx": 907,
+        "on_reb": false,
+        "fwd5": 0.0012,
+        "fwd20": 0.0043
+      },
+      {
+        "date": "2024-05-20",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.508,
+        "idx": 916,
+        "on_reb": false,
+        "fwd5": -0.0213,
+        "fwd20": -0.03
+      },
+      {
+        "date": "2024-05-21",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.616,
+        "idx": 917,
+        "on_reb": false,
+        "fwd5": 0.0011,
+        "fwd20": 0.0035
+      },
+      {
+        "date": "2024-07-19",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.506,
+        "idx": 959,
+        "on_reb": false,
+        "fwd5": -0.0662,
+        "fwd20": -0.0746
+      },
+      {
+        "date": "2024-08-20",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.57,
+        "idx": 981,
+        "on_reb": false,
+        "fwd5": -0.0177,
+        "fwd20": -0.0191
+      },
+      {
+        "date": "2024-08-21",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.662,
+        "idx": 982,
+        "on_reb": false,
+        "fwd5": -0.0017,
+        "fwd20": 0.0002
+      },
+      {
+        "date": "2024-09-26",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.544,
+        "idx": 1006,
+        "on_reb": false,
+        "fwd5": 0.2894,
+        "fwd20": 0.2586
+      },
+      {
+        "date": "2024-10-22",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.513,
+        "idx": 1019,
+        "on_reb": false,
+        "fwd5": -0.0121,
+        "fwd20": -0.0665
+      },
+      {
+        "date": "2025-01-14",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.515,
+        "idx": 1078,
+        "on_reb": false,
+        "fwd5": 0.0223,
+        "fwd20": 0.0155
+      },
+      {
+        "date": "2025-01-15",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.601,
+        "idx": 1079,
+        "on_reb": false,
+        "fwd5": -0.0013,
+        "fwd20": -0.0023
+      },
+      {
+        "date": "2025-06-16",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.509,
+        "idx": 1176,
+        "on_reb": false,
+        "fwd5": 0.1112,
+        "fwd20": -0.0479
+      },
+      {
+        "date": "2025-06-17",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.734,
+        "idx": 1177,
+        "on_reb": false,
+        "fwd5": 0.0003,
+        "fwd20": 0.0017
+      },
+      {
+        "date": "2025-08-22",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.536,
+        "idx": 1225,
+        "on_reb": true,
+        "fwd5": 0.0763,
+        "fwd20": 0.1503
+      },
+      {
+        "date": "2025-08-25",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.735,
+        "idx": 1226,
+        "on_reb": false,
+        "fwd5": 0.0012,
+        "fwd20": -0.0143
+      },
+      {
+        "date": "2025-09-01",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.549,
+        "idx": 1231,
+        "on_reb": false,
+        "fwd5": -0.0065,
+        "fwd20": 0.0977
+      },
+      {
+        "date": "2025-09-02",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.683,
+        "idx": 1232,
+        "on_reb": false,
+        "fwd5": -0.0003,
+        "fwd20": -0.0167
+      },
+      {
+        "date": "2025-09-15",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.561,
+        "idx": 1241,
+        "on_reb": false,
+        "fwd5": 0.0148,
+        "fwd20": 0.0082
+      },
+      {
+        "date": "2025-09-16",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.688,
+        "idx": 1242,
+        "on_reb": false,
+        "fwd5": -0.0163,
+        "fwd20": -0.013
+      },
+      {
+        "date": "2025-09-22",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.526,
+        "idx": 1246,
+        "on_reb": false,
+        "fwd5": 0.0425,
+        "fwd20": 0.0399
+      },
+      {
+        "date": "2025-09-23",
+        "type": "boost",
+        "asset": "513100",
+        "prob": 0.571,
+        "idx": 1247,
+        "on_reb": false,
+        "fwd5": 0.0072,
+        "fwd20": 0.1111
+      },
+      {
+        "date": "2025-10-15",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.501,
+        "idx": 1257,
+        "on_reb": false,
+        "fwd5": -0.0685,
+        "fwd20": 0.0014
+      },
+      {
+        "date": "2025-10-16",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.621,
+        "idx": 1258,
+        "on_reb": false,
+        "fwd5": 0.0028,
+        "fwd20": 0.0068
+      },
+      {
+        "date": "2025-12-02",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.548,
+        "idx": 1291,
+        "on_reb": false,
+        "fwd5": 0.0615,
+        "fwd20": 0.4764
+      },
+      {
+        "date": "2025-12-03",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.658,
+        "idx": 1292,
+        "on_reb": false,
+        "fwd5": 0.0005,
+        "fwd20": 0.0021
+      },
+      {
+        "date": "2025-12-09",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.526,
+        "idx": 1296,
+        "on_reb": false,
+        "fwd5": 0.1861,
+        "fwd20": 0.4628
+      },
+      {
+        "date": "2025-12-10",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.65,
+        "idx": 1297,
+        "on_reb": false,
+        "fwd5": -0.0012,
+        "fwd20": 0.0014
+      },
+      {
+        "date": "2025-12-16",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.551,
+        "idx": 1301,
+        "on_reb": false,
+        "fwd5": 0.3976,
+        "fwd20": 0.515
+      },
+      {
+        "date": "2025-12-17",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.615,
+        "idx": 1302,
+        "on_reb": false,
+        "fwd5": 0.0017,
+        "fwd20": 0.0043
+      },
+      {
+        "date": "2025-12-23",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.573,
+        "idx": 1306,
+        "on_reb": false,
+        "fwd5": -0.161,
+        "fwd20": 0.3678
+      },
+      {
+        "date": "2025-12-24",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.687,
+        "idx": 1307,
+        "on_reb": false,
+        "fwd5": 0.0011,
+        "fwd20": 0.0042
+      }
+    ],
+    "0.50x0.60": [
+      {
+        "date": "2021-10-12",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.51,
+        "idx": 286,
+        "on_reb": false,
+        "fwd5": 0.0268,
+        "fwd20": -0.0011
+      },
+      {
+        "date": "2021-10-13",
+        "type": "boost",
+        "asset": "159985",
+        "prob": 0.676,
+        "idx": 287,
+        "on_reb": false,
+        "fwd5": 0.0034,
+        "fwd20": -0.0338
+      },
+      {
+        "date": "2022-01-07",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.506,
+        "idx": 348,
+        "on_reb": false,
+        "fwd5": -0.0154,
+        "fwd20": 0.1588
+      },
+      {
+        "date": "2022-01-10",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.68,
+        "idx": 349,
+        "on_reb": false,
+        "fwd5": 0.0163,
+        "fwd20": -0.0907
+      },
+      {
+        "date": "2022-02-07",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.502,
+        "idx": 363,
+        "on_reb": false,
+        "fwd5": 0.0165,
+        "fwd20": 0.2696
+      },
+      {
+        "date": "2022-02-08",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.671,
+        "idx": 364,
+        "on_reb": false,
+        "fwd5": -0.0116,
+        "fwd20": -0.091
+      },
+      {
+        "date": "2022-02-10",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.516,
+        "idx": 366,
+        "on_reb": false,
+        "fwd5": -0.0102,
+        "fwd20": 0.0805
+      },
+      {
+        "date": "2022-02-11",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.678,
+        "idx": 367,
+        "on_reb": false,
+        "fwd5": 0.0297,
+        "fwd20": -0.0289
+      },
+      {
+        "date": "2022-02-22",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.517,
+        "idx": 374,
+        "on_reb": false,
+        "fwd5": 0.008,
+        "fwd20": 0.1374
+      },
+      {
+        "date": "2022-02-24",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.522,
+        "idx": 376,
+        "on_reb": false,
+        "fwd5": -0.0421,
+        "fwd20": 0.0759
+      },
+      {
+        "date": "2022-02-25",
+        "type": "boost",
+        "asset": "513100",
+        "prob": 0.63,
+        "idx": 377,
+        "on_reb": false,
+        "fwd5": 0.0089,
+        "fwd20": 0.0772
+      },
+      {
+        "date": "2022-03-01",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.544,
+        "idx": 379,
+        "on_reb": false,
+        "fwd5": -0.0729,
+        "fwd20": 0.0642
+      },
+      {
+        "date": "2022-03-03",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.515,
+        "idx": 381,
+        "on_reb": false,
+        "fwd5": 0.0657,
+        "fwd20": -0.0609
+      },
+      {
+        "date": "2022-03-07",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.674,
+        "idx": 383,
+        "on_reb": false,
+        "fwd5": -0.0208,
+        "fwd20": 0.0028
+      },
+      {
+        "date": "2022-03-10",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.557,
+        "idx": 386,
+        "on_reb": false,
+        "fwd5": 0.0139,
+        "fwd20": -0.0183
+      },
+      {
+        "date": "2022-03-11",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.612,
+        "idx": 387,
+        "on_reb": false,
+        "fwd5": 0.0201,
+        "fwd20": -0.0554
+      },
+      {
+        "date": "2022-03-17",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.503,
+        "idx": 391,
+        "on_reb": false,
+        "fwd5": 0.0511,
+        "fwd20": -0.0349
+      },
+      {
+        "date": "2022-03-21",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.602,
+        "idx": 393,
+        "on_reb": false,
+        "fwd5": -0.0037,
+        "fwd20": 0.0075
+      },
+      {
+        "date": "2022-03-24",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.572,
+        "idx": 396,
+        "on_reb": false,
+        "fwd5": -0.0575,
+        "fwd20": -0.0794
+      },
+      {
+        "date": "2022-03-25",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.646,
+        "idx": 397,
+        "on_reb": false,
+        "fwd5": 0.0058,
+        "fwd20": -0.1867
+      },
+      {
+        "date": "2022-03-31",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.529,
+        "idx": 401,
+        "on_reb": false,
+        "fwd5": -0.0549,
+        "fwd20": -0.0712
+      },
+      {
+        "date": "2022-04-01",
+        "type": "boost",
+        "asset": "159985",
+        "prob": 0.608,
+        "idx": 402,
+        "on_reb": false,
+        "fwd5": 0.0273,
+        "fwd20": 0.0426
+      },
+      {
+        "date": "2022-04-18",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.553,
+        "idx": 411,
+        "on_reb": false,
+        "fwd5": -0.053,
+        "fwd20": 0.0498
+      },
+      {
+        "date": "2022-04-19",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.678,
+        "idx": 412,
+        "on_reb": false,
+        "fwd5": -0.1224,
+        "fwd20": -0.0126
+      },
+      {
+        "date": "2022-04-25",
+        "type": "guard",
+        "asset": "518880",
+        "prob": 0.527,
+        "idx": 416,
+        "on_reb": false,
+        "fwd5": 0.0013,
+        "fwd20": -0.0059
+      },
+      {
+        "date": "2022-04-26",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.635,
+        "idx": 417,
+        "on_reb": false,
+        "fwd5": 0.0436,
+        "fwd20": 0.0791
+      },
+      {
+        "date": "2022-05-09",
+        "type": "guard",
+        "asset": "518880",
+        "prob": 0.505,
+        "idx": 423,
+        "on_reb": false,
+        "fwd5": -0.0223,
+        "fwd20": -0.0216
+      },
+      {
+        "date": "2022-05-10",
+        "type": "boost",
+        "asset": "513100",
+        "prob": 0.645,
+        "idx": 424,
+        "on_reb": false,
+        "fwd5": 0.0047,
+        "fwd20": 0.0129
+      },
+      {
+        "date": "2022-05-19",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.584,
+        "idx": 431,
+        "on_reb": false,
+        "fwd5": 0.0143,
+        "fwd20": 0.0776
+      },
+      {
+        "date": "2022-05-20",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.668,
+        "idx": 432,
+        "on_reb": false,
+        "fwd5": 0.0061,
+        "fwd20": 0.0064
+      },
+      {
+        "date": "2022-05-27",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.541,
+        "idx": 437,
+        "on_reb": false,
+        "fwd5": 0.0298,
+        "fwd20": -0.0218
+      },
+      {
+        "date": "2022-05-30",
+        "type": "boost",
+        "asset": "161226",
+        "prob": 0.672,
+        "idx": 438,
+        "on_reb": false,
+        "fwd5": -0.0044,
+        "fwd20": -0.0408
+      },
+      {
+        "date": "2022-06-02",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.532,
+        "idx": 441,
+        "on_reb": false,
+        "fwd5": 0.065,
+        "fwd20": -0.038
+      },
+      {
+        "date": "2022-06-06",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.618,
+        "idx": 442,
+        "on_reb": false,
+        "fwd5": 0.0017,
+        "fwd20": -0.0066
+      },
+      {
+        "date": "2022-06-14",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.506,
+        "idx": 448,
+        "on_reb": false,
+        "fwd5": -0.0636,
+        "fwd20": -0.1441
+      },
+      {
+        "date": "2022-06-15",
+        "type": "boost",
+        "asset": "513100",
+        "prob": 0.633,
+        "idx": 449,
+        "on_reb": false,
+        "fwd5": -0.0012,
+        "fwd20": 0.0224
+      },
+      {
+        "date": "2022-06-17",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.522,
+        "idx": 451,
+        "on_reb": false,
+        "fwd5": 0.0596,
+        "fwd20": 0.0372
+      },
+      {
+        "date": "2022-06-20",
+        "type": "boost",
+        "asset": "513100",
+        "prob": 0.668,
+        "idx": 452,
+        "on_reb": false,
+        "fwd5": 0.0515,
+        "fwd20": 0.0565
+      },
+      {
+        "date": "2022-06-24",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.534,
+        "idx": 456,
+        "on_reb": false,
+        "fwd5": -0.0142,
+        "fwd20": -0.0318
+      },
+      {
+        "date": "2022-06-27",
+        "type": "boost",
+        "asset": "159985",
+        "prob": 0.666,
+        "idx": 457,
+        "on_reb": false,
+        "fwd5": -0.0007,
+        "fwd20": -0.0093
+      },
+      {
+        "date": "2022-07-15",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.518,
+        "idx": 471,
+        "on_reb": false,
+        "fwd5": -0.0108,
+        "fwd20": -0.025
+      },
+      {
+        "date": "2022-07-18",
+        "type": "boost",
+        "asset": "161226",
+        "prob": 0.665,
+        "idx": 472,
+        "on_reb": false,
+        "fwd5": 0.0,
+        "fwd20": 0.0825
+      },
+      {
+        "date": "2022-07-22",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.551,
+        "idx": 476,
+        "on_reb": false,
+        "fwd5": 0.0242,
+        "fwd20": 0.0704
+      },
+      {
+        "date": "2022-07-25",
+        "type": "boost",
+        "asset": "161226",
+        "prob": 0.656,
+        "idx": 477,
+        "on_reb": false,
+        "fwd5": 0.0606,
+        "fwd20": 0.0253
+      },
+      {
+        "date": "2022-07-28",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.537,
+        "idx": 480,
+        "on_reb": true,
+        "fwd5": 0.0211,
+        "fwd20": -0.0016
+      },
+      {
+        "date": "2022-07-29",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.617,
+        "idx": 481,
+        "on_reb": false,
+        "fwd5": 0.0009,
+        "fwd20": 0.0039
+      },
+      {
+        "date": "2022-09-13",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.515,
+        "idx": 512,
+        "on_reb": false,
+        "fwd5": -0.0085,
+        "fwd20": -0.0119
+      },
+      {
+        "date": "2022-09-14",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.686,
+        "idx": 513,
+        "on_reb": false,
+        "fwd5": -0.0683,
+        "fwd20": -0.0313
+      },
+      {
+        "date": "2022-09-19",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.519,
+        "idx": 516,
+        "on_reb": false,
+        "fwd5": 0.0035,
+        "fwd20": 0.0115
+      },
+      {
+        "date": "2022-09-20",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.674,
+        "idx": 517,
+        "on_reb": false,
+        "fwd5": 0.0039,
+        "fwd20": -0.0244
+      },
+      {
+        "date": "2022-10-21",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.507,
+        "idx": 535,
+        "on_reb": true,
+        "fwd5": 0.0075,
+        "fwd20": 0.0264
+      },
+      {
+        "date": "2022-10-24",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.622,
+        "idx": 536,
+        "on_reb": false,
+        "fwd5": -0.0282,
+        "fwd20": 0.0234
+      },
+      {
+        "date": "2023-01-10",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.56,
+        "idx": 591,
+        "on_reb": false,
+        "fwd5": 0.0287,
+        "fwd20": 0.0371
+      },
+      {
+        "date": "2023-01-11",
+        "type": "boost",
+        "asset": "501018",
+        "prob": 0.603,
+        "idx": 592,
+        "on_reb": false,
+        "fwd5": 0.0448,
+        "fwd20": 0.0278
+      },
+      {
+        "date": "2023-03-07",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.507,
+        "idx": 626,
+        "on_reb": false,
+        "fwd5": -0.0356,
+        "fwd20": 0.0573
+      },
+      {
+        "date": "2023-03-08",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.623,
+        "idx": 627,
+        "on_reb": false,
+        "fwd5": 0.0027,
+        "fwd20": 0.0045
+      },
+      {
+        "date": "2023-04-06",
+        "type": "guard",
+        "asset": "518880",
+        "prob": 0.515,
+        "idx": 647,
+        "on_reb": false,
+        "fwd5": 0.0037,
+        "fwd20": 0.0109
+      },
+      {
+        "date": "2023-04-07",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.621,
+        "idx": 648,
+        "on_reb": false,
+        "fwd5": 0.005,
+        "fwd20": 0.0245
+      },
+      {
+        "date": "2023-05-16",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.505,
+        "idx": 672,
+        "on_reb": false,
+        "fwd5": 0.0475,
+        "fwd20": 0.1457
+      },
+      {
+        "date": "2023-05-17",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.636,
+        "idx": 673,
+        "on_reb": false,
+        "fwd5": 0.0023,
+        "fwd20": 0.0058
+      },
+      {
+        "date": "2023-05-29",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.51,
+        "idx": 681,
+        "on_reb": false,
+        "fwd5": 0.0155,
+        "fwd20": 0.0562
+      },
+      {
+        "date": "2023-05-30",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.605,
+        "idx": 682,
+        "on_reb": false,
+        "fwd5": -0.0002,
+        "fwd20": -0.0054
+      },
+      {
+        "date": "2024-02-19",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.504,
+        "idx": 856,
+        "on_reb": false,
+        "fwd5": 0.0054,
+        "fwd20": 0.0115
+      },
+      {
+        "date": "2024-02-20",
+        "type": "boost",
+        "asset": "518880",
+        "prob": 0.604,
+        "idx": 857,
+        "on_reb": false,
+        "fwd5": 0.0009,
+        "fwd20": 0.0491
+      },
+      {
+        "date": "2024-04-29",
+        "type": "guard",
+        "asset": "518880",
+        "prob": 0.503,
+        "idx": 904,
+        "on_reb": false,
+        "fwd5": -0.0083,
+        "fwd20": 0.0043
+      },
+      {
+        "date": "2024-05-06",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.585,
+        "idx": 906,
+        "on_reb": false,
+        "fwd5": -0.0194,
+        "fwd20": -0.0383
+      },
+      {
+        "date": "2024-05-07",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.605,
+        "idx": 907,
+        "on_reb": false,
+        "fwd5": 0.0012,
+        "fwd20": 0.0043
+      },
+      {
+        "date": "2024-05-20",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.508,
+        "idx": 916,
+        "on_reb": false,
+        "fwd5": -0.0213,
+        "fwd20": -0.03
+      },
+      {
+        "date": "2024-05-21",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.616,
+        "idx": 917,
+        "on_reb": false,
+        "fwd5": 0.0011,
+        "fwd20": 0.0035
+      },
+      {
+        "date": "2024-07-19",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.506,
+        "idx": 959,
+        "on_reb": false,
+        "fwd5": -0.0662,
+        "fwd20": -0.0746
+      },
+      {
+        "date": "2024-08-20",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.57,
+        "idx": 981,
+        "on_reb": false,
+        "fwd5": -0.0177,
+        "fwd20": -0.0191
+      },
+      {
+        "date": "2024-08-21",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.662,
+        "idx": 982,
+        "on_reb": false,
+        "fwd5": -0.0017,
+        "fwd20": 0.0002
+      },
+      {
+        "date": "2024-09-26",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.544,
+        "idx": 1006,
+        "on_reb": false,
+        "fwd5": 0.2894,
+        "fwd20": 0.2586
+      },
+      {
+        "date": "2024-10-22",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.513,
+        "idx": 1019,
+        "on_reb": false,
+        "fwd5": -0.0121,
+        "fwd20": -0.0665
+      },
+      {
+        "date": "2025-01-14",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.515,
+        "idx": 1078,
+        "on_reb": false,
+        "fwd5": 0.0223,
+        "fwd20": 0.0155
+      },
+      {
+        "date": "2025-01-15",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.601,
+        "idx": 1079,
+        "on_reb": false,
+        "fwd5": -0.0013,
+        "fwd20": -0.0023
+      },
+      {
+        "date": "2025-06-16",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.509,
+        "idx": 1176,
+        "on_reb": false,
+        "fwd5": 0.1112,
+        "fwd20": -0.0479
+      },
+      {
+        "date": "2025-06-17",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.734,
+        "idx": 1177,
+        "on_reb": false,
+        "fwd5": 0.0003,
+        "fwd20": 0.0017
+      },
+      {
+        "date": "2025-08-22",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.536,
+        "idx": 1225,
+        "on_reb": true,
+        "fwd5": 0.0763,
+        "fwd20": 0.1503
+      },
+      {
+        "date": "2025-08-25",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.735,
+        "idx": 1226,
+        "on_reb": false,
+        "fwd5": 0.0012,
+        "fwd20": -0.0143
+      },
+      {
+        "date": "2025-09-01",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.549,
+        "idx": 1231,
+        "on_reb": false,
+        "fwd5": -0.0065,
+        "fwd20": 0.0977
+      },
+      {
+        "date": "2025-09-02",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.683,
+        "idx": 1232,
+        "on_reb": false,
+        "fwd5": -0.0003,
+        "fwd20": -0.0167
+      },
+      {
+        "date": "2025-09-15",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.561,
+        "idx": 1241,
+        "on_reb": false,
+        "fwd5": 0.0148,
+        "fwd20": 0.0082
+      },
+      {
+        "date": "2025-09-16",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.688,
+        "idx": 1242,
+        "on_reb": false,
+        "fwd5": -0.0163,
+        "fwd20": -0.013
+      },
+      {
+        "date": "2025-09-22",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.526,
+        "idx": 1246,
+        "on_reb": false,
+        "fwd5": 0.0425,
+        "fwd20": 0.0399
+      },
+      {
+        "date": "2025-10-15",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.501,
+        "idx": 1257,
+        "on_reb": false,
+        "fwd5": -0.0685,
+        "fwd20": 0.0014
+      },
+      {
+        "date": "2025-10-16",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.621,
+        "idx": 1258,
+        "on_reb": false,
+        "fwd5": 0.0028,
+        "fwd20": 0.0068
+      },
+      {
+        "date": "2025-12-02",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.548,
+        "idx": 1291,
+        "on_reb": false,
+        "fwd5": 0.0615,
+        "fwd20": 0.4764
+      },
+      {
+        "date": "2025-12-03",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.658,
+        "idx": 1292,
+        "on_reb": false,
+        "fwd5": 0.0005,
+        "fwd20": 0.0021
+      },
+      {
+        "date": "2025-12-09",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.526,
+        "idx": 1296,
+        "on_reb": false,
+        "fwd5": 0.1861,
+        "fwd20": 0.4628
+      },
+      {
+        "date": "2025-12-10",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.65,
+        "idx": 1297,
+        "on_reb": false,
+        "fwd5": -0.0012,
+        "fwd20": 0.0014
+      },
+      {
+        "date": "2025-12-16",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.551,
+        "idx": 1301,
+        "on_reb": false,
+        "fwd5": 0.3976,
+        "fwd20": 0.515
+      },
+      {
+        "date": "2025-12-17",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.615,
+        "idx": 1302,
+        "on_reb": false,
+        "fwd5": 0.0017,
+        "fwd20": 0.0043
+      },
+      {
+        "date": "2025-12-23",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.573,
+        "idx": 1306,
+        "on_reb": false,
+        "fwd5": -0.161,
+        "fwd20": 0.3678
+      },
+      {
+        "date": "2025-12-24",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.687,
+        "idx": 1307,
+        "on_reb": false,
+        "fwd5": 0.0011,
+        "fwd20": 0.0042
+      }
+    ],
+    "0.50x0.65": [
+      {
+        "date": "2021-10-12",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.51,
+        "idx": 286,
+        "on_reb": false,
+        "fwd5": 0.0268,
+        "fwd20": -0.0011
+      },
+      {
+        "date": "2021-10-13",
+        "type": "boost",
+        "asset": "159985",
+        "prob": 0.676,
+        "idx": 287,
+        "on_reb": false,
+        "fwd5": 0.0034,
+        "fwd20": -0.0338
+      },
+      {
+        "date": "2022-01-07",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.506,
+        "idx": 348,
+        "on_reb": false,
+        "fwd5": -0.0154,
+        "fwd20": 0.1588
+      },
+      {
+        "date": "2022-01-10",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.68,
+        "idx": 349,
+        "on_reb": false,
+        "fwd5": 0.0163,
+        "fwd20": -0.0907
+      },
+      {
+        "date": "2022-02-07",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.502,
+        "idx": 363,
+        "on_reb": false,
+        "fwd5": 0.0165,
+        "fwd20": 0.2696
+      },
+      {
+        "date": "2022-02-08",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.671,
+        "idx": 364,
+        "on_reb": false,
+        "fwd5": -0.0116,
+        "fwd20": -0.091
+      },
+      {
+        "date": "2022-02-10",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.516,
+        "idx": 366,
+        "on_reb": false,
+        "fwd5": -0.0102,
+        "fwd20": 0.0805
+      },
+      {
+        "date": "2022-02-11",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.678,
+        "idx": 367,
+        "on_reb": false,
+        "fwd5": 0.0297,
+        "fwd20": -0.0289
+      },
+      {
+        "date": "2022-02-22",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.517,
+        "idx": 374,
+        "on_reb": false,
+        "fwd5": 0.008,
+        "fwd20": 0.1374
+      },
+      {
+        "date": "2022-02-24",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.522,
+        "idx": 376,
+        "on_reb": false,
+        "fwd5": -0.0421,
+        "fwd20": 0.0759
+      },
+      {
+        "date": "2022-02-28",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.654,
+        "idx": 378,
+        "on_reb": false,
+        "fwd5": 0.0007,
+        "fwd20": -0.0147
+      },
+      {
+        "date": "2022-03-03",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.515,
+        "idx": 381,
+        "on_reb": false,
+        "fwd5": 0.0657,
+        "fwd20": -0.0609
+      },
+      {
+        "date": "2022-03-07",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.674,
+        "idx": 383,
+        "on_reb": false,
+        "fwd5": -0.0208,
+        "fwd20": 0.0028
+      },
+      {
+        "date": "2022-03-10",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.557,
+        "idx": 386,
+        "on_reb": false,
+        "fwd5": 0.0139,
+        "fwd20": -0.0183
+      },
+      {
+        "date": "2022-03-17",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.503,
+        "idx": 391,
+        "on_reb": false,
+        "fwd5": 0.0511,
+        "fwd20": -0.0349
+      },
+      {
+        "date": "2022-03-24",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.572,
+        "idx": 396,
+        "on_reb": false,
+        "fwd5": -0.0575,
+        "fwd20": -0.0794
+      },
+      {
+        "date": "2022-03-28",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.657,
+        "idx": 398,
+        "on_reb": false,
+        "fwd5": 0.0151,
+        "fwd20": -0.1242
+      },
+      {
+        "date": "2022-03-31",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.529,
+        "idx": 401,
+        "on_reb": false,
+        "fwd5": -0.0549,
+        "fwd20": -0.0712
+      },
+      {
+        "date": "2022-04-18",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.553,
+        "idx": 411,
+        "on_reb": false,
+        "fwd5": -0.053,
+        "fwd20": 0.0498
+      },
+      {
+        "date": "2022-04-19",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.678,
+        "idx": 412,
+        "on_reb": false,
+        "fwd5": -0.1224,
+        "fwd20": -0.0126
+      },
+      {
+        "date": "2022-04-25",
+        "type": "guard",
+        "asset": "518880",
+        "prob": 0.527,
+        "idx": 416,
+        "on_reb": false,
+        "fwd5": 0.0013,
+        "fwd20": -0.0059
+      },
+      {
+        "date": "2022-05-09",
+        "type": "guard",
+        "asset": "518880",
+        "prob": 0.505,
+        "idx": 423,
+        "on_reb": false,
+        "fwd5": -0.0223,
+        "fwd20": -0.0216
+      },
+      {
+        "date": "2022-05-19",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.584,
+        "idx": 431,
+        "on_reb": false,
+        "fwd5": 0.0143,
+        "fwd20": 0.0776
+      },
+      {
+        "date": "2022-05-20",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.668,
+        "idx": 432,
+        "on_reb": false,
+        "fwd5": 0.0061,
+        "fwd20": 0.0064
+      },
+      {
+        "date": "2022-05-27",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.541,
+        "idx": 437,
+        "on_reb": false,
+        "fwd5": 0.0298,
+        "fwd20": -0.0218
+      },
+      {
+        "date": "2022-05-30",
+        "type": "boost",
+        "asset": "161226",
+        "prob": 0.672,
+        "idx": 438,
+        "on_reb": false,
+        "fwd5": -0.0044,
+        "fwd20": -0.0408
+      },
+      {
+        "date": "2022-06-02",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.532,
+        "idx": 441,
+        "on_reb": false,
+        "fwd5": 0.065,
+        "fwd20": -0.038
+      },
+      {
+        "date": "2022-06-14",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.506,
+        "idx": 448,
+        "on_reb": false,
+        "fwd5": -0.0636,
+        "fwd20": -0.1441
+      },
+      {
+        "date": "2022-06-17",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.522,
+        "idx": 451,
+        "on_reb": false,
+        "fwd5": 0.0596,
+        "fwd20": 0.0372
+      },
+      {
+        "date": "2022-06-20",
+        "type": "boost",
+        "asset": "513100",
+        "prob": 0.668,
+        "idx": 452,
+        "on_reb": false,
+        "fwd5": 0.0515,
+        "fwd20": 0.0565
+      },
+      {
+        "date": "2022-06-24",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.534,
+        "idx": 456,
+        "on_reb": false,
+        "fwd5": -0.0142,
+        "fwd20": -0.0318
+      },
+      {
+        "date": "2022-06-27",
+        "type": "boost",
+        "asset": "159985",
+        "prob": 0.666,
+        "idx": 457,
+        "on_reb": false,
+        "fwd5": -0.0007,
+        "fwd20": -0.0093
+      },
+      {
+        "date": "2022-07-15",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.518,
+        "idx": 471,
+        "on_reb": false,
+        "fwd5": -0.0108,
+        "fwd20": -0.025
+      },
+      {
+        "date": "2022-07-18",
+        "type": "boost",
+        "asset": "161226",
+        "prob": 0.665,
+        "idx": 472,
+        "on_reb": false,
+        "fwd5": 0.0,
+        "fwd20": 0.0825
+      },
+      {
+        "date": "2022-07-22",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.551,
+        "idx": 476,
+        "on_reb": false,
+        "fwd5": 0.0242,
+        "fwd20": 0.0704
+      },
+      {
+        "date": "2022-07-25",
+        "type": "boost",
+        "asset": "161226",
+        "prob": 0.656,
+        "idx": 477,
+        "on_reb": false,
+        "fwd5": 0.0606,
+        "fwd20": 0.0253
+      },
+      {
+        "date": "2022-07-28",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.537,
+        "idx": 480,
+        "on_reb": true,
+        "fwd5": 0.0211,
+        "fwd20": -0.0016
+      },
+      {
+        "date": "2022-09-13",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.515,
+        "idx": 512,
+        "on_reb": false,
+        "fwd5": -0.0085,
+        "fwd20": -0.0119
+      },
+      {
+        "date": "2022-09-14",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.686,
+        "idx": 513,
+        "on_reb": false,
+        "fwd5": -0.0683,
+        "fwd20": -0.0313
+      },
+      {
+        "date": "2022-09-19",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.519,
+        "idx": 516,
+        "on_reb": false,
+        "fwd5": 0.0035,
+        "fwd20": 0.0115
+      },
+      {
+        "date": "2022-09-20",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.674,
+        "idx": 517,
+        "on_reb": false,
+        "fwd5": 0.0039,
+        "fwd20": -0.0244
+      },
+      {
+        "date": "2022-10-21",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.507,
+        "idx": 535,
+        "on_reb": true,
+        "fwd5": 0.0075,
+        "fwd20": 0.0264
+      },
+      {
+        "date": "2023-01-10",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.56,
+        "idx": 591,
+        "on_reb": false,
+        "fwd5": 0.0287,
+        "fwd20": 0.0371
+      },
+      {
+        "date": "2023-01-12",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.657,
+        "idx": 593,
+        "on_reb": false,
+        "fwd5": -0.0002,
+        "fwd20": 0.0072
+      },
+      {
+        "date": "2023-03-07",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.507,
+        "idx": 626,
+        "on_reb": false,
+        "fwd5": -0.0356,
+        "fwd20": 0.0573
+      },
+      {
+        "date": "2023-04-06",
+        "type": "guard",
+        "asset": "518880",
+        "prob": 0.515,
+        "idx": 647,
+        "on_reb": false,
+        "fwd5": 0.0037,
+        "fwd20": 0.0109
+      },
+      {
+        "date": "2023-05-16",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.505,
+        "idx": 672,
+        "on_reb": false,
+        "fwd5": 0.0475,
+        "fwd20": 0.1457
+      },
+      {
+        "date": "2023-05-18",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.666,
+        "idx": 674,
+        "on_reb": false,
+        "fwd5": 0.0039,
+        "fwd20": 0.0063
+      },
+      {
+        "date": "2023-05-29",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.51,
+        "idx": 681,
+        "on_reb": false,
+        "fwd5": 0.0155,
+        "fwd20": 0.0562
+      },
+      {
+        "date": "2024-02-19",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.504,
+        "idx": 856,
+        "on_reb": false,
+        "fwd5": 0.0054,
+        "fwd20": 0.0115
+      },
+      {
+        "date": "2024-04-29",
+        "type": "guard",
+        "asset": "518880",
+        "prob": 0.503,
+        "idx": 904,
+        "on_reb": false,
+        "fwd5": -0.0083,
+        "fwd20": 0.0043
+      },
+      {
+        "date": "2024-05-06",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.585,
+        "idx": 906,
+        "on_reb": false,
+        "fwd5": -0.0194,
+        "fwd20": -0.0383
+      },
+      {
+        "date": "2024-05-09",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.674,
+        "idx": 909,
+        "on_reb": false,
+        "fwd5": 0.001,
+        "fwd20": 0.0043
+      },
+      {
+        "date": "2024-05-20",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.508,
+        "idx": 916,
+        "on_reb": false,
+        "fwd5": -0.0213,
+        "fwd20": -0.03
+      },
+      {
+        "date": "2024-07-19",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.506,
+        "idx": 959,
+        "on_reb": false,
+        "fwd5": -0.0662,
+        "fwd20": -0.0746
+      },
+      {
+        "date": "2024-08-20",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.57,
+        "idx": 981,
+        "on_reb": false,
+        "fwd5": -0.0177,
+        "fwd20": -0.0191
+      },
+      {
+        "date": "2024-08-21",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.662,
+        "idx": 982,
+        "on_reb": false,
+        "fwd5": -0.0017,
+        "fwd20": 0.0002
+      },
+      {
+        "date": "2024-09-26",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.544,
+        "idx": 1006,
+        "on_reb": false,
+        "fwd5": 0.2894,
+        "fwd20": 0.2586
+      },
+      {
+        "date": "2024-10-22",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.513,
+        "idx": 1019,
+        "on_reb": false,
+        "fwd5": -0.0121,
+        "fwd20": -0.0665
+      },
+      {
+        "date": "2025-01-14",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.515,
+        "idx": 1078,
+        "on_reb": false,
+        "fwd5": 0.0223,
+        "fwd20": 0.0155
+      },
+      {
+        "date": "2025-06-16",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.509,
+        "idx": 1176,
+        "on_reb": false,
+        "fwd5": 0.1112,
+        "fwd20": -0.0479
+      },
+      {
+        "date": "2025-06-17",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.734,
+        "idx": 1177,
+        "on_reb": false,
+        "fwd5": 0.0003,
+        "fwd20": 0.0017
+      },
+      {
+        "date": "2025-08-22",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.536,
+        "idx": 1225,
+        "on_reb": true,
+        "fwd5": 0.0763,
+        "fwd20": 0.1503
+      },
+      {
+        "date": "2025-08-25",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.735,
+        "idx": 1226,
+        "on_reb": false,
+        "fwd5": 0.0012,
+        "fwd20": -0.0143
+      },
+      {
+        "date": "2025-09-01",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.549,
+        "idx": 1231,
+        "on_reb": false,
+        "fwd5": -0.0065,
+        "fwd20": 0.0977
+      },
+      {
+        "date": "2025-09-02",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.683,
+        "idx": 1232,
+        "on_reb": false,
+        "fwd5": -0.0003,
+        "fwd20": -0.0167
+      },
+      {
+        "date": "2025-09-15",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.561,
+        "idx": 1241,
+        "on_reb": false,
+        "fwd5": 0.0148,
+        "fwd20": 0.0082
+      },
+      {
+        "date": "2025-09-16",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.688,
+        "idx": 1242,
+        "on_reb": false,
+        "fwd5": -0.0163,
+        "fwd20": -0.013
+      },
+      {
+        "date": "2025-09-22",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.526,
+        "idx": 1246,
+        "on_reb": false,
+        "fwd5": 0.0425,
+        "fwd20": 0.0399
+      },
+      {
+        "date": "2025-10-15",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.501,
+        "idx": 1257,
+        "on_reb": false,
+        "fwd5": -0.0685,
+        "fwd20": 0.0014
+      },
+      {
+        "date": "2025-12-02",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.548,
+        "idx": 1291,
+        "on_reb": false,
+        "fwd5": 0.0615,
+        "fwd20": 0.4764
+      },
+      {
+        "date": "2025-12-03",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.658,
+        "idx": 1292,
+        "on_reb": false,
+        "fwd5": 0.0005,
+        "fwd20": 0.0021
+      },
+      {
+        "date": "2025-12-09",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.526,
+        "idx": 1296,
+        "on_reb": false,
+        "fwd5": 0.1861,
+        "fwd20": 0.4628
+      },
+      {
+        "date": "2025-12-10",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.65,
+        "idx": 1297,
+        "on_reb": false,
+        "fwd5": -0.0012,
+        "fwd20": 0.0014
+      },
+      {
+        "date": "2025-12-16",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.551,
+        "idx": 1301,
+        "on_reb": false,
+        "fwd5": 0.3976,
+        "fwd20": 0.515
+      },
+      {
+        "date": "2025-12-19",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.657,
+        "idx": 1304,
+        "on_reb": false,
+        "fwd5": 0.0003,
+        "fwd20": 0.0036
+      },
+      {
+        "date": "2025-12-23",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.573,
+        "idx": 1306,
+        "on_reb": false,
+        "fwd5": -0.161,
+        "fwd20": 0.3678
+      },
+      {
+        "date": "2025-12-24",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.687,
+        "idx": 1307,
+        "on_reb": false,
+        "fwd5": 0.0011,
+        "fwd20": 0.0042
+      }
+    ],
+    "0.55x0.55": [
+      {
+        "date": "2022-03-10",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.557,
+        "idx": 386,
+        "on_reb": false,
+        "fwd5": 0.0139,
+        "fwd20": -0.0183
+      },
+      {
+        "date": "2022-03-11",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.612,
+        "idx": 387,
+        "on_reb": false,
+        "fwd5": 0.0201,
+        "fwd20": -0.0554
+      },
+      {
+        "date": "2022-03-22",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.554,
+        "idx": 394,
+        "on_reb": false,
+        "fwd5": -0.0401,
+        "fwd20": -0.0383
+      },
+      {
+        "date": "2022-03-24",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.572,
+        "idx": 396,
+        "on_reb": false,
+        "fwd5": -0.0575,
+        "fwd20": -0.0794
+      },
+      {
+        "date": "2022-03-25",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.646,
+        "idx": 397,
+        "on_reb": false,
+        "fwd5": 0.0058,
+        "fwd20": -0.1867
+      },
+      {
+        "date": "2022-04-18",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.553,
+        "idx": 411,
+        "on_reb": false,
+        "fwd5": -0.053,
+        "fwd20": 0.0498
+      },
+      {
+        "date": "2022-04-19",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.678,
+        "idx": 412,
+        "on_reb": false,
+        "fwd5": -0.1224,
+        "fwd20": -0.0126
+      },
+      {
+        "date": "2022-05-19",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.584,
+        "idx": 431,
+        "on_reb": false,
+        "fwd5": 0.0143,
+        "fwd20": 0.0776
+      },
+      {
+        "date": "2022-05-20",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.668,
+        "idx": 432,
+        "on_reb": false,
+        "fwd5": 0.0061,
+        "fwd20": 0.0064
+      },
+      {
+        "date": "2022-06-06",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.562,
+        "idx": 442,
+        "on_reb": false,
+        "fwd5": 0.0155,
+        "fwd20": -0.0522
+      },
+      {
+        "date": "2022-06-07",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.612,
+        "idx": 443,
+        "on_reb": false,
+        "fwd5": 0.0013,
+        "fwd20": -0.007
+      },
+      {
+        "date": "2022-07-19",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.579,
+        "idx": 473,
+        "on_reb": false,
+        "fwd5": -0.0135,
+        "fwd20": -0.0067
+      },
+      {
+        "date": "2022-07-20",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.648,
+        "idx": 474,
+        "on_reb": false,
+        "fwd5": 0.0029,
+        "fwd20": 0.0075
+      },
+      {
+        "date": "2022-09-15",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.563,
+        "idx": 514,
+        "on_reb": false,
+        "fwd5": 0.0249,
+        "fwd20": 0.0098
+      },
+      {
+        "date": "2022-10-27",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.576,
+        "idx": 539,
+        "on_reb": false,
+        "fwd5": 0.0365,
+        "fwd20": -0.0132
+      },
+      {
+        "date": "2023-01-10",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.56,
+        "idx": 591,
+        "on_reb": false,
+        "fwd5": 0.0287,
+        "fwd20": 0.0371
+      },
+      {
+        "date": "2023-01-11",
+        "type": "boost",
+        "asset": "501018",
+        "prob": 0.603,
+        "idx": 592,
+        "on_reb": false,
+        "fwd5": 0.0448,
+        "fwd20": 0.0278
+      },
+      {
+        "date": "2024-08-20",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.57,
+        "idx": 981,
+        "on_reb": false,
+        "fwd5": -0.0177,
+        "fwd20": -0.0191
+      },
+      {
+        "date": "2024-08-21",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.662,
+        "idx": 982,
+        "on_reb": false,
+        "fwd5": -0.0017,
+        "fwd20": 0.0002
+      },
+      {
+        "date": "2025-08-25",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.55,
+        "idx": 1226,
+        "on_reb": false,
+        "fwd5": 0.0694,
+        "fwd20": 0.1261
+      },
+      {
+        "date": "2025-08-26",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.716,
+        "idx": 1227,
+        "on_reb": false,
+        "fwd5": 0.0016,
+        "fwd20": -0.0149
+      },
+      {
+        "date": "2025-09-15",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.561,
+        "idx": 1241,
+        "on_reb": false,
+        "fwd5": 0.0148,
+        "fwd20": 0.0082
+      },
+      {
+        "date": "2025-09-16",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.688,
+        "idx": 1242,
+        "on_reb": false,
+        "fwd5": -0.0163,
+        "fwd20": -0.013
+      },
+      {
+        "date": "2025-09-24",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.556,
+        "idx": 1248,
+        "on_reb": false,
+        "fwd5": 0.0237,
+        "fwd20": 0.025
+      },
+      {
+        "date": "2025-09-25",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.57,
+        "idx": 1249,
+        "on_reb": false,
+        "fwd5": 0.0018,
+        "fwd20": 0.0105
+      },
+      {
+        "date": "2025-10-16",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.552,
+        "idx": 1258,
+        "on_reb": false,
+        "fwd5": -0.0941,
+        "fwd20": 0.0097
+      },
+      {
+        "date": "2025-10-17",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.63,
+        "idx": 1259,
+        "on_reb": false,
+        "fwd5": 0.0796,
+        "fwd20": 0.0611
+      },
+      {
+        "date": "2025-12-03",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.558,
+        "idx": 1292,
+        "on_reb": false,
+        "fwd5": 0.081,
+        "fwd20": 0.3407
+      },
+      {
+        "date": "2025-12-04",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.619,
+        "idx": 1293,
+        "on_reb": false,
+        "fwd5": 0.0022,
+        "fwd20": 0.0024
+      },
+      {
+        "date": "2025-12-10",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.555,
+        "idx": 1297,
+        "on_reb": false,
+        "fwd5": 0.2281,
+        "fwd20": 0.3939
+      },
+      {
+        "date": "2025-12-11",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.687,
+        "idx": 1298,
+        "on_reb": false,
+        "fwd5": -0.0009,
+        "fwd20": 0.0009
+      },
+      {
+        "date": "2025-12-16",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.551,
+        "idx": 1301,
+        "on_reb": false,
+        "fwd5": 0.3976,
+        "fwd20": 0.515
+      },
+      {
+        "date": "2025-12-17",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.615,
+        "idx": 1302,
+        "on_reb": false,
+        "fwd5": 0.0017,
+        "fwd20": 0.0043
+      },
+      {
+        "date": "2025-12-23",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.573,
+        "idx": 1306,
+        "on_reb": false,
+        "fwd5": -0.161,
+        "fwd20": 0.3678
+      },
+      {
+        "date": "2025-12-24",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.687,
+        "idx": 1307,
+        "on_reb": false,
+        "fwd5": 0.0011,
+        "fwd20": 0.0042
+      }
+    ],
+    "0.55x0.60": [
+      {
+        "date": "2022-03-10",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.557,
+        "idx": 386,
+        "on_reb": false,
+        "fwd5": 0.0139,
+        "fwd20": -0.0183
+      },
+      {
+        "date": "2022-03-11",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.612,
+        "idx": 387,
+        "on_reb": false,
+        "fwd5": 0.0201,
+        "fwd20": -0.0554
+      },
+      {
+        "date": "2022-03-22",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.554,
+        "idx": 394,
+        "on_reb": false,
+        "fwd5": -0.0401,
+        "fwd20": -0.0383
+      },
+      {
+        "date": "2022-03-24",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.572,
+        "idx": 396,
+        "on_reb": false,
+        "fwd5": -0.0575,
+        "fwd20": -0.0794
+      },
+      {
+        "date": "2022-03-25",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.646,
+        "idx": 397,
+        "on_reb": false,
+        "fwd5": 0.0058,
+        "fwd20": -0.1867
+      },
+      {
+        "date": "2022-04-18",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.553,
+        "idx": 411,
+        "on_reb": false,
+        "fwd5": -0.053,
+        "fwd20": 0.0498
+      },
+      {
+        "date": "2022-04-19",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.678,
+        "idx": 412,
+        "on_reb": false,
+        "fwd5": -0.1224,
+        "fwd20": -0.0126
+      },
+      {
+        "date": "2022-05-19",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.584,
+        "idx": 431,
+        "on_reb": false,
+        "fwd5": 0.0143,
+        "fwd20": 0.0776
+      },
+      {
+        "date": "2022-05-20",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.668,
+        "idx": 432,
+        "on_reb": false,
+        "fwd5": 0.0061,
+        "fwd20": 0.0064
+      },
+      {
+        "date": "2022-06-06",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.562,
+        "idx": 442,
+        "on_reb": false,
+        "fwd5": 0.0155,
+        "fwd20": -0.0522
+      },
+      {
+        "date": "2022-06-07",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.612,
+        "idx": 443,
+        "on_reb": false,
+        "fwd5": 0.0013,
+        "fwd20": -0.007
+      },
+      {
+        "date": "2022-07-19",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.579,
+        "idx": 473,
+        "on_reb": false,
+        "fwd5": -0.0135,
+        "fwd20": -0.0067
+      },
+      {
+        "date": "2022-07-20",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.648,
+        "idx": 474,
+        "on_reb": false,
+        "fwd5": 0.0029,
+        "fwd20": 0.0075
+      },
+      {
+        "date": "2022-09-15",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.563,
+        "idx": 514,
+        "on_reb": false,
+        "fwd5": 0.0249,
+        "fwd20": 0.0098
+      },
+      {
+        "date": "2022-10-27",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.576,
+        "idx": 539,
+        "on_reb": false,
+        "fwd5": 0.0365,
+        "fwd20": -0.0132
+      },
+      {
+        "date": "2023-01-10",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.56,
+        "idx": 591,
+        "on_reb": false,
+        "fwd5": 0.0287,
+        "fwd20": 0.0371
+      },
+      {
+        "date": "2023-01-11",
+        "type": "boost",
+        "asset": "501018",
+        "prob": 0.603,
+        "idx": 592,
+        "on_reb": false,
+        "fwd5": 0.0448,
+        "fwd20": 0.0278
+      },
+      {
+        "date": "2024-08-20",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.57,
+        "idx": 981,
+        "on_reb": false,
+        "fwd5": -0.0177,
+        "fwd20": -0.0191
+      },
+      {
+        "date": "2024-08-21",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.662,
+        "idx": 982,
+        "on_reb": false,
+        "fwd5": -0.0017,
+        "fwd20": 0.0002
+      },
+      {
+        "date": "2025-08-25",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.55,
+        "idx": 1226,
+        "on_reb": false,
+        "fwd5": 0.0694,
+        "fwd20": 0.1261
+      },
+      {
+        "date": "2025-08-26",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.716,
+        "idx": 1227,
+        "on_reb": false,
+        "fwd5": 0.0016,
+        "fwd20": -0.0149
+      },
+      {
+        "date": "2025-09-15",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.561,
+        "idx": 1241,
+        "on_reb": false,
+        "fwd5": 0.0148,
+        "fwd20": 0.0082
+      },
+      {
+        "date": "2025-09-16",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.688,
+        "idx": 1242,
+        "on_reb": false,
+        "fwd5": -0.0163,
+        "fwd20": -0.013
+      },
+      {
+        "date": "2025-09-24",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.556,
+        "idx": 1248,
+        "on_reb": false,
+        "fwd5": 0.0237,
+        "fwd20": 0.025
+      },
+      {
+        "date": "2025-10-16",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.552,
+        "idx": 1258,
+        "on_reb": false,
+        "fwd5": -0.0941,
+        "fwd20": 0.0097
+      },
+      {
+        "date": "2025-10-17",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.63,
+        "idx": 1259,
+        "on_reb": false,
+        "fwd5": 0.0796,
+        "fwd20": 0.0611
+      },
+      {
+        "date": "2025-12-03",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.558,
+        "idx": 1292,
+        "on_reb": false,
+        "fwd5": 0.081,
+        "fwd20": 0.3407
+      },
+      {
+        "date": "2025-12-04",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.619,
+        "idx": 1293,
+        "on_reb": false,
+        "fwd5": 0.0022,
+        "fwd20": 0.0024
+      },
+      {
+        "date": "2025-12-10",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.555,
+        "idx": 1297,
+        "on_reb": false,
+        "fwd5": 0.2281,
+        "fwd20": 0.3939
+      },
+      {
+        "date": "2025-12-11",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.687,
+        "idx": 1298,
+        "on_reb": false,
+        "fwd5": -0.0009,
+        "fwd20": 0.0009
+      },
+      {
+        "date": "2025-12-16",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.551,
+        "idx": 1301,
+        "on_reb": false,
+        "fwd5": 0.3976,
+        "fwd20": 0.515
+      },
+      {
+        "date": "2025-12-17",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.615,
+        "idx": 1302,
+        "on_reb": false,
+        "fwd5": 0.0017,
+        "fwd20": 0.0043
+      },
+      {
+        "date": "2025-12-23",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.573,
+        "idx": 1306,
+        "on_reb": false,
+        "fwd5": -0.161,
+        "fwd20": 0.3678
+      },
+      {
+        "date": "2025-12-24",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.687,
+        "idx": 1307,
+        "on_reb": false,
+        "fwd5": 0.0011,
+        "fwd20": 0.0042
+      }
+    ],
+    "0.55x0.65": [
+      {
+        "date": "2022-03-10",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.557,
+        "idx": 386,
+        "on_reb": false,
+        "fwd5": 0.0139,
+        "fwd20": -0.0183
+      },
+      {
+        "date": "2022-03-22",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.554,
+        "idx": 394,
+        "on_reb": false,
+        "fwd5": -0.0401,
+        "fwd20": -0.0383
+      },
+      {
+        "date": "2022-03-24",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.572,
+        "idx": 396,
+        "on_reb": false,
+        "fwd5": -0.0575,
+        "fwd20": -0.0794
+      },
+      {
+        "date": "2022-03-28",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.657,
+        "idx": 398,
+        "on_reb": false,
+        "fwd5": 0.0151,
+        "fwd20": -0.1242
+      },
+      {
+        "date": "2022-04-18",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.553,
+        "idx": 411,
+        "on_reb": false,
+        "fwd5": -0.053,
+        "fwd20": 0.0498
+      },
+      {
+        "date": "2022-04-19",
+        "type": "boost",
+        "asset": "159915",
+        "prob": 0.678,
+        "idx": 412,
+        "on_reb": false,
+        "fwd5": -0.1224,
+        "fwd20": -0.0126
+      },
+      {
+        "date": "2022-05-19",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.584,
+        "idx": 431,
+        "on_reb": false,
+        "fwd5": 0.0143,
+        "fwd20": 0.0776
+      },
+      {
+        "date": "2022-05-20",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.668,
+        "idx": 432,
+        "on_reb": false,
+        "fwd5": 0.0061,
+        "fwd20": 0.0064
+      },
+      {
+        "date": "2022-06-06",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.562,
+        "idx": 442,
+        "on_reb": false,
+        "fwd5": 0.0155,
+        "fwd20": -0.0522
+      },
+      {
+        "date": "2022-07-19",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.579,
+        "idx": 473,
+        "on_reb": false,
+        "fwd5": -0.0135,
+        "fwd20": -0.0067
+      },
+      {
+        "date": "2022-07-22",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.551,
+        "idx": 476,
+        "on_reb": false,
+        "fwd5": 0.0242,
+        "fwd20": 0.0704
+      },
+      {
+        "date": "2022-07-25",
+        "type": "boost",
+        "asset": "161226",
+        "prob": 0.656,
+        "idx": 477,
+        "on_reb": false,
+        "fwd5": 0.0606,
+        "fwd20": 0.0253
+      },
+      {
+        "date": "2022-09-15",
+        "type": "guard",
+        "asset": "159985",
+        "prob": 0.563,
+        "idx": 514,
+        "on_reb": false,
+        "fwd5": 0.0249,
+        "fwd20": 0.0098
+      },
+      {
+        "date": "2022-10-27",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.576,
+        "idx": 539,
+        "on_reb": false,
+        "fwd5": 0.0365,
+        "fwd20": -0.0132
+      },
+      {
+        "date": "2023-01-10",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.56,
+        "idx": 591,
+        "on_reb": false,
+        "fwd5": 0.0287,
+        "fwd20": 0.0371
+      },
+      {
+        "date": "2023-01-12",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.657,
+        "idx": 593,
+        "on_reb": false,
+        "fwd5": -0.0002,
+        "fwd20": 0.0072
+      },
+      {
+        "date": "2024-08-20",
+        "type": "guard",
+        "asset": "513100",
+        "prob": 0.57,
+        "idx": 981,
+        "on_reb": false,
+        "fwd5": -0.0177,
+        "fwd20": -0.0191
+      },
+      {
+        "date": "2024-08-21",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.662,
+        "idx": 982,
+        "on_reb": false,
+        "fwd5": -0.0017,
+        "fwd20": 0.0002
+      },
+      {
+        "date": "2025-08-25",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.55,
+        "idx": 1226,
+        "on_reb": false,
+        "fwd5": 0.0694,
+        "fwd20": 0.1261
+      },
+      {
+        "date": "2025-08-26",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.716,
+        "idx": 1227,
+        "on_reb": false,
+        "fwd5": 0.0016,
+        "fwd20": -0.0149
+      },
+      {
+        "date": "2025-09-15",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.561,
+        "idx": 1241,
+        "on_reb": false,
+        "fwd5": 0.0148,
+        "fwd20": 0.0082
+      },
+      {
+        "date": "2025-09-16",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.688,
+        "idx": 1242,
+        "on_reb": false,
+        "fwd5": -0.0163,
+        "fwd20": -0.013
+      },
+      {
+        "date": "2025-09-24",
+        "type": "guard",
+        "asset": "159915",
+        "prob": 0.556,
+        "idx": 1248,
+        "on_reb": false,
+        "fwd5": 0.0237,
+        "fwd20": 0.025
+      },
+      {
+        "date": "2025-10-16",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.552,
+        "idx": 1258,
+        "on_reb": false,
+        "fwd5": -0.0941,
+        "fwd20": 0.0097
+      },
+      {
+        "date": "2025-12-03",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.558,
+        "idx": 1292,
+        "on_reb": false,
+        "fwd5": 0.081,
+        "fwd20": 0.3407
+      },
+      {
+        "date": "2025-12-10",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.555,
+        "idx": 1297,
+        "on_reb": false,
+        "fwd5": 0.2281,
+        "fwd20": 0.3939
+      },
+      {
+        "date": "2025-12-11",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.687,
+        "idx": 1298,
+        "on_reb": false,
+        "fwd5": -0.0009,
+        "fwd20": 0.0009
+      },
+      {
+        "date": "2025-12-16",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.551,
+        "idx": 1301,
+        "on_reb": false,
+        "fwd5": 0.3976,
+        "fwd20": 0.515
+      },
+      {
+        "date": "2025-12-19",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.657,
+        "idx": 1304,
+        "on_reb": false,
+        "fwd5": 0.0003,
+        "fwd20": 0.0036
+      },
+      {
+        "date": "2025-12-23",
+        "type": "guard",
+        "asset": "161226",
+        "prob": 0.573,
+        "idx": 1306,
+        "on_reb": false,
+        "fwd5": -0.161,
+        "fwd20": 0.3678
+      },
+      {
+        "date": "2025-12-24",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.687,
+        "idx": 1307,
+        "on_reb": false,
+        "fwd5": 0.0011,
+        "fwd20": 0.0042
+      }
+    ],
+    "0.60x0.55": [
+      {
+        "date": "2022-04-29",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.62,
+        "idx": 420,
+        "on_reb": true,
+        "fwd5": -0.007,
+        "fwd20": 0.0877
+      },
+      {
+        "date": "2022-05-05",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.621,
+        "idx": 421,
+        "on_reb": false,
+        "fwd5": 0.005,
+        "fwd20": 0.0092
+      }
+    ],
+    "0.60x0.60": [
+      {
+        "date": "2022-04-29",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.62,
+        "idx": 420,
+        "on_reb": true,
+        "fwd5": -0.007,
+        "fwd20": 0.0877
+      },
+      {
+        "date": "2022-05-05",
+        "type": "boost",
+        "asset": "511220",
+        "prob": 0.621,
+        "idx": 421,
+        "on_reb": false,
+        "fwd5": 0.005,
+        "fwd20": 0.0092
+      }
+    ],
+    "0.60x0.65": [
+      {
+        "date": "2022-04-29",
+        "type": "guard",
+        "asset": "501018",
+        "prob": 0.62,
+        "idx": 420,
+        "on_reb": true,
+        "fwd5": -0.007,
+        "fwd20": 0.0877
+      }
+    ]
+  }
+}

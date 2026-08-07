@@ -1,0 +1,82 @@
+{
+  "meta": {
+    "model": "CNN L3 F32 lr1e-03 drop0.3 buffer0.5%",
+    "note": "滚动OOS: 每段用段前数据训练, 测试段未参与训练(无未来函数)"
+  },
+  "segments": [
+    {
+      "segment": "A",
+      "test_span": [
+        "2022-01-04",
+        "2023-06-30"
+      ],
+      "cnn": {
+        "final_value": 332437.0,
+        "total_return": 2.3244,
+        "ann_return": 0.3001,
+        "sharpe": 1.15,
+        "max_drawdown": -0.283,
+        "n_trades": 8
+      },
+      "v3": {
+        "final_value": 807825.0,
+        "total_return": 7.0782,
+        "ann_return": 0.5784,
+        "sharpe": 1.471,
+        "max_drawdown": -0.4072,
+        "n_trades": 155
+      },
+      "beat": false
+    },
+    {
+      "segment": "B",
+      "test_span": [
+        "2023-07-03",
+        "2024-12-31"
+      ],
+      "cnn": {
+        "final_value": 142891.0,
+        "total_return": 0.4289,
+        "ann_return": 0.1226,
+        "sharpe": 0.484,
+        "max_drawdown": -0.2536,
+        "n_trades": 9
+      },
+      "v3": {
+        "final_value": 660676.0,
+        "total_return": 5.6068,
+        "ann_return": 0.844,
+        "sharpe": 1.964,
+        "max_drawdown": -0.4072,
+        "n_trades": 111
+      },
+      "beat": false
+    },
+    {
+      "segment": "C",
+      "test_span": [
+        "2025-01-02",
+        "2026-08-03"
+      ],
+      "cnn": {
+        "final_value": 286257.0,
+        "total_return": 1.8626,
+        "ann_return": 0.9437,
+        "sharpe": 2.201,
+        "max_drawdown": -0.2761,
+        "n_trades": 12
+      },
+      "v3": {
+        "final_value": 436145.0,
+        "total_return": 3.3615,
+        "ann_return": 1.5363,
+        "sharpe": 3.108,
+        "max_drawdown": -0.4072,
+        "n_trades": 63
+      },
+      "beat": false
+    }
+  ],
+  "wins": 0,
+  "passed": false
+}

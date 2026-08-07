@@ -1,0 +1,83 @@
+{
+  "events_audit": [
+    {
+      "date": "2020-08-12",
+      "type": "H1/H2硬触发",
+      "from": "511220",
+      "reason": "entry_dd=17.9% day=-8.7%",
+      "fwd5_orig": 0.0025,
+      "fwd20_orig": 0.0012,
+      "opp_cost20": 0.0012
+    },
+    {
+      "date": "2022-03-04",
+      "type": "H1/H2硬触发",
+      "from": "511220",
+      "reason": "entry_dd=-5.9% day=-5.9%",
+      "fwd5_orig": -0.0015,
+      "fwd20_orig": -0.015,
+      "opp_cost20": -0.015
+    },
+    {
+      "date": "2022-04-11",
+      "type": "层2衰减退出",
+      "target": "511220",
+      "delta_s": -0.0638,
+      "fwd5_orig": -0.0,
+      "fwd20_orig": 0.0049,
+      "opp_cost20": 0.0049
+    },
+    {
+      "date": "2025-04-07",
+      "type": "H1/H2硬触发",
+      "from": "511220",
+      "reason": "entry_dd=-8.5% day=-8.3%",
+      "fwd5_orig": -0.0021,
+      "fwd20_orig": -0.0014,
+      "opp_cost20": -0.0014
+    },
+    {
+      "date": "2025-06-20",
+      "type": "H1/H2硬触发",
+      "from": "511220",
+      "reason": "entry_dd=3.5% day=-7.0%",
+      "fwd5_orig": -0.0003,
+      "fwd20_orig": 0.0022,
+      "opp_cost20": 0.0022
+    },
+    {
+      "date": "2025-10-20",
+      "type": "H1/H2硬触发",
+      "from": "511220",
+      "reason": "entry_dd=8.6% day=-6.9%",
+      "fwd5_orig": 0.002,
+      "fwd20_orig": 0.0064,
+      "opp_cost20": 0.0064
+    },
+    {
+      "date": "2026-02-02",
+      "type": "H1/H2硬触发",
+      "from": "511220",
+      "reason": "entry_dd=53.8% day=-10.0%",
+      "fwd5_orig": 0.0017,
+      "fwd20_orig": 0.0042,
+      "opp_cost20": 0.0042
+    },
+    {
+      "date": "2026-03-25",
+      "type": "H1/H2硬触发",
+      "from": "511220",
+      "reason": "entry_dd=11.2% day=-10.0%",
+      "fwd5_orig": 0.0008,
+      "fwd20_orig": 0.0031,
+      "opp_cost20": 0.0031
+    }
+  ],
+  "total_opp_cost": 0.0056,
+  "vol_buckets": {
+    "hv_days": 87,
+    "lv_days": 1391,
+    "hv_mean_daily": 0.00827,
+    "lv_mean_daily": 0.001894
+  }
+}

@@ -1,0 +1,919 @@
+{
+  "asset_stats": {
+    "518880": {
+      "name": "黄金ETF",
+      "n_days": 3163,
+      "ann_ret": 0.097243,
+      "ann_vol": 0.150982,
+      "skew": -0.708468,
+      "kurt": 12.570483,
+      "var95": -0.013018,
+      "es95": -0.021867,
+      "var99": -0.025275,
+      "es99": -0.038944,
+      "max_daily_drop": -0.100009,
+      "drop_gt3pct": 20,
+      "drop_gt5pct": 5,
+      "max_consec_down": 10
+    },
+    "159985": {
+      "name": "豆粕ETF",
+      "n_days": 1613,
+      "ann_ret": 0.124872,
+      "ann_vol": 0.198451,
+      "skew": 0.520652,
+      "kurt": 4.359417,
+      "var95": -0.018049,
+      "es95": -0.026044,
+      "var99": -0.03008,
+      "es99": -0.038339,
+      "max_daily_drop": -0.059006,
+      "drop_gt3pct": 17,
+      "drop_gt5pct": 2,
+      "max_consec_down": 7
+    },
+    "501018": {
+      "name": "南方原油",
+      "n_days": 2449,
+      "ann_ret": 0.068938,
+      "ann_vol": 0.320551,
+      "skew": 0.271828,
+      "kurt": 7.129619,
+      "var95": -0.026868,
+      "es95": -0.046349,
+      "var99": -0.059486,
+      "es99": -0.082841,
+      "max_daily_drop": -0.100215,
+      "drop_gt3pct": 102,
+      "drop_gt5pct": 33,
+      "max_consec_down": 10
+    },
+    "161226": {
+      "name": "白银LOF",
+      "n_days": 2659,
+      "ann_ret": 0.062543,
+      "ann_vol": 0.291289,
+      "skew": 0.400576,
+      "kurt": 9.554633,
+      "var95": -0.023518,
+      "es95": -0.042665,
+      "var99": -0.05306,
+      "es99": -0.078207,
+      "max_daily_drop": -0.100128,
+      "drop_gt3pct": 88,
+      "drop_gt5pct": 34,
+      "max_consec_down": 9
+    },
+    "513100": {
+      "name": "纳指ETF",
+      "n_days": 3160,
+      "ann_ret": 0.208429,
+      "ann_vol": 0.215379,
+      "skew": -0.324965,
+      "kurt": 5.28539,
+      "var95": -0.019396,
+      "es95": -0.031936,
+      "var99": -0.038251,
+      "es99": -0.053005,
+      "max_daily_drop": -0.099788,
+      "drop_gt3pct": 64,
+      "drop_gt5pct": 14,
+      "max_consec_down": 9
+    },
+    "159915": {
+      "name": "创业板ETF",
+      "n_days": 3554,
+      "ann_ret": 0.106587,
+      "ann_vol": 0.333744,
+      "skew": 0.180976,
+      "kurt": 8.745154,
+      "var95": -0.029469,
+      "es95": -0.048256,
+      "var99": -0.059509,
+      "es99": -0.081873,
+      "max_daily_drop": -0.162808,
+      "drop_gt3pct": 166,
+      "drop_gt5pct": 61,
+      "max_consec_down": 10
+    },
+    "511220": {
+      "name": "城投债ETF",
+      "n_days": 2819,
+      "ann_ret": 0.008717,
+      "ann_vol": 0.034932,
+      "skew": -1.575904,
+      "kurt": 14.072033,
+      "var95": -0.00303,
+      "es95": -0.006369,
+      "var99": -0.008714,
+      "es99": -0.012106,
+      "max_daily_drop": -0.018544,
+      "drop_gt3pct": 0,
+      "drop_gt5pct": 0,
+      "max_consec_down": 11
+    },
+    "511880": {
+      "name": "货币基金",
+      "n_days": 3229,
+      "ann_ret": 0.000462,
+      "ann_vol": 0.025968,
+      "skew": -17.583254,
+      "kurt": 334.022632,
+      "var95": -0.000129,
+      "es95": -0.002269,
+      "var99": -0.000604,
+      "es99": -0.010161,
+      "max_daily_drop": -0.039357,
+      "drop_gt3pct": 5,
+      "drop_gt5pct": 0,
+      "max_consec_down": 4
+    }
+  },
+  "category_compare": {
+    "商品(银油粕金)": {
+      "ann_vol": 0.240318,
+      "skew": 0.121147,
+      "kurt": 8.403538,
+      "var99": -0.041975,
+      "es99": -0.059583,
+      "max_daily_drop": -0.08984,
+      "drop_gt3pct": 56.75,
+      "drop_gt5pct": 18.5
+    },
+    "股票(创业板/纳指)": {
+      "ann_vol": 0.274562,
+      "skew": -0.071994,
+      "kurt": 7.015272,
+      "var99": -0.04888,
+      "es99": -0.067439,
+      "max_daily_drop": -0.131298,
+      "drop_gt3pct": 115.0,
+      "drop_gt5pct": 37.5
+    }
+  },
+  "correlation": {
+    "黄金ETF": {
+      "黄金ETF": 1.0,
+      "豆粕ETF": 0.0293,
+      "南方原油": 0.0576,
+      "白银LOF": 0.6622,
+      "纳指ETF": 0.1009,
+      "创业板ETF": 0.0839,
+      "城投债ETF": 0.0291
+    },
+    "豆粕ETF": {
+      "黄金ETF": 0.0293,
+      "豆粕ETF": 1.0,
+      "南方原油": 0.1993,
+      "白银LOF": 0.043,
+      "纳指ETF": 0.0411,
+      "创业板ETF": 0.0273,
+      "城投债ETF": -0.0448
+    },
+    "南方原油": {
+      "黄金ETF": 0.0576,
+      "豆粕ETF": 0.1993,
+      "南方原油": 1.0,
+      "白银LOF": 0.1029,
+      "纳指ETF": 0.0225,
+      "创业板ETF": 0.0217,
+      "城投债ETF": -0.0114
+    },
+    "白银LOF": {
+      "黄金ETF": 0.6622,
+      "豆粕ETF": 0.043,
+      "南方原油": 0.1029,
+      "白银LOF": 1.0,
+      "纳指ETF": 0.1849,
+      "创业板ETF": 0.17,
+      "城投债ETF": 0.0105
+    },
+    "纳指ETF": {
+      "黄金ETF": 0.1009,
+      "豆粕ETF": 0.0411,
+      "南方原油": 0.0225,
+      "白银LOF": 0.1849,
+      "纳指ETF": 1.0,
+      "创业板ETF": 0.3136,
+      "城投债ETF": -0.0218
+    },
+    "创业板ETF": {
+      "黄金ETF": 0.0839,
+      "豆粕ETF": 0.0273,
+      "南方原油": 0.0217,
+      "白银LOF": 0.17,
+      "纳指ETF": 0.3136,
+      "创业板ETF": 1.0,
+      "城投债ETF": -0.095
+    },
+    "城投债ETF": {
+      "黄金ETF": 0.0291,
+      "豆粕ETF": -0.0448,
+      "南方原油": -0.0114,
+      "白银LOF": 0.0105,
+      "纳指ETF": -0.0218,
+      "创业板ETF": -0.095,
+      "城投债ETF": 1.0
+    }
+  },
+  "drawdown_segments": [
+    {
+      "start": "2026-02-02",
+      "end": "2026-05-29",
+      "trough": "2026-02-06",
+      "depth": -0.4073091423053947,
+      "days": 74,
+      "recovery_days_from_trough": 69,
+      "recovered": true,
+      "holding": "161226",
+      "holding_name": "白银LOF",
+      "trough_holding": "161226",
+      "trough_holding_name": "白银LOF",
+      "signal": {
+        "hold_mom10": 0.6578668643816753,
+        "hold_mom20": 0.6419529847080039,
+        "hold_slope": 0.015913879673671416,
+        "hold_vol20": 0.895735600343478,
+        "hold_dd52w": -0.0022959183673469273,
+        "n_candidates": 5,
+        "top_margin": 0.4565612961579587,
+        "pool_mean": 0.2006942486842121,
+        "a_share_weak": true
+      }
+    },
+    {
+      "start": "2022-03-10",
+      "end": "2023-08-16",
+      "trough": "2022-05-16",
+      "depth": -0.3775561703821526,
+      "days": 351,
+      "recovery_days_from_trough": 308,
+      "recovered": true,
+      "holding": "501018",
+      "holding_name": "南方原油",
+      "trough_holding": "159915",
+      "trough_holding_name": "创业板ETF",
+      "signal": {
+        "hold_mom10": 0.28625677165956553,
+        "hold_mom20": 0.3130440101349209,
+        "hold_slope": -0.026787238475355357,
+        "hold_vol20": 0.6028700462607817,
+        "hold_dd52w": -0.011708860759493688,
+        "n_candidates": 3,
+        "top_margin": 0.06522658920102294,
+        "pool_mean": 0.07734707804415861,
+        "a_share_weak": true
+      }
+    },
+    {
+      "start": "2025-12-25",
+      "end": "2026-01-20",
+      "trough": "2025-12-31",
+      "depth": -0.24855385185237688,
+      "days": 17,
+      "recovery_days_from_trough": 12,
+      "recovered": true,
+      "holding": "161226",
+      "holding_name": "白银LOF",
+      "trough_holding": "159915",
+      "trough_holding_name": "创业板ETF",
+      "signal": {
+        "hold_mom10": 0.5196184004570679,
+        "hold_mom20": 0.882020526486861,
+        "hold_slope": -0.36240212602979316,
+        "hold_vol20": 0.5097011658182321,
+        "hold_dd52w": 0.0,
+        "n_candidates": 3,
+        "top_margin": 0.6475854368801978,
+        "pool_mean": 0.2341382371925564,
+        "a_share_weak": false
+      }
+    },
+    {
+      "start": "2023-08-22",
+      "end": "2024-09-27",
+      "trough": "2024-02-05",
+      "depth": -0.22850456818058562,
+      "days": 268,
+      "recovery_days_from_trough": 155,
+      "recovered": true,
+      "holding": "159985",
+      "holding_name": "豆粕ETF",
+      "trough_holding": "501018",
+      "trough_holding_name": "南方原油",
+      "signal": {
+        "hold_mom10": 0.05087996048491268,
+        "hold_mom20": 0.08425191857452068,
+        "hold_slope": -0.033371958089607995,
+        "hold_vol20": 0.15362983493798454,
+        "hold_dd52w": -0.00026821636119804814,
+        "n_candidates": 3,
+        "top_margin": 0.031007107706695035,
+        "pool_mean": 0.03352049075316517,
+        "a_share_weak": true
+      }
+    },
+    {
+      "start": "2024-10-09",
+      "end": "2024-12-13",
+      "trough": "2024-10-10",
+      "depth": -0.18953291675359796,
+      "days": 48,
+      "recovery_days_from_trough": 46,
+      "recovered": true,
+      "holding": "159915",
+      "holding_name": "创业板ETF",
+      "trough_holding": "518880",
+      "trough_holding_name": "黄金ETF",
+      "signal": {
+        "hold_mom10": 0.3269519338084462,
+        "hold_mom20": 0.3253220847290007,
+        "hold_slope": 0.0016298490794455223,
+        "hold_vol20": 0.5677144465404007,
+        "hold_dd52w": -0.08332794011982503,
+        "n_candidates": 4,
+        "top_margin": 0.275868491023354,
+        "pool_mean": 0.10226509196430977,
+        "a_share_weak": false
+      }
+    },
+    {
+      "start": "2020-09-04",
+      "end": "2020-11-20",
+      "trough": "2020-09-07",
+      "depth": -0.15368773830773474,
+      "days": 50,
+      "recovery_days_from_trough": 48,
+      "recovered": true,
+      "holding": "513100",
+      "holding_name": "纳指ETF",
+      "trough_holding": "513100",
+      "trough_holding_name": "纳指ETF",
+      "signal": {
+        "hold_mom10": 0.24231543633866956,
+        "hold_mom20": 0.28400803471629954,
+        "hold_slope": -0.04169259837762998,
+        "hold_vol20": 0.3171199914595263,
+        "hold_dd52w": -0.0026888098062475274,
+        "n_candidates": 3,
+        "top_margin": 0.24852201188061612,
+        "pool_mean": 0.08609790572536276,
+        "a_share_weak": false
+      }
+    },
+    {
+      "start": "2025-01-17",
+      "end": "2025-06-18",
+      "trough": "2025-04-15",
+      "depth": -0.15152654264131538,
+      "days": 98,
+      "recovery_days_from_trough": 42,
+      "recovered": true,
+      "holding": "501018",
+      "holding_name": "南方原油",
+      "trough_holding": "518880",
+      "trough_holding_name": "黄金ETF",
+      "signal": {
+        "hold_mom10": 0.0791099414483897,
+        "hold_mom20": 0.08982412300894109,
+        "hold_slope": -0.010714181560551386,
+        "hold_vol20": 0.18639343067648279,
+        "hold_dd52w": -0.03589001447177995,
+        "n_candidates": 4,
+        "top_margin": 0.05001886918598629,
+        "pool_mean": 0.03305888868159481,
+        "a_share_weak": true
+      }
+    },
+    {
+      "start": "2026-06-02",
+      "end": "2026-08-03",
+      "trough": "2026-07-24",
+      "depth": -0.14337917312291348,
+      "days": 44,
+      "recovery_days_from_trough": null,
+      "recovered": false,
+      "holding": "513100",
+      "holding_name": "纳指ETF",
+      "trough_holding": "161226",
+      "trough_holding_name": "白银LOF",
+      "signal": {
+        "hold_mom10": 0.0781948607893979,
+        "hold_mom20": 0.16286289289651612,
+        "hold_slope": -0.08466803210711822,
+        "hold_vol20": 0.2505641517034784,
+        "hold_dd52w": -0.006364858807709539,
+        "n_candidates": 2,
+        "top_margin": 0.06515006142687017,
+        "pool_mean": 0.0654725736452371,
+        "a_share_weak": false
+      }
+    },
+    {
+      "start": "2021-03-16",
+      "end": "2021-09-27",
+      "trough": "2021-05-21",
+      "depth": -0.12516567856505167,
+      "days": 133,
+      "recovery_days_from_trough": 88,
+      "recovered": true,
+      "holding": "501018",
+      "holding_name": "南方原油",
+      "trough_holding": "159915",
+      "trough_holding_name": "创业板ETF",
+      "signal": {
+        "hold_mom10": 0.050712843609584515,
+        "hold_mom20": 0.162212216680905,
+        "hold_slope": -0.11149937307132048,
+        "hold_vol20": 0.34852773738503295,
+        "hold_dd52w": -0.2524347829583178,
+        "n_candidates": 1,
+        "top_margin": 0.10312725075711268,
+        "pool_mean": 0.06521162984239967,
+        "a_share_weak": true
+      }
+    },
+    {
+      "start": "2021-01-13",
+      "end": "2021-02-22",
+      "trough": "2021-01-29",
+      "depth": -0.12027974074191727,
+      "days": 23,
+      "recovery_days_from_trough": 10,
+      "recovered": true,
+      "holding": "159915",
+      "holding_name": "创业板ETF",
+      "trough_holding": "501018",
+      "trough_holding_name": "南方原油",
+      "signal": {
+        "hold_mom10": 0.10795210075861968,
+        "hold_mom20": 0.1561569444715642,
+        "hold_slope": -0.04820484371294452,
+        "hold_vol20": 0.2487671526322607,
+        "hold_dd52w": -0.005693717277486932,
+        "n_candidates": 6,
+        "top_margin": 0.024797599194971782,
+        "pool_mean": 0.06516129642658502,
+        "a_share_weak": false
+      }
+    },
+    {
+      "start": "2025-10-20",
+      "end": "2025-11-28",
+      "trough": "2025-11-21",
+      "depth": -0.1132628623077735,
+      "days": 30,
+      "recovery_days_from_trough": 5,
+      "recovered": true,
+      "holding": "161226",
+      "holding_name": "白银LOF",
+      "trough_holding": "159985",
+      "trough_holding_name": "豆粕ETF",
+      "signal": {
+        "hold_mom10": 0.18419310603522193,
+        "hold_mom20": 0.2445520522110991,
+        "hold_slope": -0.06035894617587717,
+        "hold_vol20": 0.3432418845618582,
+        "hold_dd52w": -0.000588235294117645,
+        "n_candidates": 3,
+        "top_margin": 0.06678713535834348,
+        "pool_mean": 0.11850329081812047,
+        "a_share_weak": true
+      }
+    },
+    {
+      "start": "2022-02-25",
+      "end": "2022-03-07",
+      "trough": "2022-03-04",
+      "depth": -0.10001833037521357,
+      "days": 7,
+      "recovery_days_from_trough": 1,
+      "recovered": true,
+      "holding": "159985",
+      "holding_name": "豆粕ETF",
+      "trough_holding": "501018",
+      "trough_holding_name": "南方原油",
+      "signal": {
+        "hold_mom10": 0.0650413046715585,
+        "hold_mom20": 0.2231656527199465,
+        "hold_slope": -0.158124348048388,
+        "hold_vol20": 0.3457756083549281,
+        "hold_dd52w": -0.0021843003412969743,
+        "n_candidates": 5,
+        "top_margin": 0.08505771825052147,
+        "pool_mean": 0.05282823508262228,
+        "a_share_weak": true
+      }
+    },
+    {
+      "start": "2020-08-11",
+      "end": "2020-08-20",
+      "trough": "2020-08-12",
+      "depth": -0.0973151035926586,
+      "days": 8,
+      "recovery_days_from_trough": 6,
+      "recovered": true,
+      "holding": "161226",
+      "holding_name": "白银LOF",
+      "trough_holding": "161226",
+      "trough_holding_name": "白银LOF",
+      "signal": {
+        "hold_mom10": 0.16396021424542778,
+        "hold_mom20": 0.34720316863148254,
+        "hold_slope": -0.18324295438605476,
+        "hold_vol20": 0.5096239844000927,
+        "hold_dd52w": -0.0026415094339622635,
+        "n_candidates": 4,
+        "top_margin": 0.17566220084683265,
+        "pool_mean": 0.10105768408737559,
+        "a_share_weak": false
+      }
+    },
+    {
+      "start": "2020-07-14",
+      "end": "2020-07-21",
+      "trough": "2020-07-16",
+      "depth": -0.08643022637799969,
+      "days": 6,
+      "recovery_days_from_trough": 3,
+      "recovered": true,
+      "holding": "159915",
+      "holding_name": "创业板ETF",
+      "trough_holding": "159915",
+      "trough_holding_name": "创业板ETF",
+      "signal": {
+        "hold_mom10": 0.15993654635078136,
+        "hold_mom20": 0.26015345713905713,
+        "hold_slope": -0.10021691078827577,
+        "hold_vol20": 0.19588063499462952,
+        "hold_dd52w": 0.0,
+        "n_candidates": 5,
+        "top_margin": 0.17418911648793758,
+        "pool_mean": 0.06141600965107604,
+        "a_share_weak": false
+      }
+    },
+    {
+      "start": "2025-06-20",
+      "end": "2025-07-02",
+      "trough": "2025-06-20",
+      "depth": -0.06954973437818956,
+      "days": 9,
+      "recovery_days_from_trough": 8,
+      "recovered": true,
+      "holding": "501018",
+      "holding_name": "南方原油",
+      "trough_holding": "501018",
+      "trough_holding_name": "南方原油",
+      "signal": {
+        "hold_mom10": 0.1550966224422675,
+        "hold_mom20": 0.15662979581839392,
+        "hold_slope": -0.0015331733761264343,
+        "hold_vol20": 0.28135085960387685,
+        "hold_dd52w": -0.036725663716814225,
+        "n_candidates": 6,
+        "top_margin": 0.07571074334076318,
+        "pool_mean": 0.05297467899078199,
+        "a_share_weak": false
+      }
+    },
+    {
+      "start": "2021-10-19",
+      "end": "2021-12-22",
+      "trough": "2021-12-06",
+      "depth": -0.06929916837007188,
+      "days": 47,
+      "recovery_days_from_trough": 12,
+      "recovered": true,
+      "holding": "501018",
+      "holding_name": "南方原油",
+      "trough_holding": "513100",
+      "trough_holding_name": "纳指ETF",
+      "signal": {
+        "hold_mom10": 0.10181428081281436,
+        "hold_mom20": 0.1547490895526469,
+        "hold_slope": -0.05293480873983254,
+        "hold_vol20": 0.23887846280162955,
+        "hold_dd52w": -0.0014957264957264904,
+        "n_candidates": 1,
+        "top_margin": 0.12012806787902992,
+        "pool_mean": 0.08728782786304605,
+        "a_share_weak": false
+      }
+    },
+    {
+      "start": "2025-09-02",
+      "end": "2025-09-04",
+      "trough": "2025-09-04",
+      "depth": -0.05974862155087712,
+      "days": 3,
+      "recovery_days_from_trough": 0,
+      "recovered": true,
+      "holding": "159915",
+      "holding_name": "创业板ETF",
+      "trough_holding": "159915",
+      "trough_holding_name": "创业板ETF",
+      "signal": {
+        "hold_mom10": 0.13032871252155476,
+        "hold_mom20": 0.2036750868737486,
+        "hold_slope": -0.07334637435219385,
+        "hold_vol20": 0.2616776444819263,
+        "hold_dd52w": -0.004530507855316035,
+        "n_candidates": 4,
+        "top_margin": 0.13675153017330643,
+        "pool_mean": 0.05113391943728518,
+        "a_share_weak": false
+      }
+    },
+    {
+      "start": "2022-02-08",
+      "end": "2022-02-22",
+      "trough": "2022-02-15",
+      "depth": -0.05337825823901843,
+      "days": 11,
+      "recovery_days_from_trough": 5,
+      "recovered": true,
+      "holding": "501018",
+      "holding_name": "南方原油",
+      "trough_holding": "159985",
+      "trough_holding_name": "豆粕ETF",
+      "signal": {
+        "hold_mom10": 0.053894589268243566,
+        "hold_mom20": 0.11847328580279903,
+        "hold_slope": -0.06457869653455547,
+        "hold_vol20": 0.20225767566725522,
+        "hold_dd52w": -0.004498977505112478,
+        "n_candidates": 3,
+        "top_margin": 0.04600423167083884,
+        "pool_mean": 0.047893323755748764,
+        "a_share_weak": true
+      }
+    },
+    {
+      "start": "2020-11-24",
+      "end": "2020-12-16",
+      "trough": "2020-12-02",
+      "depth": -0.04611611203185684,
+      "days": 17,
+      "recovery_days_from_trough": 10,
+      "recovered": true,
+      "holding": "159985",
+      "holding_name": "豆粕ETF",
+      "trough_holding": "501018",
+      "trough_holding_name": "南方原油",
+      "signal": {
+        "hold_mom10": 0.03347714552435895,
+        "hold_mom20": 0.02477521898229278,
+        "hold_slope": 0.008701926542066172,
+        "hold_vol20": 0.16886189847406854,
+        "hold_dd52w": -0.006990622335890939,
+        "n_candidates": 1,
+        "top_margin": 0.037594098715097335,
+        "pool_mean": 0.025366772381816134,
+        "a_share_weak": true
+      }
+    },
+    {
+      "start": "2024-12-19",
+      "end": "2024-12-25",
+      "trough": "2024-12-20",
+      "depth": -0.04562542833634464,
+      "days": 5,
+      "recovery_days_from_trough": 3,
+      "recovered": true,
+      "holding": "513100",
+      "holding_name": "纳指ETF",
+      "trough_holding": "513100",
+      "trough_holding_name": "纳指ETF",
+      "signal": {
+        "hold_mom10": 0.06274229230786496,
+        "hold_mom20": 0.08854768321557496,
+        "hold_slope": -0.025805390907710002,
+        "hold_vol20": 0.12445882992313202,
+        "hold_dd52w": 0.0,
+        "n_candidates": 5,
+        "top_margin": 0.04746742023091758,
+        "pool_mean": 0.028445673102909092,
+        "a_share_weak": true
+      }
+    },
+    {
+      "start": "2020-12-18",
+      "end": "2020-12-30",
+      "trough": "2020-12-29",
+      "depth": -0.04527688852838818,
+      "days": 9,
+      "recovery_days_from_trough": 1,
+      "recovered": true,
+      "holding": "501018",
+      "holding_name": "南方原油",
+      "trough_holding": "159915",
+      "trough_holding_name": "创业板ETF",
+      "signal": {
+        "hold_mom10": 0.024994602171121663,
+        "hold_mom20": 0.08471073766119222,
+        "hold_slope": -0.05971613549007056,
+        "hold_vol20": 0.21409560788247856,
+        "hold_dd52w": -0.5734740015071591,
+        "n_candidates": 4,
+        "top_margin": 0.024165849060739347,
+        "pool_mean": 0.027525703718920158,
+        "a_share_weak": false
+      }
+    },
+    {
+      "start": "2021-02-26",
+      "end": "2021-03-04",
+      "trough": "2021-03-02",
+      "depth": -0.038867219072357684,
+      "days": 5,
+      "recovery_days_from_trough": 2,
+      "recovered": true,
+      "holding": "501018",
+      "holding_name": "南方原油",
+      "trough_holding": "501018",
+      "trough_holding_name": "南方原油",
+      "signal": {
+        "hold_mom10": 0.11743202991850658,
+        "hold_mom20": 0.1329385137120315,
+        "hold_slope": -0.015506483793524914,
+        "hold_vol20": 0.2329581662814518,
+        "hold_dd52w": -0.33651630643445574,
+        "n_candidates": 4,
+        "top_margin": 0.0782544928592308,
+        "pool_mean": 0.04771107021103952,
+        "a_share_weak": true
+      }
+    },
+    {
+      "start": "2025-07-30",
+      "end": "2025-08-11",
+      "trough": "2025-07-31",
+      "depth": -0.03414284275702817,
+      "days": 9,
+      "recovery_days_from_trough": 7,
+      "recovered": true,
+      "holding": "159915",
+      "holding_name": "创业板ETF",
+      "trough_holding": "159915",
+      "trough_holding_name": "创业板ETF",
+      "signal": {
+        "hold_mom10": 0.06864357525329405,
+        "hold_mom20": 0.10347967317727254,
+        "hold_slope": -0.03483609792397849,
+        "hold_vol20": 0.15542221701998932,
+        "hold_dd52w": -0.12957430918595964,
+        "n_candidates": 5,
+        "top_margin": 0.03749228297175407,
+        "pool_mean": 0.03695276450828059,
+        "a_share_weak": false
+      }
+    },
+    {
+      "start": "2020-07-29",
+      "end": "2020-08-04",
+      "trough": "2020-07-30",
+      "depth": -0.03181864513364441,
+      "days": 5,
+      "recovery_days_from_trough": 3,
+      "recovered": true,
+      "holding": "161226",
+      "holding_name": "白银LOF",
+      "trough_holding": "161226",
+      "trough_holding_name": "白银LOF",
+      "signal": {
+        "hold_mom10": 0.1820835204857531,
+        "hold_mom20": 0.2271949843146742,
+        "hold_slope": -0.04511146382892109,
+        "hold_vol20": 0.4125254936181427,
+        "hold_dd52w": -0.008110781404549927,
+        "n_candidates": 3,
+        "top_margin": 0.14031396772694346,
+        "pool_mean": 0.0958619738555431,
+        "a_share_weak": true
+      }
+    }
+  ],
+  "deep_frequency": {
+    "gt15": {
+      "n_segments": 7,
+      "annual_freq": 1.1434481216457961,
+      "time_pct": 0.3306288032454361,
+      "depth_range": [
+        -0.4073091423053947,
+        -0.15152654264131538
+      ],
+      "median_days": 74.0,
+      "recovery_ok": [
+        69,
+        308,
+        12,
+        155,
+        46,
+        48,
+        42
+      ],
+      "not_recovered": [],
+      "median_recovery_days": 48.0
+    },
+    "gt25": {
+      "n_segments": 2,
+      "annual_freq": 0.3266994633273703,
+      "time_pct": 0.12035158891142664,
+      "depth_range": [
+        -0.4073091423053947,
+        -0.3775561703821526
+      ],
+      "median_days": 212.5,
+      "recovery_ok": [
+        69,
+        308
+      ],
+      "not_recovered": [],
+      "median_recovery_days": 188.5
+    },
+    "gt35": {
+      "n_segments": 2,
+      "annual_freq": 0.3266994633273703,
+      "time_pct": 0.030425963488843813,
+      "depth_range": [
+        -0.4073091423053947,
+        -0.3775561703821526
+      ],
+      "median_days": 212.5,
+      "recovery_ok": [
+        69,
+        308
+      ],
+      "not_recovered": [],
+      "median_recovery_days": 188.5
+    }
+  },
+  "baseline_signals": {
+    "hold_mom10": {
+      "mean": 0.14112632639749575,
+      "median": 0.09084894844663288,
+      "p25": 0.055908033116720365,
+      "p75": 0.16722673955365808
+    },
+    "hold_mom20": {
+      "mean": 0.206984438173196,
+      "median": 0.15015526774217985,
+      "p25": 0.10019796234965317,
+      "p75": 0.2485818675713216
+    },
+    "hold_slope": {
+      "mean": -0.06585811177570025,
+      "median": -0.04847368883010737,
+      "p25": -0.07814945522706185,
+      "p75": -0.02496051520075146
+    },
+    "hold_vol20": {
+      "mean": 0.2893238768410287,
+      "median": 0.23447287558689706,
+      "p25": 0.18798944555484978,
+      "p75": 0.35241149654229337
+    },
+    "hold_dd52w": {
+      "mean": -0.03966386178950123,
+      "median": 0.0,
+      "p25": -0.02594339622641509,
+      "p75": 0.0
+    },
+    "n_candidates": {
+      "mean": 3.8941176470588235,
+      "median": 4.0,
+      "p25": 3.0,
+      "p75": 5.0
+    },
+    "top_margin": {
+      "mean": 0.12748439537651243,
+      "median": 0.07562450252881447,
+      "p25": 0.03110596933073606,
+      "p75": 0.15993746727343638
+    },
+    "pool_mean": {
+      "mean": 0.07066267599430694,
+      "median": 0.0522318686723177,
+      "p25": 0.03430402424633469,
+      "p75": 0.08877131129288389
+    }
+  },
+  "commodity_all_neg_20d": 0.11731843575418995,
+  "commodity_exposure_during_all_neg": {
+    "513100": 0.2501690331304936,
+    "159985": 0.18255578093306288,
+    "159915": 0.15212981744421908,
+    "501018": 0.1352265043948614,
+    "161226": 0.1250845165652468,
+    "518880": 0.09398242055442867,
+    "511220": 0.04732927653820149,
+    "511880": 0.013522650439486139
+  },
+  "n_years": 6.121834360027378,
+  "backtest": {
+    "final": 1905514.7441147815,
+    "ann_return": 0.6188067598411788,
+    "max_dd": -0.4073091423053947
+  }
+}

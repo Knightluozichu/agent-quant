@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "model": "CNN L3 F32 lr1e-03 drop0.3",
+    "image": "30日→3ch×32×32 (蜡烛+MA/成交量/MACD+RSI)",
+    "test_ic": 0.0399,
+    "train": "2019-12~2023-06",
+    "test": "2023-07~2026-08",
+    "decision": "每日预测选优, buffer换仓, T日收盘成交(14:50口径)"
+  },
+  "grid": {
+    "lr1e-03_L2_F16": {
+      "val_mse": 5.6e-05
+    },
+    "lr1e-03_L2_F32": {
+      "val_mse": 6.2e-05
+    },
+    "lr1e-03_L3_F16": {
+      "val_mse": 7.6e-05
+    },
+    "lr1e-03_L3_F32": {
+      "val_mse": 5.2e-05
+    },
+    "lr3e-04_L2_F16": {
+      "val_mse": 9e-05
+    },
+    "lr3e-04_L2_F32": {
+      "val_mse": 7.2e-05
+    },
+    "lr3e-04_L3_F16": {
+      "val_mse": 7.1e-05
+    },
+    "lr3e-04_L3_F32": {
+      "val_mse": 6.6e-05
+    }
+  },
+  "best": "lr1e-03_L3_F32",
+  "results": {
+    "V3基线": {
+      "final_value": 660676.0,
+      "total_return": 5.6068,
+      "ann_return": 0.844,
+      "sharpe": 1.964,
+      "max_drawdown": -0.4072,
+      "n_trades": 111,
+      "n_events": 0
+    },
+    "V3+R4(2.0%_b2%)": {
+      "final_value": 445937.0,
+      "total_return": 3.4594,
+      "ann_return": 0.6234,
+      "sharpe": 1.333,
+      "max_drawdown": -0.4071,
+      "n_trades": 173,
+      "n_events": 45
+    },
+    "CNN(0.5%)": {
+      "final_value": 800256.0,
+      "total_return": 7.0026,
+      "ann_return": 0.9621,
+      "sharpe": 2.409,
+      "max_drawdown": -0.2765,
+      "n_trades": 22,
+      "n_events": 22
+    },
+    "CNN(1.0%)": {
+      "final_value": 86956.0,
+      "total_return": -0.1304,
+      "ann_return": -0.0443,
+      "sharpe": -0.197,
+      "max_drawdown": -0.3024,
+      "n_trades": 2,
+      "n_events": 2
+    }
+  },
+  "ablation": {
+    "全通道": 0.0374,
+    "无成交量ch1": 0.0697,
+    "无MACD/RSI ch2": 0.0419,
+    "无蜡烛ch0": 0.0069
+  },
+  "yearly_cnn": {
+    "2023": 0.1191,
+    "2024": -0.0067,
+    "2025": 1.4245,
+    "2026": 1.9693
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "meta": {
+    "state_dim": 470,
+    "n_actions": 8,
+    "lam": 0.0,
+    "ppo": {
+      "clip": 0.2,
+      "gamma": 0.99,
+      "gae": 0.95,
+      "lr": 0.0003,
+      "epochs": 4,
+      "episodes": 1000
+    },
+    "train_seg": "2023-07-03~2024-12-31",
+    "test_seg": "2025-01-02~2026-08-03",
+    "cost": "万五+千一 单边",
+    "device": "mps"
+  },
+  "rl": {
+    "final_value": 140266.0,
+    "total_return": 0.4027,
+    "ann_return": 0.2523,
+    "sharpe": 0.907,
+    "max_drawdown": -0.3039,
+    "n_trades": 1
+  },
+  "v3": {
+    "final_value": 436145.0,
+    "total_return": 3.3615,
+    "ann_return": 1.5363,
+    "sharpe": 3.108,
+    "max_drawdown": -0.4072,
+    "n_trades": 63
+  },
+  "beat": false
+}

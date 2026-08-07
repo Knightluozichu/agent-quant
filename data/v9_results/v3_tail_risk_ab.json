@@ -1,0 +1,389 @@
+{
+  "meta": {
+    "note": "四层风控先验参数(无网格)",
+    "params": {
+      "sigma_target": 0.4,
+      "floor": 0.35,
+      "trend_gate": 0.1,
+      "decay": -0.02,
+      "abs_weak": 0.08,
+      "h1": -0.15,
+      "h2": -0.05,
+      "dd_warn": -0.12,
+      "dd_half": -0.25,
+      "dd_flush": -0.3,
+      "defense_seq": [
+        "511260",
+        "511220",
+        "511880"
+      ]
+    }
+  },
+  "results": {
+    "全周期": {
+      "A": {
+        "final_value": 1905515.0,
+        "total_return": 18.0551,
+        "ann_return": 0.6184,
+        "sharpe": 1.664,
+        "max_drawdown": -0.4073,
+        "n_trades": 197
+      },
+      "B": {
+        "final_value": 2820174.0,
+        "total_return": 27.2017,
+        "ann_return": 0.7254,
+        "sharpe": 2.35,
+        "max_drawdown": -0.2111,
+        "n_trades": 201,
+        "deep_dd_time": 0.0014,
+        "cvar95": -0.03762,
+        "n_risk_events": 16
+      },
+      "risk_events": [
+        {
+          "date": "2020-07-16",
+          "type": "改进-H1/H2降仓",
+          "from": "159915",
+          "reason": "entry_dd=14.3% day=-6.0%"
+        },
+        {
+          "date": "2020-08-12",
+          "type": "改进-H1/H2降仓",
+          "from": "161226",
+          "reason": "entry_dd=17.9% day=-8.7%"
+        },
+        {
+          "date": "2020-09-04",
+          "type": "改进-H1/H2降仓",
+          "from": "513100",
+          "reason": "entry_dd=19.4% day=-8.7%"
+        },
+        {
+          "date": "2020-09-07",
+          "type": "改进-H1/H2降仓",
+          "from": "513100",
+          "reason": "entry_dd=10.5% day=-7.5%"
+        },
+        {
+          "date": "2021-03-19",
+          "type": "改进-H1/H2降仓",
+          "from": "501018",
+          "reason": "entry_dd=-7.2% day=-6.6%"
+        },
+        {
+          "date": "2022-03-04",
+          "type": "改进-H1/H2降仓",
+          "from": "501018",
+          "reason": "entry_dd=-5.9% day=-5.9%"
+        },
+        {
+          "date": "2022-03-10",
+          "type": "改进-H1/H2降仓",
+          "from": "501018",
+          "reason": "entry_dd=6.6% day=-10.0%"
+        },
+        {
+          "date": "2022-04-01",
+          "type": "改进-H1/H2降仓",
+          "from": "159985",
+          "reason": "entry_dd=-5.2% day=-5.6%"
+        },
+        {
+          "date": "2024-09-04",
+          "type": "改进-H1/H2降仓",
+          "from": "513100",
+          "reason": "entry_dd=-7.6% day=-5.2%"
+        },
+        {
+          "date": "2024-10-09",
+          "type": "改进-H1/H2降仓",
+          "from": "159915",
+          "reason": "entry_dd=33.0% day=-16.3%"
+        },
+        {
+          "date": "2025-04-07",
+          "type": "改进-H1/H2降仓",
+          "from": "161226",
+          "reason": "entry_dd=-8.5% day=-8.3%"
+        },
+        {
+          "date": "2025-04-23",
+          "type": "改进-H1/H2降仓",
+          "from": "518880",
+          "reason": "entry_dd=2.4% day=-6.0%"
+        },
+        {
+          "date": "2025-06-20",
+          "type": "改进-H1/H2降仓",
+          "from": "501018",
+          "reason": "entry_dd=3.5% day=-7.0%"
+        },
+        {
+          "date": "2025-10-20",
+          "type": "改进-H1/H2降仓",
+          "from": "161226",
+          "reason": "entry_dd=8.6% day=-6.9%"
+        },
+        {
+          "date": "2026-02-02",
+          "type": "改进-H1/H2降仓",
+          "from": "161226",
+          "reason": "entry_dd=53.8% day=-10.0%"
+        },
+        {
+          "date": "2026-03-25",
+          "type": "改进-H1/H2降仓",
+          "from": "501018",
+          "reason": "entry_dd=11.2% day=-10.0%"
+        }
+      ]
+    },
+    "IS": {
+      "A": {
+        "final_value": 274011.0,
+        "total_return": 1.7401,
+        "ann_return": 0.3309,
+        "sharpe": 1.153,
+        "max_drawdown": -0.3776,
+        "n_trades": 101
+      },
+      "B": {
+        "final_value": 297550.0,
+        "total_return": 1.9755,
+        "ann_return": 0.3624,
+        "sharpe": 1.454,
+        "max_drawdown": -0.1998,
+        "n_trades": 101,
+        "deep_dd_time": 0.0,
+        "cvar95": -0.03449,
+        "n_risk_events": 8
+      },
+      "risk_events": [
+        {
+          "date": "2020-07-16",
+          "type": "改进-H1/H2降仓",
+          "from": "159915",
+          "reason": "entry_dd=14.3% day=-6.0%"
+        },
+        {
+          "date": "2020-08-12",
+          "type": "改进-H1/H2降仓",
+          "from": "161226",
+          "reason": "entry_dd=17.9% day=-8.7%"
+        },
+        {
+          "date": "2020-09-04",
+          "type": "改进-H1/H2降仓",
+          "from": "513100",
+          "reason": "entry_dd=19.4% day=-8.7%"
+        },
+        {
+          "date": "2020-09-07",
+          "type": "改进-H1/H2降仓",
+          "from": "513100",
+          "reason": "entry_dd=10.5% day=-7.5%"
+        },
+        {
+          "date": "2021-03-19",
+          "type": "改进-H1/H2降仓",
+          "from": "501018",
+          "reason": "entry_dd=-7.2% day=-6.6%"
+        },
+        {
+          "date": "2022-03-04",
+          "type": "改进-H1/H2降仓",
+          "from": "501018",
+          "reason": "entry_dd=-5.9% day=-5.9%"
+        },
+        {
+          "date": "2022-03-10",
+          "type": "改进-H1/H2降仓",
+          "from": "501018",
+          "reason": "entry_dd=6.6% day=-10.0%"
+        },
+        {
+          "date": "2022-04-01",
+          "type": "改进-H1/H2降仓",
+          "from": "159985",
+          "reason": "entry_dd=-5.2% day=-5.6%"
+        }
+      ]
+    },
+    "OOS": {
+      "A": {
+        "final_value": 692843.0,
+        "total_return": 5.9284,
+        "ann_return": 1.1198,
+        "sharpe": 2.415,
+        "max_drawdown": -0.4073,
+        "n_trades": 97
+      },
+      "B": {
+        "final_value": 957913.0,
+        "total_return": 8.5791,
+        "ann_return": 1.4038,
+        "sharpe": 3.692,
+        "max_drawdown": -0.1615,
+        "n_trades": 101,
+        "deep_dd_time": 0.0,
+        "cvar95": -0.04348,
+        "n_risk_events": 8
+      },
+      "risk_events": [
+        {
+          "date": "2024-09-04",
+          "type": "改进-H1/H2降仓",
+          "from": "513100",
+          "reason": "entry_dd=-7.6% day=-5.2%"
+        },
+        {
+          "date": "2024-10-09",
+          "type": "改进-H1/H2降仓",
+          "from": "159915",
+          "reason": "entry_dd=33.0% day=-16.3%"
+        },
+        {
+          "date": "2025-04-07",
+          "type": "改进-H1/H2降仓",
+          "from": "161226",
+          "reason": "entry_dd=-8.5% day=-8.3%"
+        },
+        {
+          "date": "2025-04-23",
+          "type": "改进-H1/H2降仓",
+          "from": "518880",
+          "reason": "entry_dd=2.4% day=-6.0%"
+        },
+        {
+          "date": "2025-06-20",
+          "type": "改进-H1/H2降仓",
+          "from": "501018",
+          "reason": "entry_dd=3.5% day=-7.0%"
+        },
+        {
+          "date": "2025-10-20",
+          "type": "改进-H1/H2降仓",
+          "from": "161226",
+          "reason": "entry_dd=8.6% day=-6.9%"
+        },
+        {
+          "date": "2026-02-02",
+          "type": "改进-H1/H2降仓",
+          "from": "161226",
+          "reason": "entry_dd=53.8% day=-10.0%"
+        },
+        {
+          "date": "2026-03-25",
+          "type": "改进-H1/H2降仓",
+          "from": "501018",
+          "reason": "entry_dd=11.2% day=-10.0%"
+        }
+      ]
+    }
+  },
+  "g_checks": {
+    "G1 金额≥85%基线": true,
+    "G2 maxDD≤-28.5%": true,
+    "G2 深回撤时间减半": true,
+    "G5 夏普不劣化0.15": true
+  },
+  "risk_events_full": [
+    {
+      "date": "2020-07-16",
+      "type": "改进-H1/H2降仓",
+      "from": "159915",
+      "reason": "entry_dd=14.3% day=-6.0%"
+    },
+    {
+      "date": "2020-08-12",
+      "type": "改进-H1/H2降仓",
+      "from": "161226",
+      "reason": "entry_dd=17.9% day=-8.7%"
+    },
+    {
+      "date": "2020-09-04",
+      "type": "改进-H1/H2降仓",
+      "from": "513100",
+      "reason": "entry_dd=19.4% day=-8.7%"
+    },
+    {
+      "date": "2020-09-07",
+      "type": "改进-H1/H2降仓",
+      "from": "513100",
+      "reason": "entry_dd=10.5% day=-7.5%"
+    },
+    {
+      "date": "2021-03-19",
+      "type": "改进-H1/H2降仓",
+      "from": "501018",
+      "reason": "entry_dd=-7.2% day=-6.6%"
+    },
+    {
+      "date": "2022-03-04",
+      "type": "改进-H1/H2降仓",
+      "from": "501018",
+      "reason": "entry_dd=-5.9% day=-5.9%"
+    },
+    {
+      "date": "2022-03-10",
+      "type": "改进-H1/H2降仓",
+      "from": "501018",
+      "reason": "entry_dd=6.6% day=-10.0%"
+    },
+    {
+      "date": "2022-04-01",
+      "type": "改进-H1/H2降仓",
+      "from": "159985",
+      "reason": "entry_dd=-5.2% day=-5.6%"
+    },
+    {
+      "date": "2024-09-04",
+      "type": "改进-H1/H2降仓",
+      "from": "513100",
+      "reason": "entry_dd=-7.6% day=-5.2%"
+    },
+    {
+      "date": "2024-10-09",
+      "type": "改进-H1/H2降仓",
+      "from": "159915",
+      "reason": "entry_dd=33.0% day=-16.3%"
+    },
+    {
+      "date": "2025-04-07",
+      "type": "改进-H1/H2降仓",
+      "from": "161226",
+      "reason": "entry_dd=-8.5% day=-8.3%"
+    },
+    {
+      "date": "2025-04-23",
+      "type": "改进-H1/H2降仓",
+      "from": "518880",
+      "reason": "entry_dd=2.4% day=-6.0%"
+    },
+    {
+      "date": "2025-06-20",
+      "type": "改进-H1/H2降仓",
+      "from": "501018",
+      "reason": "entry_dd=3.5% day=-7.0%"
+    },
+    {
+      "date": "2025-10-20",
+      "type": "改进-H1/H2降仓",
+      "from": "161226",
+      "reason": "entry_dd=8.6% day=-6.9%"
+    },
+    {
+      "date": "2026-02-02",
+      "type": "改进-H1/H2降仓",
+      "from": "161226",
+      "reason": "entry_dd=53.8% day=-10.0%"
+    },
+    {
+      "date": "2026-03-25",
+      "type": "改进-H1/H2降仓",
+      "from": "501018",
+      "reason": "entry_dd=11.2% day=-10.0%"
+    }
+  ]
+}

@@ -1,0 +1,122 @@
+{
+  "V3基线": {
+    "total_return": 18.0551,
+    "final_value": 1905515.0,
+    "ann_return": 0.6184,
+    "sharpe": 1.664,
+    "max_drawdown": -0.4073,
+    "yearly": {
+      "2020": {
+        "return": 1.0061,
+        "max_dd": -0.1537
+      },
+      "2021": {
+        "return": 0.2008,
+        "max_dd": -0.1252
+      },
+      "2022": {
+        "return": 0.0722,
+        "max_dd": -0.3776
+      },
+      "2023": {
+        "return": 0.0609,
+        "max_dd": -0.1997
+      },
+      "2024": {
+        "return": 0.6198,
+        "max_dd": -0.1895
+      },
+      "2025": {
+        "return": 1.6884,
+        "max_dd": -0.2486
+      },
+      "2026": {
+        "return": 0.5969,
+        "max_dd": -0.4073
+      }
+    },
+    "n_trades": 197,
+    "n_cancelled": 5,
+    "n_events": 0
+  },
+  "V3+thr2.0%_换_b2%": {
+    "total_return": 8.7864,
+    "final_value": 978642.0,
+    "ann_return": 0.4515,
+    "sharpe": 1.14,
+    "max_drawdown": -0.4132,
+    "yearly": {
+      "2020": {
+        "return": 0.734,
+        "max_dd": -0.1537
+      },
+      "2021": {
+        "return": -0.0141,
+        "max_dd": -0.181
+      },
+      "2022": {
+        "return": 0.1159,
+        "max_dd": -0.4132
+      },
+      "2023": {
+        "return": 0.0756,
+        "max_dd": -0.1596
+      },
+      "2024": {
+        "return": 0.2638,
+        "max_dd": -0.2234
+      },
+      "2025": {
+        "return": 1.4746,
+        "max_dd": -0.2486
+      },
+      "2026": {
+        "return": 0.525,
+        "max_dd": -0.4072
+      }
+    },
+    "n_trades": 285,
+    "n_cancelled": 6,
+    "n_events": 69
+  },
+  "V3+thr1.5%_换_b0%": {
+    "total_return": 8.507,
+    "final_value": 950700.0,
+    "ann_return": 0.4447,
+    "sharpe": 1.104,
+    "max_drawdown": -0.4073,
+    "yearly": {
+      "2020": {
+        "return": 0.6989,
+        "max_dd": -0.1663
+      },
+      "2021": {
+        "return": -0.1632,
+        "max_dd": -0.273
+      },
+      "2022": {
+        "return": 0.1236,
+        "max_dd": -0.3276
+      },
+      "2023": {
+        "return": 0.1657,
+        "max_dd": -0.1306
+      },
+      "2024": {
+        "return": 0.4044,
+        "max_dd": -0.2234
+      },
+      "2025": {
+        "return": 1.3516,
+        "max_dd": -0.2486
+      },
+      "2026": {
+        "return": 0.5459,
+        "max_dd": -0.4073
+      }
+    },
+    "n_trades": 357,
+    "n_cancelled": 7,
+    "n_events": 115
+  }
+}

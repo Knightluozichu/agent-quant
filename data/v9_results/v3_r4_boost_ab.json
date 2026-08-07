@@ -1,0 +1,234 @@
+{
+  "meta": {
+    "note": "R4事件加速器: 非调仓日 昨日涨幅>thr且10日动量>0 → 收盘入场, V3调仓日接管; 无未来函数 (事件检测用昨日数据)",
+    "golden_standard": "全量10万→最终金额优先; 滚动OOS ≥3/4段跑赢; Calmar/换手率"
+  },
+  "full": {
+    "V3基线": {
+      "total_return": 4.2014,
+      "final_value": 520144.0,
+      "ann_return": 0.37,
+      "sharpe": 1.049,
+      "max_drawdown": -0.4537,
+      "calmar": 0.815,
+      "n_trades": 183,
+      "turnover_ann": 34.9,
+      "n_events": 0,
+      "events": []
+    },
+    "V3+R4(3%,动量确认)": {
+      "total_return": 4.3678,
+      "final_value": 536785.0,
+      "ann_return": 0.3782,
+      "sharpe": 1.072,
+      "max_drawdown": -0.4363,
+      "calmar": 0.867,
+      "n_trades": 185,
+      "turnover_ann": 35.3,
+      "n_events": 1,
+      "events": [
+        {
+          "date": "2026-06-26",
+          "type": "r4_boost",
+          "asset": "159915",
+          "prev_ret": 0.0322,
+          "mom10": 0.1357,
+          "idx": 1423,
+          "on_reb": false,
+          "fwd5": -0.0422,
+          "fwd20": -0.1677
+        }
+      ]
+    }
+  },
+  "sensitivity": {
+    "thr2%_momon": {
+      "total_return": 4.3678,
+      "final_value": 536785.0,
+      "ann_return": 0.3782,
+      "sharpe": 1.072,
+      "max_drawdown": -0.4363,
+      "calmar": 0.867,
+      "n_trades": 185,
+      "turnover_ann": 35.3,
+      "n_events": 1,
+      "events": [
+        {
+          "date": "2026-06-26",
+          "type": "r4_boost",
+          "asset": "159915",
+          "prev_ret": 0.0322,
+          "mom10": 0.1357,
+          "idx": 1423,
+          "on_reb": false,
+          "fwd5": -0.0422,
+          "fwd20": -0.1677
+        }
+      ]
+    },
+    "thr2%_momoff": {
+      "total_return": 4.1368,
+      "final_value": 513683.0,
+      "ann_return": 0.3667,
+      "sharpe": 1.039,
+      "max_drawdown": -0.4363,
+      "calmar": 0.841,
+      "n_trades": 187,
+      "turnover_ann": 35.7,
+      "n_events": 2,
+      "events": [
+        {
+          "date": "2021-03-29",
+          "type": "r4_boost",
+          "asset": "159915",
+          "prev_ret": 0.0323,
+          "mom10": -0.003,
+          "idx": 157,
+          "on_reb": false,
+          "fwd5": 0.0353,
+          "fwd20": 0.0937
+        },
+        {
+          "date": "2026-06-26",
+          "type": "r4_boost",
+          "asset": "159915",
+          "prev_ret": 0.0322,
+          "mom10": 0.1357,
+          "idx": 1423,
+          "on_reb": false,
+          "fwd5": -0.0422,
+          "fwd20": -0.1677
+        }
+      ]
+    },
+    "thr3%_momon": {
+      "total_return": 4.3678,
+      "final_value": 536785.0,
+      "ann_return": 0.3782,
+      "sharpe": 1.072,
+      "max_drawdown": -0.4363,
+      "calmar": 0.867,
+      "n_trades": 185,
+      "turnover_ann": 35.3,
+      "n_events": 1,
+      "events": [
+        {
+          "date": "2026-06-26",
+          "type": "r4_boost",
+          "asset": "159915",
+          "prev_ret": 0.0322,
+          "mom10": 0.1357,
+          "idx": 1423,
+          "on_reb": false,
+          "fwd5": -0.0422,
+          "fwd20": -0.1677
+        }
+      ]
+    },
+    "thr3%_momoff": {
+      "total_return": 4.1368,
+      "final_value": 513683.0,
+      "ann_return": 0.3667,
+      "sharpe": 1.039,
+      "max_drawdown": -0.4363,
+      "calmar": 0.841,
+      "n_trades": 187,
+      "turnover_ann": 35.7,
+      "n_events": 2,
+      "events": [
+        {
+          "date": "2021-03-29",
+          "type": "r4_boost",
+          "asset": "159915",
+          "prev_ret": 0.0323,
+          "mom10": -0.003,
+          "idx": 157,
+          "on_reb": false,
+          "fwd5": 0.0353,
+          "fwd20": 0.0937
+        },
+        {
+          "date": "2026-06-26",
+          "type": "r4_boost",
+          "asset": "159915",
+          "prev_ret": 0.0322,
+          "mom10": 0.1357,
+          "idx": 1423,
+          "on_reb": false,
+          "fwd5": -0.0422,
+          "fwd20": -0.1677
+        }
+      ]
+    },
+    "thr4%_momon": {
+      "total_return": 4.2014,
+      "final_value": 520144.0,
+      "ann_return": 0.37,
+      "sharpe": 1.049,
+      "max_drawdown": -0.4537,
+      "calmar": 0.815,
+      "n_trades": 183,
+      "turnover_ann": 34.9,
+      "n_events": 0,
+      "events": []
+    },
+    "thr4%_momoff": {
+      "total_return": 4.2014,
+      "final_value": 520144.0,
+      "ann_return": 0.37,
+      "sharpe": 1.049,
+      "max_drawdown": -0.4537,
+      "calmar": 0.815,
+      "n_trades": 183,
+      "turnover_ann": 34.9,
+      "n_events": 0,
+      "events": []
+    }
+  },
+  "oos": [
+    {
+      "window": "W1",
+      "base_final": 133281.0,
+      "r4_final": 133281.0,
+      "beat": false,
+      "r4_events": 0
+    },
+    {
+      "window": "W2",
+      "base_final": 124883.0,
+      "r4_final": 124883.0,
+      "beat": false,
+      "r4_events": 0
+    },
+    {
+      "window": "W3",
+      "base_final": 147239.0,
+      "r4_final": 147239.0,
+      "beat": false,
+      "r4_events": 0
+    },
+    {
+      "window": "W4",
+      "base_final": 216245.0,
+      "r4_final": 216245.0,
+      "beat": false,
+      "r4_events": 0
+    }
+  ],
+  "oos_wins": 0,
+  "oos_valid": 4,
+  "oos_passed": false,
+  "events_full": [
+    {
+      "date": "2026-06-26",
+      "type": "r4_boost",
+      "asset": "159915",
+      "prev_ret": 0.0322,
+      "mom10": 0.1357,
+      "idx": 1423,
+      "on_reb": false,
+      "fwd5": -0.0422,
+      "fwd20": -0.1677
+    }
+  ]
+}

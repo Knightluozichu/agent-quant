@@ -1,0 +1,229 @@
+{
+  "meta": {
+    "thresholds": [
+      0.5,
+      0.55,
+      0.6
+    ],
+    "rf": "RandomForest(n=300, depth=6, leaf=50), 22动态特征, 段前训练",
+    "windows": [
+      0,
+      260,
+      520,
+      780
+    ],
+    "pass_note": "A/B对比: 减仓层是否在保住年化的前提下改善夏普/回撤"
+  },
+  "windows": [
+    {
+      "window": "W1",
+      "test_span": [
+        "2021-09-27",
+        "2022-10-27"
+      ],
+      "n_train": 1540,
+      "configs": {
+        "V3基线": {
+          "total_return": 0.2938,
+          "ann_return": 0.2736,
+          "sharpe": 0.791,
+          "max_drawdown": -0.1804,
+          "n_trades": 31,
+          "guard_hits": 0,
+          "n_rebalance": 52
+        },
+        "V3+RF(0.50)": {
+          "total_return": 0.2963,
+          "ann_return": 0.2759,
+          "sharpe": 0.833,
+          "max_drawdown": -0.1743,
+          "n_trades": 51,
+          "guard_hits": 9,
+          "n_rebalance": 52
+        },
+        "V3+RF(0.55)": {
+          "total_return": 0.4012,
+          "ann_return": 0.3727,
+          "sharpe": 1.108,
+          "max_drawdown": -0.1097,
+          "n_trades": 33,
+          "guard_hits": 2,
+          "n_rebalance": 52
+        },
+        "V3+RF(0.60)": {
+          "total_return": 0.3114,
+          "ann_return": 0.2899,
+          "sharpe": 0.839,
+          "max_drawdown": -0.1692,
+          "n_trades": 31,
+          "guard_hits": 1,
+          "n_rebalance": 52
+        }
+      }
+    },
+    {
+      "window": "W2",
+      "test_span": [
+        "2022-10-28",
+        "2023-11-21"
+      ],
+      "n_train": 3360,
+      "configs": {
+        "V3基线": {
+          "total_return": 0.2821,
+          "ann_return": 0.2674,
+          "sharpe": 1.404,
+          "max_drawdown": -0.0837,
+          "n_trades": 25,
+          "guard_hits": 0,
+          "n_rebalance": 52
+        },
+        "V3+RF(0.50)": {
+          "total_return": 0.2821,
+          "ann_return": 0.2674,
+          "sharpe": 1.404,
+          "max_drawdown": -0.0837,
+          "n_trades": 25,
+          "guard_hits": 0,
+          "n_rebalance": 52
+        },
+        "V3+RF(0.55)": {
+          "total_return": 0.2821,
+          "ann_return": 0.2674,
+          "sharpe": 1.404,
+          "max_drawdown": -0.0837,
+          "n_trades": 25,
+          "guard_hits": 0,
+          "n_rebalance": 52
+        },
+        "V3+RF(0.60)": {
+          "total_return": 0.2821,
+          "ann_return": 0.2674,
+          "sharpe": 1.404,
+          "max_drawdown": -0.0837,
+          "n_trades": 25,
+          "guard_hits": 0,
+          "n_rebalance": 52
+        }
+      }
+    },
+    {
+      "window": "W3",
+      "test_span": [
+        "2023-11-22",
+        "2024-12-17"
+      ],
+      "n_train": 5180,
+      "configs": {
+        "V3基线": {
+          "total_return": 0.4109,
+          "ann_return": 0.3862,
+          "sharpe": 0.892,
+          "max_drawdown": -0.179,
+          "n_trades": 35,
+          "guard_hits": 0,
+          "n_rebalance": 52
+        },
+        "V3+RF(0.50)": {
+          "total_return": 0.3301,
+          "ann_return": 0.3107,
+          "sharpe": 0.72,
+          "max_drawdown": -0.179,
+          "n_trades": 39,
+          "guard_hits": 2,
+          "n_rebalance": 52
+        },
+        "V3+RF(0.55)": {
+          "total_return": 0.4109,
+          "ann_return": 0.3862,
+          "sharpe": 0.892,
+          "max_drawdown": -0.179,
+          "n_trades": 35,
+          "guard_hits": 0,
+          "n_rebalance": 52
+        },
+        "V3+RF(0.60)": {
+          "total_return": 0.4109,
+          "ann_return": 0.3862,
+          "sharpe": 0.892,
+          "max_drawdown": -0.179,
+          "n_trades": 35,
+          "guard_hits": 0,
+          "n_rebalance": 52
+        }
+      }
+    },
+    {
+      "window": "W4",
+      "test_span": [
+        "2024-12-18",
+        "2026-01-13"
+      ],
+      "n_train": 7000,
+      "configs": {
+        "V3基线": {
+          "total_return": 1.1657,
+          "ann_return": 1.0815,
+          "sharpe": 3.02,
+          "max_drawdown": -0.0829,
+          "n_trades": 39,
+          "guard_hits": 0,
+          "n_rebalance": 52
+        },
+        "V3+RF(0.50)": {
+          "total_return": 1.0319,
+          "ann_return": 0.9594,
+          "sharpe": 2.955,
+          "max_drawdown": -0.0569,
+          "n_trades": 51,
+          "guard_hits": 6,
+          "n_rebalance": 52
+        },
+        "V3+RF(0.55)": {
+          "total_return": 0.6888,
+          "ann_return": 0.644,
+          "sharpe": 2.66,
+          "max_drawdown": -0.0829,
+          "n_trades": 43,
+          "guard_hits": 1,
+          "n_rebalance": 52
+        },
+        "V3+RF(0.60)": {
+          "total_return": 1.1657,
+          "ann_return": 1.0815,
+          "sharpe": 3.02,
+          "max_drawdown": -0.0829,
+          "n_trades": 39,
+          "guard_hits": 0,
+          "n_rebalance": 52
+        }
+      }
+    }
+  ],
+  "summary": {
+    "V3基线": {
+      "ann": 0.5022,
+      "sharpe": 1.527,
+      "max_dd": -0.1315,
+      "trades": 32.5
+    },
+    "V3+RF(0.50)": {
+      "ann": 0.4534,
+      "sharpe": 1.478,
+      "max_dd": -0.1235,
+      "trades": 41.5
+    },
+    "V3+RF(0.55)": {
+      "ann": 0.4176,
+      "sharpe": 1.516,
+      "max_dd": -0.1138,
+      "trades": 34.0
+    },
+    "V3+RF(0.60)": {
+      "ann": 0.5062,
+      "sharpe": 1.539,
+      "max_dd": -0.1287,
+      "trades": 32.5
+    }
+  }
+}

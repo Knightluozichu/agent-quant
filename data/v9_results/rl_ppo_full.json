@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "note": "滚动重训拼接: CNN≤2022-06, PPO段1(2022-07~2023-12)+段2(2024-01~2026-08), 资金拼接",
+    "device": "mps",
+    "ppo_episodes": 500,
+    "rl_span": "2022-07-01~2026-08-03",
+    "v3_full_span": "2019-12-05~2026-08-03"
+  },
+  "rl_seg1": {
+    "final_value": 85950.0,
+    "total_return": -0.1405,
+    "ann_return": -0.0987,
+    "sharpe": -0.393,
+    "max_drawdown": -0.2631,
+    "n_trades": 3
+  },
+  "rl_seg2": {
+    "final_value": 117857.0,
+    "total_return": 0.3712,
+    "ann_return": 0.1367,
+    "sharpe": 0.602,
+    "max_drawdown": -0.2498,
+    "n_trades": 58
+  },
+  "rl_combined": {
+    "final_value": 117857.0,
+    "total_return": 0.1785699999999999
+  },
+  "v3_full": {
+    "final_value": 1905515.0,
+    "total_return": 18.0551,
+    "ann_return": 0.6184,
+    "sharpe": 1.664,
+    "max_drawdown": -0.4073,
+    "n_trades": 197
+  },
+  "v3_same_span": {
+    "final_value": 891255.0,
+    "total_return": 7.9125,
+    "ann_return": 0.7071,
+    "sharpe": 1.816,
+    "max_drawdown": -0.4073,
+    "n_trades": 133
+  },
+  "beat": false
+}

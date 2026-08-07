@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "model": "GRU(24) + 22手工特征 + 3规则特征 → 未来5日收益回归",
+    "train": "2019-12-05~2023-06-30",
+    "test": "2023-07-03~2026-08-03",
+    "decision": "每日预测选优, 差>buffer 换仓, T日收盘成交(14:50口径), 最快T+1",
+    "configs": [
+      "V3基线",
+      "V3+R4(2.0%_b2%)",
+      "V3+R4(1.5%_b0%)",
+      "DL",
+      "DL+R4"
+    ]
+  },
+  "results": {
+    "V3基线": {
+      "final_value": 660676.0,
+      "total_return": 5.6068,
+      "ann_return": 0.844,
+      "sharpe": 1.964,
+      "max_drawdown": -0.4072,
+      "n_trades": 111,
+      "n_events": 0
+    },
+    "V3+R4(2.0%_b2%)": {
+      "final_value": 445937.0,
+      "total_return": 3.4594,
+      "ann_return": 0.6234,
+      "sharpe": 1.333,
+      "max_drawdown": -0.4071,
+      "n_trades": 173,
+      "n_events": 45
+    },
+    "V3+R4(1.5%_b0%)": {
+      "final_value": 488856.0,
+      "total_return": 3.8886,
+      "ann_return": 0.6725,
+      "sharpe": 1.418,
+      "max_drawdown": -0.4071,
+      "n_trades": 205,
+      "n_events": 65
+    },
+    "DL(0.5%)": {
+      "final_value": 82040.0,
+      "total_return": -0.1796,
+      "ann_return": -0.0621,
+      "sharpe": -0.18,
+      "max_drawdown": -0.4456,
+      "n_trades": 129,
+      "n_events": 129
+    },
+    "DL(1.0%)": {
+      "final_value": 109959.0,
+      "total_return": 0.0996,
+      "ann_return": 0.0312,
+      "sharpe": 0.09,
+      "max_drawdown": -0.4226,
+      "n_trades": 81,
+      "n_events": 81
+    },
+    "DL+R4(0.5%)": {
+      "final_value": 93468.0,
+      "total_return": -0.0653,
+      "ann_return": -0.0217,
+      "sharpe": -0.062,
+      "max_drawdown": -0.4454,
+      "n_trades": 131,
+      "n_events": 131
+    }
+  }
+}

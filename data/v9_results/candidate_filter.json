@@ -1,0 +1,256 @@
+{
+  "meta": {
+    "n_tests": 503,
+    "bonf_alpha": 9.940357852882704e-05,
+    "min_effect": 0.5,
+    "cluster_window": 5,
+    "period": "2020-08-03 ~ 2026-08-03"
+  },
+  "candidates": [
+    {
+      "id": "R1",
+      "name": "3日动量反转(Q5 vs Q1, 5日)",
+      "type": "cross-sectional",
+      "note": "5/7资产为反转方向; 白银为唯一持续例外",
+      "raw": {
+        "a": {
+          "n": 2312,
+          "mean": 0.002795,
+          "median": 0.000331,
+          "std": 0.050891,
+          "pct_pos": 0.5701
+        },
+        "b": {
+          "n": 2312,
+          "mean": 0.004429,
+          "median": 0.000529,
+          "std": 0.036556,
+          "pct_pos": 0.6116
+        },
+        "mean_diff": -0.001634,
+        "cohens_d": 0.0369,
+        "t_stat": -1.254,
+        "p_value": 0.20990607,
+        "effect_pass": false,
+        "bonf_pass": false
+      },
+      "verdict": "淘汰",
+      "reasons": [
+        "效应量d=0.04<0.5",
+        "p=0.2099≥α'=9.9e-05"
+      ]
+    },
+    {
+      "id": "R2",
+      "name": "10日动量符号(>0 vs ≤0, 5日)",
+      "type": "cross-sectional",
+      "note": "实验 mom_sign 差 +3.09pp, 判别力最强",
+      "raw": {
+        "a": {
+          "n": 7008,
+          "mean": 0.003412,
+          "median": 0.000389,
+          "std": 0.036483,
+          "pct_pos": 0.638
+        },
+        "b": {
+          "n": 4472,
+          "mean": 0.001154,
+          "median": 0.000882,
+          "std": 0.034568,
+          "pct_pos": 0.536
+        },
+        "mean_diff": 0.002258,
+        "cohens_d": 0.0632,
+        "t_stat": 3.339,
+        "p_value": 0.00084268,
+        "effect_pass": false,
+        "bonf_pass": false
+      },
+      "verdict": "淘汰",
+      "reasons": [
+        "效应量d=0.06<0.5",
+        "p=0.0008427≥α'=9.9e-05"
+      ]
+    },
+    {
+      "id": "R3",
+      "name": "最强类别下周 vs 最弱类别下周",
+      "type": "cross-sectional",
+      "note": "实验: 差+0.26pp, 胜率53.1% (弱信号)",
+      "raw": {
+        "a": {
+          "n": 288,
+          "mean": 0.005309,
+          "median": 0.00222,
+          "std": 0.042089,
+          "pct_pos": 0.5972
+        },
+        "b": {
+          "n": 288,
+          "mean": 0.002677,
+          "median": 0.001078,
+          "std": 0.032971,
+          "pct_pos": 0.5347
+        },
+        "mean_diff": 0.002632,
+        "cohens_d": 0.0696,
+        "t_stat": 0.835,
+        "p_value": 0.40381478,
+        "effect_pass": false,
+        "bonf_pass": false
+      },
+      "verdict": "淘汰",
+      "reasons": [
+        "效应量d=0.07<0.5",
+        "p=0.4038≥α'=9.9e-05"
+      ]
+    },
+    {
+      "id": "R4",
+      "name": "暴涨>3%后5日持续",
+      "type": "event",
+      "note": "事件重叠严重 (原油80次/白银76次), 须聚类复核",
+      "raw": {
+        "a": {
+          "n": 312,
+          "mean": 0.059716,
+          "median": 0.047465,
+          "std": 0.092865,
+          "pct_pos": 0.8141
+        },
+        "b": {
+          "n": 11560,
+          "mean": 0.002501,
+          "median": 0.000425,
+          "std": 0.035767,
+          "pct_pos": 0.5985
+        },
+        "mean_diff": 0.057215,
+        "cohens_d": 1.4914,
+        "t_stat": 10.861,
+        "p_value": 0.0,
+        "effect_pass": true,
+        "bonf_pass": true
+      },
+      "clustered": {
+        "a": {
+          "n": 173,
+          "mean": 0.048018,
+          "median": 0.046379,
+          "std": 0.057994,
+          "pct_pos": 0.8555
+        },
+        "b": {
+          "n": 11560,
+          "mean": 0.002501,
+          "median": 0.000425,
+          "std": 0.035767,
+          "pct_pos": 0.5985
+        },
+        "mean_diff": 0.045517,
+        "cohens_d": 1.2577,
+        "t_stat": 10.294,
+        "p_value": 0.0,
+        "n_reduction": "312→173",
+        "keep_ratio": 0.843,
+        "same_sign": true,
+        "cluster_pass": true,
+        "bonf_pass": true
+      },
+      "verdict": "待定(进入阶段2)",
+      "reasons": []
+    },
+    {
+      "id": "R5",
+      "name": "暴跌后短期反弹",
+      "type": "event",
+      "note": "raw口径: 暴跌池+0.74% vs 干净池+0.24%; 需聚类复核均值回归偏差",
+      "raw": {
+        "a": {
+          "n": 1016,
+          "mean": 0.007377,
+          "median": 0.0056,
+          "std": 0.060382,
+          "pct_pos": 0.5502
+        },
+        "b": {
+          "n": 10496,
+          "mean": 0.002081,
+          "median": 0.000402,
+          "std": 0.032311,
+          "pct_pos": 0.6032
+        },
+        "mean_diff": 0.005296,
+        "cohens_d": 0.1484,
+        "t_stat": 2.758,
+        "p_value": 0.00592147,
+        "effect_pass": false,
+        "bonf_pass": false
+      },
+      "clustered": {
+        "a": {
+          "n": 155,
+          "mean": 0.027401,
+          "median": 0.015038,
+          "std": 0.051575,
+          "pct_pos": 0.6581
+        },
+        "b": {
+          "n": 11560,
+          "mean": 0.002501,
+          "median": 0.000425,
+          "std": 0.035767,
+          "pct_pos": 0.5985
+        },
+        "mean_diff": 0.0249,
+        "cohens_d": 0.6913,
+        "t_stat": 5.992,
+        "p_value": 1e-08,
+        "n_reduction": "1016→155",
+        "keep_ratio": 4.658,
+        "same_sign": true,
+        "cluster_pass": true,
+        "bonf_pass": true
+      },
+      "verdict": "淘汰",
+      "reasons": [
+        "效应量d=0.15<0.5",
+        "p=0.005921≥α'=9.9e-05"
+      ]
+    },
+    {
+      "id": "R6",
+      "name": "高波动>30% vs 低波动<15% (5日)",
+      "type": "cross-sectional",
+      "note": "实验: +0.71% vs +0.18%, 高波动胜率54.0%",
+      "raw": {
+        "a": {
+          "n": 1403,
+          "mean": 0.007115,
+          "median": 0.004706,
+          "std": 0.070725,
+          "pct_pos": 0.5403
+        },
+        "b": {
+          "n": 5224,
+          "mean": 0.001338,
+          "median": 0.000385,
+          "std": 0.015764,
+          "pct_pos": 0.6924
+        },
+        "mean_diff": 0.005777,
+        "cohens_d": 0.1631,
+        "t_stat": 3.039,
+        "p_value": 0.00241297,
+        "effect_pass": false,
+        "bonf_pass": false
+      },
+      "verdict": "淘汰",
+      "reasons": [
+        "效应量d=0.16<0.5",
+        "p=0.002413≥α'=9.9e-05"
+      ]
+    }
+  ]
+}
