@@ -8,6 +8,8 @@
 #   3. 数据新鲜度 (parquet 最新日期 vs 今天)
 #   4. 持仓一致性 (state.json 非空且字段完整)
 #   5. cron 日志最近一次 SUMMARY 行 (exit code)
+#   7. crontab 三任务完整性 (run_daily/run_calibrate/run_data_sync, 缺失时自动恢复)
+#   8. V32 风控状态字段 (risk_exposure/cooldown_until/risk_log)
 #
 # 用法: ./deploy/health_check.sh [--bark]
 #   --bark: 检查失败时推送 Bark 告警
@@ -124,12 +126,119 @@ else
     check "最近cron" "fail" "无SUMMARY记录"
 fi
 
+# 7. crontab 三任务校验 (C1: 防止 crontab 被外部覆盖导致定时任务静默丢失)
+CRON_CURRENT=$(crontab -l 2>/dev/null || echo "")
+CRON_REQUIRED_SCRIPTS=("run_daily.sh" "run_calibrate.sh" "run_data_sync.sh")
+CRON_MISSING=()
+for script in "${CRON_REQUIRED_SCRIPTS[@]}"; do
+    if ! echo "$CRON_CURRENT" | grep -q "/opt/quant/deploy/${script}"; then
+        CRON_MISSING+=("$script")
+    fi
+done
+
+if [ ${#CRON_MISSING[@]} -eq 0 ]; then
+    check "crontab三任务" "ok" "run_daily/run_calibrate/run_data_sync 均在crontab"
+else
+    # 自动调用 ensure_cron.sh 恢复, 恢复后复查是否真正补齐
+    RESTORE_NOTE=""
+    if [ -x "${PROJECT_ROOT}/deploy/ensure_cron.sh" ]; then
+        bash "${PROJECT_ROOT}/deploy/ensure_cron.sh" >/dev/null 2>&1 || true
+        CRON_AFTER=$(crontab -l 2>/dev/null || echo "")
+        STILL_MISSING=()
+        for script in "${CRON_MISSING[@]}"; do
+            if ! echo "$CRON_AFTER" | grep -q "/opt/quant/deploy/${script}"; then
+                STILL_MISSING+=("$script")
+            fi
+        done
+        if [ ${#STILL_MISSING[@]} -eq 0 ]; then
+            RESTORE_NOTE="已调用ensure_cron.sh自动恢复"
+        else
+            RESTORE_NOTE="ensure_cron.sh恢复后仍缺失: ${STILL_MISSING[*]}"
+        fi
+    else
+        RESTORE_NOTE="ensure_cron.sh不可用, 需手动恢复"
+    fi
+    check "crontab三任务" "fail" "缺失: ${CRON_MISSING[*]} (${RESTORE_NOTE})"
+fi
+
+# 8. V32 风控状态字段校验 (A2/A6: 防止 risk_exposure/cooldown_until/risk_log 腐坏)
+RISK_JSON=$($PYTHON -c "
+import json
+from pathlib import Path
+from datetime import datetime
+
+result = {}
+state_file = Path('data/live/state.json')
+if not state_file.exists():
+    # 文件不存在 = 未初始化, 不视为异常
+    result['risk_state'] = 'ok'
+    result['detail'] = 'state.json不存在, 视为未初始化'
+else:
+    try:
+        state = json.loads(state_file.read_text())
+    except Exception as e:
+        result['risk_state'] = 'fail'
+        result['detail'] = f'state.json解析失败: {e}'
+        print(json.dumps(result, ensure_ascii=False))
+        raise SystemExit(0)
+
+    # risk_exposure: 缺失=未初始化(正常); 值须 ∈ {0.7, 0.8, 1.0}
+    re_ = state.get('risk_exposure')
+    if re_ is None:
+        re_ok, re_txt = True, '未初始化'
+    elif isinstance(re_, bool) or not isinstance(re_, (int, float)):
+        re_ok, re_txt = False, f'类型异常({type(re_).__name__})'
+    elif any(abs(re_ - v) < 1e-9 for v in (0.7, 0.8, 1.0)):
+        re_ok, re_txt = True, str(re_)
+    else:
+        re_ok, re_txt = False, str(re_)
+
+    # cooldown_until: null 或合法日期 (兼容 ISO 格式及 Z 后缀)
+    cu = state.get('cooldown_until')
+    if cu is None:
+        cu_ok, cu_txt = True, 'null'
+    else:
+        try:
+            datetime.fromisoformat(str(cu).replace('Z', '+00:00'))
+            cu_ok, cu_txt = True, str(cu)
+        except ValueError:
+            cu_ok, cu_txt = False, f'非法日期({cu})'
+
+    # risk_log: 数组
+    rl = state.get('risk_log')
+    if rl is None:
+        rl_ok, rl_txt = True, '未初始化'
+    elif isinstance(rl, list):
+        rl_ok, rl_txt = True, f'len={len(rl)}'
+    else:
+        rl_ok, rl_txt = False, f'类型异常({type(rl).__name__})'
+
+    result['risk_state'] = 'ok' if (re_ok and cu_ok and rl_ok) else 'fail'
+    result['detail'] = f'risk_exposure={re_txt} cooldown_until={cu_txt} risk_log={rl_txt}'
+    print(json.dumps(result, ensure_ascii=False))
+" 2>/dev/null || echo '{"risk_state":"fail","detail":"风控检查脚本异常"}')
+
+RISK_STATE=$(echo "$RISK_JSON" | $PYTHON -c "import sys,json; d=json.load(sys.stdin); print(d.get('risk_state','fail'))" 2>/dev/null || echo "fail")
+RISK_DETAIL=$(echo "$RISK_JSON" | $PYTHON -c "import sys,json; d=json.load(sys.stdin); print(d.get('detail','风控检查异常'))" 2>/dev/null || echo "风控检查异常")
+
+if [ "$RISK_STATE" = "ok" ]; then
+    check "风控状态字段" "ok" "$RISK_DETAIL"
+else
+    check "风控状态字段" "fail" "$RISK_DETAIL"
+    # 风控字段腐坏 → 立即 Bark 提示 (不依赖 --bark 参数, 通过环境变量传参避免引号问题)
+    RISK_DETAIL="$RISK_DETAIL" $PYTHON -c "
+import os, sys; sys.path.insert(0, 'scripts')
+from notify import push_bark
+push_bark('七星V3 风控状态异常', os.environ['RISK_DETAIL'])
+" 2>&1 || echo "⚠️ 风控Bark推送失败"
+fi
+
 # 输出报告
 echo ""
 echo "=== 七星V3 健康检查 $(date '+%Y-%m-%d %H:%M:%S') ==="
 echo ""
 echo -e "$REPORT"
-TOTAL_CHECKS=5
+TOTAL_CHECKS=7
 echo "总计: $((TOTAL_CHECKS - FAILURES))/${TOTAL_CHECKS} 通过, $FAILURES 失败"
 
 # 失败时推送 Bark

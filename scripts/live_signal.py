@@ -973,6 +973,8 @@ def run(dry_run: bool = False) -> int:
 
     if target == holding:
         print(f"     信号: 继续持有 {name_of(target) if target else '现金'}, 无操作")
+        if risk.exposure < 1.0:
+            print(f"  ⚠️ 风控暴露 {risk.exposure:.0%}: 降仓待下次换仓生效 (当前继续持有)")
         if not dry_run:
             with state_transaction() as st:
                 st["last_rebalance_date"] = str(td)
@@ -1012,11 +1014,17 @@ def run(dry_run: bool = False) -> int:
 
     why = dict(candidates).get(target, 0)
     cur = dict(candidates).get(holding, None) if holding else None
-    if target == DEFENSE:
+    if risk.action == "emergency_defense":
+        reason = (f"组合回撤熔断, 强制切防御 {name_of(target)}"
+                  f" (若来不及, 次日开盘执行亦可)")
+    elif target == DEFENSE:
         reason = "所有ETF动量转弱, 切入货币基金防御"
     else:
         reason = (f"{name_of(target)} 动量 {why * 100:+.1f}% 为最强"
                   + (f" (当前持仓 {cur * 100:+.1f}%)" if cur is not None else ""))
+    if 0 < risk.exposure < 1.0 and risk.action != "emergency_defense":
+        print(f"  ⚠️ 风控暴露 {risk.exposure:.0%} (本次买入按此比例折算)")
+        reason += f" | 风控暴露 {risk.exposure:.0%}"
     print(f"  原因: {reason}")
 
     if dry_run:
