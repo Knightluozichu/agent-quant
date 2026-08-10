@@ -121,14 +121,30 @@ def check_volume_spike(volume: np.ndarray, close: np.ndarray) -> bool:
 
 
 def check_single_day_drop(close: np.ndarray) -> bool:
-    """近5日有单日跌>3% → 排除."""
+    """门控版暴跌过滤: 近5日有单日跌>3% → 检查趋势位置 (V3-G).
+
+    若 ret60>=0.01 (前期上涨) → 排除 (真跌保护);
+    若 ret60<0.01 且 动量>0 → 放行 (假摔不误杀);
+    若 ret60<0.01 且 动量≤0 → 排除 (动量转负仍排除).
+    """
     if len(close) < DROP_LOOKBACK + 1:
         return True
+    triggered = False
     for i in range(-DROP_LOOKBACK, 0):
         daily_ret = (close[i] - close[i - 1]) / close[i - 1]
         if daily_ret < DROP_THRESHOLD:
-            return False  # 有暴跌, 排除
-    return True
+            triggered = True
+            break
+    if not triggered:
+        return True
+    if len(close) <= 61:
+        return False
+    ret60 = (close[-1] - close[-61]) / close[-61]
+    if ret60 >= 0.01:
+        return False
+    r10 = (close[-1] - close[-11]) / close[-11] if len(close) > 11 else 0.0
+    r20 = (close[-1] - close[-21]) / close[-21] if len(close) > 21 else 0.0
+    return 0.5 * r10 + 0.5 * r20 > 0.0
 
 
 def check_a_share_weak(data: dict, as_of_idx: int) -> bool:
@@ -221,6 +237,17 @@ def select_target(data: dict, etf_data_at_date: dict, holding: str | None):
 
     # 自适应换仓阈值: 强趋势快换(复利), 弱趋势慢换(防whipsaw)
     threshold = 0.0 if best_score > 0.10 else 0.05
+
+    # 缓冲豁免 (V3-G): 放行类型持仓 (ret60<0.01 且近5日暴跌) 不享 0.05 缓冲
+    if holding and holding in etf_data_at_date and holding != DEFENSE:
+        hclose = data[holding]["close"].values[:etf_data_at_date[holding] + 1].astype(float)
+        if len(hclose) > DROP_LOOKBACK + 1 and len(hclose) > 61:
+            drop = any(
+                (hclose[i] - hclose[i - 1]) / hclose[i - 1] < DROP_THRESHOLD
+                for i in range(-DROP_LOOKBACK, 0))
+            ret60 = (hclose[-1] - hclose[-61]) / hclose[-61]
+            if drop and ret60 < 0.01:
+                threshold = 0.0
 
     # 换仓逻辑: 趋势跟踪 + 自适应缓冲
     if holding and holding != DEFENSE:

@@ -1,0 +1,219 @@
+{
+  "variants": {
+    "基线(原版)": {
+      "segs": {
+        "全周期": {
+          "final_value": 2855701.0,
+          "total_return": 27.557,
+          "ann_return": 0.729,
+          "sharpe": 2.362,
+          "max_drawdown": -0.2111,
+          "calmar": 3.454,
+          "n_trades": 201,
+          "n_risk_events": 16,
+          "deep_dd_time": 0.0014,
+          "cvar95": -0.03762
+        },
+        "IS": {
+          "final_value": 297550.0,
+          "total_return": 1.9755,
+          "ann_return": 0.3624,
+          "sharpe": 1.454,
+          "max_drawdown": -0.1998,
+          "calmar": 1.814,
+          "n_trades": 101,
+          "n_risk_events": 8,
+          "deep_dd_time": 0.0,
+          "cvar95": -0.03449
+        },
+        "OOS": {
+          "final_value": 969927.0,
+          "total_return": 8.6993,
+          "ann_return": 1.4155,
+          "sharpe": 3.723,
+          "max_drawdown": -0.1615,
+          "calmar": 8.763,
+          "n_trades": 101,
+          "n_risk_events": 8,
+          "deep_dd_time": 0.0,
+          "cvar95": -0.04348
+        }
+      },
+      "gate_stats": {
+        "passed": 0,
+        "excluded": 0
+      }
+    },
+    "门控 thr=0.00 guard=on": {
+      "segs": {
+        "全周期": {
+          "final_value": 2727884.0,
+          "total_return": 26.2788,
+          "ann_return": 0.7161,
+          "sharpe": 2.3,
+          "max_drawdown": -0.2111,
+          "calmar": 3.392,
+          "n_trades": 203,
+          "n_risk_events": 16,
+          "deep_dd_time": 0.0014,
+          "cvar95": -0.03787
+        },
+        "IS": {
+          "final_value": 261642.0,
+          "total_return": 1.6164,
+          "ann_return": 0.3136,
+          "sharpe": 1.272,
+          "max_drawdown": -0.1998,
+          "calmar": 1.569,
+          "n_trades": 101,
+          "n_risk_events": 8,
+          "deep_dd_time": 0.0,
+          "cvar95": -0.03428
+        },
+        "OOS": {
+          "final_value": 1102006.0,
+          "total_return": 10.0201,
+          "ann_return": 1.5382,
+          "sharpe": 3.985,
+          "max_drawdown": -0.1615,
+          "calmar": 9.523,
+          "n_trades": 103,
+          "n_risk_events": 8,
+          "deep_dd_time": 0.0,
+          "cvar95": -0.04346
+        }
+      },
+      "gate_stats": {
+        "passed": 18,
+        "excluded": 340
+      }
+    },
+    "门控 thr=0.00 guard=off": {
+      "segs": {
+        "全周期": {
+          "final_value": 2727884.0,
+          "total_return": 26.2788,
+          "ann_return": 0.7161,
+          "sharpe": 2.3,
+          "max_drawdown": -0.2111,
+          "calmar": 3.392,
+          "n_trades": 203,
+          "n_risk_events": 16,
+          "deep_dd_time": 0.0014,
+          "cvar95": -0.03787
+        },
+        "IS": {
+          "final_value": 261642.0,
+          "total_return": 1.6164,
+          "ann_return": 0.3136,
+          "sharpe": 1.272,
+          "max_drawdown": -0.1998,
+          "calmar": 1.569,
+          "n_trades": 101,
+          "n_risk_events": 8,
+          "deep_dd_time": 0.0,
+          "cvar95": -0.03428
+        },
+        "OOS": {
+          "final_value": 1102006.0,
+          "total_return": 10.0201,
+          "ann_return": 1.5382,
+          "sharpe": 3.985,
+          "max_drawdown": -0.1615,
+          "calmar": 9.523,
+          "n_trades": 103,
+          "n_risk_events": 8,
+          "deep_dd_time": 0.0,
+          "cvar95": -0.04346
+        }
+      },
+      "gate_stats": {
+        "passed": 140,
+        "excluded": 218
+      }
+    },
+    "门控 thr=0.10 guard=on": {
+      "segs": {
+        "全周期": {
+          "final_value": 2276487.0,
+          "total_return": 21.7649,
+          "ann_return": 0.6661,
+          "sharpe": 2.114,
+          "max_drawdown": -0.2237,
+          "calmar": 2.978,
+          "n_trades": 203,
+          "n_risk_events": 17,
+          "deep_dd_time": 0.0189,
+          "cvar95": -0.03912
+        },
+        "IS": {
+          "final_value": 232449.0,
+          "total_return": 1.3245,
+          "ann_return": 0.2702,
+          "sharpe": 1.076,
+          "max_drawdown": -0.2237,
+          "calmar": 1.208,
+          "n_trades": 107,
+          "n_risk_events": 8,
+          "deep_dd_time": 0.0327,
+          "cvar95": -0.03496
+        },
+        "OOS": {
+          "final_value": 1015896.0,
+          "total_return": 9.159,
+          "ann_return": 1.4593,
+          "sharpe": 3.753,
+          "max_drawdown": -0.1615,
+          "calmar": 9.035,
+          "n_trades": 99,
+          "n_risk_events": 9,
+          "deep_dd_time": 0.0,
+          "cvar95": -0.04512
+        }
+      },
+      "gate_stats": {
+        "passed": 38,
+        "excluded": 320
+      }
+    }
+  },
+  "cost_stress": {
+    "base_final": 2855701.0,
+    "rows": {
+      "1x": {
+        "final_value": 2727884.0,
+        "total_return": 26.2788,
+        "ann_return": 0.7161,
+        "sharpe": 2.3,
+        "max_drawdown": -0.2111,
+        "calmar": 3.392,
+        "n_trades": 203
+      },
+      "2x": {
+        "final_value": 2114132.0,
+        "total_return": 20.1413,
+        "ann_return": 0.6461,
+        "sharpe": 2.082,
+        "max_drawdown": -0.2278,
+        "calmar": 2.836,
+        "n_trades": 203
+      },
+      "3x": {
+        "final_value": 1586421.0,
+        "total_return": 14.8642,
+        "ann_return": 0.5707,
+        "sharpe": 1.853,
+        "max_drawdown": -0.2442,
+        "calmar": 2.337,
+        "n_trades": 203
+      }
+    }
+  },
+  "checks": {
+    "全周期收益不劣化(>=基线-1%)": false,
+    "全周期回撤不劣化": true,
+    "OOS收益不劣化(>=基线-1%)": true,
+    "OOS夏普不劣化0.15": true,
+    "成本3x仍有正收益": true
+  }
+}

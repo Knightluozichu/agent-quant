@@ -1,0 +1,87 @@
+{
+  "segments": [
+    {
+      "segment": "WF-1",
+      "train_best_thr": -0.05,
+      "train_scores": {
+        "-0.05": 150171.0,
+        "0.0": 150171.0,
+        "0.05": 150171.0
+      },
+      "test_new_final": 119136.0,
+      "test_base_final": 119136.0,
+      "test_diff": 0.0,
+      "test_new_sharpe": 1.547,
+      "test_base_sharpe": 1.547,
+      "test_sharpes_all": [
+        1.547,
+        1.547,
+        1.547
+      ]
+    },
+    {
+      "segment": "WF-2",
+      "train_best_thr": -0.05,
+      "train_scores": {
+        "-0.05": 191482.0,
+        "0.0": 191482.0,
+        "0.05": 191482.0
+      },
+      "test_new_final": 112148.0,
+      "test_base_final": 112148.0,
+      "test_diff": 0.0,
+      "test_new_sharpe": 1.502,
+      "test_base_sharpe": 1.502,
+      "test_sharpes_all": [
+        1.502,
+        1.502,
+        1.502
+      ]
+    },
+    {
+      "segment": "WF-3",
+      "train_best_thr": -0.05,
+      "train_scores": {
+        "-0.05": 254998.0,
+        "0.0": 254998.0,
+        "0.05": 254998.0
+      },
+      "test_new_final": 117981.0,
+      "test_base_final": 117981.0,
+      "test_diff": 0.0,
+      "test_new_sharpe": 1.915,
+      "test_base_sharpe": 1.915,
+      "test_sharpes_all": [
+        1.915,
+        1.915,
+        1.915
+      ]
+    },
+    {
+      "segment": "WF-4",
+      "train_best_thr": -0.05,
+      "train_scores": {
+        "-0.05": 299320.0,
+        "0.0": 299320.0,
+        "0.05": 299320.0
+      },
+      "test_new_final": 90151.0,
+      "test_base_final": 90151.0,
+      "test_diff": 0.0,
+      "test_new_sharpe": -0.706,
+      "test_base_sharpe": -0.706,
+      "test_sharpes_all": [
+        -0.706,
+        -0.847,
+        -0.847
+      ]
+    }
+  ],
+  "pbo": 0.5,
+  "ret60_grid": [
+    -0.05,
+    0.0,
+    0.05
+  ],
+  "note": "审计①已证 2026-07 前新方案与基线零差异; 本测试覆盖 2021H2~2025H1 测试窗口"
+}

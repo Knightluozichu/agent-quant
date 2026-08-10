@@ -35,6 +35,13 @@ H2_DAY = -0.05           # 当日跌幅硬触发
 DD_WARN, DD_HALF, DD_FLUSH = -0.12, -0.25, -0.30  # 组合熔断分级
 DEFENSE_SEQ = ("511260", "511220", "511880")       # 十年国债→城投债→货币 (缺数据跳过)
 
+# V3-G H3 放行止损参数
+H3_DELTA = 0.02          # 放行后自暴跌日起回撤 >2% 触发
+H3_EXPO_REDUCE = 0.3     # 触发后降仓比例
+H3_DROP_THR = -0.03      # 单日跌幅阈值 (与 V3 一致)
+H3_DROP_LB = 5           # 检查天数
+H3_RET60_THR = 0.01      # 放行类型阈值 (与 V3-G 一致)
+
 # 动作枚举
 ACTION_HOLD = "hold"                # 无交易 (仅状态更新)
 ACTION_TRADE = "trade"              # 调仓日正常交易 (exposure 参与买入折算)
@@ -167,6 +174,36 @@ def assess(
             exposure = min(exposure, EXPO_REDUCE)
             events.append({"date": str(td), "type": "改进-H1/H2降仓",
                            "reason": f"entry_dd={entry_dd:.1%} day={day_ret:.1%}"})
+
+    # === H3 放行止损 (V3-G): 放行类型持仓的缓跌兜底 ===
+    if holding and holding != "511880" and cooldown is None:
+        hclose = _series(holding)
+        drop_idx: list[int] = []
+        if len(hclose) > H3_DROP_LB:
+            for k in range(1, H3_DROP_LB + 1):
+                if len(hclose) > k:
+                    dr = (hclose[-k] - hclose[-k - 1]) / hclose[-k - 1]
+                    if dr < H3_DROP_THR:
+                        drop_idx.append(len(hclose) - k)
+        if drop_idx and len(hclose) > 61:
+            ret60 = (hclose[-1] - hclose[-61]) / hclose[-61]
+            if ret60 < H3_RET60_THR:  # 放行类型
+                if state.get("h3_holding") != holding:
+                    state["h3_holding"] = holding
+                    state["h3_peak"] = float(hclose[min(drop_idx)])
+                cur = float(spot_map[holding]["price"]) if holding in spot_map else _price(holding)
+                state["h3_peak"] = max(state["h3_peak"], cur)
+                dd_peak = cur / state["h3_peak"] - 1.0 if state["h3_peak"] > 0 else 0.0
+                if dd_peak < -H3_DELTA:
+                    exposure = min(exposure, H3_EXPO_REDUCE)
+                    events.append({"date": str(td), "type": "H3放行止损-降仓",
+                                   "reason": f"ret60={ret60:.3f} dd_from_peak={dd_peak:.1%}"})
+            else:
+                state["h3_holding"] = None
+                state["h3_peak"] = 0.0
+        else:
+            state["h3_holding"] = None
+            state["h3_peak"] = 0.0
 
     # === 层4 组合熔断 ===
     if cooldown is None:

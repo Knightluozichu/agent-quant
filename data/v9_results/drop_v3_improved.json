@@ -1,0 +1,94 @@
+{
+  "基线 (原版)": {
+    "全周期": {
+      "final_value": 2855701.0,
+      "ann_return": 0.729,
+      "sharpe": 2.362,
+      "max_drawdown": -0.2111,
+      "n_trades": 201
+    },
+    "IS": {
+      "final_value": 297550.0,
+      "ann_return": 0.3624,
+      "sharpe": 1.454,
+      "max_drawdown": -0.1998,
+      "n_trades": 101
+    },
+    "OOS": {
+      "final_value": 969927.0,
+      "ann_return": 1.4155,
+      "sharpe": 3.723,
+      "max_drawdown": -0.1615,
+      "n_trades": 101
+    }
+  },
+  "门控+豁免+H3": {
+    "全周期": {
+      "final_value": 3120703.0,
+      "ann_return": 0.7542,
+      "sharpe": 2.417,
+      "max_drawdown": -0.2111,
+      "n_trades": 203
+    },
+    "IS": {
+      "final_value": 297550.0,
+      "ann_return": 0.3624,
+      "sharpe": 1.454,
+      "max_drawdown": -0.1998,
+      "n_trades": 101
+    },
+    "OOS": {
+      "final_value": 1108575.0,
+      "ann_return": 1.5441,
+      "sharpe": 4.009,
+      "max_drawdown": -0.1615,
+      "n_trades": 103
+    }
+  },
+  "动量豁免": {
+    "全周期": {
+      "final_value": 2855701.0,
+      "ann_return": 0.729,
+      "sharpe": 2.362,
+      "max_drawdown": -0.2111,
+      "n_trades": 201
+    },
+    "IS": {
+      "final_value": 297550.0,
+      "ann_return": 0.3624,
+      "sharpe": 1.454,
+      "max_drawdown": -0.1998,
+      "n_trades": 101
+    },
+    "OOS": {
+      "final_value": 969927.0,
+      "ann_return": 1.4155,
+      "sharpe": 3.723,
+      "max_drawdown": -0.1615,
+      "n_trades": 101
+    }
+  },
+  "全部叠加": {
+    "全周期": {
+      "final_value": 3120703.0,
+      "ann_return": 0.7542,
+      "sharpe": 2.417,
+      "max_drawdown": -0.2111,
+      "n_trades": 203
+    },
+    "IS": {
+      "final_value": 297550.0,
+      "ann_return": 0.3624,
+      "sharpe": 1.454,
+      "max_drawdown": -0.1998,
+      "n_trades": 101
+    },
+    "OOS": {
+      "final_value": 1108575.0,
+      "ann_return": 1.5441,
+      "sharpe": 4.009,
+      "max_drawdown": -0.1615,
+      "n_trades": 103
+    }
+  }
+}

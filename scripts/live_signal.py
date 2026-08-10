@@ -245,6 +245,9 @@ def default_state(capital: float) -> dict:
         "risk_exposure": 1.0,
         "cooldown_until": None,
         "risk_log": [],
+        # V3-G H3 放行止损状态
+        "h3_holding": None,
+        "h3_peak": 0.0,
     }
 
 
@@ -260,6 +263,9 @@ def load_state() -> dict | None:
     state.setdefault("risk_exposure", 1.0)
     state.setdefault("cooldown_until", None)
     state.setdefault("risk_log", [])
+    # V3-G H3 状态兼容
+    state.setdefault("h3_holding", None)
+    state.setdefault("h3_peak", 0.0)
     return state
 
 
@@ -899,10 +905,8 @@ def run(dry_run: bool = False) -> int:
     idx_map = build_etf_data_at_date(data, td)
     target, candidates, _best_score, a_share_weak = select_target(data, idx_map, holding)
 
-    # === 实时急跌保护: 14:50信号时检查当天盘中是否已暴跌>3% ===
-    # 新浪日K在收盘后才发布, 14:50拿不到当天数据, 但实时行情能拿到
-    # 注意: 必须用腾讯返回的 prev_close (上一交易日收盘), 不能用 price_on(data, code, td)
-    # 因为 inject_realtime 后 td=今天, price_on 返回的是当天实时价而非昨收
+    # === 实时急跌保护 (V3-G): 检查当天盘中是否已暴跌>3% ===
+    # 同步门控逻辑: ret60>=0.01 或 动量≤0 → 排除; 否则放行 (假摔)
     spot_map = _fetch_tencent_spot()
     realtime_dropped = []
     for code, _score in candidates:
@@ -914,7 +918,19 @@ def run(dry_run: bool = False) -> int:
         if prev_close and prev_close > 0:
             intraday_ret = (rt_price - prev_close) / prev_close
             if intraday_ret < -0.03:
-                realtime_dropped.append((code, intraday_ret))
+                # 检查门控条件: 用历史数据计算 ret60 和动量
+                df = data[code]
+                idx = int((df["trade_date"] <= td).sum())
+                if idx > 61:
+                    close = df["close"].values[:idx].astype(float)
+                    ret60 = (close[-1] - close[-61]) / close[-61]
+                    r10 = (close[-1] - close[-11]) / close[-11]
+                    r20 = (close[-1] - close[-21]) / close[-21]
+                    mom = 0.5 * r10 + 0.5 * r20
+                    if ret60 >= 0.01 or mom <= 0:
+                        realtime_dropped.append((code, intraday_ret))
+                else:
+                    realtime_dropped.append((code, intraday_ret))
     if realtime_dropped:
         dropped_codes = {c for c, _ in realtime_dropped}
         for code, ret in realtime_dropped:

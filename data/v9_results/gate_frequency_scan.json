@@ -1,0 +1,182 @@
+{
+  "base_final": 2855701.0,
+  "rows": [
+    {
+      "ret60_thr": 0.0,
+      "mom_thr": 0.0,
+      "exempt": true,
+      "final": 3120703.0,
+      "diff_vs_base": 0.09279753027365256,
+      "sharpe": 2.417,
+      "max_dd": -0.2111,
+      "divergences": 2,
+      "n_trades": 203
+    },
+    {
+      "ret60_thr": 0.0,
+      "mom_thr": 0.0,
+      "exempt": false,
+      "final": 2923999.0,
+      "diff_vs_base": 0.02391636939581554,
+      "sharpe": 2.364,
+      "max_dd": -0.2111,
+      "divergences": 4,
+      "n_trades": 203
+    },
+    {
+      "ret60_thr": 0.0,
+      "mom_thr": -0.05,
+      "exempt": true,
+      "final": 3120703.0,
+      "diff_vs_base": 0.09279753027365256,
+      "sharpe": 2.417,
+      "max_dd": -0.2111,
+      "divergences": 2,
+      "n_trades": 203
+    },
+    {
+      "ret60_thr": 0.0,
+      "mom_thr": -0.05,
+      "exempt": false,
+      "final": 2923999.0,
+      "diff_vs_base": 0.02391636939581554,
+      "sharpe": 2.364,
+      "max_dd": -0.2111,
+      "divergences": 4,
+      "n_trades": 203
+    },
+    {
+      "ret60_thr": 0.1,
+      "mom_thr": 0.0,
+      "exempt": true,
+      "final": 2535710.0,
+      "diff_vs_base": -0.11205339774717316,
+      "sharpe": 2.196,
+      "max_dd": -0.2237,
+      "divergences": 17,
+      "n_trades": 203
+    },
+    {
+      "ret60_thr": 0.1,
+      "mom_thr": 0.0,
+      "exempt": false,
+      "final": 2276487.0,
+      "diff_vs_base": -0.20282725677513158,
+      "sharpe": 2.114,
+      "max_dd": -0.2237,
+      "divergences": 19,
+      "n_trades": 203
+    },
+    {
+      "ret60_thr": 0.1,
+      "mom_thr": -0.05,
+      "exempt": true,
+      "final": 2535710.0,
+      "diff_vs_base": -0.11205339774717316,
+      "sharpe": 2.196,
+      "max_dd": -0.2237,
+      "divergences": 17,
+      "n_trades": 203
+    },
+    {
+      "ret60_thr": 0.1,
+      "mom_thr": -0.05,
+      "exempt": false,
+      "final": 2276487.0,
+      "diff_vs_base": -0.20282725677513158,
+      "sharpe": 2.114,
+      "max_dd": -0.2237,
+      "divergences": 19,
+      "n_trades": 203
+    },
+    {
+      "ret60_thr": 0.2,
+      "mom_thr": 0.0,
+      "exempt": true,
+      "final": 2362712.0,
+      "diff_vs_base": -0.17263326937939227,
+      "sharpe": 2.077,
+      "max_dd": -0.2237,
+      "divergences": 29,
+      "n_trades": 203
+    },
+    {
+      "ret60_thr": 0.2,
+      "mom_thr": 0.0,
+      "exempt": false,
+      "final": 2121650.0,
+      "diff_vs_base": -0.257047569055724,
+      "sharpe": 1.998,
+      "max_dd": -0.2237,
+      "divergences": 31,
+      "n_trades": 203
+    },
+    {
+      "ret60_thr": 0.2,
+      "mom_thr": -0.05,
+      "exempt": true,
+      "final": 2362712.0,
+      "diff_vs_base": -0.17263326937939227,
+      "sharpe": 2.077,
+      "max_dd": -0.2237,
+      "divergences": 29,
+      "n_trades": 203
+    },
+    {
+      "ret60_thr": 0.2,
+      "mom_thr": -0.05,
+      "exempt": false,
+      "final": 2121650.0,
+      "diff_vs_base": -0.257047569055724,
+      "sharpe": 1.998,
+      "max_dd": -0.2237,
+      "divergences": 31,
+      "n_trades": 203
+    },
+    {
+      "ret60_thr": 0.3,
+      "mom_thr": 0.0,
+      "exempt": true,
+      "final": 1932088.0,
+      "diff_vs_base": -0.32342776782303184,
+      "sharpe": 1.906,
+      "max_dd": -0.2222,
+      "divergences": 40,
+      "n_trades": 195
+    },
+    {
+      "ret60_thr": 0.3,
+      "mom_thr": 0.0,
+      "exempt": false,
+      "final": 1786856.0,
+      "diff_vs_base": -0.3742846327399122,
+      "sharpe": 1.824,
+      "max_dd": -0.2222,
+      "divergences": 49,
+      "n_trades": 197
+    },
+    {
+      "ret60_thr": 0.3,
+      "mom_thr": -0.05,
+      "exempt": true,
+      "final": 1932088.0,
+      "diff_vs_base": -0.32342776782303184,
+      "sharpe": 1.906,
+      "max_dd": -0.2222,
+      "divergences": 40,
+      "n_trades": 195
+    },
+    {
+      "ret60_thr": 0.3,
+      "mom_thr": -0.05,
+      "exempt": false,
+      "final": 1786856.0,
+      "diff_vs_base": -0.3742846327399122,
+      "sharpe": 1.824,
+      "max_dd": -0.2222,
+      "divergences": 49,
+      "n_trades": 197
+    }
+  ],
+  "robust_zone": []
+}

@@ -1,0 +1,54 @@
+{
+  "基线 (原版过滤)": {
+    "全周期": {
+      "final_value": 181538.0,
+      "ann_return": 0.1049,
+      "sharpe": 0.508,
+      "max_drawdown": -0.2637,
+      "n_trades": 177
+    },
+    "IS": {
+      "final_value": 155017.0,
+      "ann_return": 0.1376,
+      "sharpe": 0.683,
+      "max_drawdown": -0.2637,
+      "n_trades": 93
+    },
+    "OOS": {
+      "final_value": 117589.0,
+      "ann_return": 0.0654,
+      "sharpe": 0.308,
+      "max_drawdown": -0.1648,
+      "n_trades": 83
+    }
+  },
+  "门控+豁免+H3": {
+    "全周期": {
+      "final_value": 181538.0,
+      "ann_return": 0.1049,
+      "sharpe": 0.508,
+      "max_drawdown": -0.2637,
+      "n_trades": 177
+    },
+    "IS": {
+      "final_value": 155017.0,
+      "ann_return": 0.1376,
+      "sharpe": 0.683,
+      "max_drawdown": -0.2637,
+      "n_trades": 93
+    },
+    "OOS": {
+      "final_value": 117589.0,
+      "ann_return": 0.0654,
+      "sharpe": 0.308,
+      "max_drawdown": -0.1648,
+      "n_trades": 83
+    }
+  },
+  "checks": {
+    "全周期>=基线-1%": true,
+    "IS>=基线-1%": true,
+    "OOS>=基线-1%": true,
+    "回撤不劣化": true
+  }
+}
