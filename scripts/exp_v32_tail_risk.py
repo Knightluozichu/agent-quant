@@ -62,7 +62,7 @@ DD_WARN, DD_HALF, DD_FLUSH = -0.12, -0.25, -0.30   # 层4: 组合熔断(改进�
 CAT_MOM_CAP = 0.70        # 层4: 商品类别动量<0.02 → 暴露70%
 CAT_MOM_THR = 0.02
 VOL_HV_THR = 0.45   # 改进版: 高波动阈值
-EXPO_REDUCE = 0.7    # 改进版: 适度降仓比例
+EXPO_REDUCE = 1.0    # V3-G 关闭降仓层 (1.0=不降)
 DEFENSE_SEQ = ["511260", "511220", "511880"]  # 十年国债→城投债→货币
 
 IS_START, IS_END = "2020-06-01", "2023-12-31"
@@ -220,7 +220,7 @@ def run_v3_risk(data: dict,
                 risk_events.append({"date": str(td), "type": "熔断-20%告警",
                                     "dd": round(float(dd), 4)})
             elif dd < DD_WARN:
-                exposure = 0.8
+                exposure = 1.0  # V3-G 关闭降仓层: 仅告警不降仓
 
         # === 冷却恢复: 冷却至下个调仓日 ===
         if cooldown_until is not None and td in rebalance_set:

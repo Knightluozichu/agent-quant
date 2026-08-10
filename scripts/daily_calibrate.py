@@ -25,7 +25,7 @@ def main() -> None:
 
     state = ls.load_state()
     if state is None:
-        push_bark("⚠️ 七星V3 校准失败", "账户未初始化, 请检查", level="timeSensitive")
+        push_bark("⚠️ 校准异常", "账户未初始化, 请检查", level="timeSensitive")
         return
 
     # 方案A: 注入当日实时收盘价 (腾讯源), 解决新浪当日K线发布延迟导致校准滞后一天
@@ -58,27 +58,25 @@ def main() -> None:
 
     # 组装每日校准消息
     hold_disp = f"【{holding}】{ls.name_of(holding)}" if holding else "空仓"
-    lines = [f"📅 数据更新至: {latest}"]
-    if is_td and str(latest) != str(today):
-        lines.append("   ⚠️ 实时行情不可用, 数据基于昨日收盘")
-    if days_left is not None:
-        if days_left <= 0:
-            lines.append(f"🎯 下个调仓日: {next_rb} (就是今天/即将)")
-        else:
-            lines.append(f"🎯 下个调仓日: {next_rb} (还有{days_left}个交易日)")
+    lines = [f"持仓: {hold_disp}"]
+    lines.append(f"💰 盈亏: {total/10000:.2f}万 ({ret:+.1f}%)")
+    if days_left is not None and days_left <= 0:
+        lines.append(f"🎯 调仓日: {next_rb} (就是今天/即将)")
+    elif days_left is not None:
+        lines.append(f"🎯 调仓日: {next_rb} (还有{days_left}个交易日)")
     else:
-        lines.append(f"🎯 下个调仓日: 约{next_rb}")
-    lines.append(f"💼 当前持仓: {hold_disp}")
+        lines.append(f"🎯 调仓日: 约{next_rb}")
     if target == holding:
-        lines.append(f"👉 预计: 继续持有 【{holding}】{ls.name_of(holding)}")
+        lines.append(f"👉 预计: 继续持有 {hold_disp}")
     else:
         lines.append(f"👉 预计调仓: → 【{target}】{ls.name_of(target)} (动量{best_score*100:+.1f}%)")
         lines.append(f"   易淘金搜索代码 {target} 买入")
     if a_share_weak:
         lines.append("⚠️ A股走弱, 已排除创业板")
-    lines.append(f"💰 账户: {total/10000:.2f}万 ({ret:+.1f}%)")
+    if is_td and str(latest) != str(today):
+        lines.append("⚠️ 实时行情不可用, 数据基于昨日收盘")
 
-    push_bark("📅 七星V3 每日校准", "\n".join(lines), level="active")
+    push_bark("📅 每日简报", "\n".join(lines), level="active")
     print("  ✓ 每日校准已推送")
     print("\n".join("  " + ln for ln in lines))
 

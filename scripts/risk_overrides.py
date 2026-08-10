@@ -27,7 +27,7 @@ import numpy as np
 
 # === 风控参数 (与 exp_v32_tail_risk.py 一致) ===
 VOL_HV_THR = 0.45        # 高波动阈值
-EXPO_REDUCE = 0.7        # 适度降仓比例
+EXPO_REDUCE = 1.0        # H1/H2/高波动衰减降仓比例 (V3-G 2026-08-10 关闭降仓层: 净贡献-10.2%, 1.0=不降)
 DECAY_THRESH = -0.02     # 动量5日变化阈值 (三重确认1)
 ABS_WEAK = 0.08          # 绝对动量弱化阈值 (三重确认3)
 H1_DD = -0.15            # 自买入回撤硬触发
@@ -35,9 +35,9 @@ H2_DAY = -0.05           # 当日跌幅硬触发
 DD_WARN, DD_HALF, DD_FLUSH = -0.12, -0.25, -0.30  # 组合熔断分级
 DEFENSE_SEQ = ("511260", "511220", "511880")       # 十年国债→城投债→货币 (缺数据跳过)
 
-# V3-G H3 放行止损参数
+# V3-G H3 放行止损参数 (关闭: 1.0=不降仓)
 H3_DELTA = 0.02          # 放行后自暴跌日起回撤 >2% 触发
-H3_EXPO_REDUCE = 0.3     # 触发后降仓比例
+H3_EXPO_REDUCE = 1.0     # 触发后降仓比例 (关闭降仓层)
 H3_DROP_THR = -0.03      # 单日跌幅阈值 (与 V3 一致)
 H3_DROP_LB = 5           # 检查天数
 H3_RET60_THR = 0.01      # 放行类型阈值 (与 V3-G 一致)
@@ -219,9 +219,9 @@ def assess(
             events.append({"date": str(td), "type": "熔断-25%告警",
                            "reason": f"dd={dd:.1%}"})
         elif dd < DD_WARN:
-            exposure = min(exposure, 0.8)
-            events.append({"date": str(td), "type": "熔断-12%降仓",
-                           "reason": f"dd={dd:.1%}, exposure=0.8"})
+            exposure = min(exposure, 1.0)  # V3-G 关闭降仓层: -12% 仅告警不降仓
+            events.append({"date": str(td), "type": "熔断-12%告警(不降仓)",
+                           "reason": f"dd={dd:.1%}"})
 
     # === 冷却解除: 熔断后下一调仓日解除 (回测怪癖: 熔断日=调仓日则立即解除) ===
     if cooldown is not None and is_rebalance:

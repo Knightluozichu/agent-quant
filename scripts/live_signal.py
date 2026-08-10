@@ -577,6 +577,21 @@ def print_orders(sell: tuple | None, buy: tuple | None) -> None:
     print(f"  {'─' * 56}")
 
 
+def translate_risk_event(etype: str) -> str:
+    """风控事件类型 → 大白话 (供 Bark 推送展示)."""
+    return {
+        "改进-H1/H2降仓": "持仓亏损超15% 或 当日大跌超5%",
+        "改进-高波动衰减降仓": "波动过大且趋势转弱",
+        "H3放行止损-降仓": "放行品种自高点回撤超2%",
+        "熔断-30%清仓": "总资产从高点回撤30%, 强制清仓",
+        "熔断-25%告警": "总资产从高点回撤25%, 预警",
+        "熔断-12%降仓": "总资产从高点回撤12%",
+        "目标不可交易": "目标品种停牌/涨跌停",
+        "H1/H2硬触发": "持仓亏损超15% 或 当日大跌超5%",
+        "层2衰减退出": "动量持续衰减, 退出持仓",
+    }.get(etype, etype)
+
+
 def notify_hold(td, holding: str | None, state: dict, data: dict) -> None:
     """调仓日继续持有 → 推送一条平安通知."""
     total = account_value(state, data, td)
@@ -587,7 +602,7 @@ def notify_hold(td, holding: str | None, state: dict, data: dict) -> None:
         f"继续持有 {holding_disp}\n"
         f"💰 账户 {fmt_money(total)} 元 ({ret:+.1f}%)"
     )
-    push_bark("😴 七星V3 继续持有", body, level="active")
+    push_bark("✅ 今日不调仓", body, level="active")
 
 
 def notify_trade(td, sell_order, buy_order, reason: str, state: dict, data: dict) -> None:
@@ -614,7 +629,7 @@ def notify_trade(td, sell_order, buy_order, reason: str, state: dict, data: dict
     if buy_order:
         lines.append(f"   买入 {buy_order[0]} ({name_of(buy_order[0])}) {buy_order[1]}股")
     lines.append("完成后打开记账网页确认成交")
-    push_bark("🔄 七星V3 换仓信号", "\n".join(lines), level="timeSensitive", sound="alarm")
+    push_bark("🔄 调仓指令 · 请操作", "\n".join(lines), level="timeSensitive", sound="alarm")
 
 
 # --------------------------------------------------------------------------- #
@@ -774,7 +789,7 @@ def inject_realtime(data: dict) -> dict:
         msg = "数据源冲突:\n" + "\n".join(f"  - {c}" for c in conflicts)
         print(f"  ⚠️  {msg}")
         print("  ⚠️  未注入实时数据 (fail-closed), 不生成信号")
-        push_bark("⚠️ 七星V3 数据源冲突", msg, level="timeSensitive", sound="alarm")
+        push_bark("⚠️ 行情数据冲突", msg, level="timeSensitive", sound="alarm")
         return data
 
     injected = []
@@ -855,7 +870,7 @@ def run(dry_run: bool = False) -> int:
     if td < today:
         msg = f"{today} 实时行情注入失败 (数据停在 {td}), 不生成信号, 保持原持仓"
         print(f"\n  ⚠️  {msg}")
-        push_bark("⚠️ 七星V3 实时数据缺失", msg, level="timeSensitive", sound="alarm")
+        push_bark("⚠️ 实时行情获取失败", msg, level="timeSensitive", sound="alarm")
         return 1
 
     print_header(td)
@@ -873,7 +888,7 @@ def run(dry_run: bool = False) -> int:
         msg = (f"{td} 数据缺失: {', '.join(missing)}\n"
                f"不生成新信号, 保持原持仓 (DATA_UNAVAILABLE)")
         print(f"\n  ⚠️  {msg}")
-        push_bark("⚠️ 七星V3 数据缺失告警", msg, level="timeSensitive", sound="alarm")
+        push_bark("⚠️ 数据不完整·暂停信号", msg, level="timeSensitive", sound="alarm")
         return 1
 
     # 是否为调仓日: 绝对网格 (与回测一致: trading_dates[warmup:][::5])
@@ -957,14 +972,16 @@ def run(dry_run: bool = False) -> int:
     if risk.events:
         for ev in risk.events:
             print(f"  🛡️ 风控: {ev['type']} | {ev.get('reason', '')}")
-        # V32: 降仓类事件 Bark 二级告警 (含降仓比例; 熔断走既有 notify_trade 链路不重复推)
+        # V32/V3-G: 降仓类事件 Bark 二级告警 (含降仓比例; 熔断走既有 notify_trade 链路不重复推)
         if risk.action != "emergency_defense":
             try:
-                evs_txt = "; ".join(e["type"] for e in risk.events[:3])
-                body = (f"{evs_txt}\n"
-                        f"暴露降至 {risk.exposure:.0%} (下次调仓日按此比例买入)\n"
-                        f"非调仓日仅记录, 不立即交易")
-                push_bark("⚠️ 七星V3 降仓提示", body,
+                evs = risk.events[:3]
+                lines = [f"⚠️ 自动降仓: 仓位从100% → {risk.exposure:.0%}", ""]
+                for ev in evs:
+                    lines.append(f"• {translate_risk_event(ev['type'])}")
+                lines += ["", "✅ 当前持仓不动，今天不卖",
+                          f"📌 下次调仓买入按{risk.exposure:.0%}仓位执行，保留{1 - risk.exposure:.0%}现金"]
+                push_bark(f"⚠️ 自动降仓至{risk.exposure:.0%}仓位", "\n".join(lines),
                           level="timeSensitive", sound="alarm")
             except Exception as e:
                 print(f"  ⚠️ 降仓 Bark 推送失败: {e}")

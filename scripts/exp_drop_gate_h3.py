@@ -47,9 +47,10 @@ ORIG_CHECK = rq.check_single_day_drop
 
 # === H3 参数 (由命令行/变体注入) ===
 H3_ENABLED = False
+H3_EXPO = 1.0      # V3-G 关闭降仓层 (1.0=不降)
+EXPO_REDUCE = 1.0      # V3-G 关闭降仓层 (覆盖 import, 1.0=不降)
 H3_DELTA = 0.03
 H3_ACTION = "reduce"  # reduce(降仓0.5) | exit(退出切防御)
-H3_EXPO = 0.5
 GATE_STATS: dict = {"passed": 0, "excluded": 0}
 
 
@@ -265,7 +266,7 @@ def run_v3_risk_h3(data: dict,
                 risk_events.append({"date": str(td), "type": "熔断-25%告警",
                                     "dd": round(float(dd), 4)})
             elif dd < -0.12:
-                exposure = 0.8
+                exposure = 1.0  # V3-G 关闭降仓层: 仅告警不降仓
 
         if cooldown_until is not None and td in rebalance_set:
             cooldown_until = None

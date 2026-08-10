@@ -70,7 +70,7 @@ print(max(dates) if dates else 'unknown')
         $PYTHON -c "
 import sys; sys.path.insert(0, 'scripts')
 from notify import push_bark
-push_bark('七星V3 信号生成失败', f'exit=${RC}, 请检查 cron.log')
+push_bark('❌ 信号生成失败', f'exit=${RC}, 请检查 cron.log')
 " 2>&1 || echo "$TASK_NAME ⚠️ Bark 推送失败"
     else
         echo "$TASK_NAME ✅ 信号生成完成"
