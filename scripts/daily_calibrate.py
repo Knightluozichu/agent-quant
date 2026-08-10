@@ -1,12 +1,13 @@
 """每日校准: 收盘后更新数据 + 校准下个调仓日 + 预览调仓数据 + 推送每日状态.
 
-每天15:10由cron运行: 更新到最终收盘数据, 校准下个调仓日及调仓预览, 推送每日校准状态到手机。
+每天16:30由cron运行: 更新到最终收盘数据, 校准下个调仓日及调仓预览, 推送每日校准状态到手机。
 与14:50的信号推送区分: 14:50=调仓日实际信号(timeSensitive); 本脚本=每日校准预告(active)。
 用法: uv run python scripts/daily_calibrate.py
 """
 from __future__ import annotations
 
 import sys
+from datetime import date
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
@@ -26,6 +27,13 @@ def main() -> None:
     if state is None:
         push_bark("⚠️ 七星V3 校准失败", "账户未初始化, 请检查", level="timeSensitive")
         return
+
+    # 方案A: 注入当日实时收盘价 (腾讯源), 解决新浪当日K线发布延迟导致校准滞后一天
+    # 交易日才注入; 非交易日(节假日)或实时源不可用时, 回退昨日数据并在消息中标注
+    today = date.today()
+    is_td = ls.is_trading_day(today)
+    if is_td:
+        data = ls.inject_realtime(data)
 
     trading_dates = get_common_dates(data)
     latest = trading_dates[-1]
@@ -51,6 +59,8 @@ def main() -> None:
     # 组装每日校准消息
     hold_disp = f"【{holding}】{ls.name_of(holding)}" if holding else "空仓"
     lines = [f"📅 数据更新至: {latest}"]
+    if is_td and str(latest) != str(today):
+        lines.append("   ⚠️ 实时行情不可用, 数据基于昨日收盘")
     if days_left is not None:
         if days_left <= 0:
             lines.append(f"🎯 下个调仓日: {next_rb} (就是今天/即将)")
