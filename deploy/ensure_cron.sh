@@ -10,6 +10,13 @@
 set -uo pipefail
 export TZ=Asia/Shanghai
 
+# 只允许 root 管理 crontab, 防止非 root 用户给自己写入重复 crontab
+# 背景: root 和 quant 各有一套 crontab 导致 16:30 校准任务因 state.json 权限冲突失败
+if [ "$(id -u)" -ne 0 ]; then
+    echo "ensure_cron.sh: 必须以 root 运行, 当前用户 $(id -un), 跳过"
+    exit 0
+fi
+
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PYTHON="${PROJECT_ROOT}/.venv/bin/python"
 if [ ! -x "$PYTHON" ]; then
