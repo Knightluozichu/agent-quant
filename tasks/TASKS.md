@@ -238,3 +238,12 @@
 - [x] V32-005 服务器验证 (风控层加载 OK / --status 旧 state 兼容 / trade-web active)
 - [ ] V32-006 paper_mode 试运行 ≥1月 (验收: 信号偏差<1%, 误杀率≤30%)
 - [x] V32-007 audit_risk.py 误杀审计脚本 (本地测试+服务器部署, 逻辑验证通过)
+
+## [V3-G] 门控版暴跌过滤 — 已上线 (2026-08-10)
+
+**状态**: ✅ 已上线
+**参数**: ret60_thr=0.01, drop_threshold=3%, drop_lookback=5, 豁免 on, H3(δ=2%, expo=0.3)
+**全周期**: +10.0% (3,141,899 vs 基线 2,855,701), 夏普 2.42, 回撤 -20.0%
+**验证**: 置换测试 92% 分位, 扰动 6/6 ✅, 成本 2x/3x ✅, 滚动窗口 3/4 收益段 ✅
+**改动**: run_qixing_v3.py (check_single_day_drop + select_target), risk_overrides.py (H3层), live_signal.py (实时急跌同步 + H3状态)
+**实验脚本**: 13 个 exp_*.py, 12 个结果 JSON

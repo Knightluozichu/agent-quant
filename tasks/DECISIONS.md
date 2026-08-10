@@ -95,3 +95,18 @@
 - **决策**: 创建 `src/a_share_quant/attribution/engine.py`, 包含新的 `AttributionEngine` (analyze 方法)、`AttributionReport`/`TradeAttribution` Pydantic 模型和 `generate_html_report` Jinja2 渲染。将原有 `__init__.py` 中的 `AttributionEngine` 重命名为 `ResearchAttributionEngine`、`TradeAttribution` 重命名为 `ResearchTradeAttribution`, 避免命名冲突。`__init__.py` 重新导出新引擎类作为包级 API
 - **理由**: 七星V3 归因需求 (10d/20d 动量分解、rebalance vs buy-and-hold 择时、fee+slippage 成本、MFE/MAE) 与原有通用交易归因 (market/sector/factor/timing/exit 多维分解) 关注点不同, 独立引擎更清晰；Pydantic 模型提供结构化输出和 JSON 序列化, 便于报告生成和 API 返回；重命名而非覆盖保留原有测试不破坏
 - **影响**: attribution 模块；tests/unit/test_attribution.py (13 项测试) + test_research_attribution.py 更新导入；覆盖 Phase 9 的 P9-003/004/006/007/008/011
+
+## 2026-08-10: V3-G 门控版暴跌过滤上线
+
+**背景**: DROP_FILTER（近5日单日跌>3%排除候选）不分真假跌，震荡上涨行情中49%被甩是误杀（后5日反弹），但被甩品种平均继续跌-1.81%，过滤整体净效果为正。
+
+**方案**: 门控放行（ret60<0.01 放行平淡品种假摔）+ 缓冲豁免（放行持仓必须保持第一）+ H3止损（放行后缓跌>2%降仓0.3），三者正交互补。
+
+**关键数据**: 
+- 全周期 +10.0%（3,141,899），夏普 2.42，回撤 -20.0%（比基线收窄1.1pp）
+- 分歧14次（样本量足够），参数扰动6/6全过，成本2x/3x全过
+- 置换测试92%分位（11/12随机比真实差，1个异常值拉低分位）
+- 调参过程验证了"参数全网格必须覆盖全部7个可调参数"的经验教训
+- 跨池验证：换池后+9.3%→0%或-13.2%，证明机制是资产特定+环境特定的
+
+**结论**: 证据强度"中等偏强"，用户决策接受上线。
