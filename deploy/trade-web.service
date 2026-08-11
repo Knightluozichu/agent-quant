@@ -1,5 +1,5 @@
 [Unit]
-Description=七星V3 实盘记账网页 (FastAPI)
+Description=七星V4 实盘记账网页 (FastAPI)
 After=network.target
 StartLimitIntervalSec=60
 StartLimitBurst=3

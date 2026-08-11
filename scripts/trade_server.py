@@ -431,7 +431,7 @@ _BACKTEST_TIME: float = 0.0
 
 @app.get("/api/backtest")
 def api_backtest(_: None = Depends(require_token)) -> dict:
-    """返回七星V3完整池回测结果 (供网页绘制策略全景图)."""
+    """返回 V3-G 基线回测结果 (供网页绘制基准全景图)."""
     global _BACKTEST_CACHE, _BACKTEST_TIME
     mtime = max(
         (f.stat().st_mtime for f in ls.DATA_DIR.glob("*.parquet")), default=0.0
@@ -728,7 +728,7 @@ def main() -> None:
 
     import uvicorn
 
-    print(f"  🚀 七星V3 记账网页启动: http://{args.host}:{args.port}")
+    print(f"  🚀 七星V4 记账网页启动: http://{args.host}:{args.port}")
     print(f"     手机浏览器访问 http://<服务器IP>:{args.port}")
     uvicorn.run(app, host=args.host, port=args.port)
 

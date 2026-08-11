@@ -595,7 +595,7 @@ def fmt_money(x: float) -> str:
 
 def print_header(td) -> None:
     print("\n" + "=" * 56)
-    print(f"  七星V3 实盘信号  |  {td}")
+    print(f"  七星V4 实盘信号  |  {td}")
     print("=" * 56)
 
 

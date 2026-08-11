@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# 七星V3 夜间数据补齐 (由 cron 调用)
+# 七星V4 夜间数据补齐 (由 cron 调用)
 #
 # 每个交易日 21:30 自动运行:
 #   - 新浪当日K线在收盘后才陆续发布, 14:50/16:30 任务拿不到当日数据
@@ -68,7 +68,7 @@ print(max(dates) if dates else 'unknown')
         $PYTHON -c "
 import sys; sys.path.insert(0, 'scripts')
 from notify import push_bark
-push_bark('七星V3 数据同步失败', f'exit=${RC}, 请检查 sync.log')
+push_bark('七星V4 数据同步失败', f'exit=${RC}, 请检查 sync.log')
 " 2>&1 || echo "$TASK_NAME ⚠️ Bark 推送失败"
     else
         echo "$TASK_NAME ✅ 数据同步完成"

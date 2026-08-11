@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# 七星V3 每日校准任务 (由 cron 调用)
+# 七星V4 每日校准任务 (由 cron 调用)
 #
 # 每个交易日 16:30 (收盘后) 自动运行:
 #   - 更新数据到最终收盘
@@ -65,7 +65,7 @@ print(max(dates) if dates else 'unknown')
         $PYTHON -c "
 import sys; sys.path.insert(0, 'scripts')
 from notify import push_bark
-push_bark('七星V3 校准失败', f'exit=${RC}, 请检查 calibrate.log')
+push_bark('七星V4 校准失败', f'exit=${RC}, 请检查 calibrate.log')
 " 2>&1 || echo "$TASK_NAME ⚠️ Bark 推送失败"
     else
         echo "$TASK_NAME ✅ 校准完成"
