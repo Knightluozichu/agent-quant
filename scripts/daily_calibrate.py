@@ -46,7 +46,8 @@ def main() -> None:
     idx_map = build_idx_map(data, latest)
     target, candidates, best_score, a_share_weak = rq.select_target(data, idx_map, holding)
     official = state.get("last_decision")
-    if official and official.get("trade_date") == str(latest):
+    has_official = bool(official and official.get("trade_date") == str(latest))
+    if has_official:
         target = official["final_target"]
         best_score = dict(candidates).get(target, 0.0)
 
@@ -71,10 +72,12 @@ def main() -> None:
     else:
         lines.append(f"🎯 调仓日: 约{next_rb}")
     if target == holding:
-        lines.append(f"👉 14:50官方决策: 继续持有 {hold_disp}")
+        label = "14:50官方决策" if has_official else "V3-G基础预览"
+        lines.append(f"👉 {label}: 继续持有 {hold_disp}")
     else:
+        label = "14:50官方调仓" if has_official else "V3-G基础预览"
         lines.append(
-            f"👉 14:50官方调仓: → 【{target}】{ls.name_of(target)} "
+            f"👉 {label}: → 【{target}】{ls.name_of(target)} "
             f"(动量{best_score * 100:+.1f}%)"
         )
         lines.append(f"   易淘金搜索代码 {target} 买入")
