@@ -42,9 +42,23 @@
 
 ## I-V32 尾部风控实盘落地问题
 
+- [x] I-V32-03 stale risk_exposure: V3-G 关闭降仓层后, 服务器 state.json 仍残留
+      0.7, 导致非调仓日重复生成“自动降仓至70%”告警并污染下一次调仓仓位。
+      已通过 assess 启动暴露归一化、降仓 Bark 条件收紧、state.json/lock 属主
+      权限修复解决 (2026-08-11)。
 - [ ] I-V32-01 mypy 配置漂移: pyproject overrides 的 module section 报 "unused"
       (notify/run_qixing_v3/live_signal 均 import-not-found), 既有问题非本次引入,
       live_signal 54 个 mypy 错误集中在既有代码区, 需统一修复 mypy 配置
 - [ ] I-V32-02 511260 十年国债口径: 回测 load_data 不含 511260 → 防御序列实际
       511220→511880; 本地 511260 尾部缺 5 交易日, 服务器无文件 (sync 排除 cross_asset);
       本期两端一致不启用 (DEFENSE_SEQ 自动跳过), 二期数据就绪后再启用并重验
+
+## I-V4 生产部署
+
+- [x] I-V4-01 cron `/tmp` 锁权限故障：root cron 在 `fs.protected_regular=2` 下无法
+      重开 quant 所属锁文件，导致 16:30 校准和 21:30 同步静默失败。三个任务已统一
+      改用 `/run/lock/qixing`，且锁初始化错误会写入各自日志（2026-08-11）。
+- [x] I-V4-02 网页与 14:50 信号分裂：`/api/signal` 曾独立重算 V3-G。现改为读取
+      `state.last_decision` 官方快照，16:30 校准也只消费快照、不推进 V4 确认历史。
+- [x] I-V4-03 待确认订单目标校验错误：旧代码读取不存在的 `buy_code/target`。
+      现校验嵌套 `buy.code`，并增加 order_id、状态版本、持久化幂等回执和完整换仓腿校验。

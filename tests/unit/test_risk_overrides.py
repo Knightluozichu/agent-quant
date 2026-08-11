@@ -38,6 +38,7 @@ from risk_overrides import (  # noqa: E402
     EXPO_REDUCE,
     H1_DD,
     H2_DAY,
+    H3_EXPO_REDUCE,
     VOL_HV_THR,
     assess,
 )
@@ -86,11 +87,12 @@ def test_param_snapshot_matches_backtest_archive():
 
     覆盖任务要求的核心参数 (VOL_HV_THR / EXPO_REDUCE / H1_DD / DD_FLUSH /
     DEFENSE_SEQ 顺序), 并顺带锁定其余风控常量与动作枚举 (口径漂移防线).
-    这些参数与 exp_v32_tail_risk.py 逐字一致, 任一改动必须走全量验证.
+    V3-G 最终执行口径关闭所有降仓层, 任一改动必须走全量验证.
     """
     # 任务要求的关键参数
     assert VOL_HV_THR == 0.45
-    assert EXPO_REDUCE == 0.7
+    assert EXPO_REDUCE == 1.0
+    assert H3_EXPO_REDUCE == 1.0
     assert H1_DD == -0.15
     assert DD_FLUSH == -0.30
     assert DEFENSE_SEQ == ("511260", "511220", "511880")  # 十年国债→城投债→货币
@@ -146,7 +148,7 @@ def test_snapshot_20260202_h1h2_event(env):
                'reason': 'entry_dd=53.8% day=-10.0%'}
     用真实数据 (161226 白银 2026-02-02 收 4.722, 前收 5.247) 构造等价 state
     (自买入盈利 53.8%) → assess 必须触发同类型事件:
-      - exposure <= 0.7 (适度降仓, 不切防御)
+      - exposure = 1.0 (保留历史事件标签, 但当前口径不降仓)
       - action = hold (非调仓日仅记录, 不立即交易)
     """
     data, common_dates, idx_map = env
@@ -161,8 +163,29 @@ def test_snapshot_20260202_h1h2_event(env):
     assert h1h2[0]["date"] == "2026-02-02"
     # 与回测存档 reason 逐字一致 (H2 当日 -10% 触发, H1 自买入盈利未触发)
     assert h1h2[0]["reason"] == "entry_dd=53.8% day=-10.0%"
-    assert r.exposure <= EXPO_REDUCE  # 0.7 适度降仓
+    assert r.exposure == EXPO_REDUCE  # 1.0, 当前 V3-G 不降仓
     assert r.action == ACTION_HOLD    # 非调仓日仅记录
+
+
+def test_legacy_reduced_exposure_is_cleared_when_downsize_disabled(env):
+    """已关闭降仓层时, 旧 state 的 0.7 暴露不得继续污染当前决策."""
+    data, common_dates, idx_map = env
+    cur = float(data["161226"].iloc[idx_map["161226"]]["close"])
+    state = _holding_state(entry_price=cur / 1.538)
+    state["risk_exposure"] = 0.7  # 服务器曾经持久化的旧降仓状态
+
+    r = assess(
+        target=None,
+        holding="161226",
+        state=state,
+        data=data,
+        td=TD,
+        idx_map=idx_map,
+        is_rebalance=False,
+        common_dates=common_dates,
+    )
+
+    assert r.exposure == 1.0
 
 
 # --------------------------------------------------------------------------- #

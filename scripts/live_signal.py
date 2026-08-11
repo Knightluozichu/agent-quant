@@ -1,4 +1,4 @@
-"""七星V3 实盘信号生成器 (生产级).
+"""七星 V3-G/V4 实盘信号生成器 (生产级).
 
 核心保证: 直接 import run_qixing_v3 的 select_target, 实盘与回测逻辑100%一致.
 
@@ -23,11 +23,14 @@ from __future__ import annotations
 import argparse
 import contextlib
 import fcntl
+import hashlib
 import json
 import os
 import shutil
+import stat
 import sys
 import time
+from dataclasses import replace
 from datetime import date, datetime
 from pathlib import Path
 
@@ -35,7 +38,9 @@ import pandas as pd
 
 # === 保证与回测100%一致: 直接复用回测的核心逻辑 ===
 sys.path.insert(0, str(Path(__file__).parent))
+import qixing_v4 as v4
 from notify import load_config, push_bark, save_config, set_bark_key, test_push
+from risk_overrides import ACTION_EMERGENCY, RiskDecision
 from risk_overrides import assess as risk_assess
 from run_qixing_v3 import (
     A_SHARE_MA,
@@ -59,6 +64,8 @@ LIVE_DIR.mkdir(parents=True, exist_ok=True)
 STATE_FILE = LIVE_DIR / "state.json"
 STATE_TMP_FILE = STATE_FILE.parent / (STATE_FILE.name + ".tmp")
 LOCK_FILE = LIVE_DIR / "quant_state.lock"
+STRATEGY_MODE_FILE = LIVE_DIR / "strategy_mode.json"
+SNAPSHOT_DIR = LIVE_DIR / "decision_snapshots"
 MAX_BACKUPS = 7
 
 ALL_CODES = [*list(ETF_POOL.keys()), DEFENSE]
@@ -248,7 +255,37 @@ def default_state(capital: float) -> dict:
         # V3-G H3 放行止损状态
         "h3_holding": None,
         "h3_peak": 0.0,
+        "v4_state": default_v4_state(),
+        "last_decision": None,
     }
+
+
+def default_v4_state() -> dict:
+    return {
+        "schema_version": v4.STATE_SCHEMA_VERSION,
+        "strategy_id": v4.STRATEGY_ID,
+        "config_hash": v4.CONFIG_HASH,
+        "candidate_history": [],
+        "last_early_rotation_date": None,
+    }
+
+
+def _normalize_state(state: dict) -> dict:
+    state.setdefault("_version", 0)
+    state.setdefault("peak_equity", state.get("initial_capital", 0.0))
+    state.setdefault("risk_exposure", 1.0)
+    state.setdefault("cooldown_until", None)
+    state.setdefault("risk_log", [])
+    state.setdefault("h3_holding", None)
+    state.setdefault("h3_peak", 0.0)
+    state.setdefault("last_decision", None)
+    runtime = state.setdefault("v4_state", default_v4_state())
+    runtime.setdefault("schema_version", v4.STATE_SCHEMA_VERSION)
+    runtime.setdefault("strategy_id", v4.STRATEGY_ID)
+    runtime.setdefault("config_hash", v4.CONFIG_HASH)
+    runtime.setdefault("candidate_history", [])
+    runtime.setdefault("last_early_rotation_date", None)
+    return state
 
 
 def load_state() -> dict | None:
@@ -256,17 +293,34 @@ def load_state() -> dict | None:
         return None
     with open(STATE_FILE) as f:
         state = json.load(f)
-    # 版本号兼容: 旧状态文件无 _version 字段, 视为 0
-    state.setdefault("_version", 0)
-    # V32 风控字段兼容 (旧 state.json 无这些键)
-    state.setdefault("peak_equity", state.get("initial_capital", 0.0))
-    state.setdefault("risk_exposure", 1.0)
-    state.setdefault("cooldown_until", None)
-    state.setdefault("risk_log", [])
-    # V3-G H3 状态兼容
-    state.setdefault("h3_holding", None)
-    state.setdefault("h3_peak", 0.0)
-    return state
+    return _normalize_state(state)
+
+
+def get_strategy_mode() -> str:
+    """Return active strategy mode; environment override is for dry-run canaries."""
+    mode = os.environ.get("QIXING_STRATEGY_MODE", "").strip().upper()
+    if not mode and STRATEGY_MODE_FILE.exists():
+        with open(STRATEGY_MODE_FILE) as f:
+            mode = str(json.load(f).get("mode", "")).strip().upper()
+    if not mode:
+        mode = "V3-G"
+    if mode not in {"V3-G", "V4_SHADOW", "V4"}:
+        raise ValueError(f"未知策略模式: {mode}")
+    return mode
+
+
+def set_strategy_mode(mode: str) -> None:
+    mode = mode.strip().upper()
+    if mode not in {"V3-G", "V4_SHADOW", "V4"}:
+        raise ValueError("策略模式必须为 V3-G、V4_SHADOW 或 V4")
+    STRATEGY_MODE_FILE.parent.mkdir(parents=True, exist_ok=True)
+    temp = STRATEGY_MODE_FILE.with_suffix(".tmp")
+    with open(temp, "w") as f:
+        json.dump({"mode": mode}, f, ensure_ascii=False, indent=2)
+        f.flush()
+        os.fsync(f.fileno())
+    temp.replace(STRATEGY_MODE_FILE)
+    _fsync_dir(STRATEGY_MODE_FILE.parent)
 
 
 def _fsync_dir(path: Path) -> None:
@@ -300,6 +354,33 @@ def _rotate_backups() -> None:
     shutil.copy2(STATE_FILE, bak)
 
 
+def _state_file_metadata() -> tuple[int, int, int] | None:
+    """读取当前 state.json 元数据, 供 root cron 保留 quant 服务权限."""
+    try:
+        info = STATE_FILE.stat()
+    except OSError:
+        return None
+    return info.st_uid, info.st_gid, stat.S_IMODE(info.st_mode)
+
+
+def _restore_state_file_metadata(
+    path: Path,
+    metadata: tuple[int, int, int] | None,
+) -> None:
+    """将临时状态文件恢复为原文件属主/权限, 避免原子替换后权限漂移."""
+    if metadata is None:
+        return
+    uid, gid, mode = metadata
+    try:
+        # root cron 需要把文件交还给 quant; 非 root 进程无需 chown.
+        if os.geteuid() == 0:
+            os.chown(path, uid, gid)
+    except OSError:
+        pass
+    with contextlib.suppress(OSError):
+        path.chmod(mode)
+
+
 def save_state_atomic(state: dict) -> None:
     """原子写状态文件 (事务锁 + 临时文件 + fsync + 原子替换 + 自动备份).
 
@@ -316,11 +397,13 @@ def save_state_atomic(state: dict) -> None:
     lock_fd = os.open(str(LOCK_FILE), os.O_CREAT | os.O_RDWR, 0o644)
     try:
         fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        metadata = _state_file_metadata()
         _rotate_backups()
         with open(STATE_TMP_FILE, "w") as f:
             json.dump(state, f, indent=2, ensure_ascii=False, default=str)
             f.flush()
             os.fsync(f.fileno())
+        _restore_state_file_metadata(STATE_TMP_FILE, metadata)
         STATE_TMP_FILE.replace(STATE_FILE)
         _fsync_dir(STATE_FILE.parent)
     finally:
@@ -347,7 +430,8 @@ def state_transaction():
         if not STATE_FILE.exists():
             raise ValueError("账户未初始化")
         with open(STATE_FILE) as f:
-            state = json.load(f)
+            state = _normalize_state(json.load(f))
+        metadata = _state_file_metadata()
         state.setdefault("_version", 0)
         old_version = state["_version"]
 
@@ -365,6 +449,7 @@ def state_transaction():
             json.dump(state, f, indent=2, ensure_ascii=False, default=str)
             f.flush()
             os.fsync(f.fileno())
+        _restore_state_file_metadata(STATE_TMP_FILE, metadata)
         STATE_TMP_FILE.replace(STATE_FILE)
         _fsync_dir(STATE_FILE.parent)
     finally:
@@ -447,8 +532,19 @@ def _fetch_tencent_spot() -> dict[str, dict]:
         code = parts[2]
         price = float(parts[3]) if parts[3] else 0
         prev_close = float(parts[4]) if parts[4] else 0
+        exchange_time = parts[30] if len(parts) > 30 else ""
+        try:
+            exchange_ts = datetime.strptime(exchange_time, "%Y%m%d%H%M%S").timestamp()
+        except (TypeError, ValueError):
+            exchange_ts = 0.0
         if price > 0:
-            spot[code] = {"price": price, "prev_close": prev_close, "ts": now}
+            spot[code] = {
+                "price": price,
+                "prev_close": prev_close,
+                "ts": exchange_ts,
+                "exchange_time": exchange_time,
+                "fetched_at": now,
+            }
 
     if spot:
         _REALTIME_CACHE["spot"] = spot
@@ -632,14 +728,38 @@ def notify_trade(td, sell_order, buy_order, reason: str, state: dict, data: dict
     push_bark("🔄 调仓指令 · 请操作", "\n".join(lines), level="timeSensitive", sound="alarm")
 
 
+def notify_risk_reduction(risk: RiskDecision) -> None:
+    """仅在实际暴露小于 100% 时发送降仓 Bark, 纯告警留在日志."""
+    if not risk.events or risk.action == ACTION_EMERGENCY or risk.exposure >= 1.0:
+        return
+    try:
+        evs = risk.events[:3]
+        lines = [f"⚠️ 自动降仓: 仓位从100% → {risk.exposure:.0%}", ""]
+        for ev in evs:
+            lines.append(f"• {translate_risk_event(ev['type'])}")
+        lines += [
+            "",
+            "✅ 当前持仓不动，今天不卖",
+            f"📌 下次调仓买入按{risk.exposure:.0%}仓位执行，保留{1 - risk.exposure:.0%}现金",
+        ]
+        push_bark(
+            f"⚠️ 自动降仓至{risk.exposure:.0%}仓位",
+            "\n".join(lines),
+            level="timeSensitive",
+            sound="alarm",
+        )
+    except Exception as e:
+        print(f"  ⚠️ 降仓 Bark 推送失败: {e}")
+
+
 # --------------------------------------------------------------------------- #
 # P1 安全校验 (R4 交易日历 / R7 数据完整性 / R8 实时数据双通道)
 # --------------------------------------------------------------------------- #
 def is_trading_day(td) -> bool:
     """判断 td 是否为 A 股交易日 (R4, 基于新浪交易日历).
 
-    非交易日 (周末/节假日) 跳过信号生成。日历获取失败时按周末规则兜底
-    (周一~周五视为交易日), 并打印告警。
+    非交易日 (周末/节假日) 跳过信号生成。日历获取失败时 fail-closed，
+    防止工作日节假日误生成订单。
     """
     try:
         import akshare as ak
@@ -647,8 +767,8 @@ def is_trading_day(td) -> bool:
         cal_dates = set(pd.to_datetime(cal["trade_date"]).dt.date)
         return td in cal_dates
     except Exception as e:
-        print(f"  ⚠️  交易日历获取失败, 按周末规则兜底: {e}")
-        return td.weekday() < 5
+        print(f"  ⚠️  交易日历获取失败, fail-closed: {e}")
+        return False
 
 
 def check_data_availability(data: dict, td) -> tuple[bool, list[str]]:
@@ -755,7 +875,7 @@ def cross_validate_data_sources(data: dict, spot_map: dict) -> tuple[bool, list[
 # --------------------------------------------------------------------------- #
 # 实时行情注入 (解决14:50信号看不到当天数据的问题)
 # --------------------------------------------------------------------------- #
-def inject_realtime(data: dict) -> dict:
+def inject_realtime(data: dict, spot_map: dict | None = None) -> dict:
     """将当日实时行情注入内存数据 (不写parquet, 仅用于信号计算).
 
     数据源: 腾讯行情接口 qt.gtimg.cn (免费/无认证/覆盖全部场内ETF+LOF+QDII).
@@ -772,7 +892,7 @@ def inject_realtime(data: dict) -> dict:
         return data  # 已有今天数据, 无需注入
 
     # 腾讯实时行情 (复用 _fetch_tencent_spot, 与急跌保护同源)
-    spot_map = _fetch_tencent_spot()
+    spot_map = spot_map if spot_map is not None else _fetch_tencent_spot()
     if not spot_map:
         print("  ⚠️  腾讯行情获取失败, 未注入实时数据 (fail-closed)")
         return data
@@ -834,6 +954,161 @@ def inject_realtime(data: dict) -> dict:
     return data
 
 
+def evaluate_v4_overlay(
+    *,
+    data: dict,
+    idx_map: dict[str, int],
+    trading_dates: list,
+    td,
+    holding: str | None,
+    base_target: str,
+    candidates: list[tuple[str, float]],
+    scheduled_rebalance: bool,
+    state: dict,
+    mode: str,
+) -> dict:
+    """Evaluate the shared V4 core and return an auditable live decision."""
+    factor_codes = (*tuple(ETF_POOL), DEFENSE)
+    factors = v4.compute_factors(data, idx_map, factor_codes)
+    candidate_codes = {code for code, _score in candidates}
+    factors = {
+        code: factor if code in candidate_codes else replace(factor, eligible=False)
+        for code, factor in factors.items()
+    }
+    raw = v4.raw_candidate(holding, factors)
+    raw_target = raw.target if raw.triggered else None
+    runtime = state.get("v4_state", default_v4_state())
+    history, signal_hits = v4.update_candidate_history(
+        runtime.get("candidate_history", []),
+        trade_date=td,
+        raw_target=raw_target,
+        trading_dates=trading_dates,
+    )
+    days_since_early = v4.trading_days_since(
+        runtime.get("last_early_rotation_date"), td, trading_dates
+    )
+    held_factor = factors.get(holding) if holding else None
+    proposed_target = base_target
+    proposed_rebalance = scheduled_rebalance
+    scheduled_lock = bool(
+        scheduled_rebalance
+        and base_target != holding
+        and days_since_early < v4.V4_PARAMS.minimum_hold_days
+        and held_factor is not None
+        and held_factor.slow_momentum > 0.0
+    )
+    if scheduled_lock:
+        proposed_target = holding or base_target
+
+    decision = v4.FullPoolDecision(False)
+    if not scheduled_rebalance:
+        decision = v4.decide_full_pool_handoff(
+            holding=holding,
+            factors=factors,
+            params=v4.V4_PARAMS,
+            signal_hits=signal_hits,
+            days_since_rotation=days_since_early,
+        )
+        if decision.triggered and decision.target:
+            proposed_target = decision.target
+            proposed_rebalance = True
+
+    active = mode == "V4"
+    final_target = proposed_target if active else base_target
+    final_rebalance = proposed_rebalance if active else scheduled_rebalance
+    return {
+        "mode": mode,
+        "active": active,
+        "history": history,
+        "raw_target": raw_target,
+        "signal_hits": signal_hits,
+        "days_since_early_rotation": days_since_early,
+        "scheduled_lock": scheduled_lock,
+        "decision": decision,
+        "base_target": base_target,
+        "proposed_target": proposed_target,
+        "target": final_target,
+        "is_rebalance": final_rebalance,
+        "factors": factors,
+    }
+
+
+def _decision_snapshot(
+    *,
+    td,
+    holding: str | None,
+    candidates: list[tuple[str, float]],
+    overlay: dict,
+    risk: RiskDecision,
+    final_target: str,
+    spot_map: dict,
+) -> dict:
+    factors = overlay["factors"]
+    snapshot = {
+        "strategy_name": v4.STRATEGY_NAME,
+        "strategy_id": v4.STRATEGY_ID,
+        "config_hash": v4.CONFIG_HASH,
+        "mode": overlay["mode"],
+        "trade_date": str(td),
+        "created_at": datetime.now().isoformat(timespec="seconds"),
+        "holding": holding,
+        "v3g_target": overlay["base_target"],
+        "raw_v4_target": overlay["raw_target"],
+        "confirmation_hits": overlay["signal_hits"],
+        "confirmation_required": v4.V4_PARAMS.confirmation_hits,
+        "days_since_early_rotation": overlay["days_since_early_rotation"],
+        "scheduled_lock": overlay["scheduled_lock"],
+        "v4_triggered": overlay["decision"].triggered,
+        "v4_blocked_by": overlay["decision"].blocked_by,
+        "v4_reasons": list(overlay["decision"].reasons),
+        "v4_proposed_target": overlay["proposed_target"],
+        "risk_action": risk.action,
+        "risk_exposure": risk.exposure,
+        "final_target": final_target,
+        "is_rebalance": overlay["is_rebalance"] or risk.action == ACTION_EMERGENCY,
+        "eligible_candidates": [code for code, _score in candidates],
+        "candidate_scores": dict(candidates),
+        "factors": v4.factors_payload(factors),
+        "spot_hash": hashlib.sha256(
+            json.dumps(spot_map, sort_keys=True, default=str).encode()
+        ).hexdigest(),
+    }
+    identity = dict(snapshot)
+    identity.pop("created_at")
+    snapshot["decision_id"] = hashlib.sha256(
+        json.dumps(identity, sort_keys=True, default=str).encode()
+    ).hexdigest()
+    return snapshot
+
+
+def _record_v4_state(state: dict, overlay: dict, snapshot: dict) -> None:
+    runtime = state.setdefault("v4_state", default_v4_state())
+    runtime["schema_version"] = v4.STATE_SCHEMA_VERSION
+    runtime["strategy_id"] = v4.STRATEGY_ID
+    runtime["config_hash"] = v4.CONFIG_HASH
+    if overlay["mode"] in {"V4", "V4_SHADOW"}:
+        runtime["candidate_history"] = overlay["history"]
+    state["last_decision"] = snapshot
+
+
+def _save_decision_snapshot(snapshot: dict) -> None:
+    SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
+    path = SNAPSHOT_DIR / f"{snapshot['trade_date']}.json"
+    if path.exists():
+        with open(path) as f:
+            existing = json.load(f)
+        if existing.get("decision_id") != snapshot.get("decision_id"):
+            raise RuntimeError(f"{path} 已存在不同决策, 拒绝覆盖")
+        return
+    temp = path.with_suffix(".tmp")
+    with open(temp, "w") as f:
+        json.dump(snapshot, f, ensure_ascii=False, indent=2, default=str)
+        f.flush()
+        os.fsync(f.fileno())
+    temp.replace(path)
+    _fsync_dir(path.parent)
+
+
 # --------------------------------------------------------------------------- #
 # 主流程
 # --------------------------------------------------------------------------- #
@@ -845,6 +1120,23 @@ def run(dry_run: bool = False) -> int:
         print("     uv run python scripts/live_signal.py --init 100000")
         return 1
 
+    pending = state.get("pending_order")
+    if pending and pending.get("status") == "pending":
+        print(f"  ❌ 尚有 {pending.get('date')} 待确认订单, 拒绝生成新信号")
+        print("     请先在网页确认成交或明确跳过")
+        return 1
+
+    mode = get_strategy_mode()
+    runtime = state.get("v4_state", default_v4_state())
+    if (
+        mode in {"V4", "V4_SHADOW"}
+        and runtime.get("candidate_history")
+        and runtime.get("config_hash") != v4.CONFIG_HASH
+    ):
+        print("  ❌ V4 参数哈希变化但确认历史非空, 拒绝混用状态")
+        return 1
+    print(f"  策略模式: {mode} ({v4.STRATEGY_ID})")
+
     print("  加载数据...")
     data = load_data()
     if not data:
@@ -853,15 +1145,23 @@ def run(dry_run: bool = False) -> int:
     if not dry_run:
         data = update_data(data)
 
-    # 注入当日实时行情 (解决14:50拿不到当天数据的问题)
-    data = inject_realtime(data)
-
     today = date.today()
 
     # R4: 交易日历校验 - 非交易日 (周末/节假日) 跳过信号生成
     if not is_trading_day(today):
         print(f"\n  😴 今日 ({today}) 非交易日 (周末/节假日), 跳过信号生成")
         return 0
+
+    # 14:50只获取一次腾讯快照，注入、急跌过滤和审计共用同一份数据。
+    spot_map = _fetch_tencent_spot()
+    ok, reason = validate_realtime_data(spot_map)
+    if not ok:
+        msg = f"{today} 腾讯实时行情不可用: {reason}"
+        print(f"\n  ⚠️  {msg}")
+        if not dry_run:
+            push_bark("⚠️ 实时行情获取失败", msg, level="timeSensitive", sound="alarm")
+        return 1
+    data = inject_realtime(data, spot_map)
 
     trading_dates = get_trading_dates(data)
     td = trading_dates[-1]  # 最新交易日 (注入后=今天)
@@ -922,7 +1222,6 @@ def run(dry_run: bool = False) -> int:
 
     # === 实时急跌保护 (V3-G): 检查当天盘中是否已暴跌>3% ===
     # 同步门控逻辑: ret60>=0.01 或 动量≤0 → 排除; 否则放行 (假摔)
-    spot_map = _fetch_tencent_spot()
     realtime_dropped = []
     for code, _score in candidates:
         spot = spot_map.get(code)
@@ -959,6 +1258,32 @@ def run(dry_run: bool = False) -> int:
         else:
             target = DEFENSE
 
+    overlay = evaluate_v4_overlay(
+        data=data,
+        idx_map=idx_map,
+        trading_dates=trading_dates,
+        td=td,
+        holding=holding,
+        base_target=target,
+        candidates=candidates,
+        scheduled_rebalance=is_rebalance,
+        state=state,
+        mode=mode,
+    )
+    target = overlay["target"]
+    is_rebalance = overlay["is_rebalance"]
+    if overlay["raw_target"]:
+        print(
+            f"  V4共振候选: {name_of(overlay['raw_target'])} "
+            f"({overlay['signal_hits']}/{v4.V4_PARAMS.confirmation_hits}日确认)"
+        )
+    if overlay["scheduled_lock"] and mode == "V4":
+        print("  🔒 V4提前轮动3交易日锁: 本次网格换仓保持原持仓")
+    decision = overlay["decision"]
+    if decision.triggered and decision.target:
+        verb = "执行" if mode == "V4" else "影子观察"
+        print(f"  ⚡ V4严格快慢共振{verb}: → {name_of(decision.target)}")
+
     # === V32 尾部风控层 (与回测 risk_overrides 同一纯函数, 零副作用) ===
     cur_val = account_value(state, data, td)
     if cur_val > state.get("peak_equity", 0.0):
@@ -972,23 +1297,23 @@ def run(dry_run: bool = False) -> int:
     if risk.events:
         for ev in risk.events:
             print(f"  🛡️ 风控: {ev['type']} | {ev.get('reason', '')}")
-        # V32/V3-G: 降仓类事件 Bark 二级告警 (含降仓比例; 熔断走既有 notify_trade 链路不重复推)
-        if risk.action != "emergency_defense":
-            try:
-                evs = risk.events[:3]
-                lines = [f"⚠️ 自动降仓: 仓位从100% → {risk.exposure:.0%}", ""]
-                for ev in evs:
-                    lines.append(f"• {translate_risk_event(ev['type'])}")
-                lines += ["", "✅ 当前持仓不动，今天不卖",
-                          f"📌 下次调仓买入按{risk.exposure:.0%}仓位执行，保留{1 - risk.exposure:.0%}现金"]
-                push_bark(f"⚠️ 自动降仓至{risk.exposure:.0%}仓位", "\n".join(lines),
-                          level="timeSensitive", sound="alarm")
-            except Exception as e:
-                print(f"  ⚠️ 降仓 Bark 推送失败: {e}")
-    if risk.action == "emergency_defense":
+        # V32/V3-G: 只有真实降仓才发二级告警; 关闭降仓层时仅保留日志审计.
+        notify_risk_reduction(risk)
+    target = risk.final_target or DEFENSE
+    if risk.action == ACTION_EMERGENCY:
         print(f"  🛡️ 组合熔断: 强制切换防御 {risk.final_target} (非调仓日也执行)")
-        target = risk.final_target
         is_rebalance = True  # 复用既有调仓交易链路
+
+    snapshot = _decision_snapshot(
+        td=td,
+        holding=holding,
+        candidates=candidates,
+        overlay=overlay,
+        risk=risk,
+        final_target=target,
+        spot_map=spot_map,
+    )
+    snapshot["is_rebalance"] = is_rebalance
 
     print_account(state, data, td)
     print_momentum_board(data, td, holding, target)
@@ -1008,6 +1333,8 @@ def run(dry_run: bool = False) -> int:
                 st["cooldown_until"] = str(risk.cooldown_until) if risk.cooldown_until else None
                 if risk.events:
                     _append_risk_log(st, risk.events)
+                _record_v4_state(st, overlay, snapshot)
+            _save_decision_snapshot(snapshot)
         return 0
 
     # === 调仓日 ===
@@ -1026,7 +1353,9 @@ def run(dry_run: bool = False) -> int:
                 st["cooldown_until"] = str(risk.cooldown_until) if risk.cooldown_until else None
                 if risk.events:
                     _append_risk_log(st, risk.events)
+                _record_v4_state(st, overlay, snapshot)
                 state = st
+            _save_decision_snapshot(snapshot)
             notify_hold(td, target, state, data)
         return 0
 
@@ -1056,9 +1385,14 @@ def run(dry_run: bool = False) -> int:
 
     why = dict(candidates).get(target, 0)
     cur = dict(candidates).get(holding, None) if holding else None
-    if risk.action == "emergency_defense":
+    if risk.action == ACTION_EMERGENCY:
         reason = (f"组合回撤熔断, 强制切防御 {name_of(target)}"
                   f" (若来不及, 次日开盘执行亦可)")
+    elif decision.triggered and decision.target and mode == "V4":
+        reason = (
+            f"V4全池严格快慢共振连续{overlay['signal_hits']}日确认, "
+            f"提前换仓至 {name_of(target)}"
+        )
     elif target == DEFENSE:
         reason = "所有ETF动量转弱, 切入货币基金防御"
     else:
@@ -1105,7 +1439,11 @@ def run(dry_run: bool = False) -> int:
             st["cooldown_until"] = str(risk.cooldown_until) if risk.cooldown_until else None
             if risk.events:
                 _append_risk_log(st, risk.events)
+            if decision.triggered and buy_order and target != holding:
+                st["v4_state"]["last_early_rotation_date"] = str(td)
+            _record_v4_state(st, overlay, snapshot)
             state = st
+        _save_decision_snapshot(snapshot)
         print(f"\n  ✓ [模拟记账] 已按理论价自动记录: {STATE_FILE}")
         notify_trade(td, sell_order, buy_order, reason + " [模拟记账]", state, data)
         return 0
@@ -1113,7 +1451,20 @@ def run(dry_run: bool = False) -> int:
     # === 保存为【待确认】订单 (不自动成交, 以用户在网页填入的真实成交为准) ===
     if not dry_run:
         with state_transaction() as st:
+            order_id = hashlib.sha256(
+                f"{snapshot['decision_id']}:{target}".encode()
+            ).hexdigest()[:24]
             st["pending_order"] = {
+                "order_id": order_id,
+                "decision_id": snapshot["decision_id"],
+                "expected_state_version": st.get("_version", 0) + 1,
+                "strategy_id": v4.STRATEGY_ID,
+                "config_hash": v4.CONFIG_HASH,
+                "decision_kind": (
+                    "v4_early_rotation"
+                    if decision.triggered and not snapshot["scheduled_lock"]
+                    else "scheduled_or_risk"
+                ),
                 "date": str(td),
                 "sell": {
                     "code": sell_order[0], "name": name_of(sell_order[0]),
@@ -1134,7 +1485,9 @@ def run(dry_run: bool = False) -> int:
             st["cooldown_until"] = str(risk.cooldown_until) if risk.cooldown_until else None
             if risk.events:
                 _append_risk_log(st, risk.events)
+            _record_v4_state(st, overlay, snapshot)
             state = st
+        _save_decision_snapshot(snapshot)
         print(f"\n  ✓ 信号已保存为【待确认】: {STATE_FILE}")
         print("    👉 请在网页填入真实成交后确认 (持仓状态以网页确认为准)")
 
@@ -1152,6 +1505,7 @@ def show_status() -> None:
     trading_dates = get_trading_dates(data)
     td = trading_dates[-1]
     print_header(td)
+    print(f"  策略模式: {get_strategy_mode()} | {v4.STRATEGY_ID}")
     print_account(state, data, td)
     log = state.get("trade_log", [])
     if log:
@@ -1184,7 +1538,14 @@ def sync_only() -> int:
 # --------------------------------------------------------------------------- #
 # 网页确认成交 (实盘以用户填入的真实成交为准)
 # --------------------------------------------------------------------------- #
-def confirm_order(real_sell: dict | None, real_buy: dict | None) -> dict:
+def confirm_order(
+    real_sell: dict | None,
+    real_buy: dict | None,
+    *,
+    order_id: str | None = None,
+    expected_state_version: int | None = None,
+    idempotency_key: str | None = None,
+) -> dict:
     """确认待确认订单, 用真实成交数据更新持仓状态.
 
     real_sell: {"shares": int, "price": float} 或 None (卖出当前持仓)
@@ -1202,9 +1563,29 @@ def confirm_order(real_sell: dict | None, real_buy: dict | None) -> dict:
             raise ValueError("无待确认订单")
         if pending.get("status") != "pending":
             raise ValueError(f"订单状态非 pending: {pending.get('status')}")
+        if order_id and pending.get("order_id") != order_id:
+            raise ValueError("待确认订单已变化, 请刷新页面后重试")
+        if (
+            expected_state_version is not None
+            and state.get("_version") != expected_state_version
+        ):
+            raise ValueError(
+                f"状态版本已变化: 页面 {expected_state_version}, "
+                f"当前 {state.get('_version')}"
+            )
+        receipts = state.setdefault("confirm_receipts", {})
+        if idempotency_key and idempotency_key in receipts:
+            raise ValueError("重复提交 (该确认请求已处理)")
         td = pending["date"]
 
-        if real_sell and state["holding"]:
+        expected_sell = pending.get("sell")
+        expected_buy = pending.get("buy")
+        if bool(real_sell) != bool(expected_sell) or bool(real_buy) != bool(expected_buy):
+            raise ValueError("确认成交必须完整包含待确认订单的全部买卖腿")
+
+        if real_sell and expected_sell:
+            if state["holding"] != expected_sell.get("code"):
+                raise ValueError("当前持仓与待卖出资产不一致")
             code = state["holding"]
             shares = int(real_sell["shares"])
             price = float(real_sell["price"])
@@ -1216,6 +1597,8 @@ def confirm_order(real_sell: dict | None, real_buy: dict | None) -> dict:
                 raise ValueError(
                     f"卖出数量 {shares} 超过持仓 {state['shares']}"
                 )
+            if shares != int(expected_sell.get("shares", state["shares"])):
+                raise ValueError("换仓卖出必须按待确认订单数量完整成交")
             amount = shares * price * (1 - FEE - SLIPPAGE)
             state["cash"] += amount
             state["trade_log"].append({
@@ -1232,7 +1615,7 @@ def confirm_order(real_sell: dict | None, real_buy: dict | None) -> dict:
                 state["shares"] = 0
                 state["entry_price"] = 0.0
 
-        if real_buy:
+        if real_buy and expected_buy:
             code = real_buy["code"]
             shares = int(real_buy["shares"])
             price = float(real_buy["price"])
@@ -1241,7 +1624,7 @@ def confirm_order(real_sell: dict | None, real_buy: dict | None) -> dict:
             if shares <= 0:
                 raise ValueError(f"买入数量必须 > 0, 实际: {shares}")
             # 校验买入代码匹配 pending_order
-            expected_code = pending.get("buy_code") or pending.get("target")
+            expected_code = expected_buy.get("code")
             if expected_code and code != expected_code:
                 raise ValueError(
                     f"买入代码 {code} 与待确认订单 {expected_code} 不匹配"
@@ -1263,6 +1646,16 @@ def confirm_order(real_sell: dict | None, real_buy: dict | None) -> dict:
 
         pending["status"] = "confirmed"
         pending["confirmed_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        if pending.get("decision_kind") == "v4_early_rotation" and real_buy:
+            state["v4_state"]["last_early_rotation_date"] = td
+        if idempotency_key:
+            receipts[idempotency_key] = {
+                "order_id": pending.get("order_id"),
+                "confirmed_at": pending["confirmed_at"],
+            }
+            if len(receipts) > 100:
+                for key in list(receipts)[:-100]:
+                    receipts.pop(key, None)
     return state
 
 
@@ -1270,8 +1663,12 @@ def skip_pending() -> dict:
     """标记待确认订单为'本次不操作'."""
     with state_transaction() as state:
         pending = state.get("pending_order")
-        if pending:
-            pending["status"] = "skipped"
+        if not pending:
+            raise ValueError("无待确认订单")
+        if pending.get("status") != "pending":
+            raise ValueError(f"订单状态非 pending: {pending.get('status')}")
+        pending["status"] = "skipped"
+        pending["skipped_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     return state
 
 
@@ -1410,7 +1807,7 @@ def init_account(capital: float) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="七星V3 实盘信号生成器")
+    parser = argparse.ArgumentParser(description="七星 V3-G/V4 实盘信号生成器")
     parser.add_argument("--init", type=float, metavar="CAPITAL", help="初始化账户本金")
     parser.add_argument("--status", action="store_true", help="查看当前持仓状态")
     parser.add_argument("--dry-run", action="store_true", help="预演信号(不改动状态)")
@@ -1423,9 +1820,19 @@ def main() -> None:
                         help="仅更新行情数据 (夜间补齐当日K线, 不生成信号)")
     parser.add_argument("--paper-mode", metavar="on/off",
                         help="模拟记账: on=信号按理论价自动记账, off=网页确认真实成交")
+    parser.add_argument(
+        "--strategy-mode",
+        choices=("V3-G", "V4_SHADOW", "V4"),
+        help="切换持久化策略模式",
+    )
     args = parser.parse_args()
 
-    if args.bootstrap:
+    if args.strategy_mode:
+        set_strategy_mode(args.strategy_mode)
+        print(f"  ✓ 策略模式已切换为 {args.strategy_mode}")
+        print(f"    策略ID: {v4.STRATEGY_ID}")
+        print(f"    参数哈希: {v4.CONFIG_HASH}")
+    elif args.bootstrap:
         bootstrap_data()
     elif args.set_bark:
         import os

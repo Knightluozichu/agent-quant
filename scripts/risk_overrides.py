@@ -3,18 +3,18 @@
 从 exp_v32_tail_risk.py 逐行提炼改进版逻辑 (已通过全部验证:
 IS/OOS + 滚动4段3-4 + 参数扰动±20% + 成本2x/3x; 全周期收益+50%/回撤减半).
 
-改进版机制:
+当前 V3-G 执行机制:
   1. 高波动(vol20>0.45) + 动量衰减三重确认(Δs<-0.02 & close<MA10 & s<0.08)
-     → 适度降仓 0.7 (不切防御, 保留反弹)
-  2. H1/H2 (自买入回撤<-15% / 当日<-5%) → 降仓 0.7 (不切防御)
-  3. 组合回撤 -12%~-25% → 降仓 0.8; -30% → 熔断清仓切防御 + 冷却至下个调仓日
+     → 记录告警, 不降仓
+  2. H1/H2 (自买入回撤<-15% / 当日<-5%) → 记录告警, 不降仓
+  3. 组合回撤 -12%~-25% → 记录告警; -30% → 熔断清仓切防御 + 冷却至下个调仓日
   4. 防御优先级: 十年国债(511260)→城投债(511220)→货币(511880) (数据缺失自动跳过)
   5. 目标不可交易 (停牌/涨跌停/无价) → 切防御
 
 一致性铁律:
   - 本模块是唯一风控实现, 回测(run_v3_risk)与实盘(live_signal)共用同一数学逻辑
   - 回测怪癖 (vol20除数错位/熔断日=调仓日冷却立即解除) 原样保留, 禁止单端"修正"
-  - 参数与 exp_v32_tail_risk.py 逐字一致, 禁止单端修改
+  - V3-G 最终执行口径关闭所有降仓层: EXPO_REDUCE/H3_EXPO_REDUCE 均为 1.0
 """
 
 from __future__ import annotations
@@ -27,7 +27,7 @@ import numpy as np
 
 # === 风控参数 (与 exp_v32_tail_risk.py 一致) ===
 VOL_HV_THR = 0.45        # 高波动阈值
-EXPO_REDUCE = 1.0        # H1/H2/高波动衰减降仓比例 (V3-G 2026-08-10 关闭降仓层: 净贡献-10.2%, 1.0=不降)
+EXPO_REDUCE = 1.0        # H1/H2/高波动衰减比例; V3-G 已关闭 (1.0=不降)
 DECAY_THRESH = -0.02     # 动量5日变化阈值 (三重确认1)
 ABS_WEAK = 0.08          # 绝对动量弱化阈值 (三重确认3)
 H1_DD = -0.15            # 自买入回撤硬触发
@@ -87,7 +87,12 @@ def assess(
     """
     spot_map = spot_map or {}
     td_pos = common_dates.index(td)
-    exposure = float(state.get("risk_exposure", 1.0))
+    # V3-G 关闭全部降仓层后, 不得沿用历史 state.json 中持久化的 0.7/0.8
+    # 暴露值; 否则新参数虽已是 1.0, 下一次调仓仍会按旧比例买入.
+    if EXPO_REDUCE >= 1.0 and H3_EXPO_REDUCE >= 1.0:
+        exposure = 1.0
+    else:
+        exposure = float(state.get("risk_exposure", 1.0))
     cooldown_raw = state.get("cooldown_until")
     cooldown: date | None = None
     if isinstance(cooldown_raw, str) and cooldown_raw:
@@ -160,7 +165,7 @@ def assess(
         peak_equity = equity
     dd = equity / peak_equity - 1.0 if peak_equity > 0 else 0.0
 
-    # === 层3 日频硬触发 H1/H2 → 降仓 0.7 (不切防御) ===
+    # === 层3 日频硬触发 H1/H2 → 仅告警 (V3-G 关闭降仓) ===
     if holding and holding != "511880" and cooldown is None:
         cur = float(spot_map[holding]["price"]) if holding in spot_map else _price(holding)
         entry_dd = (cur / entry_price - 1.0) if entry_price > 0 else 0.0

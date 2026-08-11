@@ -14,16 +14,18 @@
 set -uo pipefail
 export TZ=Asia/Shanghai
 
-# 防重入: 获取文件锁, 已有实例运行则直接退出
-LOCK_FILE="/tmp/quant_sync.lock"
-exec 9>"$LOCK_FILE"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+LOG_DIR="${PROJECT_ROOT}/data/live"
+LOG="${LOG_DIR}/sync.log"
+LOCK_DIR="${QIXING_LOCK_DIR:-/run/lock/qixing}"
+mkdir -p "$LOG_DIR" "$LOCK_DIR" 2>>"$LOG"
+LOCK_FILE="${LOCK_DIR}/sync.lock"
+exec 9>"$LOCK_FILE" 2>>"$LOG"
 if ! flock -n 9; then
-    echo "[sync] $(date '+%Y-%m-%d %H:%M:%S') 已有实例运行, 跳过"
+    echo "[sync] $(date '+%Y-%m-%d %H:%M:%S') 已有实例运行, 跳过" >> "$LOG"
     exit 0
 fi
 
-# 定位项目根目录 (本脚本在 deploy/ 下)
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
 # crontab 自愈守护: 检查三个定时任务是否被外部覆盖丢失 (幂等, 缺失时自动补回+告警)
@@ -34,10 +36,6 @@ PYTHON="${PROJECT_ROOT}/.venv/bin/python"
 if [ ! -x "$PYTHON" ]; then
     PYTHON="uv run python"
 fi
-
-LOG_DIR="data/live"
-mkdir -p "$LOG_DIR"
-LOG="$LOG_DIR/sync.log"
 
 TASK_NAME="[sync]"
 RC=0

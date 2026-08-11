@@ -12,11 +12,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
-from next_rebalance import find_next_rebalance, preview_trade  # noqa: E402
-from notify import push_bark  # noqa: E402
-from strategy_lab.engine import build_idx_map, get_common_dates  # noqa: E402
-import live_signal as ls  # noqa: E402
+import live_signal as ls
+import run_qixing_v3 as rq
+from next_rebalance import find_next_rebalance
+from notify import push_bark
+from strategy_lab.engine import build_idx_map, get_common_dates
 
 
 def main() -> None:
@@ -42,9 +42,13 @@ def main() -> None:
 
     next_rb, days_left = find_next_rebalance(trading_dates, last_rb)
 
-    # 基于最新数据预览下个调仓日信号
+    # 14:50官方决策是唯一交易口径；16:30不重复推进V4确认历史。
     idx_map = build_idx_map(data, latest)
     target, candidates, best_score, a_share_weak = rq.select_target(data, idx_map, holding)
+    official = state.get("last_decision")
+    if official and official.get("trade_date") == str(latest):
+        target = official["final_target"]
+        best_score = dict(candidates).get(target, 0.0)
 
     # 账户总值 (优先用实时行情当日真实价, 失败回退历史价)
     total = state["cash"]
@@ -58,7 +62,7 @@ def main() -> None:
 
     # 组装每日校准消息
     hold_disp = f"【{holding}】{ls.name_of(holding)}" if holding else "空仓"
-    lines = [f"持仓: {hold_disp}"]
+    lines = [f"策略: {ls.get_strategy_mode()} ({ls.v4.STRATEGY_ID})", f"持仓: {hold_disp}"]
     lines.append(f"💰 盈亏: {total/10000:.2f}万 ({ret:+.1f}%)")
     if days_left is not None and days_left <= 0:
         lines.append(f"🎯 调仓日: {next_rb} (就是今天/即将)")
@@ -67,9 +71,12 @@ def main() -> None:
     else:
         lines.append(f"🎯 调仓日: 约{next_rb}")
     if target == holding:
-        lines.append(f"👉 预计: 继续持有 {hold_disp}")
+        lines.append(f"👉 14:50官方决策: 继续持有 {hold_disp}")
     else:
-        lines.append(f"👉 预计调仓: → 【{target}】{ls.name_of(target)} (动量{best_score*100:+.1f}%)")
+        lines.append(
+            f"👉 14:50官方调仓: → 【{target}】{ls.name_of(target)} "
+            f"(动量{best_score * 100:+.1f}%)"
+        )
         lines.append(f"   易淘金搜索代码 {target} 买入")
     if a_share_weak:
         lines.append("⚠️ A股走弱, 已排除创业板")

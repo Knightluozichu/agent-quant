@@ -14,15 +14,18 @@
 set -uo pipefail
 export TZ=Asia/Shanghai
 
-# 防重入: 获取文件锁, 已有实例运行则直接退出
-LOCK_FILE="/tmp/quant_calibrate.lock"
-exec 9>"$LOCK_FILE"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+LOG_DIR="${PROJECT_ROOT}/data/live"
+LOG="${LOG_DIR}/calibrate.log"
+LOCK_DIR="${QIXING_LOCK_DIR:-/run/lock/qixing}"
+mkdir -p "$LOG_DIR" "$LOCK_DIR" 2>>"$LOG"
+LOCK_FILE="${LOCK_DIR}/calibrate.lock"
+exec 9>"$LOCK_FILE" 2>>"$LOG"
 if ! flock -n 9; then
-    echo "[calibrate] $(date '+%Y-%m-%d %H:%M:%S') 已有实例运行, 跳过"
+    echo "[calibrate] $(date '+%Y-%m-%d %H:%M:%S') 已有实例运行, 跳过" >> "$LOG"
     exit 0
 fi
 
-PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
 # 直接使用 venv python (避免 uv run 每次检查环境, cron 环境精简)
@@ -30,10 +33,6 @@ PYTHON="${PROJECT_ROOT}/.venv/bin/python"
 if [ ! -x "$PYTHON" ]; then
     PYTHON="uv run python"
 fi
-
-LOG_DIR="data/live"
-mkdir -p "$LOG_DIR"
-LOG="$LOG_DIR/calibrate.log"
 
 TASK_NAME="[calibrate]"
 RC=0

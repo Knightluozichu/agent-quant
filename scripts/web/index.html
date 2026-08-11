@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>七星V3 实盘记账</title>
+<title>七星V4 实盘记账</title>
 <style>
   :root{
     --bg:#f5f6f8; --card:#fff; --line:#eceef1; --txt:#1c2128; --muted:#8a919e;
@@ -70,7 +70,7 @@
 
   <!-- 登录 -->
   <div id="login" class="login-box hidden">
-    <h1>七星V3 实盘记账</h1>
+    <h1>七星V4 实盘记账</h1>
     <div class="sub">填入真实成交, 让持仓状态等于现实</div>
     <div class="card">
       <label>访问密码</label>
@@ -82,7 +82,7 @@
 
   <!-- 主界面 -->
   <div id="app" class="hidden">
-    <h1>七星V3 实盘记账</h1>
+    <h1>七星V4 实盘记账</h1>
     <div class="sub" id="dateLine">—</div>
 
     <!-- 待确认信号 (置顶) -->
@@ -107,7 +107,7 @@
         </div>
       </div>
 
-      <button onclick="doConfirm()">✅ 确认成交 (填入真实数据)</button>
+      <button id="confirmButton" onclick="doConfirm()">✅ 确认成交 (填入真实数据)</button>
       <button class="ghost" onclick="doSkip()">本次不操作</button>
     </div>
 
@@ -130,7 +130,7 @@
 
     <!-- 信号 -->
     <div id="tab-signal" class="card">
-      <h2>📊 动量排行 <span class="pill">每5交易日</span></h2>
+      <h2>📊 V4 官方决策 <span class="pill">14:50快照</span></h2>
       <div id="targetLine" class="alert ok"></div>
       <div id="board"></div>
     </div>
@@ -236,7 +236,7 @@ async function loadAll(){
   ]);
   renderStatus(status); renderPending(status.pending_order);
   renderSignal(signal); renderHistory(history.trades); renderEquity(equity);
-  let dateTxt='数据截至 '+status.trade_date;
+  let dateTxt=(status.strategy_mode||'V4')+' · 数据截至 '+status.trade_date;
   if(status.holding){ dateTxt += status.realtime?' · 市值实时估算':' · 市值按收盘估算'; }
   document.getElementById('dateLine').textContent=dateTxt;
 }
@@ -289,12 +289,16 @@ function renderPending(p){
 }
 
 function renderSignal(sig){
+  if(!sig.target){ document.getElementById('targetLine').textContent=sig.reason||'暂无官方信号'; return; }
   const t=sig.target;
-  const isDef = !sig.board.some(b=>b.code===t.code && b.eligible);
+  const board=sig.board||[];
+  const confirms=sig.confirmation_required?
+    ` · 共振确认 ${sig.confirmation_hits||0}/${sig.confirmation_required}`:'';
+  const source=sig.official?' · 官方快照':' · 实时预览';
   document.getElementById('targetLine').innerHTML =
-    `本期目标: <b>${t.name} (${t.code})</b>` + (sig.a_share_weak?' · A股走弱防御':'');
+    `V4目标: <b>${t.name} (${t.code})</b>${confirms}${source}` + (sig.a_share_weak?' · A股走弱防御':'');
   const html=`<div class="board-row" style="border-bottom:1px solid var(--line);padding:4px 0 6px"><div style="width:22px"></div><div class="board-name muted" style="font-size:11px">ETF (代码)</div><div class="board-score muted" style="font-size:11px;font-weight:400">动量(10+20日)</div></div>`+
-  sig.board.map((b,i)=>{
+  board.map((b,i)=>{
     const cls=b.score>=0?'up':'down';
     const rank=i===0&&b.eligible?'board-rank top':'board-rank';
     let mark='';
@@ -422,7 +426,9 @@ function drawOvHoldings(dates,holdings,names){
 // ---------- 操作 ----------
 async function doConfirm(){
   const p=curPending; if(!p) return;
-  const payload={sell:null,buy:null};
+  const payload={sell:null,buy:null,order_id:p.order_id||null,
+    expected_state_version:p.expected_state_version??null,
+    idempotency_key:(crypto.randomUUID?crypto.randomUUID():String(Date.now()))};
   if(p.sell && document.getElementById('sellOn').checked){
     payload.sell={shares:+document.getElementById('sellShares').value, price:+document.getElementById('sellPrice').value};
   }
@@ -430,8 +436,10 @@ async function doConfirm(){
     payload.buy={code:document.getElementById('buyCode').value, shares:+document.getElementById('buyShares').value, price:+document.getElementById('buyPrice').value};
   }
   if(!payload.sell && !payload.buy){ toast('请至少勾选一笔成交'); return; }
+  const btn=document.getElementById('confirmButton'); btn.disabled=true;
   try{ await api('/api/confirm',{method:'POST',body:JSON.stringify(payload)}); toast('✅ 已确认成交'); await loadAll(); }
   catch(e){ toast('❌ '+e.message); }
+  finally{ btn.disabled=false; }
 }
 async function doSkip(){
   if(!confirm('确认本次不操作? 信号将标记为已跳过。')) return;

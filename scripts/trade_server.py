@@ -1,4 +1,4 @@
-"""七星V3 实盘记账网页 (FastAPI 后端).
+"""七星 V4 实盘记账网页 (FastAPI 后端).
 
 手机端使用流程:
   1. 每个交易日 14:50 服务器自动生成信号并 Bark 推送 (信号挂起为"待确认")
@@ -37,7 +37,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 WEB_DIR = Path(__file__).parent / "web"
 
-app = FastAPI(title="七星V3 实盘记账")
+app = FastAPI(title="七星V4 实盘记账")
 
 # 行情数据内存缓存 (带 mtime 失效: cron 14:50 更新数据后自动重载)
 _DATA_CACHE: dict | None = None
@@ -239,8 +239,11 @@ def api_health() -> dict:
     state = ls.load_state()
     return {
         "status": "ok" if state else "uninitialized",
-        "service": "qixing-v3",
-        "version": "3.0",
+        "service": "qixing-v4",
+        "version": "4.0",
+        "strategy_mode": ls.get_strategy_mode(),
+        "strategy_id": ls.v4.STRATEGY_ID,
+        "config_hash": ls.v4.CONFIG_HASH,
         "has_state": state is not None,
         "data_files": len(list(ls.DATA_DIR.glob("*.parquet"))),
     }
@@ -304,12 +307,49 @@ def api_status(_: None = Depends(require_token)) -> dict:
         "initial_capital": state["initial_capital"],
         "return_pct": round(ret, 2),
         "pending_order": state.get("pending_order"),
+        "strategy_mode": ls.get_strategy_mode(),
+        "strategy_id": ls.v4.STRATEGY_ID,
+        "config_hash": ls.v4.CONFIG_HASH,
+        "last_decision": state.get("last_decision"),
     }
 
 
 @app.get("/api/signal")
 def api_signal(_: None = Depends(require_token)) -> dict:
     state = ls.load_state()
+    if state and state.get("last_decision"):
+        decision = state["last_decision"]
+        data = get_data()
+        td = decision["trade_date"]
+        target = decision["final_target"]
+        try:
+            board_date = datetime.strptime(td, "%Y-%m-%d").date()
+            board = ls.momentum_board_data(
+                data, board_date, state.get("holding"), target
+            )
+        except (KeyError, IndexError, ValueError):
+            board = []
+        return {
+            "status": "OK",
+            "official": True,
+            "trade_date": td,
+            "is_trading_day": ls.is_trading_day(date.today()),
+            "strategy_mode": decision.get("mode", ls.get_strategy_mode()),
+            "strategy_id": decision.get("strategy_id", ls.v4.STRATEGY_ID),
+            "config_hash": decision.get("config_hash", ls.v4.CONFIG_HASH),
+            "decision_id": decision.get("decision_id"),
+            "target": {"code": target, "name": ls.name_of(target)},
+            "holding": state.get("holding"),
+            "v3g_target": decision.get("v3g_target"),
+            "raw_v4_target": decision.get("raw_v4_target"),
+            "confirmation_hits": decision.get("confirmation_hits", 0),
+            "confirmation_required": decision.get("confirmation_required", 2),
+            "v4_triggered": decision.get("v4_triggered", False),
+            "v4_blocked_by": decision.get("v4_blocked_by", ""),
+            "scheduled_lock": decision.get("scheduled_lock", False),
+            "board": board,
+            "pending_order": state.get("pending_order"),
+        }
     data = get_data()
     # 注入当日实时行情 (解决parquet没有今天数据的问题)
     data = ls.inject_realtime(data)
@@ -348,6 +388,9 @@ def api_signal(_: None = Depends(require_token)) -> dict:
     board = ls.momentum_board_data(data, td, holding, target)
     return {
         "status": "OK",
+        "official": False,
+        "strategy_mode": ls.get_strategy_mode(),
+        "strategy_id": ls.v4.STRATEGY_ID,
         "trade_date": str(td),
         "is_trading_day": is_trading,
         "target": {"code": target, "name": ls.name_of(target)},
@@ -481,6 +524,8 @@ class ConfirmRequest(BaseModel):
     sell: _SellLeg | None = None
     buy: _BuyLeg | None = None
     idempotency_key: str | None = Field(default=None, max_length=128)
+    order_id: str | None = Field(default=None, max_length=128)
+    expected_state_version: int | None = Field(default=None, ge=0)
 
     @model_validator(mode="after")
     def _at_least_one_leg(self) -> ConfirmRequest:
@@ -544,7 +589,11 @@ def _check_idempotency(key: str | None) -> None:
         raise HTTPException(
             status_code=409, detail="重复提交 (idempotency_key 已处理)"
         )
-    _IDEMPOTENCY_STORE[key] = now
+
+
+def _record_idempotency(key: str | None) -> None:
+    if key:
+        _IDEMPOTENCY_STORE[key] = time.time()
 
 
 @app.post("/api/confirm")
@@ -566,15 +615,22 @@ def api_confirm(payload: ConfirmRequest, _: None = Depends(require_token)) -> di
         state = ls.confirm_order(
             payload.sell.model_dump() if payload.sell else None,
             payload.buy.model_dump() if payload.buy else None,
+            order_id=payload.order_id,
+            expected_state_version=payload.expected_state_version,
+            idempotency_key=payload.idempotency_key,
         )
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
+    _record_idempotency(payload.idempotency_key)
     return {"ok": True, "cash": round(state["cash"], 2), "holding": state["holding"]}
 
 
 @app.post("/api/skip")
 def api_skip(_: None = Depends(require_token)) -> dict:
-    ls.skip_pending()
+    try:
+        ls.skip_pending()
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e)) from e
     return {"ok": True}
 
 
@@ -635,6 +691,7 @@ def api_trade(payload: TradeRequest, _: None = Depends(require_token)) -> dict:
         )
     except (ValueError, KeyError) as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
+    _record_idempotency(payload.idempotency_key)
     return {"ok": True, "cash": round(state["cash"], 2), "holding": state["holding"]}
 
 
@@ -645,7 +702,7 @@ def api_refresh(_: None = Depends(require_token)) -> dict:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="七星V3 实盘记账网页")
+    parser = argparse.ArgumentParser(description="七星V4 实盘记账网页")
     parser.add_argument("--port", type=int, default=8090, help="监听端口 (默认8090)")
     parser.add_argument("--host", default="127.0.0.1", help="监听地址 (默认 127.0.0.1, 仅本地访问)")
     parser.add_argument("--set-password", action="store_true",
