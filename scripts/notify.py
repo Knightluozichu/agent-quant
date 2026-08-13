@@ -13,8 +13,11 @@ from __future__ import annotations
 
 import json
 import os
+import stat
+import tempfile
 import urllib.request
 from pathlib import Path
+from typing import Any, cast
 
 LIVE_DIR = Path(__file__).parent.parent / "data" / "live"
 CONFIG_FILE = LIVE_DIR / "config.json"
@@ -24,20 +27,58 @@ DEFAULT_SOUND = "minuet"
 DEFAULT_GROUP = "七星V3"
 
 
-def load_config() -> dict:
+def load_config() -> dict[str, Any]:
     if CONFIG_FILE.exists():
         try:
             with open(CONFIG_FILE) as f:
-                return json.load(f)
+                payload = json.load(f)
+            return cast("dict[str, Any]", payload) if isinstance(payload, dict) else {}
         except (json.JSONDecodeError, OSError):
             return {}
     return {}
 
 
-def save_config(cfg: dict) -> None:
+def save_config(cfg: dict[str, Any]) -> None:
+    """Persist config atomically so concurrent requests never read a partial JSON file."""
     LIVE_DIR.mkdir(parents=True, exist_ok=True)
-    with open(CONFIG_FILE, "w") as f:
-        json.dump(cfg, f, indent=2, ensure_ascii=False)
+    metadata: tuple[int, int, int] | None = None
+    try:
+        info = CONFIG_FILE.stat()
+        metadata = info.st_uid, info.st_gid, stat.S_IMODE(info.st_mode)
+    except OSError:
+        pass
+
+    temp_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=LIVE_DIR,
+            prefix=f".{CONFIG_FILE.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as f:
+            temp_path = Path(f.name)
+            json.dump(cfg, f, indent=2, ensure_ascii=False)
+            f.flush()
+            os.fsync(f.fileno())
+
+        if metadata is not None and os.geteuid() == 0:
+            os.chown(temp_path, metadata[0], metadata[1])
+        temp_path.chmod(metadata[2] if metadata is not None else 0o600)
+        temp_path.replace(CONFIG_FILE)
+
+        try:
+            dir_fd = os.open(LIVE_DIR, os.O_RDONLY)
+        except OSError:
+            return
+        try:
+            os.fsync(dir_fd)
+        finally:
+            os.close(dir_fd)
+    finally:
+        if temp_path is not None and temp_path.exists():
+            temp_path.unlink()
 
 
 def get_bark_key() -> str | None:
@@ -45,7 +86,8 @@ def get_bark_key() -> str | None:
     key = os.environ.get("BARK_KEY", "").strip()
     if key:
         return key
-    return load_config().get("bark_key")
+    value = load_config().get("bark_key")
+    return value if isinstance(value, str) else None
 
 
 def set_bark_key(key: str) -> None:
@@ -81,7 +123,7 @@ def push_bark(
         print("     配置方法: uv run python scripts/live_signal.py --set-bark")
         return False
 
-    payload: dict = {
+    payload: dict[str, Any] = {
         "title": title,
         "body": body,
         "level": level,

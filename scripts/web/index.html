@@ -117,6 +117,7 @@
       <div class="big" id="totalVal">—</div>
       <div class="row" style="margin-top:10px"><span class="muted">可用现金</span><span id="cashVal">—</span></div>
       <div class="row"><span class="muted">当前持仓</span><span id="holdVal">—</span></div>
+      <div id="feeSummary" class="alert warn hidden" style="margin-top:12px;margin-bottom:0"></div>
     </div>
 
     <!-- 标签页 -->
@@ -164,7 +165,8 @@
 
     <!-- 策略全景 -->
     <div id="tab-overview" class="card hidden">
-      <h2>🗺️ V3-G 基线回测 <span class="pill" id="ovPeriod"></span></h2>
+      <h2>🗺️ 策略全景 <span class="pill" id="ovPeriod"></span></h2>
+      <div id="ovScope" class="alert warn"></div>
       <div id="ovMetrics"></div>
       <div style="font-size:13px;color:var(--muted);margin:14px 0 6px">净值曲线(对数) 与 回撤</div>
       <div id="ovEquity"></div>
@@ -184,6 +186,7 @@
 const RED='#e5484d', GREEN='#18a058';
 const ETF_COLORS={"518880":"#E6B800","159985":"#A0522D","501018":"#2F4F4F","161226":"#9099A0","513100":"#3B6FE0","159915":"#FF6347","511220":"#2E9E5B","511880":"#C8CDD3"};
 let ETFS = [];
+let latestStatus = null;
 
 function fmt(x){ return (x==null?'—':Number(x).toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2})); }
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),1800); }
@@ -234,11 +237,31 @@ async function loadAll(){
   const [status, signal, history, equity] = await Promise.all([
     api('/api/status'), api('/api/signal'), api('/api/history'), api('/api/equity')
   ]);
+  latestStatus = status;
   renderStatus(status); renderPending(status.pending_order);
+  renderFeeSummary(history.trades);
   renderSignal(signal); renderHistory(history.trades); renderEquity(equity);
   let dateTxt=(status.strategy_mode||'V4')+' · 数据截至 '+status.trade_date;
   if(status.holding){ dateTxt += status.realtime?' · 市值实时估算':' · 市值按收盘估算'; }
   document.getElementById('dateLine').textContent=dateTxt;
+}
+
+function renderFeeSummary(trades){
+  const el=document.getElementById('feeSummary');
+  const t=(trades||[]).find(x=>x && x.commission!=null);
+  if(!t){ el.classList.add('hidden'); return; }
+  const fee=Number(t.commission);
+  const gross=t.gross_amount!=null?Number(t.gross_amount):null;
+  const cashImpact=Number(t.amount);
+  const action=t.action==='sell'?'卖出':'买入';
+  const time=t.execution_time?
+    String(t.execution_time).replace('T',' ').slice(0,16):String(t.date||'');
+  const grossLine=gross!=null?`成交额 ¥${fmt(gross)} · `:'';
+  const cashLabel=t.action==='sell'?'现金到账':'现金扣减';
+  el.innerHTML=`💳 <b>最近成交费用 ¥${fmt(fee)}</b><br>
+    <span class="muted">${time} ${action}${t.name||t.code} ${Number(t.shares).toLocaleString('zh-CN')}份 @ ${Number(t.price).toFixed(3)} · ${grossLine}${cashLabel} ¥${fmt(cashImpact)}<br>
+    手续费已计入现金口径，持仓成本仍按 ¥${Number(t.price).toFixed(3)} 展示</span>`;
+  el.classList.remove('hidden');
 }
 
 // ---------- 渲染 ----------
@@ -319,12 +342,14 @@ function renderHistory(trades){
   if(!trades.length){ box.innerHTML='<div class="muted">暂无成交记录</div>'; return; }
   let rows=trades.map(t=>{
     const sell=t.action==='sell';
+    const feeLine=t.commission!=null?`<span class="muted">手续费 ¥${fmt(t.commission)}</span>`:'';
+    const grossLine=t.gross_amount!=null?`<span class="muted">成交额 ¥${fmt(t.gross_amount)}</span>`:'';
     return `<tr><td>${t.date.slice(5)}<br><span class="muted">${sell?'卖出':'买入'}</span></td>
       <td>${t.name}</td>
       <td class="num">${t.shares}股<br><span class="muted">@${t.price.toFixed(3)}</span></td>
-      <td class="num">${fmt(t.amount)}</td></tr>`;
+      <td class="num">${sell?'+':'-'}${fmt(t.amount)}<br>${grossLine}${feeLine}</td></tr>`;
   }).join('');
-  box.innerHTML=`<table><tr><th>日期</th><th>标的</th><th style="text-align:right">数量</th><th style="text-align:right">金额</th></tr>${rows}</table>`;
+  box.innerHTML=`<table><tr><th>日期</th><th>标的</th><th style="text-align:right">数量</th><th style="text-align:right">现金影响</th></tr>${rows}</table>`;
 }
 
 function renderEquity(eq){
@@ -362,6 +387,11 @@ async function loadOverview(){
 }
 function renderOverview(d){
   const m=d.metrics;
+  const liveMode=latestStatus&&latestStatus.strategy_mode?latestStatus.strategy_mode:'未知';
+  const liveId=latestStatus&&latestStatus.strategy_id?latestStatus.strategy_id:'';
+  document.getElementById('ovScope').innerHTML=
+    `当前实盘：<b>${liveMode}</b>${liveId?` <span class="muted">(${liveId})</span>`:''}<br>`+
+    `下方历史图：<b>V3-G 基线回测</b>，仅作基准对照，不代表 V4 的历史绩效。`;
   document.getElementById('ovPeriod').textContent=m.start+' ~ '+m.end+' · '+m.years+'年';
   document.getElementById('ovMetrics').innerHTML=
     '<div class="grid2" style="grid-template-columns:1fr 1fr 1fr">'+

@@ -12,9 +12,10 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 import pytest
+
+pytestmark = pytest.mark.integration
 
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
@@ -22,11 +23,11 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 from run_qixing_v3 import (  # noqa: E402
     DEFENSE,
     ETF_POOL,
-    load_data,
-    select_target,
-    run_qixing_v3_no_lookahead,
-    _compute_param_hash,
     _compute_data_hash,
+    _compute_param_hash,
+    load_data,
+    run_qixing_v3_no_lookahead,
+    select_target,
 )
 
 
@@ -45,7 +46,7 @@ class TestSelectTargetSnapshot:
     def _build_idx_map(self, data, td, warmup=130):
         """构造 etf_data_at_date (与 live_signal.build_etf_data_at_date 一致)."""
         idx_map = {}
-        for code in list(ETF_POOL.keys()) + [DEFENSE]:
+        for code in [*ETF_POOL.keys(), DEFENSE]:
             if code not in data:
                 continue
             df = data[code]
@@ -59,9 +60,7 @@ class TestSelectTargetSnapshot:
         """快照: 2022-01-03 选股结果."""
         td = pd.to_datetime("2022-01-03").date()
         idx_map = self._build_idx_map(real_data, td)
-        target, candidates, best_score, a_share_weak = select_target(
-            real_data, idx_map, None
-        )
+        target, candidates, best_score, a_share_weak = select_target(real_data, idx_map, None)
         # 快照断言: 固定结果 (如果逻辑不变, 结果应一致)
         assert target is not None, "目标不应为 None"
         assert isinstance(candidates, list), "candidates 应为列表"
@@ -73,9 +72,7 @@ class TestSelectTargetSnapshot:
         td = pd.to_datetime("2022-06-01").date()
         idx_map = self._build_idx_map(real_data, td)
         # 持有黄金ETF时的选股
-        target, candidates, best_score, a_share_weak = select_target(
-            real_data, idx_map, "518880"
-        )
+        target, candidates, _, _ = select_target(real_data, idx_map, "518880")
         assert target is not None
         # 如果当前持仓是最强的, 应该继续持有
         if candidates:
@@ -90,9 +87,7 @@ class TestSelectTargetSnapshot:
 
         results = []
         for _ in range(3):
-            target, candidates, best_score, a_share_weak = select_target(
-                real_data, idx_map, None
-            )
+            target, candidates, best_score, a_share_weak = select_target(real_data, idx_map, None)
             results.append((target, tuple(candidates), best_score, a_share_weak))
 
         # 三次调用结果应完全一致
@@ -103,9 +98,7 @@ class TestSelectTargetSnapshot:
         """所有ETF动量为负时返回 DEFENSE."""
         td = pd.to_datetime("2022-04-25").date()  # 2022年大跌期间
         idx_map = self._build_idx_map(real_data, td)
-        target, candidates, best_score, _ = select_target(
-            real_data, idx_map, None
-        )
+        target, candidates, _, _ = select_target(real_data, idx_map, None)
         # 如果没有正动量候选, 应返回 DEFENSE
         if not candidates:
             assert target == DEFENSE, "无正动量候选时应返回 DEFENSE"
@@ -192,7 +185,7 @@ class TestGoldenScenarios:
         eq = backtest_result["equity_curve"]
         dates = eq["trade_date"].tolist()
         for i in range(1, len(dates)):
-            assert dates[i] > dates[i - 1], f"日期应单调递增: {dates[i-1]} → {dates[i]}"
+            assert dates[i] > dates[i - 1], f"日期应单调递增: {dates[i - 1]} → {dates[i]}"
 
     def test_golden_equity_never_negative(self, backtest_result):
         """Golden: 净值永不为负 (现金+持仓市值 ≥ 0)."""
@@ -223,7 +216,6 @@ class TestStrategyInvariants:
     def test_cash_never_negative(self, real_data):
         """现金永不为负."""
         result = run_qixing_v3_no_lookahead(real_data)
-        trade_log = result.get("trade_log", [])
         # 检查每笔交易后的现金状态
         # 通过净值曲线间接验证: equity = cash + holding_value ≥ 0
         eq = result["equity_curve"]

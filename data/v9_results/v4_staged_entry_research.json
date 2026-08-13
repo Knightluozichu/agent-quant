@@ -1,0 +1,4463 @@
+{
+  "meta": {
+    "strategy": "canonical server V4 + research-only staged entry",
+    "data_end": "2026-08-11",
+    "initial_capital": 100000.0,
+    "v4_params": {
+      "enabled": true,
+      "mode": "consensus",
+      "slow_gap": 0.0075,
+      "fast_5d_gap": 0.0225,
+      "fast_3d_gap": 0.01125,
+      "minimum_target_momentum": 0.0,
+      "minimum_hold_days": 3,
+      "confirmation_hits": 2,
+      "confirmation_window": 2
+    },
+    "confirmation_days": 2,
+    "pre_registered_variants": {
+      "stage50": {
+        "initial_fraction": 0.5,
+        "entry_guard": null
+      },
+      "stage60": {
+        "initial_fraction": 0.6,
+        "entry_guard": null
+      },
+      "stage50_selective": {
+        "initial_fraction": 0.5,
+        "entry_guard": "entry_guard_selective"
+      },
+      "stage60_selective": {
+        "initial_fraction": 0.6,
+        "entry_guard": "entry_guard_selective"
+      }
+    },
+    "top_up_rule": "from age 2 onward: still the daily V3-G target, eligible, slow momentum > 0, short trend > 0, and no guard trigger",
+    "no_lookahead": "all decisions use prices and factors through T only",
+    "no_parameter_scan": true,
+    "baseline_parity": "canonical V4 verified at 0x/1x/2x/3x costs"
+  },
+  "baseline": {
+    "params": {
+      "strategy": "V4",
+      "stop_mode": "disabled",
+      "stop_1d": -0.05,
+      "stop_3d": -0.1,
+      "entry_guard_mode": null,
+      "entry_guard_days": 3,
+      "entry_guard_day_threshold": -0.05,
+      "entry_guard_entry_loss": -0.1,
+      "staged_entry_fraction": null,
+      "staged_confirmation_days": 2,
+      "stop_target": "mode_defined_target",
+      "execution": "T-day close approximation, same as canonical V4 research"
+    },
+    "metrics": {
+      "start": "2020-06-19",
+      "end": "2026-08-11",
+      "observations": 1485,
+      "initial_value": 100000.0,
+      "final_value": 5258017.614359309,
+      "total_return": 51.58017614359309,
+      "cagr": 0.9058718424980878,
+      "ann_vol": 0.35404509479095153,
+      "sharpe": 2.5586340718347373,
+      "max_drawdown": -0.28615770033824584,
+      "cost_multiplier": 1.0,
+      "stop_mode": "disabled",
+      "trade_legs": 223,
+      "raw_shocks": 0,
+      "raw_shock_1d": 0,
+      "raw_shock_3d": 0,
+      "stop_triggers": 0,
+      "stop_switches": 0,
+      "stop_cash_exits": 0,
+      "entry_guard_mode": null,
+      "entry_guard_triggers": 0,
+      "entry_guard_switches": 0,
+      "entry_guard_cash_exits": 0,
+      "staged_entry_fraction": null,
+      "staged_confirmation_days": 2,
+      "staged_entries": 0,
+      "staged_top_ups": 0,
+      "stop_noop_same_rank2": 0,
+      "stop_no_rank2": 0,
+      "scheduled_lock_blocks": 2,
+      "signal_days": 184,
+      "risk_events": 256,
+      "stop_forward_relative_5d_avg": 0.0,
+      "stop_forward_relative_5d_win_rate": 0.0,
+      "stop_forward_relative_10d_avg": 0.0,
+      "stop_forward_relative_10d_win_rate": 0.0,
+      "stop_forward_relative_20d_avg": 0.0,
+      "stop_forward_relative_20d_win_rate": 0.0,
+      "round_trips": 111,
+      "worst_trade_return": -0.07458891450058969,
+      "p05_trade_return": -0.04955391320585667,
+      "losses_below_10pct": 0
+    },
+    "annual": [
+      {
+        "year": 2020,
+        "start_value": 100000.0,
+        "end_value": 188520.77318636363,
+        "return": 0.8852077318636362,
+        "within_year_start": 99851.6206
+      },
+      {
+        "year": 2021,
+        "start_value": 188520.77318636363,
+        "end_value": 218379.08935930693,
+        "return": 0.15838210117792495,
+        "within_year_start": 195692.77318636363
+      },
+      {
+        "year": 2022,
+        "start_value": 218379.08935930693,
+        "end_value": 297437.4479093069,
+        "return": 0.3620234830264468,
+        "within_year_start": 216927.68935930694
+      },
+      {
+        "year": 2023,
+        "start_value": 297437.4479093069,
+        "end_value": 340483.3907593071,
+        "return": 0.14472267413727113,
+        "within_year_start": 298170.94790930697
+      },
+      {
+        "year": 2024,
+        "start_value": 340483.3907593071,
+        "end_value": 574832.6032093071,
+        "return": 0.6882838306073644,
+        "within_year_start": 339648.49075930705
+      },
+      {
+        "year": 2025,
+        "start_value": 574832.6032093071,
+        "end_value": 2136445.5416093064,
+        "return": 2.716639469789064,
+        "within_year_start": 579732.6032093071
+      },
+      {
+        "year": 2026,
+        "start_value": 2136445.5416093064,
+        "end_value": 5258017.614359309,
+        "return": 1.4611053789831856,
+        "within_year_start": 2199592.0416093064
+      }
+    ],
+    "trade_tail": {
+      "round_trips": 111,
+      "worst_trade_return": -0.07458891450058969,
+      "p05_trade_return": -0.04955391320585667,
+      "losses_below_10pct": 0,
+      "trade_returns": [
+        {
+          "exit_date": "2020-07-21",
+          "code": "159915",
+          "net_return": 0.1774275583943119
+        },
+        {
+          "exit_date": "2020-08-18",
+          "code": "161226",
+          "net_return": 0.29036846467540833
+        },
+        {
+          "exit_date": "2020-09-08",
+          "code": "513100",
+          "net_return": 0.16034718555327854
+        },
+        {
+          "exit_date": "2020-11-03",
+          "code": "159985",
+          "net_return": 0.05783222211487349
+        },
+        {
+          "exit_date": "2020-11-11",
+          "code": "159915",
+          "net_return": -0.023319494144966035
+        },
+        {
+          "exit_date": "2020-11-26",
+          "code": "159985",
+          "net_return": 0.002954221693887149
+        },
+        {
+          "exit_date": "2020-12-23",
+          "code": "501018",
+          "net_return": -0.004779056817278415
+        },
+        {
+          "exit_date": "2021-01-14",
+          "code": "159915",
+          "net_return": 0.08490069995189353
+        },
+        {
+          "exit_date": "2021-01-21",
+          "code": "159985",
+          "net_return": -0.049570899125763956
+        },
+        {
+          "exit_date": "2021-01-28",
+          "code": "159915",
+          "net_return": -0.0403517834080116
+        },
+        {
+          "exit_date": "2021-03-05",
+          "code": "501018",
+          "net_return": 0.18729735738969056
+        },
+        {
+          "exit_date": "2021-03-12",
+          "code": "511220",
+          "net_return": -0.0020511083503300664
+        },
+        {
+          "exit_date": "2021-03-19",
+          "code": "501018",
+          "net_return": -0.07458891450058969
+        },
+        {
+          "exit_date": "2021-04-07",
+          "code": "518880",
+          "net_return": 0.0020047944244123705
+        },
+        {
+          "exit_date": "2021-04-26",
+          "code": "513100",
+          "net_return": 0.013237349696027856
+        },
+        {
+          "exit_date": "2021-05-10",
+          "code": "159915",
+          "net_return": -0.015532063413786101
+        },
+        {
+          "exit_date": "2021-05-26",
+          "code": "161226",
+          "net_return": -0.006215112207899054
+        },
+        {
+          "exit_date": "2021-06-17",
+          "code": "159915",
+          "net_return": -0.005250444204452753
+        },
+        {
+          "exit_date": "2021-07-09",
+          "code": "501018",
+          "net_return": 0.018970320528998386
+        },
+        {
+          "exit_date": "2021-08-20",
+          "code": "513100",
+          "net_return": 0.01022197073551423
+        },
+        {
+          "exit_date": "2021-09-16",
+          "code": "511220",
+          "net_return": -0.0011943818547103247
+        },
+        {
+          "exit_date": "2021-11-04",
+          "code": "501018",
+          "net_return": 0.0821579019371299
+        },
+        {
+          "exit_date": "2021-12-06",
+          "code": "513100",
+          "net_return": -0.03338397859466702
+        },
+        {
+          "exit_date": "2021-12-30",
+          "code": "159985",
+          "net_return": 0.04769963698520008
+        },
+        {
+          "exit_date": "2022-02-08",
+          "code": "501018",
+          "net_return": 0.14884392336467278
+        },
+        {
+          "exit_date": "2022-03-03",
+          "code": "159985",
+          "net_return": 0.05606540823461548
+        },
+        {
+          "exit_date": "2022-03-10",
+          "code": "501018",
+          "net_return": 0.06247235159918363
+        },
+        {
+          "exit_date": "2022-04-01",
+          "code": "159985",
+          "net_return": -0.05464071738254883
+        },
+        {
+          "exit_date": "2022-04-15",
+          "code": "513100",
+          "net_return": -0.07267310750215894
+        },
+        {
+          "exit_date": "2022-04-25",
+          "code": "501018",
+          "net_return": -0.052845731402895724
+        },
+        {
+          "exit_date": "2022-05-05",
+          "code": "518880",
+          "net_return": -0.0017251136546965196
+        },
+        {
+          "exit_date": "2022-05-12",
+          "code": "501018",
+          "net_return": -0.02433811057114632
+        },
+        {
+          "exit_date": "2022-05-18",
+          "code": "159915",
+          "net_return": 0.0026966576924247754
+        },
+        {
+          "exit_date": "2022-06-06",
+          "code": "501018",
+          "net_return": 0.051939960498567084
+        },
+        {
+          "exit_date": "2022-06-10",
+          "code": "159915",
+          "net_return": -0.0017879922143428928
+        },
+        {
+          "exit_date": "2022-06-17",
+          "code": "501018",
+          "net_return": -0.02214236943624348
+        },
+        {
+          "exit_date": "2022-07-15",
+          "code": "159915",
+          "net_return": 0.034044907870392604
+        },
+        {
+          "exit_date": "2022-08-24",
+          "code": "513100",
+          "net_return": 0.09051161382165507
+        },
+        {
+          "exit_date": "2022-10-24",
+          "code": "159985",
+          "net_return": 0.03780716825118202
+        },
+        {
+          "exit_date": "2022-10-31",
+          "code": "513100",
+          "net_return": 0.016154639589235575
+        },
+        {
+          "exit_date": "2022-11-10",
+          "code": "501018",
+          "net_return": 0.004757249817342268
+        },
+        {
+          "exit_date": "2022-12-30",
+          "code": "161226",
+          "net_return": 0.06707215896506624
+        },
+        {
+          "exit_date": "2023-01-09",
+          "code": "159985",
+          "net_return": -0.03325285703285841
+        },
+        {
+          "exit_date": "2023-02-06",
+          "code": "159915",
+          "net_return": 0.040425830598710855
+        },
+        {
+          "exit_date": "2023-03-14",
+          "code": "513100",
+          "net_return": -0.030658059154043515
+        },
+        {
+          "exit_date": "2023-04-12",
+          "code": "518880",
+          "net_return": 0.04490499885131238
+        },
+        {
+          "exit_date": "2023-05-12",
+          "code": "161226",
+          "net_return": -0.04393211507242434
+        },
+        {
+          "exit_date": "2023-06-26",
+          "code": "513100",
+          "net_return": 0.1498223067090696
+        },
+        {
+          "exit_date": "2023-08-23",
+          "code": "159985",
+          "net_return": 0.18121096017768745
+        },
+        {
+          "exit_date": "2023-08-30",
+          "code": "511220",
+          "net_return": -0.003095527254864061
+        },
+        {
+          "exit_date": "2023-09-13",
+          "code": "159985",
+          "net_return": -0.03795595158171061
+        },
+        {
+          "exit_date": "2023-10-11",
+          "code": "501018",
+          "net_return": -0.049536927285949384
+        },
+        {
+          "exit_date": "2023-11-09",
+          "code": "511220",
+          "net_return": 7.820381086265371e-06
+        },
+        {
+          "exit_date": "2023-11-23",
+          "code": "159985",
+          "net_return": -0.042300897953620686
+        },
+        {
+          "exit_date": "2023-12-07",
+          "code": "513100",
+          "net_return": -0.016794876888818866
+        },
+        {
+          "exit_date": "2023-12-12",
+          "code": "161226",
+          "net_return": -0.020049530966707918
+        },
+        {
+          "exit_date": "2024-03-11",
+          "code": "513100",
+          "net_return": 0.11464763805056433
+        },
+        {
+          "exit_date": "2024-03-25",
+          "code": "159915",
+          "net_return": -0.034964672556383025
+        },
+        {
+          "exit_date": "2024-04-08",
+          "code": "501018",
+          "net_return": 0.030315443695373867
+        },
+        {
+          "exit_date": "2024-04-24",
+          "code": "161226",
+          "net_return": -0.015359711278628785
+        },
+        {
+          "exit_date": "2024-04-30",
+          "code": "159985",
+          "net_return": -0.00390601312642902
+        },
+        {
+          "exit_date": "2024-05-20",
+          "code": "159915",
+          "net_return": 0.0052396625326327495
+        },
+        {
+          "exit_date": "2024-05-27",
+          "code": "161226",
+          "net_return": -0.01589208227459793
+        },
+        {
+          "exit_date": "2024-07-16",
+          "code": "513100",
+          "net_return": 0.11455524137374717
+        },
+        {
+          "exit_date": "2024-07-18",
+          "code": "161226",
+          "net_return": -0.01602169609906756
+        },
+        {
+          "exit_date": "2024-07-30",
+          "code": "518880",
+          "net_return": -0.035018439503852306
+        },
+        {
+          "exit_date": "2024-08-19",
+          "code": "511220",
+          "net_return": -0.0030919661529376086
+        },
+        {
+          "exit_date": "2024-09-05",
+          "code": "513100",
+          "net_return": -0.05969063048977152
+        },
+        {
+          "exit_date": "2024-09-25",
+          "code": "159985",
+          "net_return": -0.010138834736636015
+        },
+        {
+          "exit_date": "2024-10-10",
+          "code": "159915",
+          "net_return": 0.3462656946257632
+        },
+        {
+          "exit_date": "2024-10-31",
+          "code": "518880",
+          "net_return": 0.07200817871149567
+        },
+        {
+          "exit_date": "2024-11-14",
+          "code": "159915",
+          "net_return": 0.07499824720976966
+        },
+        {
+          "exit_date": "2025-01-10",
+          "code": "513100",
+          "net_return": 0.06286286724262857
+        },
+        {
+          "exit_date": "2025-02-10",
+          "code": "501018",
+          "net_return": 0.00704404276621462
+        },
+        {
+          "exit_date": "2025-03-04",
+          "code": "518880",
+          "net_return": -0.0059017794265953105
+        },
+        {
+          "exit_date": "2025-03-10",
+          "code": "159985",
+          "net_return": -0.01634162539037265
+        },
+        {
+          "exit_date": "2025-03-17",
+          "code": "511880",
+          "net_return": -0.0028364599803121227
+        },
+        {
+          "exit_date": "2025-04-03",
+          "code": "161226",
+          "net_return": -0.005042743892375023
+        },
+        {
+          "exit_date": "2025-04-29",
+          "code": "518880",
+          "net_return": 0.056453732144945645
+        },
+        {
+          "exit_date": "2025-06-09",
+          "code": "513100",
+          "net_return": 0.08319091211039598
+        },
+        {
+          "exit_date": "2025-06-16",
+          "code": "161226",
+          "net_return": -0.019230254235505062
+        },
+        {
+          "exit_date": "2025-06-23",
+          "code": "501018",
+          "net_return": 0.10786831336007574
+        },
+        {
+          "exit_date": "2025-07-07",
+          "code": "161226",
+          "net_return": 0.006827197627204518
+        },
+        {
+          "exit_date": "2025-09-08",
+          "code": "159915",
+          "net_return": 0.3740706475831277
+        },
+        {
+          "exit_date": "2025-09-15",
+          "code": "518880",
+          "net_return": 0.007677155096970978
+        },
+        {
+          "exit_date": "2025-09-29",
+          "code": "159915",
+          "net_return": 0.05478282411746216
+        },
+        {
+          "exit_date": "2025-10-21",
+          "code": "161226",
+          "net_return": 0.07381897764949108
+        },
+        {
+          "exit_date": "2025-11-12",
+          "code": "513100",
+          "net_return": 0.05076714879629285
+        },
+        {
+          "exit_date": "2025-11-18",
+          "code": "161226",
+          "net_return": -0.039211481922415525
+        },
+        {
+          "exit_date": "2025-11-25",
+          "code": "159985",
+          "net_return": -0.005468236137856852
+        },
+        {
+          "exit_date": "2025-12-23",
+          "code": "161226",
+          "net_return": 0.984900723405405
+        },
+        {
+          "exit_date": "2025-12-30",
+          "code": "511220",
+          "net_return": -0.0030932906250669134
+        },
+        {
+          "exit_date": "2026-01-13",
+          "code": "159915",
+          "net_return": 0.020779453303785278
+        },
+        {
+          "exit_date": "2026-02-02",
+          "code": "161226",
+          "net_return": 0.7131933104709749
+        },
+        {
+          "exit_date": "2026-02-24",
+          "code": "159985",
+          "net_return": 0.010641332833576378
+        },
+        {
+          "exit_date": "2026-03-03",
+          "code": "518880",
+          "net_return": 0.025139140604162336
+        },
+        {
+          "exit_date": "2026-03-04",
+          "code": "511220",
+          "net_return": -0.002801536994119558
+        },
+        {
+          "exit_date": "2026-03-10",
+          "code": "501018",
+          "net_return": -0.03114622184370508
+        },
+        {
+          "exit_date": "2026-03-17",
+          "code": "159985",
+          "net_return": 0.029490642420948898
+        },
+        {
+          "exit_date": "2026-03-25",
+          "code": "501018",
+          "net_return": 0.10874605965447981
+        },
+        {
+          "exit_date": "2026-04-13",
+          "code": "511220",
+          "net_return": -0.000382253529714216
+        },
+        {
+          "exit_date": "2026-04-28",
+          "code": "159915",
+          "net_return": 0.03552773492586936
+        },
+        {
+          "exit_date": "2026-06-09",
+          "code": "513100",
+          "net_return": 0.1173764060989515
+        },
+        {
+          "exit_date": "2026-06-16",
+          "code": "511220",
+          "net_return": -0.004052266175798902
+        },
+        {
+          "exit_date": "2026-06-22",
+          "code": "513100",
+          "net_return": -0.016113986914365386
+        },
+        {
+          "exit_date": "2026-07-01",
+          "code": "159915",
+          "net_return": -0.026901757434640183
+        },
+        {
+          "exit_date": "2026-07-03",
+          "code": "511880",
+          "net_return": -0.002539484002593184
+        },
+        {
+          "exit_date": "2026-07-15",
+          "code": "159985",
+          "net_return": 0.07715110143501458
+        },
+        {
+          "exit_date": "2026-07-22",
+          "code": "501018",
+          "net_return": 0.1029133954745538
+        },
+        {
+          "exit_date": "2026-07-29",
+          "code": "161226",
+          "net_return": -0.011906693062404328
+        },
+        {
+          "exit_date": "2026-08-05",
+          "code": "501018",
+          "net_return": 0.009584991597776815
+        }
+      ]
+    },
+    "entry_guard_events": []
+  },
+  "variants": {
+    "stage50": {
+      "params": {
+        "strategy": "V4",
+        "stop_mode": "disabled",
+        "stop_1d": -0.05,
+        "stop_3d": -0.1,
+        "entry_guard_mode": null,
+        "entry_guard_days": 3,
+        "entry_guard_day_threshold": -0.05,
+        "entry_guard_entry_loss": -0.1,
+        "staged_entry_fraction": 0.5,
+        "staged_confirmation_days": 2,
+        "stop_target": "mode_defined_target",
+        "execution": "T-day close approximation, same as canonical V4 research"
+      },
+      "metrics": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 3298124.137519746,
+        "total_return": 31.981241375197463,
+        "cagr": 0.7665435194606041,
+        "ann_vol": 0.32467575268485765,
+        "sharpe": 2.3609509275693883,
+        "max_drawdown": -0.2323425440788801,
+        "cost_multiplier": 1.0,
+        "stop_mode": "disabled",
+        "trade_legs": 318,
+        "raw_shocks": 0,
+        "raw_shock_1d": 0,
+        "raw_shock_3d": 0,
+        "stop_triggers": 0,
+        "stop_switches": 0,
+        "stop_cash_exits": 0,
+        "entry_guard_mode": null,
+        "entry_guard_triggers": 0,
+        "entry_guard_switches": 0,
+        "entry_guard_cash_exits": 0,
+        "staged_entry_fraction": 0.5,
+        "staged_confirmation_days": 2,
+        "staged_entries": 110,
+        "staged_top_ups": 95,
+        "stop_noop_same_rank2": 0,
+        "stop_no_rank2": 0,
+        "scheduled_lock_blocks": 2,
+        "signal_days": 184,
+        "risk_events": 245,
+        "stop_forward_relative_5d_avg": 0.0,
+        "stop_forward_relative_5d_win_rate": 0.0,
+        "stop_forward_relative_10d_avg": 0.0,
+        "stop_forward_relative_10d_win_rate": 0.0,
+        "stop_forward_relative_20d_avg": 0.0,
+        "stop_forward_relative_20d_win_rate": 0.0,
+        "round_trips": 111,
+        "worst_trade_return": -0.07267310750215883,
+        "p05_trade_return": -0.05266635296734251,
+        "losses_below_10pct": 0
+      },
+      "annual": [
+        {
+          "year": 2020,
+          "start_value": 100000.0,
+          "end_value": 179353.3409436826,
+          "return": 0.7935334094368258,
+          "within_year_start": 99925.8103
+        },
+        {
+          "year": 2021,
+          "start_value": 179353.3409436826,
+          "end_value": 200766.389869747,
+          "return": 0.11939029857708738,
+          "within_year_start": 186173.3409436826
+        },
+        {
+          "year": 2022,
+          "start_value": 200766.389869747,
+          "end_value": 263631.266419747,
+          "return": 0.31312450550505666,
+          "within_year_start": 199950.37126974703
+        },
+        {
+          "year": 2023,
+          "start_value": 263631.266419747,
+          "end_value": 299004.68386974704,
+          "return": 0.1341776259333345,
+          "within_year_start": 263955.766419747
+        },
+        {
+          "year": 2024,
+          "start_value": 299004.68386974704,
+          "end_value": 454441.90991974704,
+          "return": 0.5198487998191756,
+          "within_year_start": 298272.083869747
+        },
+        {
+          "year": 2025,
+          "start_value": 454441.90991974704,
+          "end_value": 1513567.9763697467,
+          "return": 2.330608254500642,
+          "within_year_start": 458312.90991974704
+        },
+        {
+          "year": 2026,
+          "start_value": 1513567.9763697467,
+          "end_value": 3298124.137519746,
+          "return": 1.1790393223238054,
+          "within_year_start": 1534639.499969747
+        }
+      ],
+      "trade_tail": {
+        "round_trips": 111,
+        "worst_trade_return": -0.07267310750215883,
+        "p05_trade_return": -0.05266635296734251,
+        "losses_below_10pct": 0,
+        "trade_returns": [
+          {
+            "exit_date": "2020-07-21",
+            "code": "159915",
+            "net_return": 0.15983576876119554
+          },
+          {
+            "exit_date": "2020-08-18",
+            "code": "161226",
+            "net_return": 0.2430400407295299
+          },
+          {
+            "exit_date": "2020-09-08",
+            "code": "513100",
+            "net_return": 0.15371267736930982
+          },
+          {
+            "exit_date": "2020-11-03",
+            "code": "159985",
+            "net_return": 0.05884160400620453
+          },
+          {
+            "exit_date": "2020-11-11",
+            "code": "159915",
+            "net_return": -0.030762413626344465
+          },
+          {
+            "exit_date": "2020-11-26",
+            "code": "159985",
+            "net_return": 0.011656333715868161
+          },
+          {
+            "exit_date": "2020-12-23",
+            "code": "501018",
+            "net_return": 0.0024408968041822465
+          },
+          {
+            "exit_date": "2021-01-14",
+            "code": "159915",
+            "net_return": 0.08411081957333377
+          },
+          {
+            "exit_date": "2021-01-21",
+            "code": "159985",
+            "net_return": -0.03894018507274033
+          },
+          {
+            "exit_date": "2021-01-28",
+            "code": "159915",
+            "net_return": -0.050114223809866854
+          },
+          {
+            "exit_date": "2021-03-05",
+            "code": "501018",
+            "net_return": 0.17404833292448352
+          },
+          {
+            "exit_date": "2021-03-12",
+            "code": "511220",
+            "net_return": -0.0020511083503300664
+          },
+          {
+            "exit_date": "2021-03-19",
+            "code": "501018",
+            "net_return": -0.07211645286660495
+          },
+          {
+            "exit_date": "2021-04-07",
+            "code": "518880",
+            "net_return": 0.003405419990558878
+          },
+          {
+            "exit_date": "2021-04-26",
+            "code": "513100",
+            "net_return": 0.00664130545288244
+          },
+          {
+            "exit_date": "2021-05-10",
+            "code": "159915",
+            "net_return": -0.029896395508642426
+          },
+          {
+            "exit_date": "2021-05-26",
+            "code": "161226",
+            "net_return": -0.0002659270744561626
+          },
+          {
+            "exit_date": "2021-06-17",
+            "code": "159915",
+            "net_return": -0.009396899875076303
+          },
+          {
+            "exit_date": "2021-07-09",
+            "code": "501018",
+            "net_return": 0.0202202046521065
+          },
+          {
+            "exit_date": "2021-08-20",
+            "code": "513100",
+            "net_return": 0.0064425736610227435
+          },
+          {
+            "exit_date": "2021-09-16",
+            "code": "511220",
+            "net_return": -0.0012353887774899652
+          },
+          {
+            "exit_date": "2021-11-04",
+            "code": "501018",
+            "net_return": 0.0821579019371299
+          },
+          {
+            "exit_date": "2021-12-06",
+            "code": "513100",
+            "net_return": -0.037618845770927334
+          },
+          {
+            "exit_date": "2021-12-30",
+            "code": "159985",
+            "net_return": 0.04504934930722859
+          },
+          {
+            "exit_date": "2022-02-08",
+            "code": "501018",
+            "net_return": 0.15142733777065942
+          },
+          {
+            "exit_date": "2022-03-03",
+            "code": "159985",
+            "net_return": 0.03912700225417831
+          },
+          {
+            "exit_date": "2022-03-10",
+            "code": "501018",
+            "net_return": 0.06247235159918341
+          },
+          {
+            "exit_date": "2022-04-01",
+            "code": "159985",
+            "net_return": -0.0665700879456268
+          },
+          {
+            "exit_date": "2022-04-15",
+            "code": "513100",
+            "net_return": -0.07267310750215883
+          },
+          {
+            "exit_date": "2022-04-25",
+            "code": "501018",
+            "net_return": -0.052093424597020155
+          },
+          {
+            "exit_date": "2022-05-05",
+            "code": "518880",
+            "net_return": -0.0040008948884634465
+          },
+          {
+            "exit_date": "2022-05-12",
+            "code": "501018",
+            "net_return": -0.03312405190811074
+          },
+          {
+            "exit_date": "2022-05-18",
+            "code": "159915",
+            "net_return": 0.0026966576924249974
+          },
+          {
+            "exit_date": "2022-06-06",
+            "code": "501018",
+            "net_return": 0.06110417948417046
+          },
+          {
+            "exit_date": "2022-06-10",
+            "code": "159915",
+            "net_return": -0.005189831059172145
+          },
+          {
+            "exit_date": "2022-06-17",
+            "code": "501018",
+            "net_return": -0.028753229625000043
+          },
+          {
+            "exit_date": "2022-07-15",
+            "code": "159915",
+            "net_return": 0.02791010077228595
+          },
+          {
+            "exit_date": "2022-08-24",
+            "code": "513100",
+            "net_return": 0.08525498398183173
+          },
+          {
+            "exit_date": "2022-10-24",
+            "code": "159985",
+            "net_return": 0.055317873911625126
+          },
+          {
+            "exit_date": "2022-10-31",
+            "code": "513100",
+            "net_return": 0.010726572725958006
+          },
+          {
+            "exit_date": "2022-11-10",
+            "code": "501018",
+            "net_return": -0.007434616293895524
+          },
+          {
+            "exit_date": "2022-12-30",
+            "code": "161226",
+            "net_return": 0.07259469652806327
+          },
+          {
+            "exit_date": "2023-01-09",
+            "code": "159985",
+            "net_return": -0.024436438932841975
+          },
+          {
+            "exit_date": "2023-02-06",
+            "code": "159915",
+            "net_return": 0.03845359421440908
+          },
+          {
+            "exit_date": "2023-03-14",
+            "code": "513100",
+            "net_return": -0.03999190418512033
+          },
+          {
+            "exit_date": "2023-04-12",
+            "code": "518880",
+            "net_return": 0.04089733277835039
+          },
+          {
+            "exit_date": "2023-05-12",
+            "code": "161226",
+            "net_return": -0.05323928133766487
+          },
+          {
+            "exit_date": "2023-06-26",
+            "code": "513100",
+            "net_return": 0.14921558834550508
+          },
+          {
+            "exit_date": "2023-08-23",
+            "code": "159985",
+            "net_return": 0.18838157019314705
+          },
+          {
+            "exit_date": "2023-08-30",
+            "code": "511220",
+            "net_return": -0.0032949217551555554
+          },
+          {
+            "exit_date": "2023-09-13",
+            "code": "159985",
+            "net_return": -0.03386008237124427
+          },
+          {
+            "exit_date": "2023-10-11",
+            "code": "501018",
+            "net_return": -0.05937183650088074
+          },
+          {
+            "exit_date": "2023-11-09",
+            "code": "511220",
+            "net_return": -9.258201051831616e-05
+          },
+          {
+            "exit_date": "2023-11-23",
+            "code": "159985",
+            "net_return": -0.03467315798037407
+          },
+          {
+            "exit_date": "2023-12-07",
+            "code": "513100",
+            "net_return": -0.015516444094595294
+          },
+          {
+            "exit_date": "2023-12-12",
+            "code": "161226",
+            "net_return": -0.020049530966707918
+          },
+          {
+            "exit_date": "2024-03-11",
+            "code": "513100",
+            "net_return": 0.10261903608413059
+          },
+          {
+            "exit_date": "2024-03-25",
+            "code": "159915",
+            "net_return": -0.03522668863312828
+          },
+          {
+            "exit_date": "2024-04-08",
+            "code": "501018",
+            "net_return": 0.028322922384278026
+          },
+          {
+            "exit_date": "2024-04-24",
+            "code": "161226",
+            "net_return": -0.019757893640669155
+          },
+          {
+            "exit_date": "2024-04-30",
+            "code": "159985",
+            "net_return": -0.0032232893520127703
+          },
+          {
+            "exit_date": "2024-05-20",
+            "code": "159915",
+            "net_return": -0.003990699283102139
+          },
+          {
+            "exit_date": "2024-05-27",
+            "code": "161226",
+            "net_return": -0.02025751953992372
+          },
+          {
+            "exit_date": "2024-07-16",
+            "code": "513100",
+            "net_return": 0.11455524137374717
+          },
+          {
+            "exit_date": "2024-07-18",
+            "code": "161226",
+            "net_return": -0.01602169609906734
+          },
+          {
+            "exit_date": "2024-07-30",
+            "code": "518880",
+            "net_return": -0.03501843950385197
+          },
+          {
+            "exit_date": "2024-08-19",
+            "code": "511220",
+            "net_return": -0.0031401888605196993
+          },
+          {
+            "exit_date": "2024-09-05",
+            "code": "513100",
+            "net_return": -0.06832780946857986
+          },
+          {
+            "exit_date": "2024-09-25",
+            "code": "159985",
+            "net_return": -0.012155855114064917
+          },
+          {
+            "exit_date": "2024-10-10",
+            "code": "159915",
+            "net_return": 0.25589060329710733
+          },
+          {
+            "exit_date": "2024-10-31",
+            "code": "518880",
+            "net_return": 0.0606207243174568
+          },
+          {
+            "exit_date": "2024-11-14",
+            "code": "159915",
+            "net_return": 0.05060415096366677
+          },
+          {
+            "exit_date": "2025-01-10",
+            "code": "513100",
+            "net_return": 0.06565575881512542
+          },
+          {
+            "exit_date": "2025-02-10",
+            "code": "501018",
+            "net_return": -0.0091772024715846
+          },
+          {
+            "exit_date": "2025-03-04",
+            "code": "518880",
+            "net_return": -0.007422368720424788
+          },
+          {
+            "exit_date": "2025-03-10",
+            "code": "159985",
+            "net_return": -0.01634162539037254
+          },
+          {
+            "exit_date": "2025-03-17",
+            "code": "511880",
+            "net_return": -0.0028364599803122337
+          },
+          {
+            "exit_date": "2025-04-03",
+            "code": "161226",
+            "net_return": -0.008086308091494576
+          },
+          {
+            "exit_date": "2025-04-29",
+            "code": "518880",
+            "net_return": 0.039636157980747155
+          },
+          {
+            "exit_date": "2025-06-09",
+            "code": "513100",
+            "net_return": 0.07910626889248884
+          },
+          {
+            "exit_date": "2025-06-16",
+            "code": "161226",
+            "net_return": -0.019230254235505062
+          },
+          {
+            "exit_date": "2025-06-23",
+            "code": "501018",
+            "net_return": 0.09656251686999817
+          },
+          {
+            "exit_date": "2025-07-07",
+            "code": "161226",
+            "net_return": 0.004852591832863684
+          },
+          {
+            "exit_date": "2025-09-08",
+            "code": "159915",
+            "net_return": 0.3572537028795213
+          },
+          {
+            "exit_date": "2025-09-15",
+            "code": "518880",
+            "net_return": 0.0013322898950469675
+          },
+          {
+            "exit_date": "2025-09-29",
+            "code": "159915",
+            "net_return": 0.040924836290578526
+          },
+          {
+            "exit_date": "2025-10-21",
+            "code": "161226",
+            "net_return": 0.05810172679612613
+          },
+          {
+            "exit_date": "2025-11-12",
+            "code": "513100",
+            "net_return": 0.047978283732114324
+          },
+          {
+            "exit_date": "2025-11-18",
+            "code": "161226",
+            "net_return": -0.04793999390251469
+          },
+          {
+            "exit_date": "2025-11-25",
+            "code": "159985",
+            "net_return": -0.0029910379735683668
+          },
+          {
+            "exit_date": "2025-12-23",
+            "code": "161226",
+            "net_return": 0.9492890945771335
+          },
+          {
+            "exit_date": "2025-12-30",
+            "code": "511220",
+            "net_return": -0.0030932906250666914
+          },
+          {
+            "exit_date": "2026-01-13",
+            "code": "159915",
+            "net_return": 0.012697347074342558
+          },
+          {
+            "exit_date": "2026-02-02",
+            "code": "161226",
+            "net_return": 0.6232164890741283
+          },
+          {
+            "exit_date": "2026-02-24",
+            "code": "159985",
+            "net_return": 0.009111166708793306
+          },
+          {
+            "exit_date": "2026-03-03",
+            "code": "518880",
+            "net_return": 0.02687632959021169
+          },
+          {
+            "exit_date": "2026-03-04",
+            "code": "511220",
+            "net_return": -0.00280153699411978
+          },
+          {
+            "exit_date": "2026-03-10",
+            "code": "501018",
+            "net_return": -0.03114622184370508
+          },
+          {
+            "exit_date": "2026-03-17",
+            "code": "159985",
+            "net_return": 0.017278427651961747
+          },
+          {
+            "exit_date": "2026-03-25",
+            "code": "501018",
+            "net_return": 0.07296193300747289
+          },
+          {
+            "exit_date": "2026-04-13",
+            "code": "511220",
+            "net_return": -0.0008184188501274559
+          },
+          {
+            "exit_date": "2026-04-28",
+            "code": "159915",
+            "net_return": 0.029191895789770772
+          },
+          {
+            "exit_date": "2026-06-09",
+            "code": "513100",
+            "net_return": 0.11851632195202355
+          },
+          {
+            "exit_date": "2026-06-16",
+            "code": "511220",
+            "net_return": -0.004052266175798791
+          },
+          {
+            "exit_date": "2026-06-22",
+            "code": "513100",
+            "net_return": -0.013076513880660334
+          },
+          {
+            "exit_date": "2026-07-01",
+            "code": "159915",
+            "net_return": -0.026901757434640294
+          },
+          {
+            "exit_date": "2026-07-03",
+            "code": "511880",
+            "net_return": -0.002539484002593184
+          },
+          {
+            "exit_date": "2026-07-15",
+            "code": "159985",
+            "net_return": 0.05563783344880879
+          },
+          {
+            "exit_date": "2026-07-22",
+            "code": "501018",
+            "net_return": 0.11802486977816251
+          },
+          {
+            "exit_date": "2026-07-29",
+            "code": "161226",
+            "net_return": -0.011906693062404217
+          },
+          {
+            "exit_date": "2026-08-05",
+            "code": "501018",
+            "net_return": 0.009584991597776815
+          }
+        ]
+      },
+      "entry_guard_events": []
+    },
+    "stage60": {
+      "params": {
+        "strategy": "V4",
+        "stop_mode": "disabled",
+        "stop_1d": -0.05,
+        "stop_3d": -0.1,
+        "entry_guard_mode": null,
+        "entry_guard_days": 3,
+        "entry_guard_day_threshold": -0.05,
+        "entry_guard_entry_loss": -0.1,
+        "staged_entry_fraction": 0.6,
+        "staged_confirmation_days": 2,
+        "stop_target": "mode_defined_target",
+        "execution": "T-day close approximation, same as canonical V4 research"
+      },
+      "metrics": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 3622812.3938261895,
+        "total_return": 35.228123938261895,
+        "cagr": 0.7937495575764295,
+        "ann_vol": 0.3290292198476908,
+        "sharpe": 2.4123983819548305,
+        "max_drawdown": -0.2436037189766166,
+        "cost_multiplier": 1.0,
+        "stop_mode": "disabled",
+        "trade_legs": 318,
+        "raw_shocks": 0,
+        "raw_shock_1d": 0,
+        "raw_shock_3d": 0,
+        "stop_triggers": 0,
+        "stop_switches": 0,
+        "stop_cash_exits": 0,
+        "entry_guard_mode": null,
+        "entry_guard_triggers": 0,
+        "entry_guard_switches": 0,
+        "entry_guard_cash_exits": 0,
+        "staged_entry_fraction": 0.6,
+        "staged_confirmation_days": 2,
+        "staged_entries": 110,
+        "staged_top_ups": 95,
+        "stop_noop_same_rank2": 0,
+        "stop_no_rank2": 0,
+        "scheduled_lock_blocks": 2,
+        "signal_days": 184,
+        "risk_events": 253,
+        "stop_forward_relative_5d_avg": 0.0,
+        "stop_forward_relative_5d_win_rate": 0.0,
+        "stop_forward_relative_10d_avg": 0.0,
+        "stop_forward_relative_10d_win_rate": 0.0,
+        "stop_forward_relative_20d_avg": 0.0,
+        "stop_forward_relative_20d_win_rate": 0.0,
+        "round_trips": 111,
+        "worst_trade_return": -0.07267310750215872,
+        "p05_trade_return": -0.051808564677474966,
+        "losses_below_10pct": 0
+      },
+      "annual": [
+        {
+          "year": 2020,
+          "start_value": 100000.0,
+          "end_value": 181156.51952430664,
+          "return": 0.8115651952430665,
+          "within_year_start": 99911.0395
+        },
+        {
+          "year": 2021,
+          "start_value": 181156.51952430664,
+          "end_value": 204168.94962618756,
+          "return": 0.12703064820580878,
+          "within_year_start": 188042.51952430664
+        },
+        {
+          "year": 2022,
+          "start_value": 204168.94962618756,
+          "end_value": 270110.7150261873,
+          "return": 0.3229764639566024,
+          "within_year_start": 203233.80117618758
+        },
+        {
+          "year": 2023,
+          "start_value": 270110.7150261873,
+          "end_value": 306919.8640261875,
+          "return": 0.13627430143388253,
+          "within_year_start": 270509.71502618736
+        },
+        {
+          "year": 2024,
+          "start_value": 306919.8640261875,
+          "end_value": 476509.1851261874,
+          "return": 0.5525524443915755,
+          "within_year_start": 306168.06402618747
+        },
+        {
+          "year": 2025,
+          "start_value": 476509.1851261874,
+          "end_value": 1622124.4982261874,
+          "return": 2.4041830647957445,
+          "within_year_start": 480567.7851261875
+        },
+        {
+          "year": 2026,
+          "start_value": 1622124.4982261874,
+          "end_value": 3622812.3938261895,
+          "return": 1.233375057085802,
+          "within_year_start": 1649749.9627261874
+        }
+      ],
+      "trade_tail": {
+        "round_trips": 111,
+        "worst_trade_return": -0.07267310750215872,
+        "p05_trade_return": -0.051808564677474966,
+        "losses_below_10pct": 0,
+        "trade_returns": [
+          {
+            "exit_date": "2020-07-21",
+            "code": "159915",
+            "net_return": 0.16336019105468402
+          },
+          {
+            "exit_date": "2020-08-18",
+            "code": "161226",
+            "net_return": 0.2525440857504522
+          },
+          {
+            "exit_date": "2020-09-08",
+            "code": "513100",
+            "net_return": 0.1550375192562834
+          },
+          {
+            "exit_date": "2020-11-03",
+            "code": "159985",
+            "net_return": 0.058639573553236346
+          },
+          {
+            "exit_date": "2020-11-11",
+            "code": "159915",
+            "net_return": -0.02926529600956662
+          },
+          {
+            "exit_date": "2020-11-26",
+            "code": "159985",
+            "net_return": 0.009907915371672571
+          },
+          {
+            "exit_date": "2020-12-23",
+            "code": "501018",
+            "net_return": 0.0009937644073325647
+          },
+          {
+            "exit_date": "2021-01-14",
+            "code": "159915",
+            "net_return": 0.08426971261353633
+          },
+          {
+            "exit_date": "2021-01-21",
+            "code": "159985",
+            "net_return": -0.04107668040770529
+          },
+          {
+            "exit_date": "2021-01-28",
+            "code": "159915",
+            "net_return": -0.048150447840938804
+          },
+          {
+            "exit_date": "2021-03-05",
+            "code": "501018",
+            "net_return": 0.17671168425606543
+          },
+          {
+            "exit_date": "2021-03-12",
+            "code": "511220",
+            "net_return": -0.0020511083503299554
+          },
+          {
+            "exit_date": "2021-03-19",
+            "code": "501018",
+            "net_return": -0.07261055877630862
+          },
+          {
+            "exit_date": "2021-04-07",
+            "code": "518880",
+            "net_return": 0.003123873848197567
+          },
+          {
+            "exit_date": "2021-04-26",
+            "code": "513100",
+            "net_return": 0.007964615571714573
+          },
+          {
+            "exit_date": "2021-05-10",
+            "code": "159915",
+            "net_return": -0.027006111133640376
+          },
+          {
+            "exit_date": "2021-05-26",
+            "code": "161226",
+            "net_return": -0.0014533763676678468
+          },
+          {
+            "exit_date": "2021-06-17",
+            "code": "159915",
+            "net_return": -0.008562034073383185
+          },
+          {
+            "exit_date": "2021-07-09",
+            "code": "501018",
+            "net_return": 0.019968840373325802
+          },
+          {
+            "exit_date": "2021-08-20",
+            "code": "513100",
+            "net_return": 0.007199134349091585
+          },
+          {
+            "exit_date": "2021-09-16",
+            "code": "511220",
+            "net_return": -0.0012270159097657052
+          },
+          {
+            "exit_date": "2021-11-04",
+            "code": "501018",
+            "net_return": 0.0821579019371299
+          },
+          {
+            "exit_date": "2021-12-06",
+            "code": "513100",
+            "net_return": -0.0367698047274726
+          },
+          {
+            "exit_date": "2021-12-30",
+            "code": "159985",
+            "net_return": 0.04558019567187732
+          },
+          {
+            "exit_date": "2022-02-08",
+            "code": "501018",
+            "net_return": 0.15090921060865137
+          },
+          {
+            "exit_date": "2022-03-03",
+            "code": "159985",
+            "net_return": 0.04253454115199262
+          },
+          {
+            "exit_date": "2022-03-10",
+            "code": "501018",
+            "net_return": 0.06247235159918341
+          },
+          {
+            "exit_date": "2022-04-01",
+            "code": "159985",
+            "net_return": -0.0641689447198951
+          },
+          {
+            "exit_date": "2022-04-15",
+            "code": "513100",
+            "net_return": -0.07267310750215872
+          },
+          {
+            "exit_date": "2022-04-25",
+            "code": "501018",
+            "net_return": -0.052243644031764735
+          },
+          {
+            "exit_date": "2022-05-05",
+            "code": "518880",
+            "net_return": -0.003541648999243141
+          },
+          {
+            "exit_date": "2022-05-12",
+            "code": "501018",
+            "net_return": -0.03136571369390884
+          },
+          {
+            "exit_date": "2022-05-18",
+            "code": "159915",
+            "net_return": 0.0026966576924247754
+          },
+          {
+            "exit_date": "2022-06-06",
+            "code": "501018",
+            "net_return": 0.0592667424399278
+          },
+          {
+            "exit_date": "2022-06-10",
+            "code": "159915",
+            "net_return": -0.004511525450672349
+          },
+          {
+            "exit_date": "2022-06-17",
+            "code": "501018",
+            "net_return": -0.02743018502621397
+          },
+          {
+            "exit_date": "2022-07-15",
+            "code": "159915",
+            "net_return": 0.029154836138240103
+          },
+          {
+            "exit_date": "2022-08-24",
+            "code": "513100",
+            "net_return": 0.08630883347379137
+          },
+          {
+            "exit_date": "2022-10-24",
+            "code": "159985",
+            "net_return": 0.0517929576881726
+          },
+          {
+            "exit_date": "2022-10-31",
+            "code": "513100",
+            "net_return": 0.011815032593548436
+          },
+          {
+            "exit_date": "2022-11-10",
+            "code": "501018",
+            "net_return": -0.004995155435131293
+          },
+          {
+            "exit_date": "2022-12-30",
+            "code": "161226",
+            "net_return": 0.07148752209906273
+          },
+          {
+            "exit_date": "2023-01-09",
+            "code": "159985",
+            "net_return": -0.026198272004026024
+          },
+          {
+            "exit_date": "2023-02-06",
+            "code": "159915",
+            "net_return": 0.03885024961350769
+          },
+          {
+            "exit_date": "2023-03-14",
+            "code": "513100",
+            "net_return": -0.03812334588752997
+          },
+          {
+            "exit_date": "2023-04-12",
+            "code": "518880",
+            "net_return": 0.04170382576593035
+          },
+          {
+            "exit_date": "2023-05-12",
+            "code": "161226",
+            "net_return": -0.0513734853231852
+          },
+          {
+            "exit_date": "2023-06-26",
+            "code": "513100",
+            "net_return": 0.14933713395746362
+          },
+          {
+            "exit_date": "2023-08-23",
+            "code": "159985",
+            "net_return": 0.18694525622418467
+          },
+          {
+            "exit_date": "2023-08-30",
+            "code": "511220",
+            "net_return": -0.0032555183434123114
+          },
+          {
+            "exit_date": "2023-09-13",
+            "code": "159985",
+            "net_return": -0.034677898375124916
+          },
+          {
+            "exit_date": "2023-10-11",
+            "code": "501018",
+            "net_return": -0.057402546341950966
+          },
+          {
+            "exit_date": "2023-11-09",
+            "code": "511220",
+            "net_return": -7.237686039551772e-05
+          },
+          {
+            "exit_date": "2023-11-23",
+            "code": "159985",
+            "net_return": -0.0361983743369797
+          },
+          {
+            "exit_date": "2023-12-07",
+            "code": "513100",
+            "net_return": -0.01577299533051757
+          },
+          {
+            "exit_date": "2023-12-12",
+            "code": "161226",
+            "net_return": -0.020049530966707918
+          },
+          {
+            "exit_date": "2024-03-11",
+            "code": "513100",
+            "net_return": 0.10503198501309496
+          },
+          {
+            "exit_date": "2024-03-25",
+            "code": "159915",
+            "net_return": -0.03517400630361556
+          },
+          {
+            "exit_date": "2024-04-08",
+            "code": "501018",
+            "net_return": 0.02872297517676836
+          },
+          {
+            "exit_date": "2024-04-24",
+            "code": "161226",
+            "net_return": -0.018874182452171206
+          },
+          {
+            "exit_date": "2024-04-30",
+            "code": "159985",
+            "net_return": -0.0033600957077162263
+          },
+          {
+            "exit_date": "2024-05-20",
+            "code": "159915",
+            "net_return": -0.0021475916423138175
+          },
+          {
+            "exit_date": "2024-05-27",
+            "code": "161226",
+            "net_return": -0.019381941707143358
+          },
+          {
+            "exit_date": "2024-07-16",
+            "code": "513100",
+            "net_return": 0.11455524137374717
+          },
+          {
+            "exit_date": "2024-07-18",
+            "code": "161226",
+            "net_return": -0.01602169609906745
+          },
+          {
+            "exit_date": "2024-07-30",
+            "code": "518880",
+            "net_return": -0.035018439503852083
+          },
+          {
+            "exit_date": "2024-08-19",
+            "code": "511220",
+            "net_return": -0.003130426357717764
+          },
+          {
+            "exit_date": "2024-09-05",
+            "code": "513100",
+            "net_return": -0.06659838903216098
+          },
+          {
+            "exit_date": "2024-09-25",
+            "code": "159985",
+            "net_return": -0.0117522130513249
+          },
+          {
+            "exit_date": "2024-10-10",
+            "code": "159915",
+            "net_return": 0.2740965671263005
+          },
+          {
+            "exit_date": "2024-10-31",
+            "code": "518880",
+            "net_return": 0.06291509931253447
+          },
+          {
+            "exit_date": "2024-11-14",
+            "code": "159915",
+            "net_return": 0.055488719435646816
+          },
+          {
+            "exit_date": "2025-01-10",
+            "code": "513100",
+            "net_return": 0.06509659071989082
+          },
+          {
+            "exit_date": "2025-02-10",
+            "code": "501018",
+            "net_return": -0.005918592783641596
+          },
+          {
+            "exit_date": "2025-03-04",
+            "code": "518880",
+            "net_return": -0.007117015310749486
+          },
+          {
+            "exit_date": "2025-03-10",
+            "code": "159985",
+            "net_return": -0.01634162539037254
+          },
+          {
+            "exit_date": "2025-03-17",
+            "code": "511880",
+            "net_return": -0.0028364599803122337
+          },
+          {
+            "exit_date": "2025-04-03",
+            "code": "161226",
+            "net_return": -0.0074761622272472295
+          },
+          {
+            "exit_date": "2025-04-29",
+            "code": "518880",
+            "net_return": 0.042999499711713796
+          },
+          {
+            "exit_date": "2025-06-09",
+            "code": "513100",
+            "net_return": 0.07992240034029519
+          },
+          {
+            "exit_date": "2025-06-16",
+            "code": "161226",
+            "net_return": -0.019230254235505173
+          },
+          {
+            "exit_date": "2025-06-23",
+            "code": "501018",
+            "net_return": 0.09883162302439596
+          },
+          {
+            "exit_date": "2025-07-07",
+            "code": "161226",
+            "net_return": 0.005247968116651736
+          },
+          {
+            "exit_date": "2025-09-08",
+            "code": "159915",
+            "net_return": 0.3606178544066365
+          },
+          {
+            "exit_date": "2025-09-15",
+            "code": "518880",
+            "net_return": 0.0026145532091226276
+          },
+          {
+            "exit_date": "2025-09-29",
+            "code": "159915",
+            "net_return": 0.0437054107468966
+          },
+          {
+            "exit_date": "2025-10-21",
+            "code": "161226",
+            "net_return": 0.06125605905198861
+          },
+          {
+            "exit_date": "2025-11-12",
+            "code": "513100",
+            "net_return": 0.04853844319896372
+          },
+          {
+            "exit_date": "2025-11-18",
+            "code": "161226",
+            "net_return": -0.046188889973202585
+          },
+          {
+            "exit_date": "2025-11-25",
+            "code": "159985",
+            "net_return": -0.0034869819644203215
+          },
+          {
+            "exit_date": "2025-12-23",
+            "code": "161226",
+            "net_return": 0.9564333584539448
+          },
+          {
+            "exit_date": "2025-12-30",
+            "code": "511220",
+            "net_return": -0.0030932906250666914
+          },
+          {
+            "exit_date": "2026-01-13",
+            "code": "159915",
+            "net_return": 0.014317761909530047
+          },
+          {
+            "exit_date": "2026-02-02",
+            "code": "161226",
+            "net_return": 0.6412758287885987
+          },
+          {
+            "exit_date": "2026-02-24",
+            "code": "159985",
+            "net_return": 0.009417963532314166
+          },
+          {
+            "exit_date": "2026-03-03",
+            "code": "518880",
+            "net_return": 0.026528274749584746
+          },
+          {
+            "exit_date": "2026-03-04",
+            "code": "511220",
+            "net_return": -0.002801536994119669
+          },
+          {
+            "exit_date": "2026-03-10",
+            "code": "501018",
+            "net_return": -0.03114622184370519
+          },
+          {
+            "exit_date": "2026-03-17",
+            "code": "159985",
+            "net_return": 0.019727746876753827
+          },
+          {
+            "exit_date": "2026-03-25",
+            "code": "501018",
+            "net_return": 0.08014154964183651
+          },
+          {
+            "exit_date": "2026-04-13",
+            "code": "511220",
+            "net_return": -0.0007308182542050679
+          },
+          {
+            "exit_date": "2026-04-28",
+            "code": "159915",
+            "net_return": 0.03046103507158393
+          },
+          {
+            "exit_date": "2026-06-09",
+            "code": "513100",
+            "net_return": 0.11828778306546472
+          },
+          {
+            "exit_date": "2026-06-16",
+            "code": "511220",
+            "net_return": -0.004052266175798791
+          },
+          {
+            "exit_date": "2026-06-22",
+            "code": "513100",
+            "net_return": -0.013685612705430228
+          },
+          {
+            "exit_date": "2026-07-01",
+            "code": "159915",
+            "net_return": -0.026901757434640405
+          },
+          {
+            "exit_date": "2026-07-03",
+            "code": "511880",
+            "net_return": -0.002539484002593184
+          },
+          {
+            "exit_date": "2026-07-15",
+            "code": "159985",
+            "net_return": 0.05995515294875009
+          },
+          {
+            "exit_date": "2026-07-22",
+            "code": "501018",
+            "net_return": 0.11499748201073023
+          },
+          {
+            "exit_date": "2026-07-29",
+            "code": "161226",
+            "net_return": -0.011906693062403995
+          },
+          {
+            "exit_date": "2026-08-05",
+            "code": "501018",
+            "net_return": 0.009584991597776815
+          }
+        ]
+      },
+      "entry_guard_events": []
+    },
+    "stage50_selective": {
+      "params": {
+        "strategy": "V4",
+        "stop_mode": "disabled",
+        "stop_1d": -0.05,
+        "stop_3d": -0.1,
+        "entry_guard_mode": "entry_guard_selective",
+        "entry_guard_days": 3,
+        "entry_guard_day_threshold": -0.05,
+        "entry_guard_entry_loss": -0.1,
+        "staged_entry_fraction": 0.5,
+        "staged_confirmation_days": 2,
+        "stop_target": "mode_defined_target",
+        "execution": "T-day close approximation, same as canonical V4 research"
+      },
+      "metrics": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 3298124.137519746,
+        "total_return": 31.981241375197463,
+        "cagr": 0.7665435194606041,
+        "ann_vol": 0.32467575268485765,
+        "sharpe": 2.3609509275693883,
+        "max_drawdown": -0.2323425440788801,
+        "cost_multiplier": 1.0,
+        "stop_mode": "disabled",
+        "trade_legs": 318,
+        "raw_shocks": 0,
+        "raw_shock_1d": 0,
+        "raw_shock_3d": 0,
+        "stop_triggers": 0,
+        "stop_switches": 0,
+        "stop_cash_exits": 0,
+        "entry_guard_mode": "entry_guard_selective",
+        "entry_guard_triggers": 0,
+        "entry_guard_switches": 0,
+        "entry_guard_cash_exits": 0,
+        "staged_entry_fraction": 0.5,
+        "staged_confirmation_days": 2,
+        "staged_entries": 110,
+        "staged_top_ups": 95,
+        "stop_noop_same_rank2": 0,
+        "stop_no_rank2": 0,
+        "scheduled_lock_blocks": 2,
+        "signal_days": 184,
+        "risk_events": 245,
+        "stop_forward_relative_5d_avg": 0.0,
+        "stop_forward_relative_5d_win_rate": 0.0,
+        "stop_forward_relative_10d_avg": 0.0,
+        "stop_forward_relative_10d_win_rate": 0.0,
+        "stop_forward_relative_20d_avg": 0.0,
+        "stop_forward_relative_20d_win_rate": 0.0,
+        "round_trips": 111,
+        "worst_trade_return": -0.07267310750215883,
+        "p05_trade_return": -0.05266635296734251,
+        "losses_below_10pct": 0
+      },
+      "annual": [
+        {
+          "year": 2020,
+          "start_value": 100000.0,
+          "end_value": 179353.3409436826,
+          "return": 0.7935334094368258,
+          "within_year_start": 99925.8103
+        },
+        {
+          "year": 2021,
+          "start_value": 179353.3409436826,
+          "end_value": 200766.389869747,
+          "return": 0.11939029857708738,
+          "within_year_start": 186173.3409436826
+        },
+        {
+          "year": 2022,
+          "start_value": 200766.389869747,
+          "end_value": 263631.266419747,
+          "return": 0.31312450550505666,
+          "within_year_start": 199950.37126974703
+        },
+        {
+          "year": 2023,
+          "start_value": 263631.266419747,
+          "end_value": 299004.68386974704,
+          "return": 0.1341776259333345,
+          "within_year_start": 263955.766419747
+        },
+        {
+          "year": 2024,
+          "start_value": 299004.68386974704,
+          "end_value": 454441.90991974704,
+          "return": 0.5198487998191756,
+          "within_year_start": 298272.083869747
+        },
+        {
+          "year": 2025,
+          "start_value": 454441.90991974704,
+          "end_value": 1513567.9763697467,
+          "return": 2.330608254500642,
+          "within_year_start": 458312.90991974704
+        },
+        {
+          "year": 2026,
+          "start_value": 1513567.9763697467,
+          "end_value": 3298124.137519746,
+          "return": 1.1790393223238054,
+          "within_year_start": 1534639.499969747
+        }
+      ],
+      "trade_tail": {
+        "round_trips": 111,
+        "worst_trade_return": -0.07267310750215883,
+        "p05_trade_return": -0.05266635296734251,
+        "losses_below_10pct": 0,
+        "trade_returns": [
+          {
+            "exit_date": "2020-07-21",
+            "code": "159915",
+            "net_return": 0.15983576876119554
+          },
+          {
+            "exit_date": "2020-08-18",
+            "code": "161226",
+            "net_return": 0.2430400407295299
+          },
+          {
+            "exit_date": "2020-09-08",
+            "code": "513100",
+            "net_return": 0.15371267736930982
+          },
+          {
+            "exit_date": "2020-11-03",
+            "code": "159985",
+            "net_return": 0.05884160400620453
+          },
+          {
+            "exit_date": "2020-11-11",
+            "code": "159915",
+            "net_return": -0.030762413626344465
+          },
+          {
+            "exit_date": "2020-11-26",
+            "code": "159985",
+            "net_return": 0.011656333715868161
+          },
+          {
+            "exit_date": "2020-12-23",
+            "code": "501018",
+            "net_return": 0.0024408968041822465
+          },
+          {
+            "exit_date": "2021-01-14",
+            "code": "159915",
+            "net_return": 0.08411081957333377
+          },
+          {
+            "exit_date": "2021-01-21",
+            "code": "159985",
+            "net_return": -0.03894018507274033
+          },
+          {
+            "exit_date": "2021-01-28",
+            "code": "159915",
+            "net_return": -0.050114223809866854
+          },
+          {
+            "exit_date": "2021-03-05",
+            "code": "501018",
+            "net_return": 0.17404833292448352
+          },
+          {
+            "exit_date": "2021-03-12",
+            "code": "511220",
+            "net_return": -0.0020511083503300664
+          },
+          {
+            "exit_date": "2021-03-19",
+            "code": "501018",
+            "net_return": -0.07211645286660495
+          },
+          {
+            "exit_date": "2021-04-07",
+            "code": "518880",
+            "net_return": 0.003405419990558878
+          },
+          {
+            "exit_date": "2021-04-26",
+            "code": "513100",
+            "net_return": 0.00664130545288244
+          },
+          {
+            "exit_date": "2021-05-10",
+            "code": "159915",
+            "net_return": -0.029896395508642426
+          },
+          {
+            "exit_date": "2021-05-26",
+            "code": "161226",
+            "net_return": -0.0002659270744561626
+          },
+          {
+            "exit_date": "2021-06-17",
+            "code": "159915",
+            "net_return": -0.009396899875076303
+          },
+          {
+            "exit_date": "2021-07-09",
+            "code": "501018",
+            "net_return": 0.0202202046521065
+          },
+          {
+            "exit_date": "2021-08-20",
+            "code": "513100",
+            "net_return": 0.0064425736610227435
+          },
+          {
+            "exit_date": "2021-09-16",
+            "code": "511220",
+            "net_return": -0.0012353887774899652
+          },
+          {
+            "exit_date": "2021-11-04",
+            "code": "501018",
+            "net_return": 0.0821579019371299
+          },
+          {
+            "exit_date": "2021-12-06",
+            "code": "513100",
+            "net_return": -0.037618845770927334
+          },
+          {
+            "exit_date": "2021-12-30",
+            "code": "159985",
+            "net_return": 0.04504934930722859
+          },
+          {
+            "exit_date": "2022-02-08",
+            "code": "501018",
+            "net_return": 0.15142733777065942
+          },
+          {
+            "exit_date": "2022-03-03",
+            "code": "159985",
+            "net_return": 0.03912700225417831
+          },
+          {
+            "exit_date": "2022-03-10",
+            "code": "501018",
+            "net_return": 0.06247235159918341
+          },
+          {
+            "exit_date": "2022-04-01",
+            "code": "159985",
+            "net_return": -0.0665700879456268
+          },
+          {
+            "exit_date": "2022-04-15",
+            "code": "513100",
+            "net_return": -0.07267310750215883
+          },
+          {
+            "exit_date": "2022-04-25",
+            "code": "501018",
+            "net_return": -0.052093424597020155
+          },
+          {
+            "exit_date": "2022-05-05",
+            "code": "518880",
+            "net_return": -0.0040008948884634465
+          },
+          {
+            "exit_date": "2022-05-12",
+            "code": "501018",
+            "net_return": -0.03312405190811074
+          },
+          {
+            "exit_date": "2022-05-18",
+            "code": "159915",
+            "net_return": 0.0026966576924249974
+          },
+          {
+            "exit_date": "2022-06-06",
+            "code": "501018",
+            "net_return": 0.06110417948417046
+          },
+          {
+            "exit_date": "2022-06-10",
+            "code": "159915",
+            "net_return": -0.005189831059172145
+          },
+          {
+            "exit_date": "2022-06-17",
+            "code": "501018",
+            "net_return": -0.028753229625000043
+          },
+          {
+            "exit_date": "2022-07-15",
+            "code": "159915",
+            "net_return": 0.02791010077228595
+          },
+          {
+            "exit_date": "2022-08-24",
+            "code": "513100",
+            "net_return": 0.08525498398183173
+          },
+          {
+            "exit_date": "2022-10-24",
+            "code": "159985",
+            "net_return": 0.055317873911625126
+          },
+          {
+            "exit_date": "2022-10-31",
+            "code": "513100",
+            "net_return": 0.010726572725958006
+          },
+          {
+            "exit_date": "2022-11-10",
+            "code": "501018",
+            "net_return": -0.007434616293895524
+          },
+          {
+            "exit_date": "2022-12-30",
+            "code": "161226",
+            "net_return": 0.07259469652806327
+          },
+          {
+            "exit_date": "2023-01-09",
+            "code": "159985",
+            "net_return": -0.024436438932841975
+          },
+          {
+            "exit_date": "2023-02-06",
+            "code": "159915",
+            "net_return": 0.03845359421440908
+          },
+          {
+            "exit_date": "2023-03-14",
+            "code": "513100",
+            "net_return": -0.03999190418512033
+          },
+          {
+            "exit_date": "2023-04-12",
+            "code": "518880",
+            "net_return": 0.04089733277835039
+          },
+          {
+            "exit_date": "2023-05-12",
+            "code": "161226",
+            "net_return": -0.05323928133766487
+          },
+          {
+            "exit_date": "2023-06-26",
+            "code": "513100",
+            "net_return": 0.14921558834550508
+          },
+          {
+            "exit_date": "2023-08-23",
+            "code": "159985",
+            "net_return": 0.18838157019314705
+          },
+          {
+            "exit_date": "2023-08-30",
+            "code": "511220",
+            "net_return": -0.0032949217551555554
+          },
+          {
+            "exit_date": "2023-09-13",
+            "code": "159985",
+            "net_return": -0.03386008237124427
+          },
+          {
+            "exit_date": "2023-10-11",
+            "code": "501018",
+            "net_return": -0.05937183650088074
+          },
+          {
+            "exit_date": "2023-11-09",
+            "code": "511220",
+            "net_return": -9.258201051831616e-05
+          },
+          {
+            "exit_date": "2023-11-23",
+            "code": "159985",
+            "net_return": -0.03467315798037407
+          },
+          {
+            "exit_date": "2023-12-07",
+            "code": "513100",
+            "net_return": -0.015516444094595294
+          },
+          {
+            "exit_date": "2023-12-12",
+            "code": "161226",
+            "net_return": -0.020049530966707918
+          },
+          {
+            "exit_date": "2024-03-11",
+            "code": "513100",
+            "net_return": 0.10261903608413059
+          },
+          {
+            "exit_date": "2024-03-25",
+            "code": "159915",
+            "net_return": -0.03522668863312828
+          },
+          {
+            "exit_date": "2024-04-08",
+            "code": "501018",
+            "net_return": 0.028322922384278026
+          },
+          {
+            "exit_date": "2024-04-24",
+            "code": "161226",
+            "net_return": -0.019757893640669155
+          },
+          {
+            "exit_date": "2024-04-30",
+            "code": "159985",
+            "net_return": -0.0032232893520127703
+          },
+          {
+            "exit_date": "2024-05-20",
+            "code": "159915",
+            "net_return": -0.003990699283102139
+          },
+          {
+            "exit_date": "2024-05-27",
+            "code": "161226",
+            "net_return": -0.02025751953992372
+          },
+          {
+            "exit_date": "2024-07-16",
+            "code": "513100",
+            "net_return": 0.11455524137374717
+          },
+          {
+            "exit_date": "2024-07-18",
+            "code": "161226",
+            "net_return": -0.01602169609906734
+          },
+          {
+            "exit_date": "2024-07-30",
+            "code": "518880",
+            "net_return": -0.03501843950385197
+          },
+          {
+            "exit_date": "2024-08-19",
+            "code": "511220",
+            "net_return": -0.0031401888605196993
+          },
+          {
+            "exit_date": "2024-09-05",
+            "code": "513100",
+            "net_return": -0.06832780946857986
+          },
+          {
+            "exit_date": "2024-09-25",
+            "code": "159985",
+            "net_return": -0.012155855114064917
+          },
+          {
+            "exit_date": "2024-10-10",
+            "code": "159915",
+            "net_return": 0.25589060329710733
+          },
+          {
+            "exit_date": "2024-10-31",
+            "code": "518880",
+            "net_return": 0.0606207243174568
+          },
+          {
+            "exit_date": "2024-11-14",
+            "code": "159915",
+            "net_return": 0.05060415096366677
+          },
+          {
+            "exit_date": "2025-01-10",
+            "code": "513100",
+            "net_return": 0.06565575881512542
+          },
+          {
+            "exit_date": "2025-02-10",
+            "code": "501018",
+            "net_return": -0.0091772024715846
+          },
+          {
+            "exit_date": "2025-03-04",
+            "code": "518880",
+            "net_return": -0.007422368720424788
+          },
+          {
+            "exit_date": "2025-03-10",
+            "code": "159985",
+            "net_return": -0.01634162539037254
+          },
+          {
+            "exit_date": "2025-03-17",
+            "code": "511880",
+            "net_return": -0.0028364599803122337
+          },
+          {
+            "exit_date": "2025-04-03",
+            "code": "161226",
+            "net_return": -0.008086308091494576
+          },
+          {
+            "exit_date": "2025-04-29",
+            "code": "518880",
+            "net_return": 0.039636157980747155
+          },
+          {
+            "exit_date": "2025-06-09",
+            "code": "513100",
+            "net_return": 0.07910626889248884
+          },
+          {
+            "exit_date": "2025-06-16",
+            "code": "161226",
+            "net_return": -0.019230254235505062
+          },
+          {
+            "exit_date": "2025-06-23",
+            "code": "501018",
+            "net_return": 0.09656251686999817
+          },
+          {
+            "exit_date": "2025-07-07",
+            "code": "161226",
+            "net_return": 0.004852591832863684
+          },
+          {
+            "exit_date": "2025-09-08",
+            "code": "159915",
+            "net_return": 0.3572537028795213
+          },
+          {
+            "exit_date": "2025-09-15",
+            "code": "518880",
+            "net_return": 0.0013322898950469675
+          },
+          {
+            "exit_date": "2025-09-29",
+            "code": "159915",
+            "net_return": 0.040924836290578526
+          },
+          {
+            "exit_date": "2025-10-21",
+            "code": "161226",
+            "net_return": 0.05810172679612613
+          },
+          {
+            "exit_date": "2025-11-12",
+            "code": "513100",
+            "net_return": 0.047978283732114324
+          },
+          {
+            "exit_date": "2025-11-18",
+            "code": "161226",
+            "net_return": -0.04793999390251469
+          },
+          {
+            "exit_date": "2025-11-25",
+            "code": "159985",
+            "net_return": -0.0029910379735683668
+          },
+          {
+            "exit_date": "2025-12-23",
+            "code": "161226",
+            "net_return": 0.9492890945771335
+          },
+          {
+            "exit_date": "2025-12-30",
+            "code": "511220",
+            "net_return": -0.0030932906250666914
+          },
+          {
+            "exit_date": "2026-01-13",
+            "code": "159915",
+            "net_return": 0.012697347074342558
+          },
+          {
+            "exit_date": "2026-02-02",
+            "code": "161226",
+            "net_return": 0.6232164890741283
+          },
+          {
+            "exit_date": "2026-02-24",
+            "code": "159985",
+            "net_return": 0.009111166708793306
+          },
+          {
+            "exit_date": "2026-03-03",
+            "code": "518880",
+            "net_return": 0.02687632959021169
+          },
+          {
+            "exit_date": "2026-03-04",
+            "code": "511220",
+            "net_return": -0.00280153699411978
+          },
+          {
+            "exit_date": "2026-03-10",
+            "code": "501018",
+            "net_return": -0.03114622184370508
+          },
+          {
+            "exit_date": "2026-03-17",
+            "code": "159985",
+            "net_return": 0.017278427651961747
+          },
+          {
+            "exit_date": "2026-03-25",
+            "code": "501018",
+            "net_return": 0.07296193300747289
+          },
+          {
+            "exit_date": "2026-04-13",
+            "code": "511220",
+            "net_return": -0.0008184188501274559
+          },
+          {
+            "exit_date": "2026-04-28",
+            "code": "159915",
+            "net_return": 0.029191895789770772
+          },
+          {
+            "exit_date": "2026-06-09",
+            "code": "513100",
+            "net_return": 0.11851632195202355
+          },
+          {
+            "exit_date": "2026-06-16",
+            "code": "511220",
+            "net_return": -0.004052266175798791
+          },
+          {
+            "exit_date": "2026-06-22",
+            "code": "513100",
+            "net_return": -0.013076513880660334
+          },
+          {
+            "exit_date": "2026-07-01",
+            "code": "159915",
+            "net_return": -0.026901757434640294
+          },
+          {
+            "exit_date": "2026-07-03",
+            "code": "511880",
+            "net_return": -0.002539484002593184
+          },
+          {
+            "exit_date": "2026-07-15",
+            "code": "159985",
+            "net_return": 0.05563783344880879
+          },
+          {
+            "exit_date": "2026-07-22",
+            "code": "501018",
+            "net_return": 0.11802486977816251
+          },
+          {
+            "exit_date": "2026-07-29",
+            "code": "161226",
+            "net_return": -0.011906693062404217
+          },
+          {
+            "exit_date": "2026-08-05",
+            "code": "501018",
+            "net_return": 0.009584991597776815
+          }
+        ]
+      },
+      "entry_guard_events": []
+    },
+    "stage60_selective": {
+      "params": {
+        "strategy": "V4",
+        "stop_mode": "disabled",
+        "stop_1d": -0.05,
+        "stop_3d": -0.1,
+        "entry_guard_mode": "entry_guard_selective",
+        "entry_guard_days": 3,
+        "entry_guard_day_threshold": -0.05,
+        "entry_guard_entry_loss": -0.1,
+        "staged_entry_fraction": 0.6,
+        "staged_confirmation_days": 2,
+        "stop_target": "mode_defined_target",
+        "execution": "T-day close approximation, same as canonical V4 research"
+      },
+      "metrics": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 3622812.3938261895,
+        "total_return": 35.228123938261895,
+        "cagr": 0.7937495575764295,
+        "ann_vol": 0.3290292198476908,
+        "sharpe": 2.4123983819548305,
+        "max_drawdown": -0.2436037189766166,
+        "cost_multiplier": 1.0,
+        "stop_mode": "disabled",
+        "trade_legs": 318,
+        "raw_shocks": 0,
+        "raw_shock_1d": 0,
+        "raw_shock_3d": 0,
+        "stop_triggers": 0,
+        "stop_switches": 0,
+        "stop_cash_exits": 0,
+        "entry_guard_mode": "entry_guard_selective",
+        "entry_guard_triggers": 0,
+        "entry_guard_switches": 0,
+        "entry_guard_cash_exits": 0,
+        "staged_entry_fraction": 0.6,
+        "staged_confirmation_days": 2,
+        "staged_entries": 110,
+        "staged_top_ups": 95,
+        "stop_noop_same_rank2": 0,
+        "stop_no_rank2": 0,
+        "scheduled_lock_blocks": 2,
+        "signal_days": 184,
+        "risk_events": 253,
+        "stop_forward_relative_5d_avg": 0.0,
+        "stop_forward_relative_5d_win_rate": 0.0,
+        "stop_forward_relative_10d_avg": 0.0,
+        "stop_forward_relative_10d_win_rate": 0.0,
+        "stop_forward_relative_20d_avg": 0.0,
+        "stop_forward_relative_20d_win_rate": 0.0,
+        "round_trips": 111,
+        "worst_trade_return": -0.07267310750215872,
+        "p05_trade_return": -0.051808564677474966,
+        "losses_below_10pct": 0
+      },
+      "annual": [
+        {
+          "year": 2020,
+          "start_value": 100000.0,
+          "end_value": 181156.51952430664,
+          "return": 0.8115651952430665,
+          "within_year_start": 99911.0395
+        },
+        {
+          "year": 2021,
+          "start_value": 181156.51952430664,
+          "end_value": 204168.94962618756,
+          "return": 0.12703064820580878,
+          "within_year_start": 188042.51952430664
+        },
+        {
+          "year": 2022,
+          "start_value": 204168.94962618756,
+          "end_value": 270110.7150261873,
+          "return": 0.3229764639566024,
+          "within_year_start": 203233.80117618758
+        },
+        {
+          "year": 2023,
+          "start_value": 270110.7150261873,
+          "end_value": 306919.8640261875,
+          "return": 0.13627430143388253,
+          "within_year_start": 270509.71502618736
+        },
+        {
+          "year": 2024,
+          "start_value": 306919.8640261875,
+          "end_value": 476509.1851261874,
+          "return": 0.5525524443915755,
+          "within_year_start": 306168.06402618747
+        },
+        {
+          "year": 2025,
+          "start_value": 476509.1851261874,
+          "end_value": 1622124.4982261874,
+          "return": 2.4041830647957445,
+          "within_year_start": 480567.7851261875
+        },
+        {
+          "year": 2026,
+          "start_value": 1622124.4982261874,
+          "end_value": 3622812.3938261895,
+          "return": 1.233375057085802,
+          "within_year_start": 1649749.9627261874
+        }
+      ],
+      "trade_tail": {
+        "round_trips": 111,
+        "worst_trade_return": -0.07267310750215872,
+        "p05_trade_return": -0.051808564677474966,
+        "losses_below_10pct": 0,
+        "trade_returns": [
+          {
+            "exit_date": "2020-07-21",
+            "code": "159915",
+            "net_return": 0.16336019105468402
+          },
+          {
+            "exit_date": "2020-08-18",
+            "code": "161226",
+            "net_return": 0.2525440857504522
+          },
+          {
+            "exit_date": "2020-09-08",
+            "code": "513100",
+            "net_return": 0.1550375192562834
+          },
+          {
+            "exit_date": "2020-11-03",
+            "code": "159985",
+            "net_return": 0.058639573553236346
+          },
+          {
+            "exit_date": "2020-11-11",
+            "code": "159915",
+            "net_return": -0.02926529600956662
+          },
+          {
+            "exit_date": "2020-11-26",
+            "code": "159985",
+            "net_return": 0.009907915371672571
+          },
+          {
+            "exit_date": "2020-12-23",
+            "code": "501018",
+            "net_return": 0.0009937644073325647
+          },
+          {
+            "exit_date": "2021-01-14",
+            "code": "159915",
+            "net_return": 0.08426971261353633
+          },
+          {
+            "exit_date": "2021-01-21",
+            "code": "159985",
+            "net_return": -0.04107668040770529
+          },
+          {
+            "exit_date": "2021-01-28",
+            "code": "159915",
+            "net_return": -0.048150447840938804
+          },
+          {
+            "exit_date": "2021-03-05",
+            "code": "501018",
+            "net_return": 0.17671168425606543
+          },
+          {
+            "exit_date": "2021-03-12",
+            "code": "511220",
+            "net_return": -0.0020511083503299554
+          },
+          {
+            "exit_date": "2021-03-19",
+            "code": "501018",
+            "net_return": -0.07261055877630862
+          },
+          {
+            "exit_date": "2021-04-07",
+            "code": "518880",
+            "net_return": 0.003123873848197567
+          },
+          {
+            "exit_date": "2021-04-26",
+            "code": "513100",
+            "net_return": 0.007964615571714573
+          },
+          {
+            "exit_date": "2021-05-10",
+            "code": "159915",
+            "net_return": -0.027006111133640376
+          },
+          {
+            "exit_date": "2021-05-26",
+            "code": "161226",
+            "net_return": -0.0014533763676678468
+          },
+          {
+            "exit_date": "2021-06-17",
+            "code": "159915",
+            "net_return": -0.008562034073383185
+          },
+          {
+            "exit_date": "2021-07-09",
+            "code": "501018",
+            "net_return": 0.019968840373325802
+          },
+          {
+            "exit_date": "2021-08-20",
+            "code": "513100",
+            "net_return": 0.007199134349091585
+          },
+          {
+            "exit_date": "2021-09-16",
+            "code": "511220",
+            "net_return": -0.0012270159097657052
+          },
+          {
+            "exit_date": "2021-11-04",
+            "code": "501018",
+            "net_return": 0.0821579019371299
+          },
+          {
+            "exit_date": "2021-12-06",
+            "code": "513100",
+            "net_return": -0.0367698047274726
+          },
+          {
+            "exit_date": "2021-12-30",
+            "code": "159985",
+            "net_return": 0.04558019567187732
+          },
+          {
+            "exit_date": "2022-02-08",
+            "code": "501018",
+            "net_return": 0.15090921060865137
+          },
+          {
+            "exit_date": "2022-03-03",
+            "code": "159985",
+            "net_return": 0.04253454115199262
+          },
+          {
+            "exit_date": "2022-03-10",
+            "code": "501018",
+            "net_return": 0.06247235159918341
+          },
+          {
+            "exit_date": "2022-04-01",
+            "code": "159985",
+            "net_return": -0.0641689447198951
+          },
+          {
+            "exit_date": "2022-04-15",
+            "code": "513100",
+            "net_return": -0.07267310750215872
+          },
+          {
+            "exit_date": "2022-04-25",
+            "code": "501018",
+            "net_return": -0.052243644031764735
+          },
+          {
+            "exit_date": "2022-05-05",
+            "code": "518880",
+            "net_return": -0.003541648999243141
+          },
+          {
+            "exit_date": "2022-05-12",
+            "code": "501018",
+            "net_return": -0.03136571369390884
+          },
+          {
+            "exit_date": "2022-05-18",
+            "code": "159915",
+            "net_return": 0.0026966576924247754
+          },
+          {
+            "exit_date": "2022-06-06",
+            "code": "501018",
+            "net_return": 0.0592667424399278
+          },
+          {
+            "exit_date": "2022-06-10",
+            "code": "159915",
+            "net_return": -0.004511525450672349
+          },
+          {
+            "exit_date": "2022-06-17",
+            "code": "501018",
+            "net_return": -0.02743018502621397
+          },
+          {
+            "exit_date": "2022-07-15",
+            "code": "159915",
+            "net_return": 0.029154836138240103
+          },
+          {
+            "exit_date": "2022-08-24",
+            "code": "513100",
+            "net_return": 0.08630883347379137
+          },
+          {
+            "exit_date": "2022-10-24",
+            "code": "159985",
+            "net_return": 0.0517929576881726
+          },
+          {
+            "exit_date": "2022-10-31",
+            "code": "513100",
+            "net_return": 0.011815032593548436
+          },
+          {
+            "exit_date": "2022-11-10",
+            "code": "501018",
+            "net_return": -0.004995155435131293
+          },
+          {
+            "exit_date": "2022-12-30",
+            "code": "161226",
+            "net_return": 0.07148752209906273
+          },
+          {
+            "exit_date": "2023-01-09",
+            "code": "159985",
+            "net_return": -0.026198272004026024
+          },
+          {
+            "exit_date": "2023-02-06",
+            "code": "159915",
+            "net_return": 0.03885024961350769
+          },
+          {
+            "exit_date": "2023-03-14",
+            "code": "513100",
+            "net_return": -0.03812334588752997
+          },
+          {
+            "exit_date": "2023-04-12",
+            "code": "518880",
+            "net_return": 0.04170382576593035
+          },
+          {
+            "exit_date": "2023-05-12",
+            "code": "161226",
+            "net_return": -0.0513734853231852
+          },
+          {
+            "exit_date": "2023-06-26",
+            "code": "513100",
+            "net_return": 0.14933713395746362
+          },
+          {
+            "exit_date": "2023-08-23",
+            "code": "159985",
+            "net_return": 0.18694525622418467
+          },
+          {
+            "exit_date": "2023-08-30",
+            "code": "511220",
+            "net_return": -0.0032555183434123114
+          },
+          {
+            "exit_date": "2023-09-13",
+            "code": "159985",
+            "net_return": -0.034677898375124916
+          },
+          {
+            "exit_date": "2023-10-11",
+            "code": "501018",
+            "net_return": -0.057402546341950966
+          },
+          {
+            "exit_date": "2023-11-09",
+            "code": "511220",
+            "net_return": -7.237686039551772e-05
+          },
+          {
+            "exit_date": "2023-11-23",
+            "code": "159985",
+            "net_return": -0.0361983743369797
+          },
+          {
+            "exit_date": "2023-12-07",
+            "code": "513100",
+            "net_return": -0.01577299533051757
+          },
+          {
+            "exit_date": "2023-12-12",
+            "code": "161226",
+            "net_return": -0.020049530966707918
+          },
+          {
+            "exit_date": "2024-03-11",
+            "code": "513100",
+            "net_return": 0.10503198501309496
+          },
+          {
+            "exit_date": "2024-03-25",
+            "code": "159915",
+            "net_return": -0.03517400630361556
+          },
+          {
+            "exit_date": "2024-04-08",
+            "code": "501018",
+            "net_return": 0.02872297517676836
+          },
+          {
+            "exit_date": "2024-04-24",
+            "code": "161226",
+            "net_return": -0.018874182452171206
+          },
+          {
+            "exit_date": "2024-04-30",
+            "code": "159985",
+            "net_return": -0.0033600957077162263
+          },
+          {
+            "exit_date": "2024-05-20",
+            "code": "159915",
+            "net_return": -0.0021475916423138175
+          },
+          {
+            "exit_date": "2024-05-27",
+            "code": "161226",
+            "net_return": -0.019381941707143358
+          },
+          {
+            "exit_date": "2024-07-16",
+            "code": "513100",
+            "net_return": 0.11455524137374717
+          },
+          {
+            "exit_date": "2024-07-18",
+            "code": "161226",
+            "net_return": -0.01602169609906745
+          },
+          {
+            "exit_date": "2024-07-30",
+            "code": "518880",
+            "net_return": -0.035018439503852083
+          },
+          {
+            "exit_date": "2024-08-19",
+            "code": "511220",
+            "net_return": -0.003130426357717764
+          },
+          {
+            "exit_date": "2024-09-05",
+            "code": "513100",
+            "net_return": -0.06659838903216098
+          },
+          {
+            "exit_date": "2024-09-25",
+            "code": "159985",
+            "net_return": -0.0117522130513249
+          },
+          {
+            "exit_date": "2024-10-10",
+            "code": "159915",
+            "net_return": 0.2740965671263005
+          },
+          {
+            "exit_date": "2024-10-31",
+            "code": "518880",
+            "net_return": 0.06291509931253447
+          },
+          {
+            "exit_date": "2024-11-14",
+            "code": "159915",
+            "net_return": 0.055488719435646816
+          },
+          {
+            "exit_date": "2025-01-10",
+            "code": "513100",
+            "net_return": 0.06509659071989082
+          },
+          {
+            "exit_date": "2025-02-10",
+            "code": "501018",
+            "net_return": -0.005918592783641596
+          },
+          {
+            "exit_date": "2025-03-04",
+            "code": "518880",
+            "net_return": -0.007117015310749486
+          },
+          {
+            "exit_date": "2025-03-10",
+            "code": "159985",
+            "net_return": -0.01634162539037254
+          },
+          {
+            "exit_date": "2025-03-17",
+            "code": "511880",
+            "net_return": -0.0028364599803122337
+          },
+          {
+            "exit_date": "2025-04-03",
+            "code": "161226",
+            "net_return": -0.0074761622272472295
+          },
+          {
+            "exit_date": "2025-04-29",
+            "code": "518880",
+            "net_return": 0.042999499711713796
+          },
+          {
+            "exit_date": "2025-06-09",
+            "code": "513100",
+            "net_return": 0.07992240034029519
+          },
+          {
+            "exit_date": "2025-06-16",
+            "code": "161226",
+            "net_return": -0.019230254235505173
+          },
+          {
+            "exit_date": "2025-06-23",
+            "code": "501018",
+            "net_return": 0.09883162302439596
+          },
+          {
+            "exit_date": "2025-07-07",
+            "code": "161226",
+            "net_return": 0.005247968116651736
+          },
+          {
+            "exit_date": "2025-09-08",
+            "code": "159915",
+            "net_return": 0.3606178544066365
+          },
+          {
+            "exit_date": "2025-09-15",
+            "code": "518880",
+            "net_return": 0.0026145532091226276
+          },
+          {
+            "exit_date": "2025-09-29",
+            "code": "159915",
+            "net_return": 0.0437054107468966
+          },
+          {
+            "exit_date": "2025-10-21",
+            "code": "161226",
+            "net_return": 0.06125605905198861
+          },
+          {
+            "exit_date": "2025-11-12",
+            "code": "513100",
+            "net_return": 0.04853844319896372
+          },
+          {
+            "exit_date": "2025-11-18",
+            "code": "161226",
+            "net_return": -0.046188889973202585
+          },
+          {
+            "exit_date": "2025-11-25",
+            "code": "159985",
+            "net_return": -0.0034869819644203215
+          },
+          {
+            "exit_date": "2025-12-23",
+            "code": "161226",
+            "net_return": 0.9564333584539448
+          },
+          {
+            "exit_date": "2025-12-30",
+            "code": "511220",
+            "net_return": -0.0030932906250666914
+          },
+          {
+            "exit_date": "2026-01-13",
+            "code": "159915",
+            "net_return": 0.014317761909530047
+          },
+          {
+            "exit_date": "2026-02-02",
+            "code": "161226",
+            "net_return": 0.6412758287885987
+          },
+          {
+            "exit_date": "2026-02-24",
+            "code": "159985",
+            "net_return": 0.009417963532314166
+          },
+          {
+            "exit_date": "2026-03-03",
+            "code": "518880",
+            "net_return": 0.026528274749584746
+          },
+          {
+            "exit_date": "2026-03-04",
+            "code": "511220",
+            "net_return": -0.002801536994119669
+          },
+          {
+            "exit_date": "2026-03-10",
+            "code": "501018",
+            "net_return": -0.03114622184370519
+          },
+          {
+            "exit_date": "2026-03-17",
+            "code": "159985",
+            "net_return": 0.019727746876753827
+          },
+          {
+            "exit_date": "2026-03-25",
+            "code": "501018",
+            "net_return": 0.08014154964183651
+          },
+          {
+            "exit_date": "2026-04-13",
+            "code": "511220",
+            "net_return": -0.0007308182542050679
+          },
+          {
+            "exit_date": "2026-04-28",
+            "code": "159915",
+            "net_return": 0.03046103507158393
+          },
+          {
+            "exit_date": "2026-06-09",
+            "code": "513100",
+            "net_return": 0.11828778306546472
+          },
+          {
+            "exit_date": "2026-06-16",
+            "code": "511220",
+            "net_return": -0.004052266175798791
+          },
+          {
+            "exit_date": "2026-06-22",
+            "code": "513100",
+            "net_return": -0.013685612705430228
+          },
+          {
+            "exit_date": "2026-07-01",
+            "code": "159915",
+            "net_return": -0.026901757434640405
+          },
+          {
+            "exit_date": "2026-07-03",
+            "code": "511880",
+            "net_return": -0.002539484002593184
+          },
+          {
+            "exit_date": "2026-07-15",
+            "code": "159985",
+            "net_return": 0.05995515294875009
+          },
+          {
+            "exit_date": "2026-07-22",
+            "code": "501018",
+            "net_return": 0.11499748201073023
+          },
+          {
+            "exit_date": "2026-07-29",
+            "code": "161226",
+            "net_return": -0.011906693062403995
+          },
+          {
+            "exit_date": "2026-08-05",
+            "code": "501018",
+            "net_return": 0.009584991597776815
+          }
+        ]
+      },
+      "entry_guard_events": []
+    }
+  },
+  "segments": {
+    "IS_2020_2023": {
+      "baseline": {
+        "start": "2020-06-19",
+        "end": "2023-12-29",
+        "observations": 857,
+        "initial_value": 100000.0,
+        "final_value": 340989.34870898543,
+        "total_return": 2.4098934870898545,
+        "cagr": 0.416035723180848,
+        "ann_vol": 0.28439895845105545,
+        "sharpe": 1.4628595176534271,
+        "max_drawdown": -0.28615770033824584
+      },
+      "stage50": {
+        "start": "2020-06-19",
+        "end": "2023-12-29",
+        "observations": 857,
+        "initial_value": 100000.0,
+        "final_value": 299226.67924539914,
+        "total_return": 1.9922667924539912,
+        "cagr": 0.3645321869571261,
+        "ann_vol": 0.2593181865244047,
+        "sharpe": 1.405733210782035,
+        "max_drawdown": -0.23234254407888022
+      },
+      "stage60": {
+        "start": "2020-06-19",
+        "end": "2023-12-29",
+        "observations": 857,
+        "initial_value": 100000.0,
+        "final_value": 307193.1445835748,
+        "total_return": 2.071931445835748,
+        "cagr": 0.37473745468675945,
+        "ann_vol": 0.263141249229555,
+        "sharpe": 1.4240924058236568,
+        "max_drawdown": -0.2436037189766166
+      },
+      "stage50_selective": {
+        "start": "2020-06-19",
+        "end": "2023-12-29",
+        "observations": 857,
+        "initial_value": 100000.0,
+        "final_value": 299226.67924539914,
+        "total_return": 1.9922667924539912,
+        "cagr": 0.3645321869571261,
+        "ann_vol": 0.2593181865244047,
+        "sharpe": 1.405733210782035,
+        "max_drawdown": -0.23234254407888022
+      },
+      "stage60_selective": {
+        "start": "2020-06-19",
+        "end": "2023-12-29",
+        "observations": 857,
+        "initial_value": 100000.0,
+        "final_value": 307193.1445835748,
+        "total_return": 2.071931445835748,
+        "cagr": 0.37473745468675945,
+        "ann_vol": 0.263141249229555,
+        "sharpe": 1.4240924058236568,
+        "max_drawdown": -0.2436037189766166
+      }
+    },
+    "OOS_2024_2026": {
+      "baseline": {
+        "start": "2024-01-02",
+        "end": "2026-08-11",
+        "observations": 628,
+        "initial_value": 100000.0,
+        "final_value": 1548076.248654795,
+        "total_return": 14.48076248654795,
+        "cagr": 1.8607692621441645,
+        "ann_vol": 0.4301506427868957,
+        "sharpe": 4.3258548914130595,
+        "max_drawdown": -0.18964260105592678
+      },
+      "stage50": {
+        "start": "2024-01-02",
+        "end": "2026-08-11",
+        "observations": 628,
+        "initial_value": 100000.0,
+        "final_value": 1105743.4858570306,
+        "total_return": 10.057434858570305,
+        "cagr": 1.5142859582262043,
+        "ann_vol": 0.39596408234158464,
+        "sharpe": 3.824301308520912,
+        "max_drawdown": -0.18877295629306112
+      },
+      "stage60": {
+        "start": "2024-01-02",
+        "end": "2026-08-11",
+        "observations": 628,
+        "initial_value": 100000.0,
+        "final_value": 1183275.729736567,
+        "total_return": 10.83275729736567,
+        "cagr": 1.580516026385244,
+        "ann_vol": 0.4009181143769144,
+        "sharpe": 3.942241494479734,
+        "max_drawdown": -0.18883499577336682
+      },
+      "stage50_selective": {
+        "start": "2024-01-02",
+        "end": "2026-08-11",
+        "observations": 628,
+        "initial_value": 100000.0,
+        "final_value": 1105743.4858570306,
+        "total_return": 10.057434858570305,
+        "cagr": 1.5142859582262043,
+        "ann_vol": 0.39596408234158464,
+        "sharpe": 3.824301308520912,
+        "max_drawdown": -0.18877295629306112
+      },
+      "stage60_selective": {
+        "start": "2024-01-02",
+        "end": "2026-08-11",
+        "observations": 628,
+        "initial_value": 100000.0,
+        "final_value": 1183275.729736567,
+        "total_return": 10.83275729736567,
+        "cagr": 1.580516026385244,
+        "ann_vol": 0.4009181143769144,
+        "sharpe": 3.942241494479734,
+        "max_drawdown": -0.18883499577336682
+      }
+    }
+  },
+  "cost_pressure": {
+    "0x": {
+      "baseline": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 7285965.622454298,
+        "total_return": 71.85965622454297,
+        "cagr": 1.009796788151561,
+        "ann_vol": 0.35249289201757394,
+        "sharpe": 2.8647295052440844,
+        "max_drawdown": -0.270792442856309,
+        "cost_multiplier": 0.0,
+        "stop_mode": "disabled",
+        "trade_legs": 223,
+        "raw_shocks": 0,
+        "raw_shock_1d": 0,
+        "raw_shock_3d": 0,
+        "stop_triggers": 0,
+        "stop_switches": 0,
+        "stop_cash_exits": 0,
+        "entry_guard_mode": null,
+        "entry_guard_triggers": 0,
+        "entry_guard_switches": 0,
+        "entry_guard_cash_exits": 0,
+        "staged_entry_fraction": null,
+        "staged_confirmation_days": 2,
+        "staged_entries": 0,
+        "staged_top_ups": 0,
+        "stop_noop_same_rank2": 0,
+        "stop_no_rank2": 0,
+        "scheduled_lock_blocks": 2,
+        "signal_days": 184,
+        "risk_events": 192,
+        "stop_forward_relative_5d_avg": 0.0,
+        "stop_forward_relative_5d_win_rate": 0.0,
+        "stop_forward_relative_10d_avg": 0.0,
+        "stop_forward_relative_10d_win_rate": 0.0,
+        "stop_forward_relative_20d_avg": 0.0,
+        "stop_forward_relative_20d_win_rate": 0.0,
+        "round_trips": 111,
+        "worst_trade_return": -0.07180851063829796,
+        "p05_trade_return": -0.046698291512934864,
+        "losses_below_10pct": 0
+      },
+      "stage50": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 4478727.391938133,
+        "total_return": 43.787273919381335,
+        "cagr": 0.8567529063934725,
+        "ann_vol": 0.32384058364322876,
+        "sharpe": 2.6456007976361193,
+        "max_drawdown": -0.2197740083691233,
+        "cost_multiplier": 0.0,
+        "stop_mode": "disabled",
+        "trade_legs": 318,
+        "raw_shocks": 0,
+        "raw_shock_1d": 0,
+        "raw_shock_3d": 0,
+        "stop_triggers": 0,
+        "stop_switches": 0,
+        "stop_cash_exits": 0,
+        "entry_guard_mode": null,
+        "entry_guard_triggers": 0,
+        "entry_guard_switches": 0,
+        "entry_guard_cash_exits": 0,
+        "staged_entry_fraction": 0.5,
+        "staged_confirmation_days": 2,
+        "staged_entries": 110,
+        "staged_top_ups": 95,
+        "stop_noop_same_rank2": 0,
+        "stop_no_rank2": 0,
+        "scheduled_lock_blocks": 2,
+        "signal_days": 184,
+        "risk_events": 165,
+        "stop_forward_relative_5d_avg": 0.0,
+        "stop_forward_relative_5d_win_rate": 0.0,
+        "stop_forward_relative_10d_avg": 0.0,
+        "stop_forward_relative_10d_win_rate": 0.0,
+        "stop_forward_relative_20d_avg": 0.0,
+        "stop_forward_relative_20d_win_rate": 0.0,
+        "round_trips": 111,
+        "worst_trade_return": -0.0698869475847893,
+        "p05_trade_return": -0.04982227348829593,
+        "losses_below_10pct": 0
+      },
+      "stage60": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 4942636.095841606,
+        "total_return": 48.42636095841606,
+        "cagr": 0.8867797588756581,
+        "ann_vol": 0.32814739767353773,
+        "sharpe": 2.702382420712914,
+        "max_drawdown": -0.2299289363911422,
+        "cost_multiplier": 0.0,
+        "stop_mode": "disabled",
+        "trade_legs": 318,
+        "raw_shocks": 0,
+        "raw_shock_1d": 0,
+        "raw_shock_3d": 0,
+        "stop_triggers": 0,
+        "stop_switches": 0,
+        "stop_cash_exits": 0,
+        "entry_guard_mode": null,
+        "entry_guard_triggers": 0,
+        "entry_guard_switches": 0,
+        "entry_guard_cash_exits": 0,
+        "staged_entry_fraction": 0.6,
+        "staged_confirmation_days": 2,
+        "staged_entries": 110,
+        "staged_top_ups": 95,
+        "stop_noop_same_rank2": 0,
+        "stop_no_rank2": 0,
+        "scheduled_lock_blocks": 2,
+        "signal_days": 184,
+        "risk_events": 168,
+        "stop_forward_relative_5d_avg": 0.0,
+        "stop_forward_relative_5d_win_rate": 0.0,
+        "stop_forward_relative_10d_avg": 0.0,
+        "stop_forward_relative_10d_win_rate": 0.0,
+        "stop_forward_relative_20d_avg": 0.0,
+        "stop_forward_relative_20d_win_rate": 0.0,
+        "round_trips": 111,
+        "worst_trade_return": -0.0698869475847893,
+        "p05_trade_return": -0.048963715316144074,
+        "losses_below_10pct": 0
+      },
+      "stage50_selective": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 4478727.391938133,
+        "total_return": 43.787273919381335,
+        "cagr": 0.8567529063934725,
+        "ann_vol": 0.32384058364322876,
+        "sharpe": 2.6456007976361193,
+        "max_drawdown": -0.2197740083691233,
+        "cost_multiplier": 0.0,
+        "stop_mode": "disabled",
+        "trade_legs": 318,
+        "raw_shocks": 0,
+        "raw_shock_1d": 0,
+        "raw_shock_3d": 0,
+        "stop_triggers": 0,
+        "stop_switches": 0,
+        "stop_cash_exits": 0,
+        "entry_guard_mode": "entry_guard_selective",
+        "entry_guard_triggers": 0,
+        "entry_guard_switches": 0,
+        "entry_guard_cash_exits": 0,
+        "staged_entry_fraction": 0.5,
+        "staged_confirmation_days": 2,
+        "staged_entries": 110,
+        "staged_top_ups": 95,
+        "stop_noop_same_rank2": 0,
+        "stop_no_rank2": 0,
+        "scheduled_lock_blocks": 2,
+        "signal_days": 184,
+        "risk_events": 165,
+        "stop_forward_relative_5d_avg": 0.0,
+        "stop_forward_relative_5d_win_rate": 0.0,
+        "stop_forward_relative_10d_avg": 0.0,
+        "stop_forward_relative_10d_win_rate": 0.0,
+        "stop_forward_relative_20d_avg": 0.0,
+        "stop_forward_relative_20d_win_rate": 0.0,
+        "round_trips": 111,
+        "worst_trade_return": -0.0698869475847893,
+        "p05_trade_return": -0.04982227348829593,
+        "losses_below_10pct": 0
+      },
+      "stage60_selective": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 4942636.095841606,
+        "total_return": 48.42636095841606,
+        "cagr": 0.8867797588756581,
+        "ann_vol": 0.32814739767353773,
+        "sharpe": 2.702382420712914,
+        "max_drawdown": -0.2299289363911422,
+        "cost_multiplier": 0.0,
+        "stop_mode": "disabled",
+        "trade_legs": 318,
+        "raw_shocks": 0,
+        "raw_shock_1d": 0,
+        "raw_shock_3d": 0,
+        "stop_triggers": 0,
+        "stop_switches": 0,
+        "stop_cash_exits": 0,
+        "entry_guard_mode": "entry_guard_selective",
+        "entry_guard_triggers": 0,
+        "entry_guard_switches": 0,
+        "entry_guard_cash_exits": 0,
+        "staged_entry_fraction": 0.6,
+        "staged_confirmation_days": 2,
+        "staged_entries": 110,
+        "staged_top_ups": 95,
+        "stop_noop_same_rank2": 0,
+        "stop_no_rank2": 0,
+        "scheduled_lock_blocks": 2,
+        "signal_days": 184,
+        "risk_events": 168,
+        "stop_forward_relative_5d_avg": 0.0,
+        "stop_forward_relative_5d_win_rate": 0.0,
+        "stop_forward_relative_10d_avg": 0.0,
+        "stop_forward_relative_10d_win_rate": 0.0,
+        "stop_forward_relative_20d_avg": 0.0,
+        "stop_forward_relative_20d_win_rate": 0.0,
+        "round_trips": 111,
+        "worst_trade_return": -0.0698869475847893,
+        "p05_trade_return": -0.048963715316144074,
+        "losses_below_10pct": 0
+      }
+    },
+    "1x": {
+      "baseline": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 5258017.614359309,
+        "total_return": 51.58017614359309,
+        "cagr": 0.9058718424980878,
+        "ann_vol": 0.35404509479095153,
+        "sharpe": 2.5586340718347373,
+        "max_drawdown": -0.28615770033824584,
+        "cost_multiplier": 1.0,
+        "stop_mode": "disabled",
+        "trade_legs": 223,
+        "raw_shocks": 0,
+        "raw_shock_1d": 0,
+        "raw_shock_3d": 0,
+        "stop_triggers": 0,
+        "stop_switches": 0,
+        "stop_cash_exits": 0,
+        "entry_guard_mode": null,
+        "entry_guard_triggers": 0,
+        "entry_guard_switches": 0,
+        "entry_guard_cash_exits": 0,
+        "staged_entry_fraction": null,
+        "staged_confirmation_days": 2,
+        "staged_entries": 0,
+        "staged_top_ups": 0,
+        "stop_noop_same_rank2": 0,
+        "stop_no_rank2": 0,
+        "scheduled_lock_blocks": 2,
+        "signal_days": 184,
+        "risk_events": 256,
+        "stop_forward_relative_5d_avg": 0.0,
+        "stop_forward_relative_5d_win_rate": 0.0,
+        "stop_forward_relative_10d_avg": 0.0,
+        "stop_forward_relative_10d_win_rate": 0.0,
+        "stop_forward_relative_20d_avg": 0.0,
+        "stop_forward_relative_20d_win_rate": 0.0,
+        "round_trips": 111,
+        "worst_trade_return": -0.07458891450058969,
+        "p05_trade_return": -0.04955391320585667,
+        "losses_below_10pct": 0
+      },
+      "stage50": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 3298124.137519746,
+        "total_return": 31.981241375197463,
+        "cagr": 0.7665435194606041,
+        "ann_vol": 0.32467575268485765,
+        "sharpe": 2.3609509275693883,
+        "max_drawdown": -0.2323425440788801,
+        "cost_multiplier": 1.0,
+        "stop_mode": "disabled",
+        "trade_legs": 318,
+        "raw_shocks": 0,
+        "raw_shock_1d": 0,
+        "raw_shock_3d": 0,
+        "stop_triggers": 0,
+        "stop_switches": 0,
+        "stop_cash_exits": 0,
+        "entry_guard_mode": null,
+        "entry_guard_triggers": 0,
+        "entry_guard_switches": 0,
+        "entry_guard_cash_exits": 0,
+        "staged_entry_fraction": 0.5,
+        "staged_confirmation_days": 2,
+        "staged_entries": 110,
+        "staged_top_ups": 95,
+        "stop_noop_same_rank2": 0,
+        "stop_no_rank2": 0,
+        "scheduled_lock_blocks": 2,
+        "signal_days": 184,
+        "risk_events": 245,
+        "stop_forward_relative_5d_avg": 0.0,
+        "stop_forward_relative_5d_win_rate": 0.0,
+        "stop_forward_relative_10d_avg": 0.0,
+        "stop_forward_relative_10d_win_rate": 0.0,
+        "stop_forward_relative_20d_avg": 0.0,
+        "stop_forward_relative_20d_win_rate": 0.0,
+        "round_trips": 111,
+        "worst_trade_return": -0.07267310750215883,
+        "p05_trade_return": -0.05266635296734251,
+        "losses_below_10pct": 0
+      },
+      "stage60": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 3622812.3938261895,
+        "total_return": 35.228123938261895,
+        "cagr": 0.7937495575764295,
+        "ann_vol": 0.3290292198476908,
+        "sharpe": 2.4123983819548305,
+        "max_drawdown": -0.2436037189766166,
+        "cost_multiplier": 1.0,
+        "stop_mode": "disabled",
+        "trade_legs": 318,
+        "raw_shocks": 0,
+        "raw_shock_1d": 0,
+        "raw_shock_3d": 0,
+        "stop_triggers": 0,
+        "stop_switches": 0,
+        "stop_cash_exits": 0,
+        "entry_guard_mode": null,
+        "entry_guard_triggers": 0,
+        "entry_guard_switches": 0,
+        "entry_guard_cash_exits": 0,
+        "staged_entry_fraction": 0.6,
+        "staged_confirmation_days": 2,
+        "staged_entries": 110,
+        "staged_top_ups": 95,
+        "stop_noop_same_rank2": 0,
+        "stop_no_rank2": 0,
+        "scheduled_lock_blocks": 2,
+        "signal_days": 184,
+        "risk_events": 253,
+        "stop_forward_relative_5d_avg": 0.0,
+        "stop_forward_relative_5d_win_rate": 0.0,
+        "stop_forward_relative_10d_avg": 0.0,
+        "stop_forward_relative_10d_win_rate": 0.0,
+        "stop_forward_relative_20d_avg": 0.0,
+        "stop_forward_relative_20d_win_rate": 0.0,
+        "round_trips": 111,
+        "worst_trade_return": -0.07267310750215872,
+        "p05_trade_return": -0.051808564677474966,
+        "losses_below_10pct": 0
+      },
+      "stage50_selective": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 3298124.137519746,
+        "total_return": 31.981241375197463,
+        "cagr": 0.7665435194606041,
+        "ann_vol": 0.32467575268485765,
+        "sharpe": 2.3609509275693883,
+        "max_drawdown": -0.2323425440788801,
+        "cost_multiplier": 1.0,
+        "stop_mode": "disabled",
+        "trade_legs": 318,
+        "raw_shocks": 0,
+        "raw_shock_1d": 0,
+        "raw_shock_3d": 0,
+        "stop_triggers": 0,
+        "stop_switches": 0,
+        "stop_cash_exits": 0,
+        "entry_guard_mode": "entry_guard_selective",
+        "entry_guard_triggers": 0,
+        "entry_guard_switches": 0,
+        "entry_guard_cash_exits": 0,
+        "staged_entry_fraction": 0.5,
+        "staged_confirmation_days": 2,
+        "staged_entries": 110,
+        "staged_top_ups": 95,
+        "stop_noop_same_rank2": 0,
+        "stop_no_rank2": 0,
+        "scheduled_lock_blocks": 2,
+        "signal_days": 184,
+        "risk_events": 245,
+        "stop_forward_relative_5d_avg": 0.0,
+        "stop_forward_relative_5d_win_rate": 0.0,
+        "stop_forward_relative_10d_avg": 0.0,
+        "stop_forward_relative_10d_win_rate": 0.0,
+        "stop_forward_relative_20d_avg": 0.0,
+        "stop_forward_relative_20d_win_rate": 0.0,
+        "round_trips": 111,
+        "worst_trade_return": -0.07267310750215883,
+        "p05_trade_return": -0.05266635296734251,
+        "losses_below_10pct": 0
+      },
+      "stage60_selective": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 3622812.3938261895,
+        "total_return": 35.228123938261895,
+        "cagr": 0.7937495575764295,
+        "ann_vol": 0.3290292198476908,
+        "sharpe": 2.4123983819548305,
+        "max_drawdown": -0.2436037189766166,
+        "cost_multiplier": 1.0,
+        "stop_mode": "disabled",
+        "trade_legs": 318,
+        "raw_shocks": 0,
+        "raw_shock_1d": 0,
+        "raw_shock_3d": 0,
+        "stop_triggers": 0,
+        "stop_switches": 0,
+        "stop_cash_exits": 0,
+        "entry_guard_mode": "entry_guard_selective",
+        "entry_guard_triggers": 0,
+        "entry_guard_switches": 0,
+        "entry_guard_cash_exits": 0,
+        "staged_entry_fraction": 0.6,
+        "staged_confirmation_days": 2,
+        "staged_entries": 110,
+        "staged_top_ups": 95,
+        "stop_noop_same_rank2": 0,
+        "stop_no_rank2": 0,
+        "scheduled_lock_blocks": 2,
+        "signal_days": 184,
+        "risk_events": 253,
+        "stop_forward_relative_5d_avg": 0.0,
+        "stop_forward_relative_5d_win_rate": 0.0,
+        "stop_forward_relative_10d_avg": 0.0,
+        "stop_forward_relative_10d_win_rate": 0.0,
+        "stop_forward_relative_20d_avg": 0.0,
+        "stop_forward_relative_20d_win_rate": 0.0,
+        "round_trips": 111,
+        "worst_trade_return": -0.07267310750215872,
+        "p05_trade_return": -0.051808564677474966,
+        "losses_below_10pct": 0
+      }
+    },
+    "2x": {
+      "baseline": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 3666148.527217025,
+        "total_return": 35.661485272170246,
+        "cagr": 0.7972246725665426,
+        "ann_vol": 0.35604158967912325,
+        "sharpe": 2.239133561011871,
+        "max_drawdown": -0.30779732461592235,
+        "cost_multiplier": 2.0,
+        "stop_mode": "disabled",
+        "trade_legs": 227,
+        "raw_shocks": 0,
+        "raw_shock_1d": 0,
+        "raw_shock_3d": 0,
+        "stop_triggers": 0,
+        "stop_switches": 0,
+        "stop_cash_exits": 0,
+        "entry_guard_mode": null,
+        "entry_guard_triggers": 0,
+        "entry_guard_switches": 0,
+        "entry_guard_cash_exits": 0,
+        "staged_entry_fraction": null,
+        "staged_confirmation_days": 2,
+        "staged_entries": 0,
+        "staged_top_ups": 0,
+        "stop_noop_same_rank2": 0,
+        "stop_no_rank2": 0,
+        "scheduled_lock_blocks": 2,
+        "signal_days": 184,
+        "risk_events": 465,
+        "stop_forward_relative_5d_avg": 0.0,
+        "stop_forward_relative_5d_win_rate": 0.0,
+        "stop_forward_relative_10d_avg": 0.0,
+        "stop_forward_relative_10d_win_rate": 0.0,
+        "stop_forward_relative_20d_avg": 0.0,
+        "stop_forward_relative_20d_win_rate": 0.0,
+        "round_trips": 113,
+        "worst_trade_return": -0.07736100210008268,
+        "p05_trade_return": -0.05239760664977555,
+        "losses_below_10pct": 0
+      },
+      "stage50": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 2426558.0478696376,
+        "total_return": 23.265580478696375,
+        "cagr": 0.6804720928953607,
+        "ann_vol": 0.3257647143127895,
+        "sharpe": 2.088845301526401,
+        "max_drawdown": -0.2455082559510594,
+        "cost_multiplier": 2.0,
+        "stop_mode": "disabled",
+        "trade_legs": 318,
+        "raw_shocks": 0,
+        "raw_shock_1d": 0,
+        "raw_shock_3d": 0,
+        "stop_triggers": 0,
+        "stop_switches": 0,
+        "stop_cash_exits": 0,
+        "entry_guard_mode": null,
+        "entry_guard_triggers": 0,
+        "entry_guard_switches": 0,
+        "entry_guard_cash_exits": 0,
+        "staged_entry_fraction": 0.5,
+        "staged_confirmation_days": 2,
+        "staged_entries": 110,
+        "staged_top_ups": 95,
+        "stop_noop_same_rank2": 0,
+        "stop_no_rank2": 0,
+        "scheduled_lock_blocks": 2,
+        "signal_days": 184,
+        "risk_events": 319,
+        "stop_forward_relative_5d_avg": 0.0,
+        "stop_forward_relative_5d_win_rate": 0.0,
+        "stop_forward_relative_10d_avg": 0.0,
+        "stop_forward_relative_10d_win_rate": 0.0,
+        "stop_forward_relative_20d_avg": 0.0,
+        "stop_forward_relative_20d_win_rate": 0.0,
+        "round_trips": 111,
+        "worst_trade_return": -0.07545093394021418,
+        "p05_trade_return": -0.055499122972683945,
+        "losses_below_10pct": 0
+      },
+      "stage60": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 2654060.461663059,
+        "total_return": 25.54060461663059,
+        "cagr": 0.7051643011571285,
+        "ann_vol": 0.3302123774159469,
+        "sharpe": 2.135487187595271,
+        "max_drawdown": -0.2571577156039365,
+        "cost_multiplier": 2.0,
+        "stop_mode": "disabled",
+        "trade_legs": 318,
+        "raw_shocks": 0,
+        "raw_shock_1d": 0,
+        "raw_shock_3d": 0,
+        "stop_triggers": 0,
+        "stop_switches": 0,
+        "stop_cash_exits": 0,
+        "entry_guard_mode": null,
+        "entry_guard_triggers": 0,
+        "entry_guard_switches": 0,
+        "entry_guard_cash_exits": 0,
+        "staged_entry_fraction": 0.6,
+        "staged_confirmation_days": 2,
+        "staged_entries": 110,
+        "staged_top_ups": 95,
+        "stop_noop_same_rank2": 0,
+        "stop_no_rank2": 0,
+        "scheduled_lock_blocks": 2,
+        "signal_days": 184,
+        "risk_events": 323,
+        "stop_forward_relative_5d_avg": 0.0,
+        "stop_forward_relative_5d_win_rate": 0.0,
+        "stop_forward_relative_10d_avg": 0.0,
+        "stop_forward_relative_10d_win_rate": 0.0,
+        "stop_forward_relative_20d_avg": 0.0,
+        "stop_forward_relative_20d_win_rate": 0.0,
+        "round_trips": 111,
+        "worst_trade_return": -0.07545093394021418,
+        "p05_trade_return": -0.0546438118407348,
+        "losses_below_10pct": 0
+      },
+      "stage50_selective": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 2426558.0478696376,
+        "total_return": 23.265580478696375,
+        "cagr": 0.6804720928953607,
+        "ann_vol": 0.3257647143127895,
+        "sharpe": 2.088845301526401,
+        "max_drawdown": -0.2455082559510594,
+        "cost_multiplier": 2.0,
+        "stop_mode": "disabled",
+        "trade_legs": 318,
+        "raw_shocks": 0,
+        "raw_shock_1d": 0,
+        "raw_shock_3d": 0,
+        "stop_triggers": 0,
+        "stop_switches": 0,
+        "stop_cash_exits": 0,
+        "entry_guard_mode": "entry_guard_selective",
+        "entry_guard_triggers": 0,
+        "entry_guard_switches": 0,
+        "entry_guard_cash_exits": 0,
+        "staged_entry_fraction": 0.5,
+        "staged_confirmation_days": 2,
+        "staged_entries": 110,
+        "staged_top_ups": 95,
+        "stop_noop_same_rank2": 0,
+        "stop_no_rank2": 0,
+        "scheduled_lock_blocks": 2,
+        "signal_days": 184,
+        "risk_events": 319,
+        "stop_forward_relative_5d_avg": 0.0,
+        "stop_forward_relative_5d_win_rate": 0.0,
+        "stop_forward_relative_10d_avg": 0.0,
+        "stop_forward_relative_10d_win_rate": 0.0,
+        "stop_forward_relative_20d_avg": 0.0,
+        "stop_forward_relative_20d_win_rate": 0.0,
+        "round_trips": 111,
+        "worst_trade_return": -0.07545093394021418,
+        "p05_trade_return": -0.055499122972683945,
+        "losses_below_10pct": 0
+      },
+      "stage60_selective": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 2654060.461663059,
+        "total_return": 25.54060461663059,
+        "cagr": 0.7051643011571285,
+        "ann_vol": 0.3302123774159469,
+        "sharpe": 2.135487187595271,
+        "max_drawdown": -0.2571577156039365,
+        "cost_multiplier": 2.0,
+        "stop_mode": "disabled",
+        "trade_legs": 318,
+        "raw_shocks": 0,
+        "raw_shock_1d": 0,
+        "raw_shock_3d": 0,
+        "stop_triggers": 0,
+        "stop_switches": 0,
+        "stop_cash_exits": 0,
+        "entry_guard_mode": "entry_guard_selective",
+        "entry_guard_triggers": 0,
+        "entry_guard_switches": 0,
+        "entry_guard_cash_exits": 0,
+        "staged_entry_fraction": 0.6,
+        "staged_confirmation_days": 2,
+        "staged_entries": 110,
+        "staged_top_ups": 95,
+        "stop_noop_same_rank2": 0,
+        "stop_no_rank2": 0,
+        "scheduled_lock_blocks": 2,
+        "signal_days": 184,
+        "risk_events": 323,
+        "stop_forward_relative_5d_avg": 0.0,
+        "stop_forward_relative_5d_win_rate": 0.0,
+        "stop_forward_relative_10d_avg": 0.0,
+        "stop_forward_relative_10d_win_rate": 0.0,
+        "stop_forward_relative_20d_avg": 0.0,
+        "stop_forward_relative_20d_win_rate": 0.0,
+        "round_trips": 111,
+        "worst_trade_return": -0.07545093394021418,
+        "p05_trade_return": -0.0546438118407348,
+        "losses_below_10pct": 0
+      }
+    },
+    "3x": {
+      "baseline": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 15408.609976987505,
+        "total_return": -0.8459139002301249,
+        "cagr": -0.2624450414466104,
+        "ann_vol": 0.23114624662453512,
+        "sharpe": -1.1354068918666709,
+        "max_drawdown": -0.9446653280077268,
+        "cost_multiplier": 3.0,
+        "stop_mode": "disabled",
+        "trade_legs": 779,
+        "raw_shocks": 0,
+        "raw_shock_1d": 0,
+        "raw_shock_3d": 0,
+        "stop_triggers": 0,
+        "stop_switches": 0,
+        "stop_cash_exits": 0,
+        "entry_guard_mode": null,
+        "entry_guard_triggers": 0,
+        "entry_guard_switches": 0,
+        "entry_guard_cash_exits": 0,
+        "staged_entry_fraction": null,
+        "staged_confirmation_days": 2,
+        "staged_entries": 0,
+        "staged_top_ups": 0,
+        "stop_noop_same_rank2": 0,
+        "stop_no_rank2": 0,
+        "scheduled_lock_blocks": 19,
+        "signal_days": 362,
+        "risk_events": 323,
+        "stop_forward_relative_5d_avg": 0.0,
+        "stop_forward_relative_5d_win_rate": 0.0,
+        "stop_forward_relative_10d_avg": 0.0,
+        "stop_forward_relative_10d_win_rate": 0.0,
+        "stop_forward_relative_20d_avg": 0.0,
+        "stop_forward_relative_20d_win_rate": 0.0,
+        "round_trips": 389,
+        "worst_trade_return": -0.10796986477517845,
+        "p05_trade_return": -0.03148336876845801,
+        "losses_below_10pct": 1
+      },
+      "stage50": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 1785327.5266169538,
+        "total_return": 16.853275266169536,
+        "cagr": 0.5985964450699586,
+        "ann_vol": 0.32712260988101277,
+        "sharpe": 1.8298840464977073,
+        "max_drawdown": -0.2584779259870744,
+        "cost_multiplier": 3.0,
+        "stop_mode": "disabled",
+        "trade_legs": 318,
+        "raw_shocks": 0,
+        "raw_shock_1d": 0,
+        "raw_shock_3d": 0,
+        "stop_triggers": 0,
+        "stop_switches": 0,
+        "stop_cash_exits": 0,
+        "entry_guard_mode": null,
+        "entry_guard_triggers": 0,
+        "entry_guard_switches": 0,
+        "entry_guard_cash_exits": 0,
+        "staged_entry_fraction": 0.5,
+        "staged_confirmation_days": 2,
+        "staged_entries": 110,
+        "staged_top_ups": 95,
+        "stop_noop_same_rank2": 0,
+        "stop_no_rank2": 0,
+        "scheduled_lock_blocks": 2,
+        "signal_days": 184,
+        "risk_events": 491,
+        "stop_forward_relative_5d_avg": 0.0,
+        "stop_forward_relative_5d_win_rate": 0.0,
+        "stop_forward_relative_10d_avg": 0.0,
+        "stop_forward_relative_10d_win_rate": 0.0,
+        "stop_forward_relative_20d_avg": 0.0,
+        "stop_forward_relative_20d_win_rate": 0.0,
+        "round_trips": 111,
+        "worst_trade_return": -0.07822046423161533,
+        "p05_trade_return": -0.058326441969659526,
+        "losses_below_10pct": 0
+      },
+      "stage60": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 1942919.3995934525,
+        "total_return": 18.429193995934526,
+        "cagr": 0.620758877703329,
+        "ann_vol": 0.33161675560576587,
+        "sharpe": 1.8719165036440513,
+        "max_drawdown": -0.2703708572599256,
+        "cost_multiplier": 3.0,
+        "stop_mode": "disabled",
+        "trade_legs": 318,
+        "raw_shocks": 0,
+        "raw_shock_1d": 0,
+        "raw_shock_3d": 0,
+        "stop_triggers": 0,
+        "stop_switches": 0,
+        "stop_cash_exits": 0,
+        "entry_guard_mode": null,
+        "entry_guard_triggers": 0,
+        "entry_guard_switches": 0,
+        "entry_guard_cash_exits": 0,
+        "staged_entry_fraction": 0.6,
+        "staged_confirmation_days": 2,
+        "staged_entries": 110,
+        "staged_top_ups": 95,
+        "stop_noop_same_rank2": 0,
+        "stop_no_rank2": 0,
+        "scheduled_lock_blocks": 2,
+        "signal_days": 184,
+        "risk_events": 505,
+        "stop_forward_relative_5d_avg": 0.0,
+        "stop_forward_relative_5d_win_rate": 0.0,
+        "stop_forward_relative_10d_avg": 0.0,
+        "stop_forward_relative_10d_win_rate": 0.0,
+        "stop_forward_relative_20d_avg": 0.0,
+        "stop_forward_relative_20d_win_rate": 0.0,
+        "round_trips": 111,
+        "worst_trade_return": -0.07822046423161544,
+        "p05_trade_return": -0.05747112718570979,
+        "losses_below_10pct": 0
+      },
+      "stage50_selective": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 1785327.5266169538,
+        "total_return": 16.853275266169536,
+        "cagr": 0.5985964450699586,
+        "ann_vol": 0.32712260988101277,
+        "sharpe": 1.8298840464977073,
+        "max_drawdown": -0.2584779259870744,
+        "cost_multiplier": 3.0,
+        "stop_mode": "disabled",
+        "trade_legs": 318,
+        "raw_shocks": 0,
+        "raw_shock_1d": 0,
+        "raw_shock_3d": 0,
+        "stop_triggers": 0,
+        "stop_switches": 0,
+        "stop_cash_exits": 0,
+        "entry_guard_mode": "entry_guard_selective",
+        "entry_guard_triggers": 0,
+        "entry_guard_switches": 0,
+        "entry_guard_cash_exits": 0,
+        "staged_entry_fraction": 0.5,
+        "staged_confirmation_days": 2,
+        "staged_entries": 110,
+        "staged_top_ups": 95,
+        "stop_noop_same_rank2": 0,
+        "stop_no_rank2": 0,
+        "scheduled_lock_blocks": 2,
+        "signal_days": 184,
+        "risk_events": 491,
+        "stop_forward_relative_5d_avg": 0.0,
+        "stop_forward_relative_5d_win_rate": 0.0,
+        "stop_forward_relative_10d_avg": 0.0,
+        "stop_forward_relative_10d_win_rate": 0.0,
+        "stop_forward_relative_20d_avg": 0.0,
+        "stop_forward_relative_20d_win_rate": 0.0,
+        "round_trips": 111,
+        "worst_trade_return": -0.07822046423161533,
+        "p05_trade_return": -0.058326441969659526,
+        "losses_below_10pct": 0
+      },
+      "stage60_selective": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 1942919.3995934525,
+        "total_return": 18.429193995934526,
+        "cagr": 0.620758877703329,
+        "ann_vol": 0.33161675560576587,
+        "sharpe": 1.8719165036440513,
+        "max_drawdown": -0.2703708572599256,
+        "cost_multiplier": 3.0,
+        "stop_mode": "disabled",
+        "trade_legs": 318,
+        "raw_shocks": 0,
+        "raw_shock_1d": 0,
+        "raw_shock_3d": 0,
+        "stop_triggers": 0,
+        "stop_switches": 0,
+        "stop_cash_exits": 0,
+        "entry_guard_mode": "entry_guard_selective",
+        "entry_guard_triggers": 0,
+        "entry_guard_switches": 0,
+        "entry_guard_cash_exits": 0,
+        "staged_entry_fraction": 0.6,
+        "staged_confirmation_days": 2,
+        "staged_entries": 110,
+        "staged_top_ups": 95,
+        "stop_noop_same_rank2": 0,
+        "stop_no_rank2": 0,
+        "scheduled_lock_blocks": 2,
+        "signal_days": 184,
+        "risk_events": 505,
+        "stop_forward_relative_5d_avg": 0.0,
+        "stop_forward_relative_5d_win_rate": 0.0,
+        "stop_forward_relative_10d_avg": 0.0,
+        "stop_forward_relative_10d_win_rate": 0.0,
+        "stop_forward_relative_20d_avg": 0.0,
+        "stop_forward_relative_20d_win_rate": 0.0,
+        "round_trips": 111,
+        "worst_trade_return": -0.07822046423161544,
+        "p05_trade_return": -0.05747112718570979,
+        "losses_below_10pct": 0
+      }
+    }
+  },
+  "stress_scenarios": {
+    "path": {
+      "silver_daily": [
+        -0.05,
+        -0.08,
+        -0.03
+      ],
+      "gold_daily": [
+        0.01,
+        0.02,
+        0.03
+      ]
+    },
+    "full_position_v4_hold": -0.15222000000000002,
+    "variants": {
+      "stage50": {
+        "hold_silver_without_guard": -0.07611000000000001,
+        "qualified_gold_switch_day1": -0.00033249999999995783,
+        "no_qualified_replacement_cash_day2": -0.06299999999999994
+      },
+      "stage60": {
+        "hold_silver_without_guard": -0.09133199999999997,
+        "qualified_gold_switch_day1": -0.0005508000000000735,
+        "no_qualified_replacement_cash_day2": -0.0756
+      }
+    },
+    "assumption": "a qualified day-1 switch reopens the replacement at the same staged fraction; an unqualified path exits after cumulative loss breaches -10%",
+    "scope": "mechanism stress only, not historical performance evidence"
+  }
+}

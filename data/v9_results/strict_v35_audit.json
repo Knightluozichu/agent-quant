@@ -1,0 +1,1825 @@
+{
+  "meta": {
+    "strategy_name": "严格V3.5",
+    "strategy_id": "STRICT_V3_5",
+    "definition": "strict V3 base plus frozen production V4 overlay only",
+    "design_date": "2026-08-12",
+    "data_start": "2020-06-19",
+    "data_end": "2026-08-11",
+    "observations": 1485,
+    "live_oos_observations": 0,
+    "historical_oos_label_valid": false,
+    "historical_oos_reason": "strict V3.5 was proposed after the full history and prior V4/V3-G audits were observed",
+    "bootstrap_samples": 5000,
+    "minimum_reused_v4_candidate_trials": 17,
+    "trial_count_is_lower_bound": true,
+    "strict_v3_parity": true,
+    "strict_components": {
+      "strict_drop_filter": true,
+      "v4_full_pool_fast_slow": true,
+      "v4_confirmation_hits": 2,
+      "v4_confirmation_window": 2,
+      "v4_minimum_hold_days": 3,
+      "v3g_ret60_gate": false,
+      "v3g_momentum_release": false,
+      "v3g_holding_buffer_exemption": false,
+      "v3g_realtime_filter_approximation": false
+    },
+    "strict_gate_params": {
+      "drop_threshold": 0.03,
+      "drop_lookback": 5,
+      "strict_drop_filter": true
+    },
+    "v4_overlay_params": {
+      "enabled": true,
+      "mode": "consensus",
+      "slow_gap": 0.0075,
+      "fast_5d_gap": 0.0225,
+      "fast_3d_gap": 0.01125,
+      "minimum_target_momentum": 0.0,
+      "minimum_hold_days": 3,
+      "confirmation_hits": 2,
+      "confirmation_window": 2
+    },
+    "signal_time_rule": "all factor arrays are sliced through decision day T",
+    "execution_model_warning": "historical official close is a same-price 14:50 execution proxy; historical intraday snapshots are unavailable"
+  },
+  "four_way_comparison": {
+    "strict_v3": {
+      "strategy_id": "STRICT_V3",
+      "params": {
+        "enabled": false,
+        "mode": "slow",
+        "slow_gap": 0.005,
+        "fast_5d_gap": 0.015,
+        "fast_3d_gap": 0.0075,
+        "minimum_target_momentum": 0.0,
+        "minimum_hold_days": 3,
+        "confirmation_hits": 1,
+        "confirmation_window": 2
+      },
+      "metrics": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 3480226.5016647726,
+        "total_return": 33.80226501664772,
+        "cagr": 0.7820644837377155,
+        "ann_vol": 0.3403778525478328,
+        "sharpe": 2.2976362236371215,
+        "max_drawdown": -0.228493648128262,
+        "cost_multiplier": 1.0,
+        "trade_legs": 203,
+        "early_rotations": 0,
+        "signal_days": 0,
+        "scheduled_lock_blocks": 0,
+        "realtime_filter_events": 0,
+        "risk_events": 334,
+        "reason_counts": {},
+        "ex_post_relative_5d_avg": 0.0,
+        "ex_post_relative_5d_win_rate": 0.0,
+        "ex_post_relative_10d_avg": 0.0,
+        "ex_post_relative_10d_win_rate": 0.0,
+        "ex_post_relative_20d_avg": 0.0,
+        "ex_post_relative_20d_win_rate": 0.0
+      }
+    },
+    "strict_v35": {
+      "strategy_id": "STRICT_V3_5",
+      "params": {
+        "enabled": true,
+        "mode": "consensus",
+        "slow_gap": 0.0075,
+        "fast_5d_gap": 0.0225,
+        "fast_3d_gap": 0.01125,
+        "minimum_target_momentum": 0.0,
+        "minimum_hold_days": 3,
+        "confirmation_hits": 2,
+        "confirmation_window": 2
+      },
+      "metrics": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 4852093.979259306,
+        "total_return": 47.520939792593055,
+        "cagr": 0.8811103756219829,
+        "ann_vol": 0.34931250186652185,
+        "sharpe": 2.52241294231911,
+        "max_drawdown": -0.28615770033824584,
+        "cost_multiplier": 1.0,
+        "trade_legs": 221,
+        "early_rotations": 40,
+        "signal_days": 188,
+        "scheduled_lock_blocks": 2,
+        "realtime_filter_events": 0,
+        "risk_events": 242,
+        "reason_counts": {
+          "slow": 40,
+          "fast": 40
+        },
+        "ex_post_relative_5d_avg": 0.02203738262616261,
+        "ex_post_relative_5d_win_rate": 0.525,
+        "ex_post_relative_10d_avg": 0.04081265063564883,
+        "ex_post_relative_10d_win_rate": 0.7,
+        "ex_post_relative_20d_avg": 0.037205835990452296,
+        "ex_post_relative_20d_win_rate": 0.7
+      }
+    },
+    "current_v3g": {
+      "strategy_id": null,
+      "params": {
+        "enabled": false,
+        "mode": "slow",
+        "slow_gap": 0.005,
+        "fast_5d_gap": 0.015,
+        "fast_3d_gap": 0.0075,
+        "minimum_target_momentum": 0.0,
+        "minimum_hold_days": 3,
+        "confirmation_hits": 1,
+        "confirmation_window": 2
+      },
+      "metrics": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 3958583.7555147717,
+        "total_return": 38.58583755514772,
+        "cagr": 0.8198155571657546,
+        "ann_vol": 0.3448797852995521,
+        "sharpe": 2.377105275838906,
+        "max_drawdown": -0.2252772316778272,
+        "cost_multiplier": 1.0,
+        "trade_legs": 205,
+        "early_rotations": 0,
+        "signal_days": 0,
+        "scheduled_lock_blocks": 0,
+        "realtime_filter_events": 0,
+        "risk_events": 274,
+        "reason_counts": {},
+        "ex_post_relative_5d_avg": 0.0,
+        "ex_post_relative_5d_win_rate": 0.0,
+        "ex_post_relative_10d_avg": 0.0,
+        "ex_post_relative_10d_win_rate": 0.0,
+        "ex_post_relative_20d_avg": 0.0,
+        "ex_post_relative_20d_win_rate": 0.0
+      }
+    },
+    "current_v4": {
+      "strategy_id": null,
+      "params": {
+        "enabled": true,
+        "mode": "consensus",
+        "slow_gap": 0.0075,
+        "fast_5d_gap": 0.0225,
+        "fast_3d_gap": 0.01125,
+        "minimum_target_momentum": 0.0,
+        "minimum_hold_days": 3,
+        "confirmation_hits": 2,
+        "confirmation_window": 2
+      },
+      "metrics": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 5258017.614359309,
+        "total_return": 51.58017614359309,
+        "cagr": 0.9058718424980878,
+        "ann_vol": 0.35404509479095153,
+        "sharpe": 2.5586340718347373,
+        "max_drawdown": -0.28615770033824584,
+        "cost_multiplier": 1.0,
+        "trade_legs": 223,
+        "early_rotations": 39,
+        "signal_days": 184,
+        "scheduled_lock_blocks": 2,
+        "realtime_filter_events": 0,
+        "risk_events": 256,
+        "reason_counts": {
+          "slow": 39,
+          "fast": 39
+        },
+        "ex_post_relative_5d_avg": 0.02228795370300695,
+        "ex_post_relative_5d_win_rate": 0.5128205128205128,
+        "ex_post_relative_10d_avg": 0.04093190457950408,
+        "ex_post_relative_10d_win_rate": 0.6666666666666666,
+        "ex_post_relative_20d_avg": 0.03751800745507738,
+        "ex_post_relative_20d_win_rate": 0.6923076923076923
+      }
+    }
+  },
+  "incremental_to_strict_v3": {
+    "terminal_relative": 0.3941891359479901,
+    "annual": {
+      "years": [
+        {
+          "year": 2020,
+          "observations": 132,
+          "relative_log_contribution": -0.06213046186052473,
+          "strict_v3_return": 1.006051734863635,
+          "strict_v35_return": 0.8852077318636354,
+          "strict_v35_relative_to_strict_v3": -0.060239724080802054
+        },
+        {
+          "year": 2021,
+          "observations": 242,
+          "relative_log_contribution": -0.03598022893998731,
+          "strict_v3_return": 0.20081983594079755,
+          "strict_v35_return": 0.15838210117792534,
+          "strict_v35_relative_to_strict_v3": -0.03534063436720617
+        },
+        {
+          "year": 2022,
+          "observations": 241,
+          "relative_log_contribution": 0.02043265660209137,
+          "strict_v3_return": 0.3344761162536736,
+          "strict_v35_return": 0.36202348302644677,
+          "strict_v35_relative_to_strict_v3": 0.020642832372382926
+        },
+        {
+          "year": 2023,
+          "observations": 242,
+          "relative_log_contribution": 0.08332121106549373,
+          "strict_v3_return": 0.06097061242468109,
+          "strict_v35_return": 0.15315927607706942,
+          "strict_v35_relative_to_strict_v3": 0.08689087385908426
+        },
+        {
+          "year": 2024,
+          "observations": 242,
+          "relative_log_contribution": 0.041088538463045055,
+          "strict_v3_return": 0.6201001410837517,
+          "strict_v35_return": 0.6880541942903511,
+          "strict_v35_relative_to_strict_v3": 0.04194435361331561
+        },
+        {
+          "year": 2025,
+          "observations": 243,
+          "relative_log_contribution": 0.15338519221761615,
+          "strict_v3_return": 2.192035451825003,
+          "strict_v35_return": 2.721191743755565,
+          "strict_v35_relative_to_strict_v3": 0.16577393951812902
+        },
+        {
+          "year": 2026,
+          "observations": 143,
+          "relative_log_contribution": 0.13219607417244994,
+          "strict_v3_return": 0.9731668089919976,
+          "strict_v35_return": 1.2520385843574313,
+          "strict_v35_relative_to_strict_v3": 0.1413320830730458
+        }
+      ],
+      "positive_relative_years": 5,
+      "year_count": 7,
+      "post_2024_share_of_total_relative_log_return": 0.9830184880594741,
+      "leave_one_year_out_relative_return": {
+        "2020": 0.4835582772258665,
+        "2021": 0.44526574417637566,
+        "2022": 0.365991208410621,
+        "2023": 0.28273147698611306,
+        "2024": 0.3380648698878587,
+        "2025": 0.19593438203317215,
+        "2026": 0.22154555770843207
+      }
+    },
+    "rolling_252d": {
+      "window_trading_days": 252,
+      "step_trading_days": 63,
+      "windows": 20,
+      "positive_windows": 14,
+      "positive_rate": 0.7,
+      "median_relative_return": 0.043897432859361166,
+      "minimum_relative_return": -0.07830706962581507,
+      "maximum_relative_return": 0.24404911230570456,
+      "rows": [
+        {
+          "start": "2020-06-19",
+          "end": "2021-07-05",
+          "relative_return": -0.06468237998249436
+        },
+        {
+          "start": "2020-09-18",
+          "end": "2021-10-11",
+          "relative_return": -0.07808590753966546
+        },
+        {
+          "start": "2020-12-24",
+          "end": "2022-01-07",
+          "relative_return": -0.00947836126693287
+        },
+        {
+          "start": "2021-04-01",
+          "end": "2022-04-18",
+          "relative_return": -0.03205965193485676
+        },
+        {
+          "start": "2021-07-06",
+          "end": "2022-07-20",
+          "relative_return": -0.01739279487742302
+        },
+        {
+          "start": "2021-10-12",
+          "end": "2022-10-25",
+          "relative_return": 0.01928778348172598
+        },
+        {
+          "start": "2022-01-10",
+          "end": "2023-01-30",
+          "relative_return": 0.015806867702203103
+        },
+        {
+          "start": "2022-04-19",
+          "end": "2023-04-28",
+          "relative_return": 0.04369324874544053
+        },
+        {
+          "start": "2022-07-21",
+          "end": "2023-08-02",
+          "relative_return": 0.06445353933177089
+        },
+        {
+          "start": "2022-10-26",
+          "end": "2023-11-07",
+          "relative_return": 0.06747724944284385
+        },
+        {
+          "start": "2023-01-31",
+          "end": "2024-02-05",
+          "relative_return": 0.20229926455319058
+        },
+        {
+          "start": "2023-05-04",
+          "end": "2024-05-17",
+          "relative_return": 0.04410161697328179
+        },
+        {
+          "start": "2023-08-03",
+          "end": "2024-08-15",
+          "relative_return": 0.040524902074352984
+        },
+        {
+          "start": "2023-11-08",
+          "end": "2024-11-21",
+          "relative_return": 0.04459709934625614
+        },
+        {
+          "start": "2024-02-06",
+          "end": "2025-02-27",
+          "relative_return": -0.07830706962581507
+        },
+        {
+          "start": "2024-05-20",
+          "end": "2025-06-03",
+          "relative_return": 0.19700396739271953
+        },
+        {
+          "start": "2024-08-16",
+          "end": "2025-08-29",
+          "relative_return": 0.16703536100588354
+        },
+        {
+          "start": "2024-11-22",
+          "end": "2025-12-04",
+          "relative_return": 0.16579280362916024
+        },
+        {
+          "start": "2025-02-28",
+          "end": "2026-03-17",
+          "relative_return": 0.24404911230570456
+        },
+        {
+          "start": "2025-06-04",
+          "end": "2026-06-22",
+          "relative_return": 0.10940356205475861
+        }
+      ]
+    },
+    "newey_west": {
+      "5": {
+        "observations": 1485.0,
+        "mean": 0.00022377978567015772,
+        "standard_error": 0.00018578324028568162,
+        "t_stat": 1.2045208455081753,
+        "p_value_one_sided": 0.11419416501509998,
+        "max_lag": 5.0
+      },
+      "20": {
+        "observations": 1485.0,
+        "mean": 0.00022377978567015772,
+        "standard_error": 0.00018250317261862765,
+        "t_stat": 1.2261692904253494,
+        "p_value_one_sided": 0.11006748757801021,
+        "max_lag": 20.0
+      },
+      "60": {
+        "observations": 1485.0,
+        "mean": 0.00022377978567015772,
+        "standard_error": 0.00015763106385700276,
+        "t_stat": 1.4196426782551104,
+        "p_value_one_sided": 0.07785586695228452,
+        "max_lag": 60.0
+      }
+    },
+    "moving_block_bootstrap": {
+      "5": {
+        "block_size": 5,
+        "bootstrap_samples": 5000,
+        "annualized_relative_return": 0.058012878639215684,
+        "ci90": [
+          -0.019288353877503717,
+          0.14857749053657304
+        ],
+        "ci95": [
+          -0.03276472017495451,
+          0.1696467368714898
+        ],
+        "probability_positive": 0.8828
+      },
+      "20": {
+        "block_size": 20,
+        "bootstrap_samples": 5000,
+        "annualized_relative_return": 0.058012878639215684,
+        "ci90": [
+          -0.015858693170272418,
+          0.1414527577606687
+        ],
+        "ci95": [
+          -0.02854004972791183,
+          0.15993744014273495
+        ],
+        "probability_positive": 0.8954
+      },
+      "60": {
+        "block_size": 60,
+        "bootstrap_samples": 5000,
+        "annualized_relative_return": 0.058012878639215684,
+        "ci90": [
+          -0.00740857159809203,
+          0.13120641391763613
+        ],
+        "ci95": [
+          -0.020822348409305386,
+          0.1470447899942549
+        ],
+        "probability_positive": 0.9228
+      }
+    },
+    "white_reality_check": {
+      "5": {
+        "observations": 1485,
+        "candidate_count": 17,
+        "block_size": 5,
+        "bootstrap_samples": 5000,
+        "selected_mean": 0.00022377978567015772,
+        "best_mean": 0.00022377978567015772,
+        "selected_rank": 1,
+        "observed_max_stat": 0.00862351018001103,
+        "bootstrap_p95": 0.036699531408637937,
+        "p_value": 0.7080583883223356
+      },
+      "20": {
+        "observations": 1485,
+        "candidate_count": 17,
+        "block_size": 20,
+        "bootstrap_samples": 5000,
+        "selected_mean": 0.00022377978567015772,
+        "best_mean": 0.00022377978567015772,
+        "selected_rank": 1,
+        "observed_max_stat": 0.00862351018001103,
+        "bootstrap_p95": 0.03836695814358725,
+        "p_value": 0.7194561087782444
+      },
+      "60": {
+        "observations": 1485,
+        "candidate_count": 17,
+        "block_size": 60,
+        "bootstrap_samples": 5000,
+        "selected_mean": 0.00022377978567015772,
+        "best_mean": 0.00022377978567015772,
+        "selected_rank": 1,
+        "observed_max_stat": 0.00862351018001103,
+        "bootstrap_p95": 0.04036118589951278,
+        "p_value": 0.7476504699060188
+      }
+    },
+    "white_reality_check_consensus_family": {
+      "5": {
+        "observations": 1485,
+        "candidate_count": 4,
+        "block_size": 5,
+        "bootstrap_samples": 5000,
+        "selected_mean": 0.00022377978567015772,
+        "best_mean": 0.00022377978567015772,
+        "selected_rank": 1,
+        "observed_max_stat": 0.00862351018001103,
+        "bootstrap_p95": 0.019405858765724794,
+        "p_value": 0.3181363727254549
+      },
+      "20": {
+        "observations": 1485,
+        "candidate_count": 4,
+        "block_size": 20,
+        "bootstrap_samples": 5000,
+        "selected_mean": 0.00022377978567015772,
+        "best_mean": 0.00022377978567015772,
+        "selected_rank": 1,
+        "observed_max_stat": 0.00862351018001103,
+        "bootstrap_p95": 0.018498521985256255,
+        "p_value": 0.2929414117176565
+      },
+      "60": {
+        "observations": 1485,
+        "candidate_count": 4,
+        "block_size": 60,
+        "bootstrap_samples": 5000,
+        "selected_mean": 0.00022377978567015772,
+        "best_mean": 0.00022377978567015772,
+        "selected_rank": 1,
+        "observed_max_stat": 0.00862351018001103,
+        "bootstrap_p95": 0.017538791229918655,
+        "p_value": 0.27394521095780844
+      }
+    }
+  },
+  "selection_bias": {
+    "candidate_names": [
+      "slow",
+      "slow_confirm2",
+      "slow_gap1_confirm2",
+      "fast",
+      "fast_confirm2",
+      "consensus",
+      "consensus_confirm2",
+      "consensus_strict",
+      "consensus_very_strict",
+      "or",
+      "slow_gap1.0%_hits1",
+      "slow_gap2.0%_hits1",
+      "slow_gap2.0%_hits2",
+      "slow_gap3.0%_hits1",
+      "slow_gap3.0%_hits2",
+      "slow_gap5.0%_hits1",
+      "slow_gap5.0%_hits2"
+    ],
+    "all_recorded_candidates_cscv": {
+      "slices": 8,
+      "splits": 70,
+      "pbo": 0.3,
+      "median_oos_rank_percentile": 0.7647058823529411,
+      "mean_oos_rank_percentile": 0.6974789915966387,
+      "selection_counts": {
+        "slow_gap1_confirm2": 11,
+        "strict_v3": 3,
+        "consensus_strict": 28,
+        "consensus_very_strict": 10,
+        "slow_gap3.0%_hits2": 3,
+        "slow_gap2.0%_hits2": 2,
+        "slow_gap1.0%_hits1": 13
+      }
+    },
+    "consensus_family_cscv": {
+      "slices": 8,
+      "splits": 70,
+      "pbo": 0.07142857142857142,
+      "median_oos_rank_percentile": 0.75,
+      "mean_oos_rank_percentile": 0.7964285714285714,
+      "selection_counts": {
+        "strict_v3": 5,
+        "consensus_strict": 51,
+        "consensus_very_strict": 14
+      }
+    }
+  },
+  "parameter_robustness": {
+    "gap_surface": {
+      "definition": "3x3x3 independent gap perturbation at 80%/100%/120%",
+      "points": 27,
+      "points_beating_strict_v3": 27,
+      "beat_rate": 1.0,
+      "minimum_relative_to_strict_v3": 0.11894145247887011,
+      "median_relative_to_strict_v3": 0.33207356413202094,
+      "maximum_relative_to_strict_v3": 0.4217725728578261,
+      "strict_v35_center_rank_by_final": 4,
+      "rows": [
+        {
+          "name": "slow0.8_fast50.8_fast30.8",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.006,
+            "fast_5d_gap": 0.018,
+            "fast_3d_gap": 0.009,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 3916654.5174782374,
+          "relative_to_strict_v3": 0.12540218735898323,
+          "sharpe": 2.3258019453075236,
+          "max_drawdown": -0.2861424015545134,
+          "early_rotations": 45
+        },
+        {
+          "name": "slow0.8_fast50.8_fast31.0",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.006,
+            "fast_5d_gap": 0.018,
+            "fast_3d_gap": 0.01125,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 3894169.696728238,
+          "relative_to_strict_v3": 0.11894145247887011,
+          "sharpe": 2.321042441947035,
+          "max_drawdown": -0.2861424015545134,
+          "early_rotations": 45
+        },
+        {
+          "name": "slow0.8_fast50.8_fast31.2",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.006,
+            "fast_5d_gap": 0.018,
+            "fast_3d_gap": 0.0135,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 4262477.35707353,
+          "relative_to_strict_v3": 0.2247700990250392,
+          "sharpe": 2.4009201307777035,
+          "max_drawdown": -0.28613119889463223,
+          "early_rotations": 40
+        },
+        {
+          "name": "slow0.8_fast51.0_fast30.8",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.006,
+            "fast_5d_gap": 0.0225,
+            "fast_3d_gap": 0.009,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 4635917.720059308,
+          "relative_to_strict_v3": 0.33207356413202094,
+          "sharpe": 2.480653983314618,
+          "max_drawdown": -0.28615770033824584,
+          "early_rotations": 41
+        },
+        {
+          "name": "slow0.8_fast51.0_fast31.0",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.006,
+            "fast_5d_gap": 0.0225,
+            "fast_3d_gap": 0.01125,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 4773541.36070931,
+          "relative_to_strict_v3": 0.37161801349017876,
+          "sharpe": 2.5076451395770367,
+          "max_drawdown": -0.28615770033824584,
+          "early_rotations": 40
+        },
+        {
+          "name": "slow0.8_fast51.0_fast31.2",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.006,
+            "fast_5d_gap": 0.0225,
+            "fast_3d_gap": 0.0135,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 4798213.458149914,
+          "relative_to_strict_v3": 0.37870723524882055,
+          "sharpe": 2.5124084541869993,
+          "max_drawdown": -0.2861395610052667,
+          "early_rotations": 37
+        },
+        {
+          "name": "slow0.8_fast51.2_fast30.8",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.006,
+            "fast_5d_gap": 0.027,
+            "fast_3d_gap": 0.009,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 4488675.792812883,
+          "relative_to_strict_v3": 0.28976541919490484,
+          "sharpe": 2.4510998219507862,
+          "max_drawdown": -0.2861665138119872,
+          "early_rotations": 39
+        },
+        {
+          "name": "slow0.8_fast51.2_fast31.0",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.006,
+            "fast_5d_gap": 0.027,
+            "fast_3d_gap": 0.01125,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 4622769.482062883,
+          "relative_to_strict_v3": 0.32829558071912057,
+          "sharpe": 2.4779247027759834,
+          "max_drawdown": -0.2861665138119872,
+          "early_rotations": 38
+        },
+        {
+          "name": "slow0.8_fast51.2_fast31.2",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.006,
+            "fast_5d_gap": 0.027,
+            "fast_3d_gap": 0.0135,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 4647888.6182942195,
+          "relative_to_strict_v3": 0.335513253539933,
+          "sharpe": 2.482890927518526,
+          "max_drawdown": -0.28616635113366473,
+          "early_rotations": 35
+        },
+        {
+          "name": "slow1.0_fast50.8_fast30.8",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.0075,
+            "fast_5d_gap": 0.018,
+            "fast_3d_gap": 0.009,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 3981031.3596782372,
+          "relative_to_strict_v3": 0.14390007597893528,
+          "sharpe": 2.340023733702981,
+          "max_drawdown": -0.2861424015545134,
+          "early_rotations": 45
+        },
+        {
+          "name": "slow1.0_fast50.8_fast31.0",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.0075,
+            "fast_5d_gap": 0.018,
+            "fast_3d_gap": 0.01125,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 3958265.8173282365,
+          "relative_to_strict_v3": 0.13735867922239908,
+          "sharpe": 2.33525043642385,
+          "max_drawdown": -0.2861424015545134,
+          "early_rotations": 45
+        },
+        {
+          "name": "slow1.0_fast50.8_fast31.2",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.0075,
+            "fast_5d_gap": 0.018,
+            "fast_3d_gap": 0.0135,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 4332912.7422735235,
+          "relative_to_strict_v3": 0.2450088349711914,
+          "sharpe": 2.415324291543504,
+          "max_drawdown": -0.28613119889463223,
+          "early_rotations": 40
+        },
+        {
+          "name": "slow1.0_fast51.0_fast30.8",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.0075,
+            "fast_5d_gap": 0.0225,
+            "fast_3d_gap": 0.009,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 4712681.44655931,
+          "relative_to_strict_v3": 0.3541306706057754,
+          "sharpe": 2.4954079024892435,
+          "max_drawdown": -0.28615770033824584,
+          "early_rotations": 41
+        },
+        {
+          "name": "slow1.0_fast51.0_fast31.0",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.0075,
+            "fast_5d_gap": 0.0225,
+            "fast_3d_gap": 0.01125,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 4852093.979259306,
+          "relative_to_strict_v3": 0.3941891359479901,
+          "sharpe": 2.52241294231911,
+          "max_drawdown": -0.28615770033824584,
+          "early_rotations": 40
+        },
+        {
+          "name": "slow1.0_fast51.0_fast31.2",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.0075,
+            "fast_5d_gap": 0.0225,
+            "fast_3d_gap": 0.0135,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 4877983.069949917,
+          "relative_to_strict_v3": 0.4016280456506278,
+          "sharpe": 2.5272027869883655,
+          "max_drawdown": -0.2861395610052667,
+          "early_rotations": 37
+        },
+        {
+          "name": "slow1.0_fast51.2_fast30.8",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.0075,
+            "fast_5d_gap": 0.027,
+            "fast_3d_gap": 0.009,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 4562989.120112884,
+          "relative_to_strict_v3": 0.31111843379451587,
+          "sharpe": 2.4657535740265732,
+          "max_drawdown": -0.2861665138119872,
+          "early_rotations": 39
+        },
+        {
+          "name": "slow1.0_fast51.2_fast31.0",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.0075,
+            "fast_5d_gap": 0.027,
+            "fast_3d_gap": 0.01125,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 4699921.046812885,
+          "relative_to_strict_v3": 0.35046412771256974,
+          "sharpe": 2.4927414130845365,
+          "max_drawdown": -0.2861665138119872,
+          "early_rotations": 38
+        },
+        {
+          "name": "slow1.0_fast51.2_fast31.2",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.0075,
+            "fast_5d_gap": 0.027,
+            "fast_3d_gap": 0.0135,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 4724667.987894225,
+          "relative_to_strict_v3": 0.35757485486481166,
+          "sharpe": 2.497517857643211,
+          "max_drawdown": -0.28616635113366473,
+          "early_rotations": 35
+        },
+        {
+          "name": "slow1.2_fast50.8_fast30.8",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.009,
+            "fast_5d_gap": 0.018,
+            "fast_3d_gap": 0.009,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 4038318.931928236,
+          "relative_to_strict_v3": 0.16036095064401668,
+          "sharpe": 2.3498449874654193,
+          "max_drawdown": -0.2861424015545134,
+          "early_rotations": 45
+        },
+        {
+          "name": "slow1.2_fast50.8_fast31.0",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.009,
+            "fast_5d_gap": 0.018,
+            "fast_3d_gap": 0.01125,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 4015000.8787282365,
+          "relative_to_strict_v3": 0.15366079673482558,
+          "sharpe": 2.345029749941643,
+          "max_drawdown": -0.2861424015545134,
+          "early_rotations": 45
+        },
+        {
+          "name": "slow1.2_fast50.8_fast31.2",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.009,
+            "fast_5d_gap": 0.018,
+            "fast_3d_gap": 0.0135,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 4394931.837323526,
+          "relative_to_strict_v3": 0.2628292541365347,
+          "sharpe": 2.4252059594843827,
+          "max_drawdown": -0.28613119889463223,
+          "early_rotations": 40
+        },
+        {
+          "name": "slow1.2_fast51.0_fast30.8",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.009,
+            "fast_5d_gap": 0.0225,
+            "fast_3d_gap": 0.009,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 4780656.69340931,
+          "relative_to_strict_v3": 0.37366251625360425,
+          "sharpe": 2.5054762905874153,
+          "max_drawdown": -0.28615770033824584,
+          "early_rotations": 41
+        },
+        {
+          "name": "slow1.2_fast51.0_fast31.0",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.009,
+            "fast_5d_gap": 0.0225,
+            "fast_3d_gap": 0.01125,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 4921921.421959311,
+          "relative_to_strict_v3": 0.4142531871431072,
+          "sharpe": 2.532500008331807,
+          "max_drawdown": -0.28615770033824584,
+          "early_rotations": 40
+        },
+        {
+          "name": "slow1.2_fast51.0_fast31.2",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.009,
+            "fast_5d_gap": 0.0225,
+            "fast_3d_gap": 0.0135,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 4948090.587399915,
+          "relative_to_strict_v3": 0.4217725728578261,
+          "sharpe": 2.537289110408463,
+          "max_drawdown": -0.2861395610052667,
+          "early_rotations": 37
+        },
+        {
+          "name": "slow1.2_fast51.2_fast30.8",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.009,
+            "fast_5d_gap": 0.027,
+            "fast_3d_gap": 0.009,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 4628600.249962885,
+          "relative_to_strict_v3": 0.32997097969019706,
+          "sharpe": 2.475747409867729,
+          "max_drawdown": -0.2861665138119872,
+          "early_rotations": 39
+        },
+        {
+          "name": "slow1.2_fast51.2_fast31.0",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.009,
+            "fast_5d_gap": 0.027,
+            "fast_3d_gap": 0.01125,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 4767404.327312886,
+          "relative_to_strict_v3": 0.36985461292027666,
+          "sharpe": 2.5027668151671674,
+          "max_drawdown": -0.2861665138119872,
+          "early_rotations": 38
+        },
+        {
+          "name": "slow1.2_fast51.2_fast31.2",
+          "params": {
+            "enabled": true,
+            "mode": "consensus",
+            "slow_gap": 0.009,
+            "fast_5d_gap": 0.027,
+            "fast_3d_gap": 0.0135,
+            "minimum_target_momentum": 0.0,
+            "minimum_hold_days": 3,
+            "confirmation_hits": 2,
+            "confirmation_window": 2
+          },
+          "final_value": 4792700.649094222,
+          "relative_to_strict_v3": 0.3771231978153218,
+          "sharpe": 2.5075763119421186,
+          "max_drawdown": -0.28616635113366473,
+          "early_rotations": 35
+        }
+      ]
+    },
+    "structural_neighbors": {
+      "hold_2": {
+        "strategy_id": "STRICT_V3_5",
+        "params": {
+          "enabled": true,
+          "mode": "consensus",
+          "slow_gap": 0.0075,
+          "fast_5d_gap": 0.0225,
+          "fast_3d_gap": 0.01125,
+          "minimum_target_momentum": 0.0,
+          "minimum_hold_days": 2,
+          "confirmation_hits": 2,
+          "confirmation_window": 2
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 4408227.664509309,
+          "total_return": 43.082276645093096,
+          "cagr": 0.8519640216825826,
+          "ann_vol": 0.3483746803165549,
+          "sharpe": 2.445539443074437,
+          "max_drawdown": -0.28615770033824584,
+          "cost_multiplier": 1.0,
+          "trade_legs": 225,
+          "early_rotations": 40,
+          "signal_days": 190,
+          "scheduled_lock_blocks": 0,
+          "realtime_filter_events": 0,
+          "risk_events": 242,
+          "reason_counts": {
+            "slow": 40,
+            "fast": 40
+          },
+          "ex_post_relative_5d_avg": 0.02203738262616261,
+          "ex_post_relative_5d_win_rate": 0.525,
+          "ex_post_relative_10d_avg": 0.04081265063564883,
+          "ex_post_relative_10d_win_rate": 0.7,
+          "ex_post_relative_20d_avg": 0.037205835990452296,
+          "ex_post_relative_20d_win_rate": 0.7
+        }
+      },
+      "hold_3": {
+        "strategy_id": "STRICT_V3_5",
+        "params": {
+          "enabled": true,
+          "mode": "consensus",
+          "slow_gap": 0.0075,
+          "fast_5d_gap": 0.0225,
+          "fast_3d_gap": 0.01125,
+          "minimum_target_momentum": 0.0,
+          "minimum_hold_days": 3,
+          "confirmation_hits": 2,
+          "confirmation_window": 2
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 4852093.979259306,
+          "total_return": 47.520939792593055,
+          "cagr": 0.8811103756219829,
+          "ann_vol": 0.34931250186652185,
+          "sharpe": 2.52241294231911,
+          "max_drawdown": -0.28615770033824584,
+          "cost_multiplier": 1.0,
+          "trade_legs": 221,
+          "early_rotations": 40,
+          "signal_days": 188,
+          "scheduled_lock_blocks": 2,
+          "realtime_filter_events": 0,
+          "risk_events": 242,
+          "reason_counts": {
+            "slow": 40,
+            "fast": 40
+          },
+          "ex_post_relative_5d_avg": 0.02203738262616261,
+          "ex_post_relative_5d_win_rate": 0.525,
+          "ex_post_relative_10d_avg": 0.04081265063564883,
+          "ex_post_relative_10d_win_rate": 0.7,
+          "ex_post_relative_20d_avg": 0.037205835990452296,
+          "ex_post_relative_20d_win_rate": 0.7
+        }
+      },
+      "hold_4": {
+        "strategy_id": "STRICT_V3_5",
+        "params": {
+          "enabled": true,
+          "mode": "consensus",
+          "slow_gap": 0.0075,
+          "fast_5d_gap": 0.0225,
+          "fast_3d_gap": 0.01125,
+          "minimum_target_momentum": 0.0,
+          "minimum_hold_days": 4,
+          "confirmation_hits": 2,
+          "confirmation_window": 2
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 4852093.979259306,
+          "total_return": 47.520939792593055,
+          "cagr": 0.8811103756219829,
+          "ann_vol": 0.34931250186652185,
+          "sharpe": 2.52241294231911,
+          "max_drawdown": -0.28615770033824584,
+          "cost_multiplier": 1.0,
+          "trade_legs": 221,
+          "early_rotations": 40,
+          "signal_days": 188,
+          "scheduled_lock_blocks": 2,
+          "realtime_filter_events": 0,
+          "risk_events": 242,
+          "reason_counts": {
+            "slow": 40,
+            "fast": 40
+          },
+          "ex_post_relative_5d_avg": 0.02203738262616261,
+          "ex_post_relative_5d_win_rate": 0.525,
+          "ex_post_relative_10d_avg": 0.04081265063564883,
+          "ex_post_relative_10d_win_rate": 0.7,
+          "ex_post_relative_20d_avg": 0.037205835990452296,
+          "ex_post_relative_20d_win_rate": 0.7
+        }
+      },
+      "confirmation_1": {
+        "strategy_id": "STRICT_V3_5",
+        "params": {
+          "enabled": true,
+          "mode": "consensus",
+          "slow_gap": 0.0075,
+          "fast_5d_gap": 0.0225,
+          "fast_3d_gap": 0.01125,
+          "minimum_target_momentum": 0.0,
+          "minimum_hold_days": 3,
+          "confirmation_hits": 1,
+          "confirmation_window": 2
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 2562403.095713831,
+          "total_return": 24.62403095713831,
+          "cagr": 0.6954377719074067,
+          "ann_vol": 0.36050841439836007,
+          "sharpe": 1.9290472680589124,
+          "max_drawdown": -0.2692662872140684,
+          "cost_multiplier": 1.0,
+          "trade_legs": 309,
+          "early_rotations": 101,
+          "signal_days": 133,
+          "scheduled_lock_blocks": 3,
+          "realtime_filter_events": 0,
+          "risk_events": 566,
+          "reason_counts": {
+            "slow": 101,
+            "fast": 101
+          },
+          "ex_post_relative_5d_avg": 0.005527698760882749,
+          "ex_post_relative_5d_win_rate": 0.48484848484848486,
+          "ex_post_relative_10d_avg": 0.004919486407201258,
+          "ex_post_relative_10d_win_rate": 0.5154639175257731,
+          "ex_post_relative_20d_avg": -0.0003300073906581519,
+          "ex_post_relative_20d_win_rate": 0.5208333333333334
+        }
+      },
+      "confirmation_2": {
+        "strategy_id": "STRICT_V3_5",
+        "params": {
+          "enabled": true,
+          "mode": "consensus",
+          "slow_gap": 0.0075,
+          "fast_5d_gap": 0.0225,
+          "fast_3d_gap": 0.01125,
+          "minimum_target_momentum": 0.0,
+          "minimum_hold_days": 3,
+          "confirmation_hits": 2,
+          "confirmation_window": 2
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 4852093.979259306,
+          "total_return": 47.520939792593055,
+          "cagr": 0.8811103756219829,
+          "ann_vol": 0.34931250186652185,
+          "sharpe": 2.52241294231911,
+          "max_drawdown": -0.28615770033824584,
+          "cost_multiplier": 1.0,
+          "trade_legs": 221,
+          "early_rotations": 40,
+          "signal_days": 188,
+          "scheduled_lock_blocks": 2,
+          "realtime_filter_events": 0,
+          "risk_events": 242,
+          "reason_counts": {
+            "slow": 40,
+            "fast": 40
+          },
+          "ex_post_relative_5d_avg": 0.02203738262616261,
+          "ex_post_relative_5d_win_rate": 0.525,
+          "ex_post_relative_10d_avg": 0.04081265063564883,
+          "ex_post_relative_10d_win_rate": 0.7,
+          "ex_post_relative_20d_avg": 0.037205835990452296,
+          "ex_post_relative_20d_win_rate": 0.7
+        }
+      }
+    }
+  },
+  "cost_pressure": {
+    "0x": {
+      "strict_v3": {
+        "strategy_id": "STRICT_V3",
+        "params": {
+          "enabled": false,
+          "mode": "slow",
+          "slow_gap": 0.005,
+          "fast_5d_gap": 0.015,
+          "fast_3d_gap": 0.0075,
+          "minimum_target_momentum": 0.0,
+          "minimum_hold_days": 3,
+          "confirmation_hits": 1,
+          "confirmation_window": 2
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 4683583.477626119,
+          "total_return": 45.83583477626119,
+          "cagr": 0.8703188322083455,
+          "ann_vol": 0.3392216164686497,
+          "sharpe": 2.56563494174841,
+          "max_drawdown": -0.21152646198537717,
+          "cost_multiplier": 0.0,
+          "trade_legs": 203,
+          "early_rotations": 0,
+          "signal_days": 0,
+          "scheduled_lock_blocks": 0,
+          "realtime_filter_events": 0,
+          "risk_events": 262,
+          "reason_counts": {},
+          "ex_post_relative_5d_avg": 0.0,
+          "ex_post_relative_5d_win_rate": 0.0,
+          "ex_post_relative_10d_avg": 0.0,
+          "ex_post_relative_10d_win_rate": 0.0,
+          "ex_post_relative_20d_avg": 0.0,
+          "ex_post_relative_20d_win_rate": 0.0
+        }
+      },
+      "strict_v35": {
+        "strategy_id": "STRICT_V3_5",
+        "params": {
+          "enabled": true,
+          "mode": "consensus",
+          "slow_gap": 0.0075,
+          "fast_5d_gap": 0.0225,
+          "fast_3d_gap": 0.01125,
+          "minimum_target_momentum": 0.0,
+          "minimum_hold_days": 3,
+          "confirmation_hits": 2,
+          "confirmation_window": 2
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 6705182.122454299,
+          "total_return": 66.05182122454299,
+          "cagr": 0.9828052679106887,
+          "ann_vol": 0.34781182357831686,
+          "sharpe": 2.82568101854476,
+          "max_drawdown": -0.270792442856309,
+          "cost_multiplier": 0.0,
+          "trade_legs": 221,
+          "early_rotations": 40,
+          "signal_days": 188,
+          "scheduled_lock_blocks": 2,
+          "realtime_filter_events": 0,
+          "risk_events": 189,
+          "reason_counts": {
+            "slow": 40,
+            "fast": 40
+          },
+          "ex_post_relative_5d_avg": 0.02203738262616261,
+          "ex_post_relative_5d_win_rate": 0.525,
+          "ex_post_relative_10d_avg": 0.04081265063564883,
+          "ex_post_relative_10d_win_rate": 0.7,
+          "ex_post_relative_20d_avg": 0.037205835990452296,
+          "ex_post_relative_20d_win_rate": 0.7
+        }
+      },
+      "strict_v35_relative_final": 0.4316350193149179
+    },
+    "1x": {
+      "strict_v3": {
+        "strategy_id": "STRICT_V3",
+        "params": {
+          "enabled": false,
+          "mode": "slow",
+          "slow_gap": 0.005,
+          "fast_5d_gap": 0.015,
+          "fast_3d_gap": 0.0075,
+          "minimum_target_momentum": 0.0,
+          "minimum_hold_days": 3,
+          "confirmation_hits": 1,
+          "confirmation_window": 2
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 3480226.5016647726,
+          "total_return": 33.80226501664772,
+          "cagr": 0.7820644837377155,
+          "ann_vol": 0.3403778525478328,
+          "sharpe": 2.2976362236371215,
+          "max_drawdown": -0.228493648128262,
+          "cost_multiplier": 1.0,
+          "trade_legs": 203,
+          "early_rotations": 0,
+          "signal_days": 0,
+          "scheduled_lock_blocks": 0,
+          "realtime_filter_events": 0,
+          "risk_events": 334,
+          "reason_counts": {},
+          "ex_post_relative_5d_avg": 0.0,
+          "ex_post_relative_5d_win_rate": 0.0,
+          "ex_post_relative_10d_avg": 0.0,
+          "ex_post_relative_10d_win_rate": 0.0,
+          "ex_post_relative_20d_avg": 0.0,
+          "ex_post_relative_20d_win_rate": 0.0
+        }
+      },
+      "strict_v35": {
+        "strategy_id": "STRICT_V3_5",
+        "params": {
+          "enabled": true,
+          "mode": "consensus",
+          "slow_gap": 0.0075,
+          "fast_5d_gap": 0.0225,
+          "fast_3d_gap": 0.01125,
+          "minimum_target_momentum": 0.0,
+          "minimum_hold_days": 3,
+          "confirmation_hits": 2,
+          "confirmation_window": 2
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 4852093.979259306,
+          "total_return": 47.520939792593055,
+          "cagr": 0.8811103756219829,
+          "ann_vol": 0.34931250186652185,
+          "sharpe": 2.52241294231911,
+          "max_drawdown": -0.28615770033824584,
+          "cost_multiplier": 1.0,
+          "trade_legs": 221,
+          "early_rotations": 40,
+          "signal_days": 188,
+          "scheduled_lock_blocks": 2,
+          "realtime_filter_events": 0,
+          "risk_events": 242,
+          "reason_counts": {
+            "slow": 40,
+            "fast": 40
+          },
+          "ex_post_relative_5d_avg": 0.02203738262616261,
+          "ex_post_relative_5d_win_rate": 0.525,
+          "ex_post_relative_10d_avg": 0.04081265063564883,
+          "ex_post_relative_10d_win_rate": 0.7,
+          "ex_post_relative_20d_avg": 0.037205835990452296,
+          "ex_post_relative_20d_win_rate": 0.7
+        }
+      },
+      "strict_v35_relative_final": 0.3941891359479901
+    },
+    "2x": {
+      "strict_v3": {
+        "strategy_id": "STRICT_V3",
+        "params": {
+          "enabled": false,
+          "mode": "slow",
+          "slow_gap": 0.005,
+          "fast_5d_gap": 0.015,
+          "fast_3d_gap": 0.0075,
+          "minimum_target_momentum": 0.0,
+          "minimum_hold_days": 3,
+          "confirmation_hits": 1,
+          "confirmation_window": 2
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 2583868.8927739887,
+          "total_return": 24.838688927739888,
+          "cagr": 0.6977414983787911,
+          "ann_vol": 0.34194519987311117,
+          "sharpe": 2.0405067789742586,
+          "max_drawdown": -0.24693185294214337,
+          "cost_multiplier": 2.0,
+          "trade_legs": 203,
+          "early_rotations": 0,
+          "signal_days": 0,
+          "scheduled_lock_blocks": 0,
+          "realtime_filter_events": 0,
+          "risk_events": 425,
+          "reason_counts": {},
+          "ex_post_relative_5d_avg": 0.0,
+          "ex_post_relative_5d_win_rate": 0.0,
+          "ex_post_relative_10d_avg": 0.0,
+          "ex_post_relative_10d_win_rate": 0.0,
+          "ex_post_relative_20d_avg": 0.0,
+          "ex_post_relative_20d_win_rate": 0.0
+        }
+      },
+      "strict_v35": {
+        "strategy_id": "STRICT_V3_5",
+        "params": {
+          "enabled": true,
+          "mode": "consensus",
+          "slow_gap": 0.0075,
+          "fast_5d_gap": 0.0225,
+          "fast_3d_gap": 0.01125,
+          "minimum_target_momentum": 0.0,
+          "minimum_hold_days": 3,
+          "confirmation_hits": 2,
+          "confirmation_window": 2
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 3393764.8828170253,
+          "total_return": 32.93764882817025,
+          "cagr": 0.7747821732552143,
+          "ann_vol": 0.3512888301317219,
+          "sharpe": 2.205541727485887,
+          "max_drawdown": -0.30779732461592235,
+          "cost_multiplier": 2.0,
+          "trade_legs": 225,
+          "early_rotations": 40,
+          "signal_days": 188,
+          "scheduled_lock_blocks": 2,
+          "realtime_filter_events": 0,
+          "risk_events": 433,
+          "reason_counts": {
+            "slow": 40,
+            "fast": 40
+          },
+          "ex_post_relative_5d_avg": 0.02203738262616261,
+          "ex_post_relative_5d_win_rate": 0.525,
+          "ex_post_relative_10d_avg": 0.04081265063564883,
+          "ex_post_relative_10d_win_rate": 0.7,
+          "ex_post_relative_20d_avg": 0.037205835990452296,
+          "ex_post_relative_20d_win_rate": 0.7
+        }
+      },
+      "strict_v35_relative_final": 0.31344314423536757
+    },
+    "3x": {
+      "strict_v3": {
+        "strategy_id": "STRICT_V3",
+        "params": {
+          "enabled": false,
+          "mode": "slow",
+          "slow_gap": 0.005,
+          "fast_5d_gap": 0.015,
+          "fast_3d_gap": 0.0075,
+          "minimum_target_momentum": 0.0,
+          "minimum_hold_days": 3,
+          "confirmation_hits": 1,
+          "confirmation_window": 2
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 1916457.0899670061,
+          "total_return": 18.16457089967006,
+          "cagr": 0.6171452069807495,
+          "ann_vol": 0.3439367020330813,
+          "sharpe": 1.7943569364149738,
+          "max_drawdown": -0.26501381861821716,
+          "cost_multiplier": 3.0,
+          "trade_legs": 203,
+          "early_rotations": 0,
+          "signal_days": 0,
+          "scheduled_lock_blocks": 0,
+          "realtime_filter_events": 0,
+          "risk_events": 527,
+          "reason_counts": {},
+          "ex_post_relative_5d_avg": 0.0,
+          "ex_post_relative_5d_win_rate": 0.0,
+          "ex_post_relative_10d_avg": 0.0,
+          "ex_post_relative_10d_win_rate": 0.0,
+          "ex_post_relative_20d_avg": 0.0,
+          "ex_post_relative_20d_win_rate": 0.0
+        }
+      },
+      "strict_v35": {
+        "strategy_id": "STRICT_V3_5",
+        "params": {
+          "enabled": true,
+          "mode": "consensus",
+          "slow_gap": 0.0075,
+          "fast_5d_gap": 0.0225,
+          "fast_3d_gap": 0.01125,
+          "minimum_target_momentum": 0.0,
+          "minimum_hold_days": 3,
+          "confirmation_hits": 2,
+          "confirmation_window": 2
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 14645.927526987496,
+          "total_return": -0.853540724730125,
+          "cagr": -0.2685141612781139,
+          "ann_vol": 0.2294459584947206,
+          "sharpe": -1.1702719151808125,
+          "max_drawdown": -0.9452215554471363,
+          "cost_multiplier": 3.0,
+          "trade_legs": 777,
+          "early_rotations": 80,
+          "signal_days": 367,
+          "scheduled_lock_blocks": 20,
+          "realtime_filter_events": 0,
+          "risk_events": 323,
+          "reason_counts": {
+            "slow": 80,
+            "fast": 80
+          },
+          "ex_post_relative_5d_avg": 0.017760311355756665,
+          "ex_post_relative_5d_win_rate": 0.4936708860759494,
+          "ex_post_relative_10d_avg": 0.03035296780665035,
+          "ex_post_relative_10d_win_rate": 0.6455696202531646,
+          "ex_post_relative_20d_avg": 0.04106075258818975,
+          "ex_post_relative_20d_win_rate": 0.5897435897435898
+        }
+      },
+      "strict_v35_relative_final": -0.9923578108773415
+    }
+  },
+  "retrospective_segments": {
+    "retrospective_2020_2023": {
+      "strict_v3": {
+        "start": "2020-06-19",
+        "end": "2023-12-29",
+        "observations": 857,
+        "initial_value": 100000.0,
+        "final_value": 341569.45316996705,
+        "total_return": 2.4156945316996703,
+        "cagr": 0.41671845395650986,
+        "ann_vol": 0.2786014309397945,
+        "sharpe": 1.4957513051918327,
+        "max_drawdown": -0.2252772316778272
+      },
+      "strict_v35": {
+        "start": "2020-06-19",
+        "end": "2023-12-29",
+        "observations": 857,
+        "initial_value": 100000.0,
+        "final_value": 343502.43896723207,
+        "total_return": 2.4350243896723205,
+        "cagr": 0.4189874258646751,
+        "ann_vol": 0.284268033118151,
+        "sharpe": 1.4739167864524898,
+        "max_drawdown": -0.28615770033824584
+      }
+    },
+    "retrospective_2024_current": {
+      "strict_v3": {
+        "start": "2024-01-02",
+        "end": "2026-08-11",
+        "observations": 628,
+        "initial_value": 100000.0,
+        "final_value": 1016506.6896187759,
+        "total_return": 9.165066896187758,
+        "cagr": 1.434411124236711,
+        "ann_vol": 0.40937266654340065,
+        "sharpe": 3.503925008839442,
+        "max_drawdown": -0.18958693251167658
+      },
+      "strict_v35": {
+        "start": "2024-01-02",
+        "end": "2026-08-11",
+        "observations": 628,
+        "initial_value": 100000.0,
+        "final_value": 1418112.514570505,
+        "total_return": 13.18112514570505,
+        "cagr": 1.7661275026482763,
+        "ann_vol": 0.42117880067088304,
+        "sharpe": 4.193296290874719,
+        "max_drawdown": -0.1896040018086973
+      }
+    }
+  },
+  "rotation_event_evidence": {
+    "events": 40,
+    "events_by_year": {
+      "2020": 2,
+      "2021": 8,
+      "2022": 8,
+      "2023": 6,
+      "2024": 6,
+      "2025": 4,
+      "2026": 6
+    },
+    "horizons": {
+      "5": {
+        "observations": 40,
+        "mean": 0.02203738262616261,
+        "median": 0.007591541516938527,
+        "win_rate": 0.525,
+        "sign_test_p_value_one_sided": 0.43731465619021037,
+        "top5_share_of_positive_sum": 0.6681079152595968
+      },
+      "10": {
+        "observations": 40,
+        "mean": 0.04081265063564883,
+        "median": 0.028451029857589905,
+        "win_rate": 0.7,
+        "sign_test_p_value_one_sided": 0.008294501687487355,
+        "top5_share_of_positive_sum": 0.6166539259330814
+      },
+      "20": {
+        "observations": 40,
+        "mean": 0.037205835990452296,
+        "median": 0.04027627104228504,
+        "win_rate": 0.7,
+        "sign_test_p_value_one_sided": 0.008294501687487355,
+        "top5_share_of_positive_sum": 0.48959206270329647
+      }
+    },
+    "dependence_warning": "event horizons overlap and sign-test observations are not independent"
+  },
+  "documented_shock_scenario": {
+    "scenario": "silver daily -5%/-8%/-3%; gold +1%/+2%/+3%",
+    "decisions": [
+      {
+        "day": 1,
+        "triggered": false,
+        "target": null,
+        "reasons": [],
+        "blocked_by": "no_signal"
+      },
+      {
+        "day": 2,
+        "triggered": false,
+        "target": null,
+        "reasons": [],
+        "blocked_by": "confirmation"
+      },
+      {
+        "day": 3,
+        "triggered": true,
+        "target": "518880",
+        "reasons": [
+          "slow",
+          "fast"
+        ],
+        "blocked_by": ""
+      }
+    ],
+    "silver_cumulative_return": -0.15222000000000002,
+    "gold_cumulative_return": 0.061106000000000105,
+    "gold_relative_wealth_advantage": 0.2516289603434856,
+    "known_defect_fixed": false,
+    "mechanism": "strict eligibility blocks silver as a new target but does not force-sell an ineligible holding; V4 still waits for fast/slow consensus and two hits"
+  },
+  "assessment": {
+    "classification": "high_overfit_risk",
+    "research_status": "research_candidate_only",
+    "statistical_increment_pass": false,
+    "parameter_neighborhood_pass": true,
+    "pbo_warning": false,
+    "temporal_concentration_warning": true,
+    "cost_stress_pass": false,
+    "cost_path_warning": "cost changes portfolio drawdown, which changes risk actions and later trades; the 3x collapse is a path-dependent stress failure",
+    "production_recommendation": "do not replace production from this retrospective result; freeze the candidate and collect untouched shadow observations"
+  }
+}
