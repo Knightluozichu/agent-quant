@@ -7,6 +7,7 @@
 用法: uv run python scripts/exp_gate_mom_period_scan.py
 输出: data/v9_results/gate_mom_period_scan.json
 """
+
 from __future__ import annotations
 
 import json
@@ -54,32 +55,37 @@ def main() -> None:
         final_mat[s] = {}
     for short, long in combos:
         rep = run_with_periods(data, short, long)
-        results[f"{short}/{long}"] = {"short": short, "long": long,
-                               "final": rep["final_value"],
-                               "ann": rep["ann_return"],
-                               "sharpe": rep["sharpe"],
-                               "dd": rep["max_drawdown"],
-                               "n_trades": rep["n_trades"]}
+        results[f"{short}/{long}"] = {
+            "short": short,
+            "long": long,
+            "final": rep["final_value"],
+            "ann": rep["ann_return"],
+            "sharpe": rep["sharpe"],
+            "dd": rep["max_drawdown"],
+            "n_trades": rep["n_trades"],
+        }
         final_mat[short][long] = rep["final_value"]
-        print(f"  {short:>2}/{long:<3} 期末{rep['final_value']:>10,.0f} "
-              f"年化{rep['ann_return']*100:>+6.1f}% 夏普{rep['sharpe']:>5.2f} "
-              f"回撤{rep['max_drawdown']*100:>6.1f}%")
+        print(
+            f"  {short:>2}/{long:<3} 期末{rep['final_value']:>10,.0f} "
+            f"年化{rep['ann_return'] * 100:>+6.1f}% 夏普{rep['sharpe']:>5.2f} "
+            f"回撤{rep['max_drawdown'] * 100:>6.1f}%"
+        )
 
     # 矩阵输出
     print("\n" + "=" * 78)
     print("  期末收益矩阵 (万):")
     print(f"  {'短\\长':<6}" + "".join(f"{long:>8}" for long in LONG))
     for short in SHORT:
-        row = "".join(
-            f"{final_mat[short].get(long, 0) / 10000:>8.0f}" for long in LONG
-        )
+        row = "".join(f"{final_mat[short].get(long, 0) / 10000:>8.0f}" for long in LONG)
         print(f"  {short:<6}" + row)
 
     # 最优
     best_key = max(results, key=lambda k: results[k]["final"])
     prod = results.get("10/20")
-    print(f"\n  最优: {best_key} 期末{results[best_key]['final']:,.0f} "
-          f"年化{results[best_key]['ann']*100:+.1f}% 夏普{results[best_key]['sharpe']:.2f}")
+    print(
+        f"\n  最优: {best_key} 期末{results[best_key]['final']:,.0f} "
+        f"年化{results[best_key]['ann'] * 100:+.1f}% 夏普{results[best_key]['sharpe']:.2f}"
+    )
     if prod:
         d = results[best_key]["final"] / prod["final"] - 1
         print(f"  生产(10/20): 期末{prod['final']:,.0f} | 最优相对生产 {d:+.1%}")

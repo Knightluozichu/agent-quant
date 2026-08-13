@@ -27,18 +27,20 @@ def test_every_original_has_one_unique_peer_and_groups_cover_sixteen() -> None:
 
 
 def test_nasdaq_peer_split_is_adjusted_only_before_split_date() -> None:
-    frame = pd.DataFrame({
-        "trade_date": [
-            pd.Timestamp("2022-07-04").date(),
-            pd.Timestamp("2022-07-05").date(),
-        ],
-        "open": [2.4, 0.6],
-        "high": [2.4, 0.6],
-        "low": [2.4, 0.6],
-        "close": [2.4, 0.6],
-        "volume": [100.0, 400.0],
-        "symbol": ["159941", "159941"],
-    })
+    frame = pd.DataFrame(
+        {
+            "trade_date": [
+                pd.Timestamp("2022-07-04").date(),
+                pd.Timestamp("2022-07-05").date(),
+            ],
+            "open": [2.4, 0.6],
+            "high": [2.4, 0.6],
+            "low": [2.4, 0.6],
+            "close": [2.4, 0.6],
+            "volume": [100.0, 400.0],
+            "symbol": ["159941", "159941"],
+        }
+    )
 
     adjusted = apply_known_splits("159941", frame)
 

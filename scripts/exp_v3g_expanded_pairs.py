@@ -91,9 +91,7 @@ def apply_known_splits(code: str, frame: pd.DataFrame) -> pd.DataFrame:
         mask = adjusted["trade_date"] < split_day
         for column in ("open", "high", "low", "close"):
             adjusted.loc[mask, column] = adjusted.loc[mask, column].astype(float) / ratio
-        adjusted.loc[mask, "volume"] = (
-            adjusted.loc[mask, "volume"].astype(float) * ratio
-        )
+        adjusted.loc[mask, "volume"] = adjusted.loc[mask, "volume"].astype(float) * ratio
     return adjusted
 
 
@@ -117,9 +115,9 @@ def fetch_peer_data() -> None:
         frame["symbol"] = code
         for column in ("open", "high", "low", "close", "volume"):
             frame[column] = pd.to_numeric(frame[column], errors="coerce").astype(float)
-        frame = frame[
-            ["trade_date", "open", "close", "high", "low", "volume", "symbol"]
-        ].dropna(subset=["trade_date", "close"])
+        frame = frame[["trade_date", "open", "close", "high", "low", "volume", "symbol"]].dropna(
+            subset=["trade_date", "close"]
+        )
         frame = frame.sort_values("trade_date").drop_duplicates("trade_date")
         frame = apply_known_splits(code, frame).reset_index(drop=True)
         frame.to_parquet(PEER_DATA_DIR / f"{code}.parquet", index=False)
@@ -142,9 +140,7 @@ def load_expanded_data() -> tuple[dict[str, pd.DataFrame], dict[str, pd.DataFram
         frame = pd.read_parquet(path)
         data[code] = frame.sort_values("trade_date").reset_index(drop=True)
     if missing_peers:
-        raise RuntimeError(
-            f"Missing peer data {missing_peers}; rerun with --fetch"
-        )
+        raise RuntimeError(f"Missing peer data {missing_peers}; rerun with --fetch")
     return base, data
 
 
@@ -154,9 +150,7 @@ def select_target_expanded(
     holding: str | None,
 ) -> tuple[str, list[tuple[str, float]], float, bool]:
     """V3-G selector extended to 15 candidates plus the original defense."""
-    a_share_weak = rq.check_a_share_weak(
-        data, etf_data_at_date.get("159915", 0)
-    )
+    a_share_weak = rq.check_a_share_weak(data, etf_data_at_date.get("159915", 0))
     candidates: list[tuple[str, float]] = []
     for code in EXTENDED_POOL:
         if code not in etf_data_at_date:
@@ -195,11 +189,7 @@ def select_target_expanded(
     if holding and holding != rq.DEFENSE:
         current_score = dict(candidates).get(holding, -999.0)
         if current_score > 0:
-            target = (
-                best_target
-                if best_score > current_score + threshold
-                else holding
-            )
+            target = best_target if best_score > current_score + threshold else holding
         else:
             target = best_target
     else:
@@ -375,9 +365,7 @@ def main() -> None:
         },
     }
     if args.save:
-        OUTPUT.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n"
-        )
+        OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n")
         print(f"\nsaved: {OUTPUT}")
 
 

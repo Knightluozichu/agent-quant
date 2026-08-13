@@ -38,8 +38,14 @@ PROJECT_ROOT = Path(__file__).parent.parent
 OUTPUT = PROJECT_ROOT / "data" / "v9_results" / "v4_risk_budget_research.json"
 INITIAL_CAPITAL = 100_000.0
 Mode = Literal[
-    "volatility", "cppi", "shock", "risk_budget", "position_budget",
-    "episode_budget", "constant", "constant_shock",
+    "volatility",
+    "cppi",
+    "shock",
+    "risk_budget",
+    "position_budget",
+    "episode_budget",
+    "constant",
+    "constant_shock",
     "volatility_shock",
 ]
 FloatArray = np.ndarray[Any, np.dtype[np.float64]]
@@ -245,9 +251,7 @@ def volatility_exposure(
     _validate_params(params)
     if annualized_volatility <= 0.0:
         return 1.0
-    return float(np.clip(
-        params.volatility_target / annualized_volatility, 0.0, 1.0
-    ))
+    return float(np.clip(params.volatility_target / annualized_volatility, 0.0, 1.0))
 
 
 def target_exposure(
@@ -277,9 +281,7 @@ def target_exposure(
             shock_exposure(one_day, three_day, params),
         )
     if params.mode in ("constant", "constant_shock"):
-        return constant_target_exposure(
-            one_day=one_day, three_day=three_day, params=params
-        )
+        return constant_target_exposure(one_day=one_day, three_day=three_day, params=params)
     if params.mode in ("position_budget", "episode_budget"):
         raise ValueError(f"{params.mode} requires stateful controller inputs")
     raise ValueError(f"unsupported mode: {params.mode}")
@@ -327,20 +329,20 @@ def replay_documented_shock() -> dict[str, Any]:
         "constant80_shock_exposure_used": constant_used,
         "constant80_shock_return": constant_wealth - 1.0,
         "first_gap_is_unavoidable": True,
-        "execution_rule": (
-            "T-day 14:50 signal controls only the exposure after that observation"
-        ),
+        "execution_rule": ("T-day 14:50 signal controls only the exposure after that observation"),
     }
 
 
 def _curve_returns(curve: pd.DataFrame) -> FloatArray:
     equity = np.asarray(curve["equity"], dtype=float)
-    return cast("FloatArray", np.asarray(
-        np.diff(np.concatenate(([INITIAL_CAPITAL], equity))) / np.concatenate(
-            ([INITIAL_CAPITAL], equity[:-1])
+    return cast(
+        "FloatArray",
+        np.asarray(
+            np.diff(np.concatenate(([INITIAL_CAPITAL], equity)))
+            / np.concatenate(([INITIAL_CAPITAL], equity[:-1])),
+            dtype=np.float64,
         ),
-        dtype=np.float64,
-    ))
+    )
 
 
 def _date_index(frame: pd.DataFrame) -> dict[pd.Timestamp, int]:
@@ -371,7 +373,8 @@ def observable_inputs(
         safe_index = maps[rq.DEFENSE][td]
         safe.append(
             float(safe_close[safe_index] / safe_close[safe_index - 1] - 1.0)
-            if safe_index > 0 else 0.0
+            if safe_index > 0
+            else 0.0
         )
         if position == 0:
             held_1d.append(0.0)
@@ -384,14 +387,8 @@ def observable_inputs(
             else:
                 index = maps[held][td]
                 close = np.asarray(data[held]["close"], dtype=float)
-                held_1d.append(
-                    float(close[index] / close[index - 1] - 1.0)
-                    if index >= 1 else 0.0
-                )
-                held_3d.append(
-                    float(close[index] / close[index - 3] - 1.0)
-                    if index >= 3 else 0.0
-                )
+                held_1d.append(float(close[index] / close[index - 1] - 1.0) if index >= 1 else 0.0)
+                held_3d.append(float(close[index] / close[index - 3] - 1.0) if index >= 3 else 0.0)
 
         current_holding = holdings[position]
         changed = position == 0 or current_holding != holdings[position - 1]
@@ -425,20 +422,24 @@ def _annual_rows(curve: pd.DataFrame) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for year, group in indexed.groupby("year", sort=True):
         end = float(group["equity"].iloc[-1])
-        rows.append({
-            "year": int(cast("int", year)),
-            "return": end / prior - 1.0,
-            "end_value": end,
-        })
+        rows.append(
+            {
+                "year": int(cast("int", year)),
+                "return": end / prior - 1.0,
+                "end_value": end,
+            }
+        )
         prior = end
     return rows
 
 
 def _rolling_252(curve: pd.DataFrame) -> dict[str, Any]:
-    equity = np.concatenate((
-        np.asarray([INITIAL_CAPITAL], dtype=float),
-        np.asarray(curve["equity"], dtype=float),
-    ))
+    equity = np.concatenate(
+        (
+            np.asarray([INITIAL_CAPITAL], dtype=float),
+            np.asarray(curve["equity"], dtype=float),
+        )
+    )
     if len(equity) <= 252:
         return {"windows": 0, "negative_windows": 0}
     values = equity[252:] / equity[:-252] - 1.0
@@ -459,21 +460,18 @@ def _risk_metrics(curve: pd.DataFrame) -> dict[str, Any]:
     equity = np.asarray(curve["equity"], dtype=float)
     cagr = float(metrics["cagr"])
     max_drawdown = float(metrics["max_drawdown"])
-    drawdowns = equity / np.maximum.accumulate(
-        np.concatenate(([INITIAL_CAPITAL], equity))
-    )[1:] - 1.0
+    drawdowns = (
+        equity / np.maximum.accumulate(np.concatenate(([INITIAL_CAPITAL], equity)))[1:] - 1.0
+    )
     tail_count = max(math.ceil(0.05 * len(returns)), 1)
-    metrics.update({
-        "calmar": float(
-            cagr / abs(max_drawdown)
-            if max_drawdown < 0.0 else math.inf
-        ),
-        "ulcer_index": float(np.sqrt(np.mean(np.square(drawdowns)))),
-        "daily_expected_shortfall_5pct": float(
-            np.mean(np.sort(returns)[:tail_count])
-        ),
-        "worst_1d_return": float(np.min(returns)),
-    })
+    metrics.update(
+        {
+            "calmar": float(cagr / abs(max_drawdown) if max_drawdown < 0.0 else math.inf),
+            "ulcer_index": float(np.sqrt(np.mean(np.square(drawdowns)))),
+            "daily_expected_shortfall_5pct": float(np.mean(np.sort(returns)[:tail_count])),
+            "worst_1d_return": float(np.min(returns)),
+        }
+    )
     return metrics
 
 
@@ -504,11 +502,7 @@ def run_overlay(
 
     wealth = INITIAL_CAPITAL
     peak = INITIAL_CAPITAL
-    exposure = (
-        params.constant_exposure
-        if params.mode in ("constant", "constant_shock")
-        else 1.0
-    )
+    exposure = params.constant_exposure if params.mode in ("constant", "constant_shock") else 1.0
     ewma_variance = (params.volatility_target**2) / 252.0
     controller_cost = 0.0
     turnover = 0.0
@@ -517,12 +511,7 @@ def run_overlay(
     rows: list[dict[str, Any]] = []
     dates = list(base_curve["trade_date"])
     fee_per_reallocation = 2.0 * (rq.FEE + rq.SLIPPAGE) * cost_multiplier
-    initial_safe_cost = (
-        wealth
-        * (1.0 - exposure)
-        * (rq.FEE + rq.SLIPPAGE)
-        * cost_multiplier
-    )
+    initial_safe_cost = wealth * (1.0 - exposure) * (rq.FEE + rq.SLIPPAGE) * cost_multiplier
     wealth -= initial_safe_cost
     controller_cost += initial_safe_cost
     turnover += 1.0 - exposure
@@ -535,8 +524,7 @@ def run_overlay(
         drifted_exposure = risky_value / wealth if wealth > 0.0 else 0.0
         peak = max(peak, wealth)
         ewma_variance = (
-            params.ewma_decay * ewma_variance
-            + (1.0 - params.ewma_decay) * base_returns[index] ** 2
+            params.ewma_decay * ewma_variance + (1.0 - params.ewma_decay) * base_returns[index] ** 2
         )
         annualized_volatility = math.sqrt(max(ewma_variance, 0.0) * 252.0)
         portfolio_drawdown = wealth / peak - 1.0 if peak > 0.0 else 0.0
@@ -552,9 +540,7 @@ def run_overlay(
             next_exposure, episode_active = episode_target_exposure(
                 portfolio_drawdown=portfolio_drawdown,
                 episode_active=episode_active,
-                shock_cap=shock_exposure(
-                    float(held_1d[index]), float(held_3d[index]), params
-                ),
+                shock_cap=shock_exposure(float(held_1d[index]), float(held_3d[index]), params),
                 params=params,
             )
         else:
@@ -572,38 +558,42 @@ def run_overlay(
         controller_cost += cost
         turnover += reallocation
         episode_days += int(episode_active)
-        rows.append({
-            "trade_date": pd.Timestamp(td),
-            "equity": wealth,
-            "holding": base_curve.iloc[index]["holding"],
-            "exposure_used": used_exposure,
-            "next_exposure": next_exposure,
-            "drifted_exposure": drifted_exposure,
-            "annualized_volatility": annualized_volatility,
-            "held_1d_return": float(held_1d[index]),
-            "held_3d_return": float(held_3d[index]),
-            "position_drawdown": float(position_drawdowns[index]),
-            "holding_changed": bool(holding_changes[index]),
-            "portfolio_drawdown": portfolio_drawdown,
-            "episode_active": episode_active,
-            "controller_cost": cost,
-        })
+        rows.append(
+            {
+                "trade_date": pd.Timestamp(td),
+                "equity": wealth,
+                "holding": base_curve.iloc[index]["holding"],
+                "exposure_used": used_exposure,
+                "next_exposure": next_exposure,
+                "drifted_exposure": drifted_exposure,
+                "annualized_volatility": annualized_volatility,
+                "held_1d_return": float(held_1d[index]),
+                "held_3d_return": float(held_3d[index]),
+                "position_drawdown": float(position_drawdowns[index]),
+                "holding_changed": bool(holding_changes[index]),
+                "portfolio_drawdown": portfolio_drawdown,
+                "episode_active": episode_active,
+                "controller_cost": cost,
+            }
+        )
         exposure = next_exposure
 
     curve = pd.DataFrame(rows)
     metrics = _risk_metrics(curve)
     annual = _annual_rows(curve)
-    metrics.update({
-        "cost_multiplier": cost_multiplier,
-        "average_exposure": float(curve["exposure_used"].mean()),
-        "minimum_exposure": float(curve["exposure_used"].min()),
-        "days_below_full_exposure": int(np.sum(curve["exposure_used"] < 0.999)),
-        "zero_exposure_days": int(np.sum(curve["exposure_used"] <= 0.001)),
-        "controller_turnover": turnover,
-        "controller_cost": controller_cost,
-        "episode_days": episode_days,
-        "negative_years": int(sum(row["return"] < 0.0 for row in annual)),
-    })
+    metrics.update(
+        {
+            "cost_multiplier": cost_multiplier,
+            "average_exposure": float(curve["exposure_used"].mean()),
+            "minimum_exposure": float(curve["exposure_used"].min()),
+            "days_below_full_exposure": int(np.sum(curve["exposure_used"] < 0.999)),
+            "zero_exposure_days": int(np.sum(curve["exposure_used"] <= 0.001)),
+            "controller_turnover": turnover,
+            "controller_cost": controller_cost,
+            "episode_days": episode_days,
+            "negative_years": int(sum(row["return"] < 0.0 for row in annual)),
+        }
+    )
     return {
         "params": asdict(params),
         "metrics": metrics,
@@ -618,9 +608,7 @@ def _compact(result: dict[str, Any]) -> dict[str, Any]:
         "params": result.get("params", asdict(v4.V4_PARAMS)),
         "metrics": result["metrics"],
         "annual": result.get("annual", _annual_rows(result["equity_curve"])),
-        "rolling_252": result.get(
-            "rolling_252", _rolling_252(result["equity_curve"])
-        ),
+        "rolling_252": result.get("rolling_252", _rolling_252(result["equity_curve"])),
     }
 
 
@@ -637,19 +625,19 @@ def _recent_comparison(
     rows: list[dict[str, Any]] = []
     for index in range(max(len(base_curve) - days, 0), len(base_curve)):
         selected_row = selected_curve.iloc[index]
-        rows.append({
-            "date": str(pd.Timestamp(base_curve.iloc[index]["trade_date"]).date()),
-            "holding": str(base_curve.iloc[index]["holding"]),
-            "v4_return": float(base_returns[index]),
-            "selected_return": float(selected_returns[index]),
-            "exposure_used": float(selected_row["exposure_used"]),
-            "next_exposure": float(selected_row["next_exposure"]),
-            "held_1d_return": float(selected_row["held_1d_return"]),
-            "held_3d_return": float(selected_row["held_3d_return"]),
-            "annualized_volatility": float(
-                selected_row["annualized_volatility"]
-            ),
-        })
+        rows.append(
+            {
+                "date": str(pd.Timestamp(base_curve.iloc[index]["trade_date"]).date()),
+                "holding": str(base_curve.iloc[index]["holding"]),
+                "v4_return": float(base_returns[index]),
+                "selected_return": float(selected_returns[index]),
+                "exposure_used": float(selected_row["exposure_used"]),
+                "next_exposure": float(selected_row["next_exposure"]),
+                "held_1d_return": float(selected_row["held_1d_return"]),
+                "held_3d_return": float(selected_row["held_3d_return"]),
+                "annualized_volatility": float(selected_row["annualized_volatility"]),
+            }
+        )
     return rows
 
 
@@ -673,28 +661,18 @@ def _bootstrap_comparison(
     safety_pass = 0
     positive = 0
     for _ in range(bootstrap_samples):
-        indices = circular_block_indices(
-            len(base), block_size=block_size, rng=rng
-        )
+        indices = circular_block_indices(len(base), block_size=block_size, rng=rng)
         base_sample = base[indices]
         candidate_sample = candidate[indices]
         base_wealth: FloatArray = np.cumprod(1.0 + base_sample)
         candidate_wealth: FloatArray = np.cumprod(1.0 + candidate_sample)
         base_cagr = float(base_wealth[-1] ** (252.0 / len(base)) - 1.0)
-        candidate_cagr = float(
-            candidate_wealth[-1] ** (252.0 / len(candidate)) - 1.0
-        )
+        candidate_cagr = float(candidate_wealth[-1] ** (252.0 / len(candidate)) - 1.0)
         base_peak = np.maximum.accumulate(np.concatenate(([1.0], base_wealth)))[1:]
-        candidate_peak = np.maximum.accumulate(
-            np.concatenate(([1.0], candidate_wealth))
-        )[1:]
+        candidate_peak = np.maximum.accumulate(np.concatenate(([1.0], candidate_wealth)))[1:]
         base_mdd = abs(float(np.min(base_wealth / base_peak - 1.0)))
-        candidate_mdd = abs(float(
-            np.min(candidate_wealth / candidate_peak - 1.0)
-        ))
-        cagr_retention = (
-            candidate_cagr / base_cagr if base_cagr > 0.0 else 0.0
-        )
+        candidate_mdd = abs(float(np.min(candidate_wealth / candidate_peak - 1.0)))
+        cagr_retention = candidate_cagr / base_cagr if base_cagr > 0.0 else 0.0
         mdd_gain = 1.0 - candidate_mdd / base_mdd if base_mdd > 0.0 else 0.0
         retention.append(cagr_retention)
         drawdown_improvement.append(mdd_gain)
@@ -706,9 +684,7 @@ def _bootstrap_comparison(
         "bootstrap_samples": bootstrap_samples,
         "probability_positive_terminal": positive / bootstrap_samples,
         "probability_joint_80pct_cagr_20pct_mdd_rule": joint_pass / bootstrap_samples,
-        "probability_positive_cagr_and_mdd_at_most_20pct": (
-            safety_pass / bootstrap_samples
-        ),
+        "probability_positive_cagr_and_mdd_at_most_20pct": (safety_pass / bootstrap_samples),
         "cagr_retention_ci95": np.asarray(
             np.quantile(retention, (0.025, 0.975)), dtype=float
         ).tolist(),
@@ -733,9 +709,7 @@ def main() -> None:
 
     data = rq.load_data()
     baseline_by_cost = {
-        multiplier: run_full_pool_strategy(
-            data, v4.V4_PARAMS, cost_multiplier=multiplier
-        )
+        multiplier: run_full_pool_strategy(data, v4.V4_PARAMS, cost_multiplier=multiplier)
         for multiplier in (0.0, 1.0, 2.0, 3.0)
     }
     phase1_candidates = preregistered_candidates()
@@ -750,9 +724,7 @@ def main() -> None:
     for cost, baseline in baseline_by_cost.items():
         inputs = observable_inputs(data, baseline["equity_curve"])
         overlay_by_cost[cost] = {
-            name: run_overlay(
-                baseline, *inputs, params, cost_multiplier=cost
-            )
+            name: run_overlay(baseline, *inputs, params, cost_multiplier=cost)
             for name, params in candidates.items()
         }
 
@@ -788,8 +760,11 @@ def main() -> None:
             "positive_at_2x_cost": cost2["final_value"] > INITIAL_CAPITAL,
             "mdd_below_40pct_at_2x_cost": cost2["max_drawdown"] > -0.40,
             "documented_shock_below_10pct": (
-                name not in (
-                    "v4_risk_budget", "v4_position_budget", "v4_episode_budget",
+                name
+                not in (
+                    "v4_risk_budget",
+                    "v4_position_budget",
+                    "v4_episode_budget",
                     "v4_constant80_shock",
                     "v4_vol30_shock",
                 )
@@ -819,10 +794,7 @@ def main() -> None:
     cost_pressure = {
         f"{cost:.0f}x": {
             "baseline_v4": _compact(baseline_result),
-            **{
-                name: _compact(result)
-                for name, result in overlay_by_cost[cost].items()
-            },
+            **{name: _compact(result) for name, result in overlay_by_cost[cost].items()},
         }
         for cost, baseline_result in baseline_by_cost.items()
     }
@@ -840,21 +812,23 @@ def main() -> None:
     neighbor_rows: list[dict[str, Any]] = []
     for name, result in neighbor_results.items():
         metrics = result["metrics"]
-        neighbor_rows.append({
-            "name": name,
-            "params": result["params"],
-            "final_value": float(metrics["final_value"]),
-            "cagr": float(metrics["cagr"]),
-            "max_drawdown": float(metrics["max_drawdown"]),
-            "sharpe": float(metrics["sharpe"]),
-            "average_exposure": float(metrics["average_exposure"]),
-            "negative_years": int(metrics["negative_years"]),
-            "safety_profile_passed": bool(
-                metrics["cagr"] > 0.0
-                and metrics["max_drawdown"] >= -0.20
-                and metrics["negative_years"] == 0
-            ),
-        })
+        neighbor_rows.append(
+            {
+                "name": name,
+                "params": result["params"],
+                "final_value": float(metrics["final_value"]),
+                "cagr": float(metrics["cagr"]),
+                "max_drawdown": float(metrics["max_drawdown"]),
+                "sharpe": float(metrics["sharpe"]),
+                "average_exposure": float(metrics["average_exposure"]),
+                "negative_years": int(metrics["negative_years"]),
+                "safety_profile_passed": bool(
+                    metrics["cagr"] > 0.0
+                    and metrics["max_drawdown"] >= -0.20
+                    and metrics["negative_years"] == 0
+                ),
+            }
+        )
     neighbor_passes = sum(row["safety_profile_passed"] for row in neighbor_rows)
     neighborhood = {
         "definition": "one-axis center plus +/-20% risk and shock perturbations",
@@ -862,9 +836,7 @@ def main() -> None:
         "safety_profile_passes": neighbor_passes,
         "safety_profile_pass_rate": neighbor_passes / len(neighbor_rows),
         "minimum_cagr": min(row["cagr"] for row in neighbor_rows),
-        "maximum_mdd_magnitude": max(
-            abs(row["max_drawdown"]) for row in neighbor_rows
-        ),
+        "maximum_mdd_magnitude": max(abs(row["max_drawdown"]) for row in neighbor_rows),
         "rows": neighbor_rows,
     }
     bootstrap = {
@@ -887,20 +859,14 @@ def main() -> None:
         "no_negative_calendar_year": selected_metrics["negative_years"] == 0,
         "positive_at_2x_cost": selected_cost2["final_value"] > INITIAL_CAPITAL,
         "mdd_below_40pct_at_2x_cost": selected_cost2["max_drawdown"] > -0.40,
-        "documented_shock_below_10pct": (
-            shock_scenario["risk_budget_return"] > -0.10
-        ),
+        "documented_shock_below_10pct": (shock_scenario["risk_budget_return"] > -0.10),
     }
     safety_pass = bool(all(safety_checks.values()))
-    neighborhood_pass = bool(
-        neighborhood["safety_profile_pass_rate"] >= 0.80
-    )
+    neighborhood_pass = bool(neighborhood["safety_profile_pass_rate"] >= 0.80)
     bootstrap_safety_probability = float(
         bootstrap["20"]["probability_positive_cagr_and_mdd_at_most_20pct"]
     )
-    robustness_pass = bool(
-        neighborhood_pass and bootstrap_safety_probability >= 0.80
-    )
+    robustness_pass = bool(neighborhood_pass and bootstrap_safety_probability >= 0.80)
     classification = (
         "shadow_candidate_strict_constraints_require_oos"
         if selected_pass and robustness_pass
@@ -920,9 +886,7 @@ def main() -> None:
             "live_oos_observations": 0,
             "no_parameter_scan": True,
             "candidate_count": len(candidates),
-            "current_recorded_path_evaluations": (
-                len(candidates) + len(neighbor_results)
-            ),
+            "current_recorded_path_evaluations": (len(candidates) + len(neighbor_results)),
             "adaptive_research_sequence": True,
             "phase1_candidate_count": len(phase1_candidates),
             "phase2_theory_revision_count": 1,
@@ -971,12 +935,8 @@ def main() -> None:
                 "20%, without adding negative years or failing 2x costs"
             ),
             "volatility_rule": "x=min(1, 30% / EWMA annualized volatility), lambda=0.94",
-            "cppi_rule": (
-                "floor=80% of running peak; x=min(1, 5*(wealth-floor)/wealth)"
-            ),
-            "shock_rule": (
-                "next-period x<=50% after held asset 1d<=-5%; x=0 after 3d<=-10%"
-            ),
+            "cppi_rule": ("floor=80% of running peak; x=min(1, 5*(wealth-floor)/wealth)"),
+            "shock_rule": ("next-period x<=50% after held asset 1d<=-5%; x=0 after 3d<=-10%"),
             "position_budget_rule": (
                 "full exposure through 5% position drawdown, linear to zero at 10%, "
                 "then reset only after frozen V4 changes the holding"
@@ -989,9 +949,7 @@ def main() -> None:
                 "80% frozen V4 sleeve plus 20% defense, daily rebalanced; the shock "
                 "variant applies the pre-registered 50%/0% next-period caps"
             ),
-            "volatility_shock_rule": (
-                "x=min(1, 30%/EWMA volatility, 1d/3d shock cap)"
-            ),
+            "volatility_shock_rule": ("x=min(1, 30%/EWMA volatility, 1d/3d shock cap)"),
             "guarantee_limit": (
                 "daily discrete execution creates gap risk; the 80% floor is soft, not "
                 "a guaranteed payoff"
@@ -1012,17 +970,13 @@ def main() -> None:
             "results": bootstrap,
         },
         "parameter_robustness": neighborhood,
-        "recent_10_trading_days": _recent_comparison(
-            baseline, named[selected_name]
-        ),
+        "recent_10_trading_days": _recent_comparison(baseline, named[selected_name]),
         "assessment": {
             "classification": classification,
             "preregistered_constraints_passed": selected_pass,
             "safety_profile_checks": safety_checks,
             "safety_profile_passed": safety_pass,
-            "local_neighborhood_pass_rate": neighborhood[
-                "safety_profile_pass_rate"
-            ],
+            "local_neighborhood_pass_rate": neighborhood["safety_profile_pass_rate"],
             "local_neighborhood_passed": neighborhood_pass,
             "bootstrap_20d_safety_probability": bootstrap_safety_probability,
             "robustness_passed": robustness_pass,
@@ -1060,9 +1014,7 @@ def main() -> None:
         f"{bootstrap['20']['probability_joint_80pct_cagr_20pct_mdd_rule']:.1%}"
     )
     if args.save:
-        OUTPUT.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n"
-        )
+        OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n")
         print(f"saved: {OUTPUT}")
 
 

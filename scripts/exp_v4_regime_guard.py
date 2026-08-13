@@ -106,9 +106,7 @@ def validate_params(params: RegimeGuardParams) -> None:
         raise ValueError("recovery_days must be positive")
 
 
-def absolute_trend_votes(
-    *, return_20d: float, return_60d: float, ma20_slope_5d: float
-) -> int:
+def absolute_trend_votes(*, return_20d: float, return_60d: float, ma20_slope_5d: float) -> int:
     """Three low-degree-of-freedom absolute-trend votes."""
     return sum((return_20d > 0.0, return_60d > 0.0, ma20_slope_5d > 0.0))
 
@@ -153,10 +151,7 @@ def risk_votes(
         reasons.append("correlation_concentration")
     if downside_vol_acceleration > downside_vol_threshold:
         reasons.append("downside_vol_acceleration")
-    if (
-        rank_churn_10d > churn_threshold
-        and leader_confidence < confidence_threshold
-    ):
+    if rank_churn_10d > churn_threshold and leader_confidence < confidence_threshold:
         reasons.append("unstable_leadership")
     return len(reasons), tuple(reasons)
 
@@ -180,10 +175,7 @@ def regime_exposure(
         reasons.append("stale_holding_shock")
     if votes >= params.red_votes:
         reasons.append("red_regime")
-    if (
-        portfolio_drawdown <= -params.drawdown_red
-        and votes >= params.yellow_votes
-    ):
+    if portfolio_drawdown <= -params.drawdown_red and votes >= params.yellow_votes:
         red = True
         reasons.append("drawdown_red_confirmation")
 
@@ -205,10 +197,7 @@ def regime_exposure(
     elif not absolute_ok:
         exposure = params.yellow_exposure
         reasons.append("weak_absolute_trend")
-    if (
-        portfolio_drawdown <= -params.drawdown_yellow
-        and votes >= 1
-    ):
+    if portfolio_drawdown <= -params.drawdown_yellow and votes >= 1:
         exposure = min(exposure, params.yellow_exposure)
         reasons.append("drawdown_yellow_confirmation")
     return exposure, risk_off_active, recovery_streak, tuple(reasons)
@@ -303,9 +292,7 @@ def confirmed_tail_exposure(
     return 1.0, ()
 
 
-def _close_prefix(
-    data: dict[str, pd.DataFrame], code: str, index: int
-) -> FloatArray:
+def _close_prefix(data: dict[str, pd.DataFrame], code: str, index: int) -> FloatArray:
     return cast(
         "FloatArray",
         np.asarray(data[code]["close"].values[: index + 1], dtype=np.float64),
@@ -366,19 +353,12 @@ def compute_raw_factor_history(data: dict[str, pd.DataFrame]) -> pd.DataFrame:
         scores.sort(key=lambda item: item[1], reverse=True)
         leader = scores[0][0]
         leaders.append(leader)
-        score_values: FloatArray = np.asarray(
-            [score for _code, score in scores], dtype=np.float64
-        )
+        score_values: FloatArray = np.asarray([score for _code, score in scores], dtype=np.float64)
         median_score = float(np.median(score_values))
         mad = float(np.median(np.abs(score_values - median_score)))
-        confidence = float(
-            (scores[0][1] - scores[1][1]) / max(mad, 1e-6)
-        )
+        confidence = float((scores[0][1] - scores[1][1]) / max(mad, 1e-6))
         recent_leaders = leaders[-10:]
-        churn = sum(
-            current != previous
-            for previous, current in pairwise(recent_leaders)
-        )
+        churn = sum(current != previous for previous, current in pairwise(recent_leaders))
 
         return_matrix = np.column_stack(daily_blocks)
         correlation = cast(
@@ -396,21 +376,21 @@ def compute_raw_factor_history(data: dict[str, pd.DataFrame]) -> pd.DataFrame:
         downside_10 = math.sqrt(float(np.mean(np.minimum(equal_weight[-10:], 0.0) ** 2)))
         downside_60 = math.sqrt(float(np.mean(np.minimum(equal_weight, 0.0) ** 2)))
         acceleration = downside_10 / downside_60 if downside_60 > 0.0 else 1.0
-        returns_20_array: FloatArray = np.asarray(
-            returns_20, dtype=np.float64
+        returns_20_array: FloatArray = np.asarray(returns_20, dtype=np.float64)
+        rows.append(
+            {
+                "trade_date": pd.Timestamp(td),
+                "breadth_20d": float(np.mean(returns_20_array > 0.0)),
+                "median_return_20d": float(np.median(returns_20_array)),
+                "correlation_concentration": concentration,
+                "downside_vol_acceleration": acceleration,
+                "rank_churn_10d": float(churn),
+                "leader": leader,
+                "leader_confidence": confidence,
+                "absolute_votes_by_code": absolute_by_code,
+                "tail_state_by_code": tail_state_by_code,
+            }
         )
-        rows.append({
-            "trade_date": pd.Timestamp(td),
-            "breadth_20d": float(np.mean(returns_20_array > 0.0)),
-            "median_return_20d": float(np.median(returns_20_array)),
-            "correlation_concentration": concentration,
-            "downside_vol_acceleration": acceleration,
-            "rank_churn_10d": float(churn),
-            "leader": leader,
-            "leader_confidence": confidence,
-            "absolute_votes_by_code": absolute_by_code,
-            "tail_state_by_code": tail_state_by_code,
-        })
     return pd.DataFrame(rows)
 
 
@@ -435,8 +415,7 @@ def build_regime_inputs(
             default=default,
         )
     factor_map = {
-        pd.Timestamp(row["trade_date"]).normalize(): row
-        for row in frame.to_dict("records")
+        pd.Timestamp(row["trade_date"]).normalize(): row for row in frame.to_dict("records")
     }
     aligned: list[dict[str, Any]] = []
     for row in curve.to_dict("records"):
@@ -445,23 +424,22 @@ def build_regime_inputs(
         holding = str(row["holding"])
         absolute_by_code = factor["absolute_votes_by_code"]
         tail_by_code = factor["tail_state_by_code"]
-        tail = tail_by_code.get(holding, {
-            "volatility_20d": 0.0,
-            "momentum_decay_5d": 0.0,
-            "price_below_ma10": False,
-            "momentum_score": math.inf,
-        })
+        tail = tail_by_code.get(
+            holding,
+            {
+                "volatility_20d": 0.0,
+                "momentum_decay_5d": 0.0,
+                "price_below_ma10": False,
+                "momentum_score": math.inf,
+            },
+        )
         count, reasons = risk_votes(
             breadth_20d=float(factor["breadth_20d"]),
             median_return_20d=float(factor["median_return_20d"]),
             correlation_concentration=float(factor["correlation_concentration"]),
-            correlation_threshold=float(
-                factor["correlation_concentration_threshold"]
-            ),
+            correlation_threshold=float(factor["correlation_concentration_threshold"]),
             downside_vol_acceleration=float(factor["downside_vol_acceleration"]),
-            downside_vol_threshold=float(
-                factor["downside_vol_acceleration_threshold"]
-            ),
+            downside_vol_threshold=float(factor["downside_vol_acceleration_threshold"]),
             rank_churn_10d=float(factor["rank_churn_10d"]),
             churn_threshold=float(factor["rank_churn_10d_threshold"]),
             leader_confidence=float(factor["leader_confidence"]),
@@ -473,25 +451,27 @@ def build_regime_inputs(
             for key, value in factor.items()
             if key not in {"absolute_votes_by_code", "tail_state_by_code"}
         }
-        aligned.append({
-            **factor_payload,
-            "trade_date": td,
-            "holding": holding,
-            "absolute_votes": int(absolute_by_code.get(holding, 0)),
-            "risk_votes": count,
-            "risk_vote_reasons": reasons,
-            "tail_volatility_20d": float(tail["volatility_20d"]),
-            "tail_momentum_decay_5d": float(tail["momentum_decay_5d"]),
-            "tail_price_below_ma10": bool(tail["price_below_ma10"]),
-            "tail_momentum_score": float(tail["momentum_score"]),
-            "tail_decay_confirmed": tail_decay_confirmation(
-                volatility_20d=float(tail["volatility_20d"]),
-                momentum_decay_5d=float(tail["momentum_decay_5d"]),
-                price_below_ma10=bool(tail["price_below_ma10"]),
-                momentum_score=float(tail["momentum_score"]),
-                params=params,
-            ),
-        })
+        aligned.append(
+            {
+                **factor_payload,
+                "trade_date": td,
+                "holding": holding,
+                "absolute_votes": int(absolute_by_code.get(holding, 0)),
+                "risk_votes": count,
+                "risk_vote_reasons": reasons,
+                "tail_volatility_20d": float(tail["volatility_20d"]),
+                "tail_momentum_decay_5d": float(tail["momentum_decay_5d"]),
+                "tail_price_below_ma10": bool(tail["price_below_ma10"]),
+                "tail_momentum_score": float(tail["momentum_score"]),
+                "tail_decay_confirmed": tail_decay_confirmation(
+                    volatility_20d=float(tail["volatility_20d"]),
+                    momentum_decay_5d=float(tail["momentum_decay_5d"]),
+                    price_below_ma10=bool(tail["price_below_ma10"]),
+                    momentum_score=float(tail["momentum_score"]),
+                    params=params,
+                ),
+            }
+        )
     return pd.DataFrame(aligned)
 
 
@@ -511,13 +491,11 @@ def _ablation_exposure(
             float(row["breadth_20d"]) < params.breadth_floor
             or float(row["median_return_20d"]) < 0.0
         )
-        return (
-            (params.yellow_exposure, ("weak_breadth",))
-            if stress else (1.0, ())
-        )
+        return (params.yellow_exposure, ("weak_breadth",)) if stress else (1.0, ())
     if mode == "systemic":
         reasons = tuple(
-            reason for reason in row["risk_vote_reasons"]
+            reason
+            for reason in row["risk_vote_reasons"]
             if reason in {"correlation_concentration", "downside_vol_acceleration"}
         )
         if len(reasons) == 2:
@@ -527,10 +505,7 @@ def _ablation_exposure(
         return 1.0, ()
     if mode == "leadership":
         stress = "unstable_leadership" in row["risk_vote_reasons"]
-        return (
-            (params.yellow_exposure, ("unstable_leadership",))
-            if stress else (1.0, ())
-        )
+        return (params.yellow_exposure, ("unstable_leadership",)) if stress else (1.0, ())
     raise ValueError(f"unsupported ablation mode: {mode}")
 
 
@@ -578,10 +553,7 @@ def run_guard_overlay(
         peak = max(peak, wealth)
         portfolio_drawdown = wealth / peak - 1.0 if peak > 0.0 else 0.0
         signal = inputs.iloc[index]
-        holding_shock = bool(
-            held_1d[index] <= params.shock_1d
-            or held_3d[index] <= params.shock_3d
-        )
+        holding_shock = bool(held_1d[index] <= params.shock_1d or held_3d[index] <= params.shock_3d)
         stale_shock = bool(not holding_changes[index] and holding_shock)
         if params.mode == "full":
             next_exposure, risk_off_active, recovery_streak, reasons = regime_exposure(
@@ -614,59 +586,62 @@ def run_guard_overlay(
         wealth -= cost
         controller_cost += cost
         turnover += reallocation
-        rows.append({
-            "trade_date": pd.Timestamp(base_row["trade_date"]),
-            "equity": wealth,
-            "holding": base_row["holding"],
-            "exposure_used": used_exposure,
-            "next_exposure": next_exposure,
-            "portfolio_drawdown": portfolio_drawdown,
-            "absolute_votes": int(signal["absolute_votes"]),
-            "risk_votes": int(signal["risk_votes"]),
-            "risk_vote_reasons": list(signal["risk_vote_reasons"]),
-            "decision_reasons": list(reasons),
-            "breadth_20d": float(signal["breadth_20d"]),
-            "median_return_20d": float(signal["median_return_20d"]),
-            "correlation_concentration": float(signal["correlation_concentration"]),
-            "downside_vol_acceleration": float(signal["downside_vol_acceleration"]),
-            "rank_churn_10d": float(signal["rank_churn_10d"]),
-            "leader_confidence": float(signal["leader_confidence"]),
-            "held_1d_return": float(held_1d[index]),
-            "held_3d_return": float(held_3d[index]),
-            "holding_shock": holding_shock,
-            "holding_changed": bool(holding_changes[index]),
-            "stale_holding_shock": stale_shock,
-            "tail_volatility_20d": float(signal["tail_volatility_20d"]),
-            "tail_momentum_decay_5d": float(signal["tail_momentum_decay_5d"]),
-            "tail_price_below_ma10": bool(signal["tail_price_below_ma10"]),
-            "tail_momentum_score": float(signal["tail_momentum_score"]),
-            "tail_decay_confirmed": bool(signal["tail_decay_confirmed"]),
-            "risk_off_active": risk_off_active,
-            "recovery_streak": recovery_streak,
-            "controller_cost": cost,
-        })
+        rows.append(
+            {
+                "trade_date": pd.Timestamp(base_row["trade_date"]),
+                "equity": wealth,
+                "holding": base_row["holding"],
+                "exposure_used": used_exposure,
+                "next_exposure": next_exposure,
+                "portfolio_drawdown": portfolio_drawdown,
+                "absolute_votes": int(signal["absolute_votes"]),
+                "risk_votes": int(signal["risk_votes"]),
+                "risk_vote_reasons": list(signal["risk_vote_reasons"]),
+                "decision_reasons": list(reasons),
+                "breadth_20d": float(signal["breadth_20d"]),
+                "median_return_20d": float(signal["median_return_20d"]),
+                "correlation_concentration": float(signal["correlation_concentration"]),
+                "downside_vol_acceleration": float(signal["downside_vol_acceleration"]),
+                "rank_churn_10d": float(signal["rank_churn_10d"]),
+                "leader_confidence": float(signal["leader_confidence"]),
+                "held_1d_return": float(held_1d[index]),
+                "held_3d_return": float(held_3d[index]),
+                "holding_shock": holding_shock,
+                "holding_changed": bool(holding_changes[index]),
+                "stale_holding_shock": stale_shock,
+                "tail_volatility_20d": float(signal["tail_volatility_20d"]),
+                "tail_momentum_decay_5d": float(signal["tail_momentum_decay_5d"]),
+                "tail_price_below_ma10": bool(signal["tail_price_below_ma10"]),
+                "tail_momentum_score": float(signal["tail_momentum_score"]),
+                "tail_decay_confirmed": bool(signal["tail_decay_confirmed"]),
+                "risk_off_active": risk_off_active,
+                "recovery_streak": recovery_streak,
+                "controller_cost": cost,
+            }
+        )
         exposure = next_exposure
 
     curve = pd.DataFrame(rows)
     metrics = rb._risk_metrics(curve)
     annual = rb._annual_rows(curve)
-    metrics.update({
-        "cost_multiplier": cost_multiplier,
-        "average_exposure": float(curve["exposure_used"].mean()),
-        "days_full_exposure": int(np.sum(curve["exposure_used"] >= 0.999)),
-        "days_half_exposure": int(np.sum(
-            np.isclose(curve["exposure_used"], params.yellow_exposure)
-        )),
-        "days_zero_exposure": int(np.sum(curve["exposure_used"] <= 0.001)),
-        "days_reduced_exposure": int(np.sum(
-            (curve["exposure_used"] > 0.001)
-            & (curve["exposure_used"] < 0.999)
-        )),
-        "controller_turnover": turnover,
-        "controller_cost": controller_cost,
-        "negative_years": int(sum(row["return"] < 0.0 for row in annual)),
-        "reason_counts": dict(reason_counts),
-    })
+    metrics.update(
+        {
+            "cost_multiplier": cost_multiplier,
+            "average_exposure": float(curve["exposure_used"].mean()),
+            "days_full_exposure": int(np.sum(curve["exposure_used"] >= 0.999)),
+            "days_half_exposure": int(
+                np.sum(np.isclose(curve["exposure_used"], params.yellow_exposure))
+            ),
+            "days_zero_exposure": int(np.sum(curve["exposure_used"] <= 0.001)),
+            "days_reduced_exposure": int(
+                np.sum((curve["exposure_used"] > 0.001) & (curve["exposure_used"] < 0.999))
+            ),
+            "controller_turnover": turnover,
+            "controller_cost": controller_cost,
+            "negative_years": int(sum(row["return"] < 0.0 for row in annual)),
+            "reason_counts": dict(reason_counts),
+        }
+    )
     return {
         "params": asdict(params),
         "metrics": metrics,
@@ -681,24 +656,23 @@ def compact(result: dict[str, Any]) -> dict[str, Any]:
         "params": result.get("params", asdict(v4.V4_PARAMS)),
         "metrics": result["metrics"],
         "annual": result.get("annual", rb._annual_rows(result["equity_curve"])),
-        "rolling_252": result.get(
-            "rolling_252", rb._rolling_252(result["equity_curve"])
-        ),
+        "rolling_252": result.get("rolling_252", rb._rolling_252(result["equity_curve"])),
     }
 
 
 def max_drawdown_episode(curve: pd.DataFrame) -> dict[str, Any]:
-    equity = np.concatenate((
-        np.asarray([INITIAL_CAPITAL], dtype=float),
-        np.asarray(curve["equity"], dtype=float),
-    ))
+    equity = np.concatenate(
+        (
+            np.asarray([INITIAL_CAPITAL], dtype=float),
+            np.asarray(curve["equity"], dtype=float),
+        )
+    )
     peaks = np.maximum.accumulate(equity)
     drawdown = equity / peaks - 1.0
     trough = int(np.argmin(drawdown))
     peak = int(np.argmax(equity[: trough + 1]))
     peak_date = (
-        "initial" if peak == 0
-        else str(pd.Timestamp(curve.iloc[peak - 1]["trade_date"]).date())
+        "initial" if peak == 0 else str(pd.Timestamp(curve.iloc[peak - 1]["trade_date"]).date())
     )
     trough_date = str(pd.Timestamp(curve.iloc[trough - 1]["trade_date"]).date())
     return {
@@ -735,25 +709,17 @@ def bootstrap_guard(
     improvements: list[float] = []
     passes = 0
     for _ in range(bootstrap_samples):
-        indices = circular_block_indices(
-            len(base), block_size=block_size, rng=rng
-        )
+        indices = circular_block_indices(len(base), block_size=block_size, rng=rng)
         base_sample = base[indices]
         candidate_sample = candidate[indices]
         base_wealth: FloatArray = np.cumprod(1.0 + base_sample)
         candidate_wealth: FloatArray = np.cumprod(1.0 + candidate_sample)
         base_cagr = float(base_wealth[-1] ** (252.0 / len(base)) - 1.0)
-        candidate_cagr = float(
-            candidate_wealth[-1] ** (252.0 / len(candidate)) - 1.0
-        )
+        candidate_cagr = float(candidate_wealth[-1] ** (252.0 / len(candidate)) - 1.0)
         base_peak = np.maximum.accumulate(np.concatenate(([1.0], base_wealth)))[1:]
-        candidate_peak = np.maximum.accumulate(
-            np.concatenate(([1.0], candidate_wealth))
-        )[1:]
+        candidate_peak = np.maximum.accumulate(np.concatenate(([1.0], candidate_wealth)))[1:]
         base_mdd = abs(float(np.min(base_wealth / base_peak - 1.0)))
-        candidate_mdd = abs(float(
-            np.min(candidate_wealth / candidate_peak - 1.0)
-        ))
+        candidate_mdd = abs(float(np.min(candidate_wealth / candidate_peak - 1.0)))
         cagr_retention = candidate_cagr / base_cagr if base_cagr > 0.0 else 0.0
         improvement = 1.0 - candidate_mdd / base_mdd if base_mdd > 0.0 else 0.0
         retention.append(cagr_retention)
@@ -764,9 +730,7 @@ def bootstrap_guard(
         "bootstrap_samples": bootstrap_samples,
         "probability_joint_85pct_cagr_20pct_mdd_rule": passes / bootstrap_samples,
         "cagr_retention_ci95": np.quantile(retention, (0.025, 0.975)).tolist(),
-        "mdd_improvement_ci95": np.quantile(
-            improvements, (0.025, 0.975)
-        ).tolist(),
+        "mdd_improvement_ci95": np.quantile(improvements, (0.025, 0.975)).tolist(),
         "scope_warning": "resamples fixed-policy daily returns; no parameter reselection",
     }
 
@@ -805,9 +769,7 @@ def main() -> None:
             cost_multiplier=1.0,
         )
     revised_params = RegimeGuardParams(mode="conjunctive")
-    revised_inputs = build_regime_inputs(
-        raw, baseline["equity_curve"], revised_params
-    )
+    revised_inputs = build_regime_inputs(raw, baseline["equity_curve"], revised_params)
     variants["v4_rg_conjunctive"] = run_guard_overlay(
         baseline,
         cast("FloatArray", safe),
@@ -874,23 +836,25 @@ def main() -> None:
         improvement_n = 1.0 - abs(metrics["max_drawdown"]) / abs(
             baseline["metrics"]["max_drawdown"]
         )
-        neighbors.append({
-            "name": name,
-            "params": asdict(params),
-            "final_value": metrics["final_value"],
-            "cagr": metrics["cagr"],
-            "max_drawdown": metrics["max_drawdown"],
-            "sharpe": metrics["sharpe"],
-            "average_exposure": metrics["average_exposure"],
-            "cagr_retention": retention_n,
-            "mdd_improvement": improvement_n,
-            "recent_cluster_loss_reduction": recent_n["loss_reduction"],
-            "joint_passed": bool(
-                retention_n >= 0.85
-                and improvement_n >= 0.20
-                and recent_n["loss_reduction"] >= 0.40
-            ),
-        })
+        neighbors.append(
+            {
+                "name": name,
+                "params": asdict(params),
+                "final_value": metrics["final_value"],
+                "cagr": metrics["cagr"],
+                "max_drawdown": metrics["max_drawdown"],
+                "sharpe": metrics["sharpe"],
+                "average_exposure": metrics["average_exposure"],
+                "cagr_retention": retention_n,
+                "mdd_improvement": improvement_n,
+                "recent_cluster_loss_reduction": recent_n["loss_reduction"],
+                "joint_passed": bool(
+                    retention_n >= 0.85
+                    and improvement_n >= 0.20
+                    and recent_n["loss_reduction"] >= 0.40
+                ),
+            }
+        )
 
     baseline_metrics = baseline["metrics"]
     selected_metrics = selected["metrics"]
@@ -910,9 +874,7 @@ def main() -> None:
         baseline_episode["peak_date"],
         baseline_episode["trough_date"],
     )
-    historical_window_improvement = 1.0 - abs(selected_window_return) / abs(
-        baseline_window_return
-    )
+    historical_window_improvement = 1.0 - abs(selected_window_return) / abs(baseline_window_return)
     cost2 = cost_pressure["2x"][selected_name]["metrics"]
     acceptance_checks = {
         "cagr_retention_at_least_85pct": cagr_retention >= 0.85,
@@ -920,14 +882,10 @@ def main() -> None:
         "baseline_mdd_window_loss_reduction_at_least_30pct": (
             historical_window_improvement >= 0.30
         ),
-        "recent_cluster_loss_reduction_at_least_40pct": (
-            recent["loss_reduction"] >= 0.40
-        ),
+        "recent_cluster_loss_reduction_at_least_40pct": (recent["loss_reduction"] >= 0.40),
         "no_additional_negative_year": (
             selected_metrics["negative_years"]
-            <= sum(row["return"] < 0.0 for row in rb._annual_rows(
-                baseline["equity_curve"]
-            ))
+            <= sum(row["return"] < 0.0 for row in rb._annual_rows(baseline["equity_curve"]))
         ),
         "positive_at_2x_cost": cost2["final_value"] > INITIAL_CAPITAL,
         "mdd_below_40pct_at_2x_cost": cost2["max_drawdown"] > -0.40,
@@ -956,16 +914,11 @@ def main() -> None:
         )
     }
     center_pass = bool(all(acceptance_checks.values()))
-    neighborhood_pass_rate = sum(row["joint_passed"] for row in neighbors) / len(
-        neighbors
-    )
+    neighborhood_pass_rate = sum(row["joint_passed"] for row in neighbors) / len(neighbors)
     classification = (
         "adaptive_phase3_shadow_candidate_requires_oos"
         if center_pass and neighborhood_pass_rate >= 0.80
-        else (
-            "center_pass_but_not_robust"
-            if center_pass else "failed_joint_constraints"
-        )
+        else ("center_pass_but_not_robust" if center_pass else "failed_joint_constraints")
     )
     payload: dict[str, Any] = {
         "meta": {
@@ -1063,17 +1016,26 @@ def main() -> None:
             "passed": center_pass,
         },
         "baseline_max_drawdown_episode": baseline_episode,
-        "selected_max_drawdown_episode": max_drawdown_episode(
-            selected["equity_curve"]
-        ),
+        "selected_max_drawdown_episode": max_drawdown_episode(selected["equity_curve"]),
         "recent_cluster_replay": recent,
         "documented_failure_replay": mf.replay_documented_failure(),
-        "factor_snapshot_baseline_mdd": selected["equity_curve"].loc[
-            selected["equity_curve"]["trade_date"].isin(pd.to_datetime([
-                "2022-03-09", "2022-03-10", "2022-04-01", "2022-04-15",
-                "2022-04-25", "2022-05-05", "2022-05-24",
-            ]))
-        ].to_dict("records"),
+        "factor_snapshot_baseline_mdd": selected["equity_curve"]
+        .loc[
+            selected["equity_curve"]["trade_date"].isin(
+                pd.to_datetime(
+                    [
+                        "2022-03-09",
+                        "2022-03-10",
+                        "2022-04-01",
+                        "2022-04-15",
+                        "2022-04-25",
+                        "2022-05-05",
+                        "2022-05-24",
+                    ]
+                )
+            )
+        ]
+        .to_dict("records"),
         "parameter_neighborhood": {
             "points": len(neighbors),
             "joint_passes": sum(row["joint_passed"] for row in neighbors),
@@ -1115,9 +1077,7 @@ def main() -> None:
         f"assessment={classification}"
     )
     if args.save:
-        OUTPUT.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n"
-        )
+        OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n")
         print(f"saved: {OUTPUT}")
 
 

@@ -11,6 +11,7 @@
 用法: uv run python scripts/exp_gate_mom_scan.py
 输出: data/v9_results/gate_mom_scan.json
 """
+
 from __future__ import annotations
 
 import json
@@ -65,16 +66,23 @@ def main() -> None:
     results = []
     for name, periods, weights in grid:
         rep = run_with_mom(data, periods, weights)
-        results.append({"name": name, "periods": list(periods),
-                        "weights": list(weights),
-                        "final": rep["final_value"],
-                        "ann_return": rep["ann_return"],
-                        "sharpe": rep["sharpe"],
-                        "max_dd": rep["max_drawdown"],
-                        "n_trades": rep["n_trades"]})
-        print(f"  {name:<22} 期末{rep['final_value']:>10,.0f} "
-              f"年化{rep['ann_return']*100:>+6.1f}% 夏普{rep['sharpe']:>5.2f} "
-              f"回撤{rep['max_drawdown']*100:>6.1f}% 交易{rep['n_trades']:>3}")
+        results.append(
+            {
+                "name": name,
+                "periods": list(periods),
+                "weights": list(weights),
+                "final": rep["final_value"],
+                "ann_return": rep["ann_return"],
+                "sharpe": rep["sharpe"],
+                "max_dd": rep["max_drawdown"],
+                "n_trades": rep["n_trades"],
+            }
+        )
+        print(
+            f"  {name:<22} 期末{rep['final_value']:>10,.0f} "
+            f"年化{rep['ann_return'] * 100:>+6.1f}% 夏普{rep['sharpe']:>5.2f} "
+            f"回撤{rep['max_drawdown'] * 100:>6.1f}% 交易{rep['n_trades']:>3}"
+        )
 
     # 对比生产
     base = results[0]

@@ -11,6 +11,7 @@
 用法: uv run python scripts/exp_v3_dl_gate.py
 输出: data/v9_results/v3_dl_gate.json
 """
+
 from __future__ import annotations
 
 import json
@@ -51,27 +52,42 @@ def collect_events(data: dict) -> list[dict]:
             r10 = (c[i] - c[i - 11]) / c[i - 11]
             r20 = (c[i] - c[i - 21]) / c[i - 21]
             mom = 0.5 * r10 + 0.5 * r20
-            dr = np.diff(c[i - 21:i]) / c[i - 21:i - 1]
+            dr = np.diff(c[i - 21 : i]) / c[i - 21 : i - 1]
             vol20 = float(np.std(dr) * np.sqrt(252))
-            w60 = c[i - 60:i]
+            w60 = c[i - 60 : i]
             pos60 = (c[i] - w60.min()) / (w60.max() - w60.min()) if w60.max() > w60.min() else 0.5
-            peak60 = float(np.max(c[i - 61:i - 1]))
+            peak60 = float(np.max(c[i - 61 : i - 1]))
             dd_peak = c[i] / peak60 - 1.0 if peak60 > 0 else 0.0
-            avg_vol = float(np.mean(v[i - 21:i - 1])) if i >= 22 else 1.0
+            avg_vol = float(np.mean(v[i - 21 : i - 1])) if i >= 22 else 1.0
             vol_ratio = float(v[i] / avg_vol) if avg_vol > 0 else 1.0
             open_gap = (o[i] - c[i - 1]) / c[i - 1]
             intraday = (c[i] - o[i]) / o[i] if o[i] > 0 else 0.0
             fwd5 = (c[i + 5] - c[i]) / c[i]
-            events.append({
-                "date": str(df.iloc[i]["trade_date"]), "code": code,
-                "name": rq.ETF_POOL[code],
-                "f": [ret60, r5, r10, r20, mom, vol20, pos60, dd_peak,
-                      vol_ratio, open_gap, intraday, cr],
-                "kline": c[i - 30:i + 1] / c[i] - 1.0,  # 31日归一化K线
-                "label": 1.0 if fwd5 > 0 else 0.0,  # 假摔=1
-                "rule_gate": 1.0 if ret60 < RET60_THR and mom > 0 else 0.0,
-                "year": str(df.iloc[i]["trade_date"])[:4],
-            })
+            events.append(
+                {
+                    "date": str(df.iloc[i]["trade_date"]),
+                    "code": code,
+                    "name": rq.ETF_POOL[code],
+                    "f": [
+                        ret60,
+                        r5,
+                        r10,
+                        r20,
+                        mom,
+                        vol20,
+                        pos60,
+                        dd_peak,
+                        vol_ratio,
+                        open_gap,
+                        intraday,
+                        cr,
+                    ],
+                    "kline": c[i - 30 : i + 1] / c[i] - 1.0,  # 31日归一化K线
+                    "label": 1.0 if fwd5 > 0 else 0.0,  # 假摔=1
+                    "rule_gate": 1.0 if ret60 < RET60_THR and mom > 0 else 0.0,
+                    "year": str(df.iloc[i]["trade_date"])[:4],
+                }
+            )
     return events
 
 
@@ -104,8 +120,11 @@ class MLP(nn.Module):
     def __init__(self, in_dim):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Linear(in_dim, 32), nn.ReLU(), nn.Dropout(0.2),
-            nn.Linear(32, 16), nn.ReLU(),
+            nn.Linear(in_dim, 32),
+            nn.ReLU(),
+            nn.Dropout(0.2),
+            nn.Linear(32, 16),
+            nn.ReLU(),
             nn.Linear(16, 1),
         )
 
@@ -117,10 +136,15 @@ class CNN1D(nn.Module):
     def __init__(self, in_len=31):
         super().__init__()
         self.net = nn.Sequential(
-            nn.Conv1d(1, 16, 5, padding=2), nn.ReLU(), nn.MaxPool1d(2),
-            nn.Conv1d(16, 32, 5, padding=2), nn.ReLU(), nn.MaxPool1d(2),
+            nn.Conv1d(1, 16, 5, padding=2),
+            nn.ReLU(),
+            nn.MaxPool1d(2),
+            nn.Conv1d(16, 32, 5, padding=2),
+            nn.ReLU(),
+            nn.MaxPool1d(2),
             nn.Flatten(),
-            nn.Linear(32 * (in_len // 4), 32), nn.ReLU(),
+            nn.Linear(32 * (in_len // 4), 32),
+            nn.ReLU(),
             nn.Linear(32, 1),
         )
 
@@ -137,7 +161,7 @@ def train_eval(model, x, y, epochs=60, lr=1e-3, batch=32):
     for _epoch in range(epochs):
         perm = torch.randperm(n)
         for i in range(0, n, batch):
-            idx = perm[i:i + batch]
+            idx = perm[i : i + batch]
             opt.zero_grad()
             loss = lossf(model(x_t[idx]), yt[idx])
             loss.backward()
@@ -155,13 +179,10 @@ def main() -> None:
     data = rq.load_data()
     events = collect_events(data)
     x_tr, y_tr, x_te, y_te, k_tr, k_te, tr, te = split_data(events)
+    print(f"\n  事件总数: {len(events)} | 训练 {len(tr)} (2020-2023) | 测试 {len(te)} (2024-2026)")
     print(
-        f"\n  事件总数: {len(events)} | 训练 {len(tr)} (2020-2023) | "
-        f"测试 {len(te)} (2024-2026)"
-    )
-    print(
-        f"  假摔率(标签=1): 训练 {(y_tr == 1).mean()*100:.1f}% | "
-        f"测试 {(y_te == 1).mean()*100:.1f}%"
+        f"  假摔率(标签=1): 训练 {(y_tr == 1).mean() * 100:.1f}% | "
+        f"测试 {(y_te == 1).mean() * 100:.1f}%"
     )
 
     # 基准1: 规则门控 (ret60<0.01 且 动量>0)
@@ -170,8 +191,8 @@ def main() -> None:
     rule_auc = auc_score(y_te, rule_p)
     rule_recall = float(((rule_p == 1) & (y_te == 1)).sum() / max((y_te == 1).sum(), 1))
     print(
-        f"\n  【规则门控基准】 准确率 {rule_acc*100:.1f}% | "
-        f"AUC {rule_auc:.3f} | 假摔召回 {rule_recall*100:.1f}%"
+        f"\n  【规则门控基准】 准确率 {rule_acc * 100:.1f}% | "
+        f"AUC {rule_auc:.3f} | 假摔召回 {rule_recall * 100:.1f}%"
     )
 
     # DNN (MLP) — 12维手工特征
@@ -184,8 +205,8 @@ def main() -> None:
     auc_mlp = auc_score(y_te, p_mlp_te)
     recall_mlp = float(((p_mlp_te > 0.5) & (y_te == 1)).sum() / max((y_te == 1).sum(), 1))
     print(
-        f"  【DNN(MLP)】     准确率 {acc_mlp*100:.1f}% | "
-        f"AUC {auc_mlp:.3f} | 假摔召回 {recall_mlp*100:.1f}%"
+        f"  【DNN(MLP)】     准确率 {acc_mlp * 100:.1f}% | "
+        f"AUC {auc_mlp:.3f} | 假摔召回 {recall_mlp * 100:.1f}%"
     )
 
     # CNN (1D) — 31日K线
@@ -198,34 +219,45 @@ def main() -> None:
     auc_cnn = auc_score(y_te, p_cnn_te)
     recall_cnn = float(((p_cnn_te > 0.5) & (y_te == 1)).sum() / max((y_te == 1).sum(), 1))
     print(
-        f"  【CNN(1D K线)】  准确率 {acc_cnn*100:.1f}% | "
-        f"AUC {auc_cnn:.3f} | 假摔召回 {recall_cnn*100:.1f}%"
+        f"  【CNN(1D K线)】  准确率 {acc_cnn * 100:.1f}% | "
+        f"AUC {auc_cnn:.3f} | 假摔召回 {recall_cnn * 100:.1f}%"
     )
 
     # 融合: DNN特征 + CNN K线
     torch.manual_seed(42)
+
     class Fusion(nn.Module):
         def __init__(self, in_dim, klen):
             super().__init__()
             self.cnn = nn.Sequential(
-                nn.Conv1d(1, 16, 5, padding=2), nn.ReLU(), nn.MaxPool1d(2),
-                nn.Conv1d(16, 32, 5, padding=2), nn.ReLU(), nn.MaxPool1d(2),
-                nn.Flatten(), nn.Linear(32 * (klen // 4), 16), nn.ReLU())
-            self.head = nn.Sequential(nn.Linear(in_dim + 16, 32), nn.ReLU(),
-                                      nn.Linear(32, 1))
+                nn.Conv1d(1, 16, 5, padding=2),
+                nn.ReLU(),
+                nn.MaxPool1d(2),
+                nn.Conv1d(16, 32, 5, padding=2),
+                nn.ReLU(),
+                nn.MaxPool1d(2),
+                nn.Flatten(),
+                nn.Linear(32 * (klen // 4), 16),
+                nn.ReLU(),
+            )
+            self.head = nn.Sequential(nn.Linear(in_dim + 16, 32), nn.ReLU(), nn.Linear(32, 1))
+
         def forward(self, x, k):
             kf = self.cnn(k.unsqueeze(1))
             return self.head(torch.cat([x, kf], dim=1)).squeeze(-1)
+
     fus = Fusion(x_tr.shape[1], k_tr.shape[1])
     opt = torch.optim.Adam(fus.parameters(), lr=1e-3)
     lossf = nn.BCEWithLogitsLoss()
-    x_t, y_t, k_t = (torch.tensor(x_tr, dtype=torch.float32),
-                     torch.tensor(y_tr, dtype=torch.float32),
-                     torch.tensor(k_tr, dtype=torch.float32))
+    x_t, y_t, k_t = (
+        torch.tensor(x_tr, dtype=torch.float32),
+        torch.tensor(y_tr, dtype=torch.float32),
+        torch.tensor(k_tr, dtype=torch.float32),
+    )
     for _epoch in range(60):
         perm = torch.randperm(len(x_t))
         for i in range(0, len(x_t), 32):
-            idx = perm[i:i + 32]
+            idx = perm[i : i + 32]
             opt.zero_grad()
             loss = lossf(fus(x_t[idx], k_t[idx]), y_t[idx])
             loss.backward()
@@ -239,22 +271,25 @@ def main() -> None:
     auc_fus = auc_score(y_te, p_fus_te)
     recall_fus = float(((p_fus_te > 0.5) & (y_te == 1)).sum() / max((y_te == 1).sum(), 1))
     print(
-        f"  【DNN+CNN融合】  准确率 {acc_fus*100:.1f}% | "
-        f"AUC {auc_fus:.3f} | 假摔召回 {recall_fus*100:.1f}%"
+        f"  【DNN+CNN融合】  准确率 {acc_fus * 100:.1f}% | "
+        f"AUC {auc_fus:.3f} | 假摔召回 {recall_fus * 100:.1f}%"
     )
 
     # 判定: DL 是否显著优于规则门控 (AUC 提升 > 0.05)
     best_auc = max(auc_mlp, auc_cnn, auc_fus)
-    verdict = (f"AUC 最高 {best_auc:.3f} (规则 {rule_auc:.3f}), "
-               + ("✅ DL 显著优于规则" if best_auc - rule_auc > 0.05
-                  else "❌ DL 未显著优于规则 (信号太弱, 与历史ML层结论一致)"))
+    verdict = f"AUC 最高 {best_auc:.3f} (规则 {rule_auc:.3f}), " + (
+        "✅ DL 显著优于规则"
+        if best_auc - rule_auc > 0.05
+        else "❌ DL 未显著优于规则 (信号太弱, 与历史ML层结论一致)"
+    )
 
     print("\n" + "=" * 76)
     print(f"  判定: {verdict}")
     print("=" * 76)
 
     out = {
-        "n_train": len(tr), "n_test": len(te),
+        "n_train": len(tr),
+        "n_test": len(te),
         "rule": {"acc": rule_acc, "auc": rule_auc, "recall": rule_recall},
         "dnn": {"acc": acc_mlp, "auc": auc_mlp, "recall": recall_mlp},
         "cnn": {"acc": acc_cnn, "auc": auc_cnn, "recall": recall_cnn},

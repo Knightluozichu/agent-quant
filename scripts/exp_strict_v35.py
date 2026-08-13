@@ -129,39 +129,55 @@ def replay_documented_shock_scenario() -> dict[str, Any]:
     daily_factors = (
         {
             "518880": _scenario_factor(
-                "518880", eligible=True, slow=0.06,
-                return_3d=0.01, return_5d=0.03,
+                "518880",
+                eligible=True,
+                slow=0.06,
+                return_3d=0.01,
+                return_5d=0.03,
             ),
             "161226": _scenario_factor(
-                "161226", eligible=False, slow=0.14,
-                return_3d=-0.05, return_5d=0.08,
+                "161226",
+                eligible=False,
+                slow=0.14,
+                return_3d=-0.05,
+                return_5d=0.08,
             ),
         },
         {
             "518880": _scenario_factor(
-                "518880", eligible=True, slow=0.07,
-                return_3d=0.03, return_5d=0.04,
+                "518880",
+                eligible=True,
+                slow=0.07,
+                return_3d=0.03,
+                return_5d=0.04,
             ),
             "161226": _scenario_factor(
-                "161226", eligible=False, slow=0.05,
-                return_3d=-0.12, return_5d=-0.08,
+                "161226",
+                eligible=False,
+                slow=0.05,
+                return_3d=-0.12,
+                return_5d=-0.08,
             ),
         },
         {
             "518880": _scenario_factor(
-                "518880", eligible=True, slow=0.09,
-                return_3d=0.06, return_5d=0.07,
+                "518880",
+                eligible=True,
+                slow=0.09,
+                return_3d=0.06,
+                return_5d=0.07,
             ),
             "161226": _scenario_factor(
-                "161226", eligible=False, slow=0.01,
-                return_3d=-0.15, return_5d=-0.15,
+                "161226",
+                eligible=False,
+                slow=0.01,
+                return_3d=-0.15,
+                return_5d=-0.15,
             ),
         },
     )
     decisions = []
-    for day, (factors, hits) in enumerate(
-        zip(daily_factors, (0, 1, 2), strict=True), start=1
-    ):
+    for day, (factors, hits) in enumerate(zip(daily_factors, (0, 1, 2), strict=True), start=1):
         decision = v4.decide_full_pool_handoff(
             holding="161226",
             factors=factors,
@@ -253,18 +269,13 @@ def _rename_annual_fields(annual: dict[str, Any]) -> dict[str, Any]:
     for row in annual["years"]:
         row["strict_v3_return"] = row.pop("v3g_return")
         row["strict_v35_return"] = row.pop("v4_return")
-        row["strict_v35_relative_to_strict_v3"] = row.pop(
-            "v4_relative_to_v3g"
-        )
+        row["strict_v35_relative_to_strict_v3"] = row.pop("v4_relative_to_v3g")
     return annual
 
 
-def _named_selection_counts(
-    result: dict[str, Any], names: list[str]
-) -> dict[str, Any]:
+def _named_selection_counts(result: dict[str, Any], names: list[str]) -> dict[str, Any]:
     result["selection_counts"] = {
-        names[int(key)]: value
-        for key, value in result["selection_counts"].items()
+        names[int(key)]: value for key, value in result["selection_counts"].items()
     }
     return result
 
@@ -280,28 +291,24 @@ def main() -> None:
         raise RuntimeError("strict V3.5 audit requires all downsize layers disabled")
 
     data = rq.load_data()
-    strict_cache: dict[
-        tuple[v4.FullPoolParams, float], dict[str, Any]
-    ] = {}
+    strict_cache: dict[tuple[v4.FullPoolParams, float], dict[str, Any]] = {}
 
-    def evaluate_strict(
-        params: v4.FullPoolParams, cost: float = 1.0
-    ) -> dict[str, Any]:
+    def evaluate_strict(params: v4.FullPoolParams, cost: float = 1.0) -> dict[str, Any]:
         key = (params, cost)
         if key not in strict_cache:
-            strict_cache[key] = run_strict_strategy(
-                data, params, cost_multiplier=cost
-            )
+            strict_cache[key] = run_strict_strategy(data, params, cost_multiplier=cost)
         return strict_cache[key]
 
     strict_v3 = evaluate_strict(v4.FullPoolParams.disabled())
     strict_v35 = evaluate_strict(STRICT_V35_PARAMS)
 
     parameterized_strict_v3 = run_gate_strategy(data, STRICT_V3_PARAMS)
-    strict_parity = bool(np.allclose(
-        strict_v3["equity_curve"]["equity"],
-        parameterized_strict_v3["equity_curve"]["equity"],
-    ))
+    strict_parity = bool(
+        np.allclose(
+            strict_v3["equity_curve"]["equity"],
+            parameterized_strict_v3["equity_curve"]["equity"],
+        )
+    )
     if not strict_parity:
         raise RuntimeError("strict V3 baseline parity failed")
 
@@ -314,8 +321,7 @@ def main() -> None:
 
     historical_params = historical_candidate_params()
     historical_results = {
-        name: evaluate_strict(params)
-        for name, params in historical_params.items()
+        name: evaluate_strict(params) for name, params in historical_params.items()
     }
     historical_names = list(historical_results)
     candidate_excess: list[np.ndarray] = []
@@ -348,9 +354,7 @@ def main() -> None:
         "consensus_strict",
         "consensus_very_strict",
     ]
-    consensus_columns = [
-        historical_names.index(name) for name in consensus_candidate_names
-    ]
+    consensus_columns = [historical_names.index(name) for name in consensus_candidate_names]
     consensus_white = {
         str(block): white_reality_check(
             excess_matrix[:, consensus_columns],
@@ -372,17 +376,14 @@ def main() -> None:
         for block in (5, 20, 60)
     }
     newey_west = {
-        str(lag): newey_west_mean_test(selected_excess, max_lag=lag)
-        for lag in (5, 20, 60)
+        str(lag): newey_west_mean_test(selected_excess, max_lag=lag) for lag in (5, 20, 60)
     }
     all_pbo = _named_selection_counts(
         cscv_probability_of_backtest_overfitting(absolute_matrix, slices=8),
         absolute_names,
     )
     consensus_absolute_names = ["strict_v3", *consensus_candidate_names]
-    consensus_absolute_columns = [
-        absolute_names.index(name) for name in consensus_absolute_names
-    ]
+    consensus_absolute_columns = [absolute_names.index(name) for name in consensus_absolute_names]
     consensus_pbo = _named_selection_counts(
         cscv_probability_of_backtest_overfitting(
             absolute_matrix[:, consensus_absolute_columns], slices=8
@@ -395,27 +396,21 @@ def main() -> None:
     for name, params in local_gap_grid().items():
         result = evaluate_strict(params)
         metrics = result["metrics"]
-        surface_rows.append({
-            "name": name,
-            "params": result["params"],
-            "final_value": float(metrics["final_value"]),
-            "relative_to_strict_v3": float(
-                metrics["final_value"] / strict_v3_final - 1.0
-            ),
-            "sharpe": float(metrics["sharpe"]),
-            "max_drawdown": float(metrics["max_drawdown"]),
-            "early_rotations": int(metrics["early_rotations"]),
-        })
-    relative_values = np.asarray([
-        row["relative_to_strict_v3"] for row in surface_rows
-    ])
+        surface_rows.append(
+            {
+                "name": name,
+                "params": result["params"],
+                "final_value": float(metrics["final_value"]),
+                "relative_to_strict_v3": float(metrics["final_value"] / strict_v3_final - 1.0),
+                "sharpe": float(metrics["sharpe"]),
+                "max_drawdown": float(metrics["max_drawdown"]),
+                "early_rotations": int(metrics["early_rotations"]),
+            }
+        )
+    relative_values = np.asarray([row["relative_to_strict_v3"] for row in surface_rows])
     center_name = "slow1.0_fast51.0_fast31.0"
-    center_final = next(
-        row["final_value"] for row in surface_rows if row["name"] == center_name
-    )
-    ordered_finals = sorted(
-        (row["final_value"] for row in surface_rows), reverse=True
-    )
+    center_final = next(row["final_value"] for row in surface_rows if row["name"] == center_name)
+    ordered_finals = sorted((row["final_value"] for row in surface_rows), reverse=True)
     surface = {
         "definition": "3x3x3 independent gap perturbation at 80%/100%/120%",
         "points": len(surface_rows),
@@ -436,31 +431,25 @@ def main() -> None:
         "confirmation_2": STRICT_V35_PARAMS,
     }
     structural = {
-        name: _compact(evaluate_strict(params))
-        for name, params in structural_params.items()
+        name: _compact(evaluate_strict(params)) for name, params in structural_params.items()
     }
 
     cost_pressure: dict[str, dict[str, Any]] = {
         f"{cost:.0f}x": {
-            "strict_v3": _compact(
-                evaluate_strict(v4.FullPoolParams.disabled(), cost)
-            ),
+            "strict_v3": _compact(evaluate_strict(v4.FullPoolParams.disabled(), cost)),
             "strict_v35": _compact(evaluate_strict(STRICT_V35_PARAMS, cost)),
         }
         for cost in (0.0, 1.0, 2.0, 3.0)
     }
     for row in cost_pressure.values():
         row["strict_v35_relative_final"] = float(
-            row["strict_v35"]["metrics"]["final_value"]
-            / row["strict_v3"]["metrics"]["final_value"]
+            row["strict_v35"]["metrics"]["final_value"] / row["strict_v3"]["metrics"]["final_value"]
             - 1.0
         )
     segments = {
         label: {
             "strict_v3": rr.segment_metrics(strict_v3["equity_curve"], start, end),
-            "strict_v35": rr.segment_metrics(
-                strict_v35["equity_curve"], start, end
-            ),
+            "strict_v35": rr.segment_metrics(strict_v35["equity_curve"], start, end),
         }
         for label, start, end in (
             ("retrospective_2020_2023", "2020-06-19", "2023-12-29"),
@@ -477,36 +466,30 @@ def main() -> None:
         "current_v4": _compact(current_v4),
     }
 
-    annual = _rename_annual_fields(_annual_attribution(
-        dates, strict_v3_returns, strict_v35_returns
-    ))
+    annual = _rename_annual_fields(
+        _annual_attribution(dates, strict_v3_returns, strict_v35_returns)
+    )
     rolling = _rolling_attribution(dates, selected_excess)
     events = _event_evidence(strict_v35["rotation_events"])
-    terminal_relative = float(
-        strict_v35["metrics"]["final_value"] / strict_v3_final - 1.0
-    )
+    terminal_relative = float(strict_v35["metrics"]["final_value"] / strict_v3_final - 1.0)
 
     statistical_pass = bool(
-        float(white["20"]["p_value"]) < 0.05
-        and float(bootstrap["20"]["ci95"][0]) > 0.0
+        float(white["20"]["p_value"]) < 0.05 and float(bootstrap["20"]["ci95"][0]) > 0.0
     )
     neighborhood_pass = bool(cast("float", surface["beat_rate"]) >= 0.80)
-    pbo_warning = bool(
-        float(all_pbo["pbo"]) >= 0.50
-        or float(consensus_pbo["pbo"]) >= 0.50
-    )
+    pbo_warning = bool(float(all_pbo["pbo"]) >= 0.50 or float(consensus_pbo["pbo"]) >= 0.50)
     temporal_warning = bool(
         annual["positive_relative_years"] < annual["year_count"] / 2
         or rolling["positive_rate"] < 0.50
         or float(annual["post_2024_share_of_total_relative_log_return"]) > 0.80
     )
-    cost_stress_pass = bool(all(
-        float(cost_pressure[label]["strict_v35_relative_final"]) > 0.0
-        and float(
-            cost_pressure[label]["strict_v35"]["metrics"]["max_drawdown"]
-        ) > -0.50
-        for label in ("2x", "3x")
-    ))
+    cost_stress_pass = bool(
+        all(
+            float(cost_pressure[label]["strict_v35_relative_final"]) > 0.0
+            and float(cost_pressure[label]["strict_v35"]["metrics"]["max_drawdown"]) > -0.50
+            for label in ("2x", "3x")
+        )
+    )
     if (
         not statistical_pass
         or not neighborhood_pass
@@ -589,10 +572,7 @@ def main() -> None:
     }
 
     print("\n严格V3.5 audit")
-    print(
-        f"data={payload['meta']['data_start']}..{data_end} n={len(dates)} "
-        "live_OOS=0"
-    )
+    print(f"data={payload['meta']['data_start']}..{data_end} n={len(dates)} live_OOS=0")
     print("\nstrategy             final    CAGR Sharpe     MDD legs early")
     for name, result in four_way.items():
         metrics = result["metrics"]
@@ -620,9 +600,7 @@ def main() -> None:
         f"assessment={classification}"
     )
     if args.save:
-        OUTPUT.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n"
-        )
+        OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n")
         print(f"saved: {OUTPUT}")
 
 

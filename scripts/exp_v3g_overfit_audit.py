@@ -98,19 +98,14 @@ def gate_allows(close: np.ndarray, params: GateParams) -> bool:
         return False
     short = _period_return(close, params.gate_momentum_short)
     long = _period_return(close, params.gate_momentum_long)
-    momentum = (
-        params.gate_short_weight * short
-        + (1.0 - params.gate_short_weight) * long
-    )
+    momentum = params.gate_short_weight * short + (1.0 - params.gate_short_weight) * long
     return momentum > params.gate_momentum_threshold
 
 
 def _score(close: np.ndarray, params: GateParams) -> float:
-    return (
-        params.score_short_weight * _period_return(close, params.score_short)
-        + (1.0 - params.score_short_weight)
-        * _period_return(close, params.score_long)
-    )
+    return params.score_short_weight * _period_return(close, params.score_short) + (
+        1.0 - params.score_short_weight
+    ) * _period_return(close, params.score_long)
 
 
 def select_target(
@@ -156,18 +151,14 @@ def select_target(
     if rq.USE_CATEGORY_SWITCH and candidates:
         score_map = dict(candidates)
         category_scores = {
-            category: float(np.mean([
-                score_map[code] for code in codes if code in score_map
-            ]))
+            category: float(np.mean([score_map[code] for code in codes if code in score_map]))
             for category, codes in rq.CATEGORIES.items()
             if any(code in score_map for code in codes)
         }
         if category_scores:
             best_category = max(category_scores, key=category_scores.__getitem__)
             category_codes = set(rq.CATEGORIES[best_category])
-            candidates = [
-                item for item in candidates if item[0] in category_codes
-            ]
+            candidates = [item for item in candidates if item[0] in category_codes]
 
     best_target = candidates[0][0] if candidates else rq.DEFENSE
     best_score = candidates[0][1] if candidates else 0.0
@@ -179,20 +170,14 @@ def select_target(
         and holding != rq.DEFENSE
         and holding in idx_map
     ):
-        held_close = np.asarray(
-            data[holding]["close"].values[: idx_map[holding] + 1], dtype=float
-        )
+        held_close = np.asarray(data[holding]["close"].values[: idx_map[holding] + 1], dtype=float)
         if _has_drop(held_close, params) and gate_allows(held_close, params):
             threshold = 0.0
 
     if holding and holding != rq.DEFENSE:
         current_score = dict(candidates).get(holding, -999.0)
         if current_score > 0.0:
-            target = (
-                best_target
-                if best_score > current_score + threshold
-                else holding
-            )
+            target = best_target if best_score > current_score + threshold else holding
         else:
             target = best_target
     else:
@@ -209,21 +194,15 @@ def historical_score_periods() -> list[tuple[int, int]]:
 def local_gate_neighbors() -> dict[str, GateParams]:
     candidates: list[tuple[str, GateParams]] = []
     for threshold in (0.0, 0.005, 0.01, 0.015, 0.02):
-        candidates.append((f"ret60_{threshold:.3f}", GateParams(
-            ret60_threshold=threshold
-        )))
+        candidates.append((f"ret60_{threshold:.3f}", GateParams(ret60_threshold=threshold)))
     for threshold in (0.025, 0.03, 0.035):
-        candidates.append((f"drop_{threshold:.3f}", GateParams(
-            drop_threshold=threshold
-        )))
+        candidates.append((f"drop_{threshold:.3f}", GateParams(drop_threshold=threshold)))
     for lookback in (4, 5, 6):
-        candidates.append((f"lookback_{lookback}", GateParams(
-            drop_lookback=lookback
-        )))
+        candidates.append((f"lookback_{lookback}", GateParams(drop_lookback=lookback)))
     for threshold in (-0.01, 0.0, 0.01):
-        candidates.append((f"gate_momentum_{threshold:+.2f}", GateParams(
-            gate_momentum_threshold=threshold
-        )))
+        candidates.append(
+            (f"gate_momentum_{threshold:+.2f}", GateParams(gate_momentum_threshold=threshold))
+        )
     candidates.append(("without_buffer_exemption", GateParams(exempt_buffer=False)))
     unique: dict[GateParams, str] = {}
     for name, params in candidates:
@@ -231,9 +210,7 @@ def local_gate_neighbors() -> dict[str, GateParams]:
     return {name: params for params, name in unique.items()}
 
 
-def run_gate_strategy(
-    data: dict[str, Any], params: GateParams
-) -> dict[str, Any]:
+def run_gate_strategy(data: dict[str, Any], params: GateParams) -> dict[str, Any]:
     """Replay one selector variant through the canonical V3-G daily engine."""
     original_select = rq.select_target
     original_realtime_filter = rr.apply_server_realtime_filter
@@ -246,24 +223,20 @@ def run_gate_strategy(
     ) -> tuple[str, list[tuple[str, float]], float, bool]:
         result = select_target(inner_data, idx_map, holding, params)
         code = next((item for item in rq.ETF_POOL if item in idx_map), None)
-        trade_date = (
-            inner_data[code].iloc[idx_map[code]]["trade_date"] if code else None
+        trade_date = inner_data[code].iloc[idx_map[code]]["trade_date"] if code else None
+        decisions.append(
+            {
+                "date": str(trade_date),
+                "holding": holding,
+                "target": result[0],
+            }
         )
-        decisions.append({
-            "date": str(trade_date),
-            "holding": holding,
-            "target": result[0],
-        })
         return result
 
     try:
         rq.select_target = wrapped
-        rr.apply_server_realtime_filter = (
-            lambda _data, _idx_map, candidates: (candidates, [])
-        )
-        result: dict[str, Any] = run_full_pool_strategy(
-            data, v4.FullPoolParams.disabled()
-        )
+        rr.apply_server_realtime_filter = lambda _data, _idx_map, candidates: (candidates, [])
+        result: dict[str, Any] = run_full_pool_strategy(data, v4.FullPoolParams.disabled())
     finally:
         rq.select_target = original_select
         rr.apply_server_realtime_filter = original_realtime_filter
@@ -327,18 +300,13 @@ def main() -> None:
         raise RuntimeError("V3 and V3-G date alignment drift")
     excess = production_returns - strict_returns
     data_end = str(dates[-1])[:10]
-    live_oos = int(np.sum(np.asarray([
-        str(date)[:10] > V3G_LAUNCH_DATE for date in dates
-    ])))
+    live_oos = int(np.sum(np.asarray([str(date)[:10] > V3G_LAUNCH_DATE for date in dates])))
 
     ret60_params = {
         f"ret60_{threshold:.2f}": GateParams(ret60_threshold=threshold)
-        for threshold in (0.00, 0.01, 0.02, 0.03, 0.04, 0.05,
-                          0.06, 0.07, 0.08, 0.09, 0.10)
+        for threshold in (0.00, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.10)
     }
-    ret60_results = {
-        name: evaluate(params) for name, params in ret60_params.items()
-    }
+    ret60_results = {name: evaluate(params) for name, params in ret60_params.items()}
     ret60_names = list(ret60_results)
     ret60_excess: list[np.ndarray] = []
     ret60_absolute: list[np.ndarray] = [strict_returns]
@@ -359,13 +327,10 @@ def main() -> None:
         )
         for block in (5, 20, 60)
     }
-    gate_pbo = cscv_probability_of_backtest_overfitting(
-        ret60_absolute_matrix, slices=8
-    )
+    gate_pbo = cscv_probability_of_backtest_overfitting(ret60_absolute_matrix, slices=8)
     gate_names = ["strict_v3", *ret60_names]
     gate_pbo["selection_counts"] = {
-        gate_names[int(key)]: value
-        for key, value in gate_pbo["selection_counts"].items()
+        gate_names[int(key)]: value for key, value in gate_pbo["selection_counts"].items()
     }
 
     bootstrap = {
@@ -377,58 +342,43 @@ def main() -> None:
         )
         for block in (5, 20, 60)
     }
-    hac = {
-        str(lag): newey_west_mean_test(excess, max_lag=lag)
-        for lag in (5, 20, 60)
-    }
+    hac = {str(lag): newey_west_mean_test(excess, max_lag=lag) for lag in (5, 20, 60)}
     annual = _annual_attribution(dates, strict_returns, production_returns)
     for row in annual["years"]:
         row["strict_v3_return"] = row.pop("v3g_return")
         row["v3g_return"] = row.pop("v4_return")
         row["v3g_relative_to_strict_v3"] = row.pop("v4_relative_to_v3g")
     rolling = _rolling_attribution(dates, excess)
-    rebalance_dates = {
-        str(date) for date in rr.common_dates(data)[130:][:: rq.REBALANCE_DAYS]
-    }
+    rebalance_dates = {str(date) for date in rr.common_dates(data)[130:][:: rq.REBALANCE_DAYS]}
 
     strict_final = float(strict["metrics"]["final_value"])
     local_rows: list[dict[str, Any]] = []
     for name, params in local_gate_neighbors().items():
         result = evaluate(params)
         metrics = result["metrics"]
-        local_rows.append({
-            "name": name,
-            "params": asdict(params),
-            "final_value": float(metrics["final_value"]),
-            "relative_to_strict_v3": float(
-                metrics["final_value"] / strict_final - 1.0
-            ),
-            "sharpe": float(metrics["sharpe"]),
-            "max_drawdown": float(metrics["max_drawdown"]),
-        })
-    local_relative = np.asarray([
-        row["relative_to_strict_v3"] for row in local_rows
-    ], dtype=float)
+        local_rows.append(
+            {
+                "name": name,
+                "params": asdict(params),
+                "final_value": float(metrics["final_value"]),
+                "relative_to_strict_v3": float(metrics["final_value"] / strict_final - 1.0),
+                "sharpe": float(metrics["sharpe"]),
+                "max_drawdown": float(metrics["max_drawdown"]),
+            }
+        )
+    local_relative = np.asarray([row["relative_to_strict_v3"] for row in local_rows], dtype=float)
 
     score_params: dict[str, GateParams] = {
-        f"period_{short}_{long}": replace(
-            production_params, score_short=short, score_long=long
-        )
+        f"period_{short}_{long}": replace(production_params, score_short=short, score_long=long)
         for short, long in historical_score_periods()
     }
     for weight in (0.3, 0.4, 0.5, 0.6, 0.7):
-        score_params[f"weight_{weight:.1f}"] = replace(
-            production_params, score_short_weight=weight
-        )
+        score_params[f"weight_{weight:.1f}"] = replace(production_params, score_short_weight=weight)
     unique_score_params: dict[GateParams, str] = {}
     for name, params in score_params.items():
         unique_score_params.setdefault(params, name)
-    score_params = {
-        name: params for params, name in unique_score_params.items()
-    }
-    score_results = {
-        name: evaluate(params) for name, params in score_params.items()
-    }
+    score_params = {name: params for params, name in unique_score_params.items()}
+    score_results = {name: evaluate(params) for name, params in score_params.items()}
     score_names = list(score_results)
     score_returns = []
     score_rows = []
@@ -436,35 +386,30 @@ def main() -> None:
         _, returns = _log_returns(result)
         score_returns.append(returns)
         metrics = result["metrics"]
-        score_rows.append({
-            "name": name,
-            "params": result["gate_params"],
-            "final_value": float(metrics["final_value"]),
-            "sharpe": float(metrics["sharpe"]),
-            "max_drawdown": float(metrics["max_drawdown"]),
-        })
+        score_rows.append(
+            {
+                "name": name,
+                "params": result["gate_params"],
+                "final_value": float(metrics["final_value"]),
+                "sharpe": float(metrics["sharpe"]),
+                "max_drawdown": float(metrics["max_drawdown"]),
+            }
+        )
     score_matrix = np.column_stack(score_returns)
     score_pbo = cscv_probability_of_backtest_overfitting(score_matrix, slices=8)
     score_pbo["selection_counts"] = {
-        score_names[int(key)]: value
-        for key, value in score_pbo["selection_counts"].items()
+        score_names[int(key)]: value for key, value in score_pbo["selection_counts"].items()
     }
     production_score_name = next(
         name for name, params in score_params.items() if params == production_params
     )
-    ordered_score_final = sorted(
-        (row["final_value"] for row in score_rows), reverse=True
-    )
+    ordered_score_final = sorted((row["final_value"] for row in score_rows), reverse=True)
     production_score_final = float(production["metrics"]["final_value"])
-    within_ten_percent = int(sum(
-        row["final_value"] >= production_score_final * 0.90
-        for row in score_rows
-    ))
-
-    gate_stat_pass = bool(
-        white["20"]["p_value"] < 0.05
-        and float(bootstrap["20"]["ci95"][0]) > 0.0
+    within_ten_percent = int(
+        sum(row["final_value"] >= production_score_final * 0.90 for row in score_rows)
     )
+
+    gate_stat_pass = bool(white["20"]["p_value"] < 0.05 and float(bootstrap["20"]["ci95"][0]) > 0.0)
     local_pass = float(np.mean(local_relative > 0.0)) >= 0.80
     historical_validation_passed = False
     if live_oos <= 1 and (
@@ -500,9 +445,7 @@ def main() -> None:
         "strict_v3": _compact(strict),
         "v3g": _compact(production),
         "gate_increment": {
-            "terminal_relative_to_strict_v3": (
-                production_score_final / strict_final - 1.0
-            ),
+            "terminal_relative_to_strict_v3": (production_score_final / strict_final - 1.0),
             "decision_divergences": _decision_divergences(
                 strict["decision_log"],
                 production["decision_log"],
@@ -527,9 +470,7 @@ def main() -> None:
         "momentum_selection": {
             "candidate_count": len(score_rows),
             "production_name": production_score_name,
-            "production_rank_by_final": (
-                ordered_score_final.index(production_score_final) + 1
-            ),
+            "production_rank_by_final": (ordered_score_final.index(production_score_final) + 1),
             "candidates_within_10pct_of_production": within_ten_percent,
             "cscv": score_pbo,
             "rows": score_rows,
@@ -584,9 +525,7 @@ def main() -> None:
         f"assessment={classification}"
     )
     if args.save:
-        OUTPUT.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n"
-        )
+        OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n")
         print(f"saved: {OUTPUT}")
 
 

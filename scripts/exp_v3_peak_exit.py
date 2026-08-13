@@ -85,18 +85,12 @@ def target_on_rebalance(
         if mask.sum() >= WARMUP:
             idx_map[code] = int(mask.sum()) - 1
 
-    target, candidates, _best_score, _a_share_weak = rq.select_target(
-        data, idx_map, holding
-    )
+    target, candidates, _best_score, _a_share_weak = rq.select_target(data, idx_map, holding)
     if live_mirror and candidates:
         dropped: set[str] = set()
         for code, _score in candidates:
             close = close_through(data, code, td)
-            if (
-                len(close) >= 2
-                and close[-2] > 0
-                and (close[-1] - close[-2]) / close[-2] < -0.03
-            ):
+            if len(close) >= 2 and close[-2] > 0 and (close[-1] - close[-2]) / close[-2] < -0.03:
                 dropped.add(code)
         if dropped:
             candidates = [(code, score) for code, score in candidates if code not in dropped]
@@ -122,19 +116,30 @@ def trade_to(
     old_shares = shares
     if holding and holding in data:
         if not tradable(data, holding, td):
-            trade_log.append({
-                "date": str(td), "action": "sell", "code": holding,
-                "status": "cancelled", "reason": "not_tradable",
-            })
+            trade_log.append(
+                {
+                    "date": str(td),
+                    "action": "sell",
+                    "code": holding,
+                    "status": "cancelled",
+                    "reason": "not_tradable",
+                }
+            )
             return cash, holding, shares, 0.0, 0.0
         sell_price = price_on(data, holding, td)
         amount = shares * sell_price * (1 - fee - slippage)
         cash += amount
-        trade_log.append({
-            "date": str(td), "action": "sell", "code": holding,
-            "shares": shares, "price": sell_price, "amount": amount,
-            "status": "executed",
-        })
+        trade_log.append(
+            {
+                "date": str(td),
+                "action": "sell",
+                "code": holding,
+                "shares": shares,
+                "price": sell_price,
+                "amount": amount,
+                "status": "executed",
+            }
+        )
         holding = None
         shares = 0
 
@@ -146,16 +151,27 @@ def trade_to(
             cash -= cost
             holding = target
             shares = buy_shares
-            trade_log.append({
-                "date": str(td), "action": "buy", "code": target,
-                "shares": buy_shares, "price": buy_price, "amount": cost,
-                "status": "executed",
-            })
+            trade_log.append(
+                {
+                    "date": str(td),
+                    "action": "buy",
+                    "code": target,
+                    "shares": buy_shares,
+                    "price": buy_price,
+                    "amount": cost,
+                    "status": "executed",
+                }
+            )
         else:
-            trade_log.append({
-                "date": str(td), "action": "buy", "code": target,
-                "status": "cancelled", "reason": "zero_shares",
-            })
+            trade_log.append(
+                {
+                    "date": str(td),
+                    "action": "buy",
+                    "code": target,
+                    "status": "cancelled",
+                    "reason": "zero_shares",
+                }
+            )
 
     entry_price = price_on(data, holding, td) if holding and holding != old_holding else 0.0
     if holding == old_holding and old_shares == shares:
@@ -204,9 +220,7 @@ def summarize(
         "turnover": turnover,
         "trail_exit_count": len(exit_events),
         "trail_exit_avg_dd": (
-            float(np.mean([x["dd_from_peak"] for x in exit_events]))
-            if exit_events
-            else 0.0
+            float(np.mean([x["dd_from_peak"] for x in exit_events])) if exit_events else 0.0
         ),
         "trail_exit_events": exit_events,
     }
@@ -228,7 +242,8 @@ def run_strategy(
     start = pd.Timestamp(start_date).date() if start_date else None
     end = pd.Timestamp(end_date).date() if end_date else None
     trading_dates = [
-        td for td in full_trading_dates
+        td
+        for td in full_trading_dates
         if (start is None or td >= start) and (end is None or td <= end)
     ]
     rebalance_dates = full_trading_dates[::REBALANCE_DAYS]
@@ -257,19 +272,30 @@ def run_strategy(
             if peak_gain >= activation and dd_from_peak <= -trail:
                 old_holding = holding
                 cash, holding, shares, new_entry, _ = trade_to(
-                    data, td, cash, holding, shares, rq.DEFENSE,
-                    cost_multiplier, trade_log,
+                    data,
+                    td,
+                    cash,
+                    holding,
+                    shares,
+                    rq.DEFENSE,
+                    cost_multiplier,
+                    trade_log,
                     exposure=1.0,
                 )
                 if holding == rq.DEFENSE:
                     entry_price = new_entry or price_on(data, holding, td)
                     holding_peak = entry_price
                     cooldown_until = next_rebalance.get(td)
-                    exit_events.append({
-                        "date": str(td), "code": old_holding,
-                        "peak_gain": peak_gain, "dd_from_peak": dd_from_peak,
-                        "trail": trail, "activation": activation,
-                    })
+                    exit_events.append(
+                        {
+                            "date": str(td),
+                            "code": old_holding,
+                            "peak_gain": peak_gain,
+                            "dd_from_peak": dd_from_peak,
+                            "trail": trail,
+                            "activation": activation,
+                        }
+                    )
                     exited_today = True
                 else:
                     # If the close is not tradable, retain the old peak state.
@@ -293,8 +319,14 @@ def run_strategy(
                         if vol20 > 0:
                             exposure = max(0.35, min(1.0, vol_target / vol20))
                 cash, new_holding, new_shares, new_entry, _ = trade_to(
-                    data, td, cash, holding, shares, target,
-                    cost_multiplier, trade_log,
+                    data,
+                    td,
+                    cash,
+                    holding,
+                    shares,
+                    target,
+                    cost_multiplier,
+                    trade_log,
                     exposure=exposure,
                 )
                 if new_holding != holding:
@@ -314,11 +346,13 @@ def run_strategy(
             equity = cash + shares * current
         else:
             equity = cash
-        equity_rows.append({
-            "trade_date": pd.Timestamp(td),
-            "equity": equity,
-            "holding": holding or rq.DEFENSE,
-        })
+        equity_rows.append(
+            {
+                "trade_date": pd.Timestamp(td),
+                "equity": equity,
+                "holding": holding or rq.DEFENSE,
+            }
+        )
 
     curve = pd.DataFrame(equity_rows)
     return summarize(curve, trade_log, exit_events, INITIAL_CAPITAL), curve
@@ -336,8 +370,7 @@ def main() -> None:
     data = rq.load_data()
     dates = common_dates(data)
     print(
-        f"common_dates={len(dates)} start={dates[0]} end={dates[-1]} "
-        f"backtest_start={dates[WARMUP]}"
+        f"common_dates={len(dates)} start={dates[0]} end={dates[-1]} backtest_start={dates[WARMUP]}"
     )
 
     baseline_result = rq.run_qixing_v3_same_day(

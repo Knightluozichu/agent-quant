@@ -63,12 +63,8 @@ def test_failure_breaker_exits_stale_leader_after_first_observed_shock() -> None
 
 def test_failure_breaker_rotates_to_a_qualified_alternative() -> None:
     factors = {
-        "silver": _factor(
-            "silver", slow=0.15, return_3d=-0.04, return_5d=-0.01
-        ),
-        "gold": _factor(
-            "gold", slow=0.05, return_3d=0.02, return_5d=0.04
-        ),
+        "silver": _factor("silver", slow=0.15, return_3d=-0.04, return_5d=-0.01),
+        "gold": _factor("gold", slow=0.05, return_3d=0.02, return_5d=0.04),
     }
     decision = momentum_failure_decision(
         mode="stale_leader_best_or_cash",
@@ -88,12 +84,8 @@ def test_failure_breaker_rotates_to_a_qualified_alternative() -> None:
 
 def test_failure_breaker_rejects_a_weak_alternative_and_uses_cash() -> None:
     factors = {
-        "silver": _factor(
-            "silver", slow=0.15, return_3d=-0.04, return_5d=-0.01
-        ),
-        "gold": _factor(
-            "gold", slow=-0.01, return_3d=0.02, return_5d=0.04
-        ),
+        "silver": _factor("silver", slow=0.15, return_3d=-0.04, return_5d=-0.01),
+        "gold": _factor("gold", slow=-0.01, return_3d=0.02, return_5d=0.04),
     }
     decision = momentum_failure_decision(
         mode="stale_leader_best_or_cash",

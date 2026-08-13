@@ -93,9 +93,7 @@ def main() -> None:
     internal_results: dict[str, dict[str, Any]] = {}
     for name, pair in PAIR_GROUPS.items():
         global_results[name] = run_strategy(data, global_params((pair,)))
-        internal_results[name] = run_pair_strategy(
-            data, slow, pair_groups=(pair,)
-        )
+        internal_results[name] = run_pair_strategy(data, slow, pair_groups=(pair,))
 
     combinations = {
         "precious_commodity": (PAIR_GROUPS["precious"], PAIR_GROUPS["commodity"]),
@@ -104,8 +102,7 @@ def main() -> None:
         "all": all_groups,
     }
     global_combinations = {
-        name: run_strategy(data, global_params(groups))
-        for name, groups in combinations.items()
+        name: run_strategy(data, global_params(groups)) for name, groups in combinations.items()
     }
     internal_combinations = {
         name: run_pair_strategy(data, slow, pair_groups=groups)
@@ -141,9 +138,7 @@ def main() -> None:
                     data, PairFactorParams.disabled(), cost_multiplier=multiplier
                 )
             elif mode == "global":
-                result = run_strategy(
-                    data, global_params(groups), cost_multiplier=multiplier
-                )
+                result = run_strategy(data, global_params(groups), cost_multiplier=multiplier)
             elif mode == "hybrid":
                 result = run_pair_strategy(
                     data,
@@ -184,14 +179,8 @@ def main() -> None:
         "precious_hybrid": precious_hybrid,
         **{f"{name}_global": result for name, result in global_results.items()},
         **{f"{name}_internal": result for name, result in internal_results.items()},
-        **{
-            f"{name}_global": result
-            for name, result in global_combinations.items()
-        },
-        **{
-            f"{name}_internal": result
-            for name, result in internal_combinations.items()
-        },
+        **{f"{name}_global": result for name, result in global_combinations.items()},
+        **{f"{name}_internal": result for name, result in internal_combinations.items()},
     }
 
     segments: dict[str, Any] = {}
@@ -217,10 +206,10 @@ def main() -> None:
 
     print("\ncost pressure")
     for label, rows in costs.items():
-        print(label, " ".join(
-            f"{name}={row['metrics']['final_value']:,.0f}"
-            for name, row in rows.items()
-        ))
+        print(
+            label,
+            " ".join(f"{name}={row['metrics']['final_value']:,.0f}" for name, row in rows.items()),
+        )
 
     payload = {
         "meta": {
@@ -240,9 +229,7 @@ def main() -> None:
         "segments": segments,
     }
     if args.save:
-        OUTPUT.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n"
-        )
+        OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n")
         print(f"\nsaved: {OUTPUT}")
 
 

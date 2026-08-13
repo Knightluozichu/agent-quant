@@ -18,21 +18,13 @@ from scripts.exp_v4_regime_guard import (
 
 
 def test_absolute_trend_requires_two_independent_horizons_by_default() -> None:
-    assert absolute_trend_votes(
-        return_20d=0.01, return_60d=-0.02, ma20_slope_5d=0.01
-    ) == 2
-    assert absolute_trend_votes(
-        return_20d=-0.01, return_60d=-0.02, ma20_slope_5d=0.01
-    ) == 1
+    assert absolute_trend_votes(return_20d=0.01, return_60d=-0.02, ma20_slope_5d=0.01) == 2
+    assert absolute_trend_votes(return_20d=-0.01, return_60d=-0.02, ma20_slope_5d=0.01) == 1
 
 
 def test_expanding_threshold_excludes_current_observation() -> None:
-    values: FloatArray = np.asarray(
-        [1.0, 2.0, 3.0, 100.0], dtype=np.float64
-    )
-    thresholds = expanding_thresholds(
-        values, quantile=0.5, minimum_history=3, default=float("inf")
-    )
+    values: FloatArray = np.asarray([1.0, 2.0, 3.0, 100.0], dtype=np.float64)
+    thresholds = expanding_thresholds(values, quantile=0.5, minimum_history=3, default=float("inf"))
 
     assert np.isinf(thresholds[:3]).all()
     assert thresholds[3] == pytest.approx(2.0)

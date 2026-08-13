@@ -6,6 +6,9 @@ import sys
 from pathlib import Path
 
 import numpy as np
+import pytest
+
+pytestmark = pytest.mark.integration
 
 SCRIPTS = Path(__file__).resolve().parents[2] / "scripts"
 sys.path.insert(0, str(SCRIPTS))

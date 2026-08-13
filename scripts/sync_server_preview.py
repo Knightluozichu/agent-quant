@@ -28,8 +28,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, cast
 
-import live_signal  # type: ignore[import-not-found]
-import qixing_v4  # type: ignore[import-not-found]
+import live_signal
+import qixing_v4
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 LOCAL_LIVE_DIR = PROJECT_ROOT / "data" / "live"

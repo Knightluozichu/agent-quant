@@ -57,14 +57,10 @@ def replay_documented_failure() -> dict[str, Any]:
     silver: np.ndarray[Any, np.dtype[np.float64]] = np.asarray(
         [-0.05, -0.08, -0.03], dtype=np.float64
     )
-    gold: np.ndarray[Any, np.dtype[np.float64]] = np.asarray(
-        [0.01, 0.02, 0.03], dtype=np.float64
-    )
+    gold: np.ndarray[Any, np.dtype[np.float64]] = np.asarray([0.01, 0.02, 0.03], dtype=np.float64)
     v4_return = float(np.prod(1.0 + silver) - 1.0)
     cash_return = float(1.0 + silver[0] - 1.0)
-    replacement_return = float(
-        (1.0 + silver[0]) * (1.0 + gold[1]) * (1.0 + gold[2]) - 1.0
-    )
+    replacement_return = float((1.0 + silver[0]) * (1.0 + gold[1]) * (1.0 + gold[2]) - 1.0)
     return {
         "silver_returns": silver.tolist(),
         "gold_returns": gold.tolist(),
@@ -111,29 +107,26 @@ def run_candidate(
     day_threshold: float = -0.05,
     three_day_threshold: float = -0.10,
 ) -> dict[str, Any]:
-    return audited(run_v4_with_stop(
-        data,
-        stop_mode="disabled",
-        cost_multiplier=cost_multiplier,
-        momentum_failure_mode=mode,
-        momentum_failure_day_threshold=day_threshold,
-        momentum_failure_three_day_threshold=three_day_threshold,
-    ))
+    return audited(
+        run_v4_with_stop(
+            data,
+            stop_mode="disabled",
+            cost_multiplier=cost_multiplier,
+            momentum_failure_mode=mode,
+            momentum_failure_day_threshold=day_threshold,
+            momentum_failure_three_day_threshold=three_day_threshold,
+        )
+    )
 
 
-def recent_cluster(
-    baseline: dict[str, Any], selected: dict[str, Any]
-) -> dict[str, Any]:
+def recent_cluster(baseline: dict[str, Any], selected: dict[str, Any]) -> dict[str, Any]:
     dates = pd.to_datetime(baseline["equity_curve"]["trade_date"])
     mask = (dates >= "2026-08-10") & (dates <= "2026-08-11")
     base_returns = rb._curve_returns(baseline["equity_curve"])[mask]
     selected_returns = rb._curve_returns(selected["equity_curve"])[mask]
     base_cluster = float(np.prod(1.0 + base_returns) - 1.0)
     selected_cluster = float(np.prod(1.0 + selected_returns) - 1.0)
-    reduction = (
-        1.0 - abs(selected_cluster) / abs(base_cluster)
-        if base_cluster < 0.0 else 0.0
-    )
+    reduction = 1.0 - abs(selected_cluster) / abs(base_cluster) if base_cluster < 0.0 else 0.0
     return {
         "start": "2026-08-10",
         "end": "2026-08-11",
@@ -159,33 +152,29 @@ def main() -> None:
     data = rq.load_data()
     baseline = audited(run_full_pool_strategy(data, v4.V4_PARAMS))
     disabled_control = audited(run_v4_with_stop(data, stop_mode="disabled"))
-    parity_max_abs = float(np.max(np.abs(
-        np.asarray(baseline["equity_curve"]["equity"], dtype=float)
-        - np.asarray(disabled_control["equity_curve"]["equity"], dtype=float)
-    )))
+    parity_max_abs = float(
+        np.max(
+            np.abs(
+                np.asarray(baseline["equity_curve"]["equity"], dtype=float)
+                - np.asarray(disabled_control["equity_curve"]["equity"], dtype=float)
+            )
+        )
+    )
     if parity_max_abs > 1e-6:
         raise RuntimeError("disabled breaker does not reproduce canonical V4")
     candidates = {
-        "stale_leader_cash": run_candidate(
-            data, "stale_leader_cash", cost_multiplier=1.0
-        ),
+        "stale_leader_cash": run_candidate(data, "stale_leader_cash", cost_multiplier=1.0),
         SELECTED: run_candidate(data, SELECTED, cost_multiplier=1.0),
     }
-    broad_cash = audited(run_v4_with_stop(
-        data, stop_mode="fixed_shock_cash", cost_multiplier=1.0
-    ))
+    broad_cash = audited(run_v4_with_stop(data, stop_mode="fixed_shock_cash", cost_multiplier=1.0))
     selected = candidates[SELECTED]
 
     cost_pressure: dict[str, Any] = {}
     for cost in (0.0, 1.0, 2.0, 3.0):
-        cost_baseline = audited(run_full_pool_strategy(
-            data, v4.V4_PARAMS, cost_multiplier=cost
-        ))
+        cost_baseline = audited(run_full_pool_strategy(data, v4.V4_PARAMS, cost_multiplier=cost))
         cost_pressure[f"{cost:.0f}x"] = {
             "baseline_v4": compact(cost_baseline),
-            SELECTED: compact(run_candidate(
-                data, SELECTED, cost_multiplier=cost
-            )),
+            SELECTED: compact(run_candidate(data, SELECTED, cost_multiplier=cost)),
         }
 
     neighbors: list[dict[str, Any]] = []
@@ -199,30 +188,30 @@ def main() -> None:
         )
         metrics = result["metrics"]
         neighbor_recent = recent_cluster(baseline, result)
-        neighbors.append({
-            "name": name,
-            "day_threshold": day_threshold,
-            "three_day_threshold": three_day_threshold,
-            "final_value": metrics["final_value"],
-            "cagr": metrics["cagr"],
-            "max_drawdown": metrics["max_drawdown"],
-            "sharpe": metrics["sharpe"],
-            "stop_triggers": metrics["stop_triggers"],
-            "cagr_retention": metrics["cagr"] / baseline["metrics"]["cagr"],
-            "recent_cluster_loss_reduction": neighbor_recent["loss_reduction"],
-            "specified_cluster_passed": bool(
-                metrics["cagr"] / baseline["metrics"]["cagr"] >= 0.90
-                and neighbor_recent["loss_reduction"] >= 0.40
-            ),
-        })
+        neighbors.append(
+            {
+                "name": name,
+                "day_threshold": day_threshold,
+                "three_day_threshold": three_day_threshold,
+                "final_value": metrics["final_value"],
+                "cagr": metrics["cagr"],
+                "max_drawdown": metrics["max_drawdown"],
+                "sharpe": metrics["sharpe"],
+                "stop_triggers": metrics["stop_triggers"],
+                "cagr_retention": metrics["cagr"] / baseline["metrics"]["cagr"],
+                "recent_cluster_loss_reduction": neighbor_recent["loss_reduction"],
+                "specified_cluster_passed": bool(
+                    metrics["cagr"] / baseline["metrics"]["cagr"] >= 0.90
+                    and neighbor_recent["loss_reduction"] >= 0.40
+                ),
+            }
+        )
 
     recent = recent_cluster(baseline, selected)
     documented = replay_documented_failure()
     baseline_metrics = baseline["metrics"]
     selected_metrics = selected["metrics"]
-    cagr_retention = (
-        selected_metrics["cagr"] / baseline_metrics["cagr"]
-    )
+    cagr_retention = selected_metrics["cagr"] / baseline_metrics["cagr"]
     mdd_improvement = 1.0 - abs(selected_metrics["max_drawdown"]) / abs(
         baseline_metrics["max_drawdown"]
     )
@@ -232,16 +221,12 @@ def main() -> None:
         "documented_cluster_loss_at_most_6pct": (
             documented["breaker_qualified_gold_return"] >= -0.06
         ),
-        "recent_cluster_loss_reduction_at_least_40pct": (
-            recent["loss_reduction"] >= 0.40
-        ),
+        "recent_cluster_loss_reduction_at_least_40pct": (recent["loss_reduction"] >= 0.40),
         "no_additional_negative_year": (
-            selected_metrics["negative_years"]
-            <= baseline_metrics["negative_years"]
+            selected_metrics["negative_years"] <= baseline_metrics["negative_years"]
         ),
         "positive_at_2x_cost": (
-            cost_pressure["2x"][SELECTED]["metrics"]["final_value"]
-            > INITIAL_CAPITAL
+            cost_pressure["2x"][SELECTED]["metrics"]["final_value"] > INITIAL_CAPITAL
         ),
     }
     bootstrap = {
@@ -292,10 +277,7 @@ def main() -> None:
             "disabled_breaker_parity_max_abs_equity_difference": parity_max_abs,
         },
         "theory": {
-            "formula": (
-                "STOP_t = I[V4 would retain held asset] * "
-                "I[r_1d<=-5% or r_3d<=-10%]"
-            ),
+            "formula": ("STOP_t = I[V4 would retain held asset] * I[r_1d<=-5% or r_3d<=-10%]"),
             "replacement": (
                 "strongest eligible alternative with positive slow momentum and trend, "
                 "and both 3d/5d return above the failed holding; otherwise cash"
@@ -322,16 +304,13 @@ def main() -> None:
             "specified_cluster_passed": bool(
                 acceptance_checks["cagr_retention_at_least_90pct"]
                 and acceptance_checks["documented_cluster_loss_at_most_6pct"]
-                and acceptance_checks[
-                    "recent_cluster_loss_reduction_at_least_40pct"
-                ]
+                and acceptance_checks["recent_cluster_loss_reduction_at_least_40pct"]
             ),
             "threshold_neighborhood_specified_cluster_passes": sum(
                 row["specified_cluster_passed"] for row in neighbors
             ),
             "threshold_neighborhood_specified_cluster_pass_rate": (
-                sum(row["specified_cluster_passed"] for row in neighbors)
-                / len(neighbors)
+                sum(row["specified_cluster_passed"] for row in neighbors) / len(neighbors)
             ),
         },
         "threshold_neighborhood": neighbors,
@@ -369,9 +348,7 @@ def main() -> None:
         f"assessment={classification}"
     )
     if args.save:
-        OUTPUT.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n"
-        )
+        OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n")
         print(f"saved: {OUTPUT}")
 
 

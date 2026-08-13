@@ -88,9 +88,7 @@ def _stress_scenarios() -> dict[str, Any]:
         first_v4_target=None,
     )
     no_replacement = dict(factors)
-    no_replacement["gold"] = _factor(
-        "gold", slow=0.06, ret3=0.01, ret5=0.02, trend=-0.01
-    )
+    no_replacement["gold"] = _factor("gold", slow=0.06, ret3=0.01, ret5=0.02, trend=-0.01)
     day1_without_replacement = entry_guard_decision(
         mode="entry_guard_selective",
         holding="silver",
@@ -137,9 +135,7 @@ def _stress_scenarios() -> dict[str, Any]:
     }
 
 
-def _entry_path_diagnostics(
-    trades: list[dict[str, Any]], data: dict[str, Any]
-) -> dict[str, Any]:
+def _entry_path_diagnostics(trades: list[dict[str, Any]], data: dict[str, Any]) -> dict[str, Any]:
     """Describe first-three-day entry paths for reporting only."""
     entries: list[dict[str, Any]] = []
     open_entry: dict[str, Any] | None = None
@@ -186,13 +182,15 @@ def _entry_path_diagnostics(
             price = prices.get(day)
             if price is None or entry["price"] <= 0.0:
                 continue
-            rows.append({
-                "entry_date": entry["date"],
-                "date": day,
-                "code": code,
-                "age": age,
-                "return_since_entry": price / entry["price"] - 1.0,
-            })
+            rows.append(
+                {
+                    "entry_date": entry["date"],
+                    "date": day,
+                    "code": code,
+                    "age": age,
+                    "return_since_entry": price / entry["price"] - 1.0,
+                }
+            )
 
     by_age: dict[str, Any] = {}
     for age in range(1, ENTRY_GUARD_DAYS + 1):
@@ -223,15 +221,15 @@ def _trade_tail(trades: list[dict[str, Any]], cost_multiplier: float) -> dict[st
             entry = (code, price)
         elif action == "sell" and entry and entry[0] == code and price > 0.0:
             gross_return = price / entry[1] - 1.0
-            net_return = price * (1.0 - unit_cost) / (
-                entry[1] * (1.0 + unit_cost)
-            ) - 1.0
-            rows.append({
-                "exit_date": str(trade.get("date")),
-                "code": code,
-                "gross_return": gross_return,
-                "net_return": net_return,
-            })
+            net_return = price * (1.0 - unit_cost) / (entry[1] * (1.0 + unit_cost)) - 1.0
+            rows.append(
+                {
+                    "exit_date": str(trade.get("date")),
+                    "code": code,
+                    "gross_return": gross_return,
+                    "net_return": net_return,
+                }
+            )
             entry = None
 
     values = np.asarray([row["net_return"] for row in rows], dtype=float)
@@ -263,11 +261,9 @@ def _evaluate(
         entry_guard_entry_loss=entry_loss_threshold,
     )
     result["trade_tail"] = _trade_tail(result["trades"], cost_multiplier)
-    result["metrics"].update({
-        key: value
-        for key, value in result["trade_tail"].items()
-        if key != "trade_returns"
-    })
+    result["metrics"].update(
+        {key: value for key, value in result["trade_tail"].items() if key != "trade_returns"}
+    )
     return result
 
 
@@ -281,9 +277,7 @@ def _compact(result: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _assert_baseline_parity(
-    canonical: dict[str, Any], replay: dict[str, Any]
-) -> None:
+def _assert_baseline_parity(canonical: dict[str, Any], replay: dict[str, Any]) -> None:
     left = canonical["equity_curve"]
     right = replay["equity_curve"]
     if left["trade_date"].tolist() != right["trade_date"].tolist():
@@ -334,10 +328,7 @@ def main() -> None:
     cost_pressure = {
         f"{multiplier:.0f}x": {
             "baseline": evaluate(None, multiplier)["metrics"],
-            **{
-                mode: evaluate(mode, multiplier)["metrics"]
-                for mode in ENTRY_GUARD_MODES
-            },
+            **{mode: evaluate(mode, multiplier)["metrics"] for mode in ENTRY_GUARD_MODES},
         }
         for multiplier in (0.0, 1.0, 2.0, 3.0)
     }
@@ -386,9 +377,7 @@ def main() -> None:
             "shock_1d": STOP_1D,
             "entry_loss": ENTRY_GUARD_ENTRY_LOSS,
             "pre_registered_variants": {
-                "entry_guard_cash": (
-                    "new holding shock exits to cash until the next fixed grid"
-                ),
+                "entry_guard_cash": ("new holding shock exits to cash until the next fixed grid"),
                 "entry_guard_v4_or_cash": (
                     "new holding shock switches on first full V4 consensus; "
                     "otherwise exits to cash until the next fixed grid"
@@ -474,9 +463,7 @@ def main() -> None:
     print(json.dumps(stress_scenarios, ensure_ascii=False, indent=2))
 
     if args.save:
-        OUTPUT.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n"
-        )
+        OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n")
         print(f"\nsaved: {OUTPUT}")
 
 

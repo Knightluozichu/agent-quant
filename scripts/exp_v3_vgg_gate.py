@@ -13,6 +13,7 @@
 用法: uv run python scripts/exp_v3_vgg_gate.py
 输出: data/v9_results/v3_vgg_gate.json
 """
+
 from __future__ import annotations
 
 import json
@@ -42,20 +43,36 @@ class VGG8(nn.Module):
     def __init__(self, in_ch=3, num_classes=1):
         super().__init__()
         self.features = nn.Sequential(
-            nn.Conv2d(in_ch, 64, 3, padding=1), nn.BatchNorm2d(64), nn.ReLU(),
-            nn.Conv2d(64, 64, 3, padding=1), nn.BatchNorm2d(64), nn.ReLU(),
+            nn.Conv2d(in_ch, 64, 3, padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, 3, padding=1),
+            nn.BatchNorm2d(64),
+            nn.ReLU(),
             nn.MaxPool2d(2),
-            nn.Conv2d(64, 128, 3, padding=1), nn.BatchNorm2d(128), nn.ReLU(),
-            nn.Conv2d(128, 128, 3, padding=1), nn.BatchNorm2d(128), nn.ReLU(),
+            nn.Conv2d(64, 128, 3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
+            nn.Conv2d(128, 128, 3, padding=1),
+            nn.BatchNorm2d(128),
+            nn.ReLU(),
             nn.MaxPool2d(2),
-            nn.Conv2d(128, 256, 3, padding=1), nn.BatchNorm2d(256), nn.ReLU(),
-            nn.Conv2d(256, 256, 3, padding=1), nn.BatchNorm2d(256), nn.ReLU(),
+            nn.Conv2d(128, 256, 3, padding=1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(),
+            nn.Conv2d(256, 256, 3, padding=1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(),
             nn.MaxPool2d(2),
         )
         flat = 256 * (IMG_SIZE // 8) ** 2
         self.classifier = nn.Sequential(
-            nn.Linear(flat, 512), nn.ReLU(), nn.Dropout(0.3),
-            nn.Linear(512, 256), nn.ReLU(), nn.Dropout(0.3),
+            nn.Linear(flat, 512),
+            nn.ReLU(),
+            nn.Dropout(0.3),
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Dropout(0.3),
             nn.Linear(256, num_classes),
         )
 
@@ -95,8 +112,13 @@ def main() -> None:
             if cr >= DROP_THR:
                 continue
             img = render_tech_image(
-                c[:i + 1], h[:i + 1], low[:i + 1], o[:i + 1], v[:i + 1],
-                n=30, size=IMG_SIZE,
+                c[: i + 1],
+                h[: i + 1],
+                low[: i + 1],
+                o[: i + 1],
+                v[: i + 1],
+                n=30,
+                size=IMG_SIZE,
             )
             ret60 = (c[i] - c[i - 61]) / c[i - 61]
             r10 = (c[i] - c[i - 11]) / c[i - 11]
@@ -107,8 +129,9 @@ def main() -> None:
             labels.append(1.0 if fwd5 > 0 else 0.0)
             rules.append(1.0 if ret60 < RET60_THR and mom > 0 else 0.0)
             years.append(str(df.iloc[i]["trade_date"])[:4])
-            metas.append({"date": str(df.iloc[i]["trade_date"]), "code": code,
-                          "name": rq.ETF_POOL[code]})
+            metas.append(
+                {"date": str(df.iloc[i]["trade_date"]), "code": code, "name": rq.ETF_POOL[code]}
+            )
 
     imgs = np.stack(imgs).astype(np.float32)
     labels = np.array(labels, dtype=np.float32)
@@ -118,8 +141,8 @@ def main() -> None:
     te_mask = years >= "2024"
     print(f"\n  事件总数: {len(imgs)} | 训练 {tr_mask.sum()} | 测试 {te_mask.sum()}")
     print(
-        f"  假摔率: 训练 {labels[tr_mask].mean()*100:.1f}% | "
-        f"测试 {labels[te_mask].mean()*100:.1f}%"
+        f"  假摔率: 训练 {labels[tr_mask].mean() * 100:.1f}% | "
+        f"测试 {labels[te_mask].mean() * 100:.1f}%"
     )
 
     # 规则门控基准
@@ -130,8 +153,8 @@ def main() -> None:
         / max((labels[te_mask] == 1).sum(), 1)
     )
     print(
-        f"\n  【规则门控】 准确率 {rule_acc*100:.1f}% | "
-        f"AUC {rule_auc:.3f} | 假摔召回 {rule_recall*100:.1f}%"
+        f"\n  【规则门控】 准确率 {rule_acc * 100:.1f}% | "
+        f"AUC {rule_auc:.3f} | 假摔召回 {rule_recall * 100:.1f}%"
     )
 
     # VGG-8 训练
@@ -148,37 +171,41 @@ def main() -> None:
         model.train()
         perm = torch.randperm(n)
         for i in range(0, n, 32):
-            idx = perm[i:i + 32]
+            idx = perm[i : i + 32]
             opt.zero_grad()
             loss = lossf(model(x_tr[idx]), ytr[idx])
             loss.backward()
             opt.step()
         if (ep + 1) % 10 == 0:
-            print(f"  epoch {ep+1}: loss {loss.item():.4f}")
+            print(f"  epoch {ep + 1}: loss {loss.item():.4f}")
     model.eval()
     with torch.no_grad():
         p_te = torch.sigmoid(model(x_te)).cpu().numpy()
     acc = float(((p_te > 0.5) == labels[te_mask]).mean())
     auc = auc_score(labels[te_mask], p_te)
     recall = float(
-        ((p_te > 0.5) & (labels[te_mask] == 1)).sum()
-        / max((labels[te_mask] == 1).sum(), 1)
+        ((p_te > 0.5) & (labels[te_mask] == 1)).sum() / max((labels[te_mask] == 1).sum(), 1)
     )
     print(
-        f"\n  【VGG-8】      准确率 {acc*100:.1f}% | "
-        f"AUC {auc:.3f} | 假摔召回 {recall*100:.1f}%"
+        f"\n  【VGG-8】      准确率 {acc * 100:.1f}% | AUC {auc:.3f} | 假摔召回 {recall * 100:.1f}%"
     )
 
-    verdict = (f"VGG-8 AUC {auc:.3f} vs 规则 {rule_auc:.3f}, "
-               + ("✅ VGG-8 显著优于规则门控" if auc - rule_auc > 0.05
-                  else "❌ VGG-8 未显著优于规则 (暴跌后走向接近随机, 与历史4次ML实验结论一致)"))
+    verdict = f"VGG-8 AUC {auc:.3f} vs 规则 {rule_auc:.3f}, " + (
+        "✅ VGG-8 显著优于规则门控"
+        if auc - rule_auc > 0.05
+        else "❌ VGG-8 未显著优于规则 (暴跌后走向接近随机, 与历史4次ML实验结论一致)"
+    )
     print("\n" + "=" * 76)
     print(f"  判定: {verdict}")
     print("=" * 76)
 
-    out = {"n_train": int(tr_mask.sum()), "n_test": int(te_mask.sum()),
-           "rule": {"acc": rule_acc, "auc": rule_auc, "recall": rule_recall},
-           "vgg8": {"acc": acc, "auc": auc, "recall": recall}, "verdict": verdict}
+    out = {
+        "n_train": int(tr_mask.sum()),
+        "n_test": int(te_mask.sum()),
+        "rule": {"acc": rule_acc, "auc": rule_auc, "recall": rule_recall},
+        "vgg8": {"acc": acc, "auc": auc, "recall": recall},
+        "verdict": verdict,
+    }
     path = OUTPUT_DIR / "v3_vgg_gate.json"
     path.write_text(json.dumps(out, indent=2, ensure_ascii=False, default=str))
     print(f"\n  ✓ 结果已保存: {path}")

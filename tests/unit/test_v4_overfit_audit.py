@@ -77,8 +77,6 @@ def test_local_gap_grid_is_centered_and_has_27_unique_points() -> None:
     assert len(grid) == 27
     assert len(set(grid.values())) == 27
     assert any(
-        params.slow_gap == 0.0075
-        and params.fast_5d_gap == 0.0225
-        and params.fast_3d_gap == 0.01125
+        params.slow_gap == 0.0075 and params.fast_5d_gap == 0.0225 and params.fast_3d_gap == 0.01125
         for params in grid.values()
     )

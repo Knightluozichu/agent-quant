@@ -53,10 +53,13 @@ def circular_block_indices(
     blocks = math.ceil(length / block_size)
     starts = rng.integers(0, length, size=blocks)
     offsets = np.arange(block_size)
-    return cast("IntArray", np.asarray(
-        np.concatenate([(start + offsets) % length for start in starts])[:length],
-        dtype=np.int64,
-    ))
+    return cast(
+        "IntArray",
+        np.asarray(
+            np.concatenate([(start + offsets) % length for start in starts])[:length],
+            dtype=np.int64,
+        ),
+    )
 
 
 def newey_west_mean_test(values: np.ndarray, *, max_lag: int) -> dict[str, float]:
@@ -75,9 +78,7 @@ def newey_west_mean_test(values: np.ndarray, *, max_lag: int) -> dict[str, float
         covariance = float(np.dot(centered[lag:], centered[:-lag]) / n)
         long_variance += 2.0 * weight * covariance
     standard_error = math.sqrt(max(long_variance, 0.0) / n)
-    t_stat = (
-        math.inf if mean > 0.0 else 0.0
-    ) if standard_error == 0.0 else mean / standard_error
+    t_stat = (math.inf if mean > 0.0 else 0.0) if standard_error == 0.0 else mean / standard_error
     p_value = 0.5 * math.erfc(t_stat / math.sqrt(2.0))
     return {
         "observations": float(n),
@@ -113,9 +114,7 @@ def white_reality_check(
     boot_max: FloatArray = np.empty(bootstrap_samples, dtype=float)
     for sample_index in range(bootstrap_samples):
         indices = circular_block_indices(n, block_size=block_size, rng=rng)
-        boot_max[sample_index] = math.sqrt(n) * float(
-            np.max(np.mean(centered[indices], axis=0))
-        )
+        boot_max[sample_index] = math.sqrt(n) * float(np.max(np.mean(centered[indices], axis=0)))
     p_value = float((1 + np.sum(boot_max >= observed)) / (bootstrap_samples + 1))
     return {
         "observations": n,
@@ -124,9 +123,7 @@ def white_reality_check(
         "bootstrap_samples": bootstrap_samples,
         "selected_mean": float(means[selected_column]),
         "best_mean": float(np.max(means)),
-        "selected_rank": int(
-            candidates - np.argsort(np.argsort(means))[selected_column]
-        ),
+        "selected_rank": int(candidates - np.argsort(np.argsort(means))[selected_column]),
         "observed_max_stat": observed,
         "bootstrap_p95": float(np.quantile(boot_max, 0.95)),
         "p_value": p_value,
@@ -156,17 +153,18 @@ def cscv_probability_of_backtest_overfitting(
         raise ValueError("return_matrix needs at least two strategies")
     if slices < 4 or slices % 2:
         raise ValueError("slices must be an even integer of at least four")
-    blocks: list[IntArray] = [np.asarray(block, dtype=np.int64) for block in np.array_split(
-        np.arange(matrix.shape[0]), slices
-    )]
+    blocks: list[IntArray] = [
+        np.asarray(block, dtype=np.int64)
+        for block in np.array_split(np.arange(matrix.shape[0]), slices)
+    ]
     percentiles: list[float] = []
     selected_columns: list[int] = []
     for train_blocks in itertools.combinations(range(slices), slices // 2):
         train_set = set(train_blocks)
         train_index = np.concatenate([blocks[index] for index in train_blocks])
-        test_index = np.concatenate([
-            blocks[index] for index in range(slices) if index not in train_set
-        ])
+        test_index = np.concatenate(
+            [blocks[index] for index in range(slices) if index not in train_set]
+        )
         train_scores = _mean_score(matrix[train_index])
         selected = int(np.argmax(train_scores))
         test_scores = _mean_score(matrix[test_index])
@@ -186,12 +184,8 @@ def cscv_probability_of_backtest_overfitting(
 def local_gap_grid() -> dict[str, v4.FullPoolParams]:
     """Predefined ±20% three-dimensional neighborhood around V4 gaps."""
     grid: dict[str, v4.FullPoolParams] = {}
-    for slow_scale, fast5_scale, fast3_scale in itertools.product(
-        (0.8, 1.0, 1.2), repeat=3
-    ):
-        name = (
-            f"slow{slow_scale:.1f}_fast5{fast5_scale:.1f}_fast3{fast3_scale:.1f}"
-        )
+    for slow_scale, fast5_scale, fast3_scale in itertools.product((0.8, 1.0, 1.2), repeat=3):
+        name = f"slow{slow_scale:.1f}_fast5{fast5_scale:.1f}_fast3{fast3_scale:.1f}"
         grid[name] = replace(
             v4.V4_PARAMS,
             slow_gap=v4.V4_PARAMS.slow_gap * slow_scale,
@@ -206,31 +200,32 @@ def historical_candidate_params() -> dict[str, v4.FullPoolParams]:
     candidates: list[tuple[str, v4.FullPoolParams]] = [
         ("slow", v4.FullPoolParams(mode="slow")),
         ("slow_confirm2", v4.FullPoolParams(mode="slow", confirmation_hits=2)),
-        ("slow_gap1_confirm2", v4.FullPoolParams(
-            mode="slow", slow_gap=0.01, confirmation_hits=2
-        )),
+        ("slow_gap1_confirm2", v4.FullPoolParams(mode="slow", slow_gap=0.01, confirmation_hits=2)),
         ("fast", v4.FullPoolParams(mode="fast")),
         ("fast_confirm2", v4.FullPoolParams(mode="fast", confirmation_hits=2)),
         ("consensus", v4.FullPoolParams(mode="consensus")),
-        ("consensus_confirm2", v4.FullPoolParams(
-            mode="consensus", confirmation_hits=2
-        )),
+        ("consensus_confirm2", v4.FullPoolParams(mode="consensus", confirmation_hits=2)),
         ("consensus_strict", v4.V4_PARAMS),
-        ("consensus_very_strict", v4.FullPoolParams(
-            mode="consensus",
-            slow_gap=0.01,
-            fast_5d_gap=0.03,
-            fast_3d_gap=0.015,
-            confirmation_hits=2,
-        )),
+        (
+            "consensus_very_strict",
+            v4.FullPoolParams(
+                mode="consensus",
+                slow_gap=0.01,
+                fast_5d_gap=0.03,
+                fast_3d_gap=0.015,
+                confirmation_hits=2,
+            ),
+        ),
         ("or", v4.FullPoolParams(mode="or")),
     ]
     for gap in (0.005, 0.01, 0.02, 0.03, 0.05):
         for hits in (1, 2):
-            candidates.append((
-                f"slow_gap{gap:.1%}_hits{hits}",
-                v4.FullPoolParams(mode="slow", slow_gap=gap, confirmation_hits=hits),
-            ))
+            candidates.append(
+                (
+                    f"slow_gap{gap:.1%}_hits{hits}",
+                    v4.FullPoolParams(mode="slow", slow_gap=gap, confirmation_hits=hits),
+                )
+            )
     unique: dict[v4.FullPoolParams, str] = {}
     for name, params in candidates:
         unique.setdefault(params, name)
@@ -281,14 +276,16 @@ def _annual_attribution(
     excess = selected_returns - baseline_returns
     for year in sorted(set(years.tolist())):
         mask = years == year
-        rows.append({
-            "year": year,
-            "observations": int(np.sum(mask)),
-            "v3g_return": float(np.expm1(np.sum(baseline_returns[mask]))),
-            "v4_return": float(np.expm1(np.sum(selected_returns[mask]))),
-            "v4_relative_to_v3g": float(np.expm1(np.sum(excess[mask]))),
-            "relative_log_contribution": float(np.sum(excess[mask])),
-        })
+        rows.append(
+            {
+                "year": year,
+                "observations": int(np.sum(mask)),
+                "v3g_return": float(np.expm1(np.sum(baseline_returns[mask]))),
+                "v4_return": float(np.expm1(np.sum(selected_returns[mask]))),
+                "v4_relative_to_v3g": float(np.expm1(np.sum(excess[mask]))),
+                "relative_log_contribution": float(np.sum(excess[mask])),
+            }
+        )
     total_log = float(np.sum(excess))
     post_2024_log = float(np.sum(excess[years >= 2024]))
     leave_one_year_out = {
@@ -297,9 +294,7 @@ def _annual_attribution(
     }
     return {
         "years": rows,
-        "positive_relative_years": int(sum(
-            row["v4_relative_to_v3g"] > 0.0 for row in rows
-        )),
+        "positive_relative_years": int(sum(row["v4_relative_to_v3g"] > 0.0 for row in rows)),
         "year_count": len(rows),
         "post_2024_share_of_total_relative_log_return": (
             post_2024_log / total_log if total_log != 0.0 else 0.0
@@ -318,11 +313,13 @@ def _rolling_attribution(
     rows: list[dict[str, Any]] = []
     for start in range(0, len(excess_returns) - window + 1, step):
         end = start + window
-        rows.append({
-            "start": str(dates[start])[:10],
-            "end": str(dates[end - 1])[:10],
-            "relative_return": float(np.expm1(np.sum(excess_returns[start:end]))),
-        })
+        rows.append(
+            {
+                "start": str(dates[start])[:10],
+                "end": str(dates[end - 1])[:10],
+                "relative_return": float(np.expm1(np.sum(excess_returns[start:end]))),
+            }
+        )
     values = np.asarray([row["relative_return"] for row in rows], dtype=float)
     return {
         "window_trading_days": window,
@@ -340,19 +337,16 @@ def _rolling_attribution(
 def _binomial_upper_tail(wins: int, trials: int) -> float:
     if trials < 1:
         return 1.0
-    return float(sum(
-        math.comb(trials, value) * 0.5**trials
-        for value in range(wins, trials + 1)
-    ))
+    return float(sum(math.comb(trials, value) * 0.5**trials for value in range(wins, trials + 1)))
 
 
 def _event_evidence(events: list[dict[str, Any]]) -> dict[str, Any]:
     horizons: dict[str, Any] = {}
     for horizon in (5, 10, 20):
         key = f"ex_post_actual_relative_{horizon}d"
-        values: FloatArray = np.asarray([
-            float(event[key]) for event in events if key in event
-        ], dtype=float)
+        values: FloatArray = np.asarray(
+            [float(event[key]) for event in events if key in event], dtype=float
+        )
         positive = np.sort(values[values > 0.0])[::-1]
         wins = int(np.sum(values > 0.0))
         horizons[str(horizon)] = {
@@ -411,14 +405,12 @@ def main() -> None:
     if dates.tolist() != selected_dates.tolist():
         raise RuntimeError("V3-G and V4 date alignment drift")
     data_end = str(dates[-1])[:10]
-    live_oos_observations = int(np.sum(np.asarray([
-        str(date)[:10] > V4_LAUNCH_DATE for date in dates
-    ])))
+    live_oos_observations = int(
+        np.sum(np.asarray([str(date)[:10] > V4_LAUNCH_DATE for date in dates]))
+    )
 
     historical_params = historical_candidate_params()
-    historical_results = {
-        name: evaluate(params) for name, params in historical_params.items()
-    }
+    historical_results = {name: evaluate(params) for name, params in historical_params.items()}
     historical_names = list(historical_results)
     candidate_excess: list[np.ndarray] = []
     candidate_absolute: list[np.ndarray] = [baseline_log_returns]
@@ -450,9 +442,7 @@ def main() -> None:
         "consensus_strict",
         "consensus_very_strict",
     ]
-    consensus_excess_columns = [
-        historical_names.index(name) for name in consensus_excess_names
-    ]
+    consensus_excess_columns = [historical_names.index(name) for name in consensus_excess_names]
     consensus_excess_matrix = excess_matrix[:, consensus_excess_columns]
     consensus_selected_column = consensus_excess_names.index("consensus_strict")
     consensus_white_checks = {
@@ -476,8 +466,7 @@ def main() -> None:
         for block in (5, 20, 60)
     }
     newey_west = {
-        str(lag): newey_west_mean_test(selected_excess, max_lag=lag)
-        for lag in (5, 20, 60)
+        str(lag): newey_west_mean_test(selected_excess, max_lag=lag) for lag in (5, 20, 60)
     }
 
     all_pbo = cscv_probability_of_backtest_overfitting(absolute_matrix, slices=8)
@@ -497,36 +486,29 @@ def main() -> None:
         absolute_matrix[:, consensus_columns], slices=8
     )
     consensus_pbo["selection_counts"] = {
-        consensus_names[int(key)]: value
-        for key, value in consensus_pbo["selection_counts"].items()
+        consensus_names[int(key)]: value for key, value in consensus_pbo["selection_counts"].items()
     }
 
-    grid_results = {
-        name: evaluate(params) for name, params in local_gap_grid().items()
-    }
+    grid_results = {name: evaluate(params) for name, params in local_gap_grid().items()}
     baseline_final = float(baseline["metrics"]["final_value"])
     surface_rows = []
     for name, result in grid_results.items():
         metrics = result["metrics"]
-        surface_rows.append({
-            "name": name,
-            "params": result["params"],
-            "final_value": float(metrics["final_value"]),
-            "relative_to_v3g": float(metrics["final_value"] / baseline_final - 1.0),
-            "sharpe": float(metrics["sharpe"]),
-            "max_drawdown": float(metrics["max_drawdown"]),
-            "early_rotations": int(metrics["early_rotations"]),
-        })
+        surface_rows.append(
+            {
+                "name": name,
+                "params": result["params"],
+                "final_value": float(metrics["final_value"]),
+                "relative_to_v3g": float(metrics["final_value"] / baseline_final - 1.0),
+                "sharpe": float(metrics["sharpe"]),
+                "max_drawdown": float(metrics["max_drawdown"]),
+                "early_rotations": int(metrics["early_rotations"]),
+            }
+        )
     center_name = "slow1.0_fast51.0_fast31.0"
-    center_final = next(
-        row["final_value"] for row in surface_rows if row["name"] == center_name
-    )
-    ordered_final = sorted(
-        (row["final_value"] for row in surface_rows), reverse=True
-    )
-    relative_values = np.asarray([
-        row["relative_to_v3g"] for row in surface_rows
-    ], dtype=float)
+    center_final = next(row["final_value"] for row in surface_rows if row["name"] == center_name)
+    ordered_final = sorted((row["final_value"] for row in surface_rows), reverse=True)
+    relative_values = np.asarray([row["relative_to_v3g"] for row in surface_rows], dtype=float)
     neighborhood_beat_rate = float(np.mean(relative_values > 0.0))
     surface_summary = {
         "definition": "3x3x3 independent gap perturbation at 80%/100%/120%",
@@ -548,8 +530,7 @@ def main() -> None:
         "confirmation_2": v4.V4_PARAMS,
     }
     structural = {
-        name: _compact_metrics(evaluate(params))
-        for name, params in structural_params.items()
+        name: _compact_metrics(evaluate(params)) for name, params in structural_params.items()
     }
 
     annual = _annual_attribution(
@@ -561,13 +542,10 @@ def main() -> None:
     event_evidence = _event_evidence(selected["rotation_events"])
 
     statistical_pass = bool(
-        white_checks["20"]["p_value"] < 0.05
-        and float(bootstrap_intervals["20"]["ci95"][0]) > 0.0
+        white_checks["20"]["p_value"] < 0.05 and float(bootstrap_intervals["20"]["ci95"][0]) > 0.0
     )
     neighborhood_pass = neighborhood_beat_rate >= 0.80
-    pbo_warning = bool(
-        all_pbo["pbo"] >= 0.50 or consensus_pbo["pbo"] >= 0.50
-    )
+    pbo_warning = bool(all_pbo["pbo"] >= 0.50 or consensus_pbo["pbo"] >= 0.50)
     if live_oos_observations == 0 and (
         not statistical_pass or not neighborhood_pass or pbo_warning
     ):
@@ -586,9 +564,7 @@ def main() -> None:
             "v4_launch_date": V4_LAUNCH_DATE,
             "live_oos_observations": live_oos_observations,
             "historical_oos_label_valid": False,
-            "historical_oos_reason": (
-                "2024-2026 data participated in V4 design and selection"
-            ),
+            "historical_oos_reason": ("2024-2026 data participated in V4 design and selection"),
             "minimum_recorded_nonbaseline_trials": len(historical_names),
             "trial_count_is_lower_bound": True,
             "bootstrap_samples": args.bootstrap_samples,
@@ -662,15 +638,10 @@ def main() -> None:
         f"post-2024 log contribution={annual['post_2024_share_of_total_relative_log_return']:.1%}; "
         f"252d rolling wins={rolling['positive_windows']}/{rolling['windows']}"
     )
-    print(
-        f"early rotations={event_evidence['events']}; "
-        f"assessment={assessment}"
-    )
+    print(f"early rotations={event_evidence['events']}; assessment={assessment}")
 
     if args.save:
-        OUTPUT.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n"
-        )
+        OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n")
         print(f"saved: {OUTPUT}")
 
 

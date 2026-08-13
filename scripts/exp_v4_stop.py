@@ -282,13 +282,15 @@ def _annual_rows(curve: pd.DataFrame) -> list[dict[str, Any]]:
         start = float(group["equity"].iloc[0])
         end = float(group["equity"].iloc[-1])
         base = previous_equity if year != int(indexed["year"].iloc[0]) else INITIAL_CAPITAL
-        rows.append({
-            "year": int(year),
-            "start_value": base,
-            "end_value": end,
-            "return": end / base - 1.0 if base else 0.0,
-            "within_year_start": start,
-        })
+        rows.append(
+            {
+                "year": int(year),
+                "start_value": base,
+                "end_value": end,
+                "return": end / base - 1.0 if base else 0.0,
+                "within_year_start": start,
+            }
+        )
         previous_equity = end
     return rows
 
@@ -317,14 +319,11 @@ def _enrich_stop_events(
             if event.get("to"):
                 new_now = rr.price_at(data, event["to"], now_map)
                 new_future = rr.price_at(data, event["to"], future_map)
-                new_return = (
-                    new_future / new_now - 1.0 if new_now > 0 else 0.0
-                )
+                new_return = new_future / new_now - 1.0 if new_now > 0 else 0.0
             else:
                 cash_until = event.get("cash_until")
-                if (
-                    cash_until not in (None, "None")
-                    and pd.Timestamp(future_td) > pd.Timestamp(cash_until)
+                if cash_until not in (None, "None") and pd.Timestamp(future_td) > pd.Timestamp(
+                    cash_until
                 ):
                     continue
                 new_return = 0.0
@@ -537,16 +536,12 @@ def run_v4_with_stop(
         one_day, three_day = _holding_returns(data, holding, idx_map)
         entry_position = state.get("entry_position")
         holding_age = (
-            position - entry_position
-            if holding and isinstance(entry_position, int)
-            else None
+            position - entry_position if holding and isinstance(entry_position, int) else None
         )
         entry_price = float(state.get("entry_price", 0.0))
         current_price = rr.price_at(data, holding, idx_map) if holding else 0.0
         entry_return = (
-            current_price / entry_price - 1.0
-            if current_price > 0.0 and entry_price > 0.0
-            else 0.0
+            current_price / entry_price - 1.0 if current_price > 0.0 and entry_price > 0.0 else 0.0
         )
         guard = EntryGuardDecision(False)
         if entry_guard_mode is not None:
@@ -688,16 +683,23 @@ def run_v4_with_stop(
             if holding:
                 sell_price = rr.price_at(data, holding, idx_map)
                 if sell_price > 0:
-                    amount = float(state["shares"]) * sell_price * (
-                        1.0 - (rq.FEE + rq.SLIPPAGE) * cost_multiplier
+                    amount = (
+                        float(state["shares"])
+                        * sell_price
+                        * (1.0 - (rq.FEE + rq.SLIPPAGE) * cost_multiplier)
                     )
                     cash += amount
-                    trades.append({
-                        "date": str(td), "action": "sell", "code": holding,
-                        "price": sell_price, "amount": amount,
-                        "shares": float(state["shares"]),
-                        "decision_source": "stop_to_cash",
-                    })
+                    trades.append(
+                        {
+                            "date": str(td),
+                            "action": "sell",
+                            "code": holding,
+                            "price": sell_price,
+                            "amount": amount,
+                            "shares": float(state["shares"]),
+                            "decision_source": "stop_to_cash",
+                        }
+                    )
                     state["holding"] = None
                     state["shares"] = 0.0
                     state["entry_price"] = 0.0
@@ -711,7 +713,7 @@ def run_v4_with_stop(
             next_grid = next(
                 (
                     future_td
-                    for future_td in trading_dates[position + 1:]
+                    for future_td in trading_dates[position + 1 :]
                     if future_td in rebalance_set
                 ),
                 None,
@@ -723,15 +725,22 @@ def run_v4_with_stop(
             if holding:
                 sell_price = rr.price_at(data, holding, idx_map)
                 if sell_price > 0:
-                    amount = float(state["shares"]) * sell_price * (
-                        1.0 - (rq.FEE + rq.SLIPPAGE) * cost_multiplier
+                    amount = (
+                        float(state["shares"])
+                        * sell_price
+                        * (1.0 - (rq.FEE + rq.SLIPPAGE) * cost_multiplier)
                     )
                     cash += amount
-                    trades.append({
-                        "date": str(td), "action": "sell", "code": holding,
-                        "price": sell_price, "amount": amount,
-                        "shares": float(state["shares"]),
-                    })
+                    trades.append(
+                        {
+                            "date": str(td),
+                            "action": "sell",
+                            "code": holding,
+                            "price": sell_price,
+                            "amount": amount,
+                            "shares": float(state["shares"]),
+                        }
+                    )
                     state["holding"] = None
                     state["shares"] = 0.0
                     state["entry_price"] = 0.0
@@ -744,16 +753,10 @@ def run_v4_with_stop(
                     and staged_entry_fraction < 1.0
                     and target != rq.DEFENSE
                 )
-                entry_fraction = (
-                    staged_entry_fraction if use_staged_entry else 1.0
-                )
-                shares = int(
-                    cash * risk.exposure * entry_fraction * 0.99 / buy_price / 100
-                ) * 100
+                entry_fraction = staged_entry_fraction if use_staged_entry else 1.0
+                shares = int(cash * risk.exposure * entry_fraction * 0.99 / buy_price / 100) * 100
                 if shares > 0:
-                    amount = shares * buy_price * (
-                        1.0 + (rq.FEE + rq.SLIPPAGE) * cost_multiplier
-                    )
+                    amount = shares * buy_price * (1.0 + (rq.FEE + rq.SLIPPAGE) * cost_multiplier)
                     cash -= amount
                     state["holding"] = target
                     state["shares"] = float(shares)
@@ -761,11 +764,16 @@ def run_v4_with_stop(
                     state["entry_position"] = position
                     state["staged_entry_active"] = use_staged_entry
                     staged_entry_count += int(use_staged_entry)
-                    trades.append({
-                        "date": str(td), "action": "buy", "code": target,
-                        "price": buy_price, "amount": amount,
-                        "shares": float(shares),
-                    })
+                    trades.append(
+                        {
+                            "date": str(td),
+                            "action": "buy",
+                            "code": target,
+                            "price": buy_price,
+                            "amount": amount,
+                            "shares": float(shares),
+                        }
+                    )
                     trade_executed = target != old_holding
             state["cash"] = cash
             state["risk_exposure"] = 1.0
@@ -774,33 +782,31 @@ def run_v4_with_stop(
             cash = float(state["cash"])
             if top_up_price > 0.0:
                 current_equity = cash + float(state["shares"]) * top_up_price
-                desired_shares = int(
-                    current_equity
-                    * risk.exposure
-                    * 0.99
-                    / top_up_price
-                    / 100
-                ) * 100
+                desired_shares = (
+                    int(current_equity * risk.exposure * 0.99 / top_up_price / 100) * 100
+                )
                 added_shares = max(
                     desired_shares - int(float(state["shares"])),
                     0,
                 )
-                amount = added_shares * top_up_price * (
-                    1.0 + (rq.FEE + rq.SLIPPAGE) * cost_multiplier
+                amount = (
+                    added_shares * top_up_price * (1.0 + (rq.FEE + rq.SLIPPAGE) * cost_multiplier)
                 )
                 if added_shares > 0 and amount <= cash:
                     cash -= amount
                     state["shares"] = float(state["shares"]) + added_shares
                     state["staged_entry_active"] = False
                     staged_top_up_count += 1
-                    trades.append({
-                        "date": str(td),
-                        "action": "top_up",
-                        "code": holding,
-                        "price": top_up_price,
-                        "amount": amount,
-                        "shares": float(added_shares),
-                    })
+                    trades.append(
+                        {
+                            "date": str(td),
+                            "action": "top_up",
+                            "code": holding,
+                            "price": top_up_price,
+                            "amount": amount,
+                            "shares": float(added_shares),
+                        }
+                    )
             state["cash"] = cash
             state["risk_exposure"] = 1.0
         else:
@@ -817,64 +823,62 @@ def run_v4_with_stop(
             and state["holding"] == stop_target
         )
         stop_cash_executed = bool(
-            stop_triggered
-            and stop_to_cash
-            and old_holding
-            and state["holding"] is None
+            stop_triggered and stop_to_cash and old_holding and state["holding"] is None
         )
         if stop_triggered:
             if stop_executed:
                 stop_switch_count += int(stop_executed)
                 if decision_source == "entry_guard":
                     entry_guard_switch_count += 1
-            stop_events.append({
-                "trade_date_raw": td,
-                "date": str(td),
-                "from": old_holding,
-                "to": state["holding"],
-                "intended_to": "CASH" if stop_to_cash else stop_target,
-                "risk_redirected": bool(
-                    stop_target and state["holding"] != stop_target
-                ),
-                "one_day_return": one_day,
-                "three_day_return": three_day,
-                "entry_return": entry_return,
-                "holding_age": holding_age,
-                "decision_source": decision_source,
-                "raw_shock_reasons": shock_reasons,
-                "reasons": stop_reasons,
-                "rank1": candidates[0][0] if candidates else rq.DEFENSE,
-                "rank2": stop_target,
-                "v4_target_before_stop": v4_target_before_stop,
-                "executed_switch": stop_executed,
-                "executed_cash_exit": stop_cash_executed,
-                "cash_until": str(state["cash_until"]) if stop_to_cash else None,
-            })
+            stop_events.append(
+                {
+                    "trade_date_raw": td,
+                    "date": str(td),
+                    "from": old_holding,
+                    "to": state["holding"],
+                    "intended_to": "CASH" if stop_to_cash else stop_target,
+                    "risk_redirected": bool(stop_target and state["holding"] != stop_target),
+                    "one_day_return": one_day,
+                    "three_day_return": three_day,
+                    "entry_return": entry_return,
+                    "holding_age": holding_age,
+                    "decision_source": decision_source,
+                    "raw_shock_reasons": shock_reasons,
+                    "reasons": stop_reasons,
+                    "rank1": candidates[0][0] if candidates else rq.DEFENSE,
+                    "rank2": stop_target,
+                    "v4_target_before_stop": v4_target_before_stop,
+                    "executed_switch": stop_executed,
+                    "executed_cash_exit": stop_cash_executed,
+                    "cash_until": str(state["cash_until"]) if stop_to_cash else None,
+                }
+            )
 
         holding = state["holding"]
         equity = float(state["cash"])
         if holding:
             equity += float(state["shares"]) * rr.price_at(data, holding, idx_map)
-        equity_rows.append({
-            "trade_date": pd.Timestamp(td),
-            "equity": equity,
-            "holding": holding or rq.DEFENSE,
-        })
+        equity_rows.append(
+            {
+                "trade_date": pd.Timestamp(td),
+                "equity": equity,
+                "holding": holding or rq.DEFENSE,
+            }
+        )
 
     curve = pd.DataFrame(equity_rows)
     enriched = _enrich_stop_events(stop_events, data, trading_dates, index_maps)
-    metrics: dict[str, Any] = dict(
-        rr.curve_metrics(curve, initial_capital=INITIAL_CAPITAL)
-    )
-    metrics.update({
-        "cost_multiplier": cost_multiplier,
-        "stop_mode": stop_mode,
-        "trade_legs": len(trades),
-        "raw_shocks": raw_shock_count,
-        "raw_shock_1d": raw_shock_1d_count,
-        "raw_shock_3d": raw_shock_3d_count,
-        "stop_triggers": stop_trigger_count,
-        "stop_switches": stop_switch_count,
+    metrics: dict[str, Any] = dict(rr.curve_metrics(curve, initial_capital=INITIAL_CAPITAL))
+    metrics.update(
+        {
+            "cost_multiplier": cost_multiplier,
+            "stop_mode": stop_mode,
+            "trade_legs": len(trades),
+            "raw_shocks": raw_shock_count,
+            "raw_shock_1d": raw_shock_1d_count,
+            "raw_shock_3d": raw_shock_3d_count,
+            "stop_triggers": stop_trigger_count,
+            "stop_switches": stop_switch_count,
             "stop_cash_exits": stop_cash_exit_count,
             "entry_guard_mode": entry_guard_mode,
             "entry_guard_triggers": entry_guard_trigger_count,
@@ -884,30 +888,24 @@ def run_v4_with_stop(
             "staged_confirmation_days": staged_confirmation_days,
             "momentum_failure_mode": momentum_failure_mode,
             "momentum_failure_day_threshold": momentum_failure_day_threshold,
-            "momentum_failure_three_day_threshold": (
-                momentum_failure_three_day_threshold
-            ),
+            "momentum_failure_three_day_threshold": (momentum_failure_three_day_threshold),
             "staged_entries": staged_entry_count,
             "staged_top_ups": staged_top_up_count,
-        "stop_noop_same_rank2": stop_noop_same_rank_count,
-        "stop_no_rank2": stop_no_rank2_count,
-        "scheduled_lock_blocks": scheduled_lock_blocks,
-        "signal_days": signal_days,
-        "risk_events": len(risk_events),
-    })
+            "stop_noop_same_rank2": stop_noop_same_rank_count,
+            "stop_no_rank2": stop_no_rank2_count,
+            "scheduled_lock_blocks": scheduled_lock_blocks,
+            "signal_days": signal_days,
+            "risk_events": len(risk_events),
+        }
+    )
     for horizon in (1, 2, 3, 5, 10, 20):
         values = [
             float(event[f"forward_relative_{horizon}d"])
             for event in enriched
             if f"forward_relative_{horizon}d" in event
-            and (
-                event.get("executed_switch")
-                or event.get("executed_cash_exit")
-            )
+            and (event.get("executed_switch") or event.get("executed_cash_exit"))
         ]
-        metrics[f"stop_forward_relative_{horizon}d_avg"] = (
-            float(np.mean(values)) if values else 0.0
-        )
+        metrics[f"stop_forward_relative_{horizon}d_avg"] = float(np.mean(values)) if values else 0.0
         metrics[f"stop_forward_relative_{horizon}d_count"] = len(values)
         metrics[f"stop_forward_relative_{horizon}d_win_rate"] = (
             float(np.mean(np.asarray(values) > 0)) if values else 0.0
@@ -926,8 +924,7 @@ def run_v4_with_stop(
             "staged_confirmation_days": staged_confirmation_days,
             "stop_target": (
                 "cash_until_next_fixed_grid"
-                if stop_mode.endswith("_cash")
-                or momentum_failure_mode == "stale_leader_cash"
+                if stop_mode.endswith("_cash") or momentum_failure_mode == "stale_leader_cash"
                 else (
                     "qualified_alternative_or_cash_until_next_fixed_grid"
                     if momentum_failure_mode == "stale_leader_best_or_cash"
@@ -975,9 +972,9 @@ def main() -> None:
     }
     cost_pressure = {
         f"{multiplier:.0f}x": {
-            "baseline": run_full_pool_strategy(
-                data, v4.V4_PARAMS, cost_multiplier=multiplier
-            )["metrics"],
+            "baseline": run_full_pool_strategy(data, v4.V4_PARAMS, cost_multiplier=multiplier)[
+                "metrics"
+            ],
             **{
                 mode: run_v4_with_stop(
                     data,
@@ -1011,9 +1008,7 @@ def main() -> None:
             "stop_1d": STOP_1D,
             "stop_3d": STOP_3D,
             "pre_registered_variants": {
-                "fixed_shock_rank2": (
-                    "shock <= -5%/ -10%, then V3-G filtered momentum rank #2"
-                ),
+                "fixed_shock_rank2": ("shock <= -5%/ -10%, then V3-G filtered momentum rank #2"),
                 "v3g_confirmed_shock": (
                     "shock plus held V3-G 5d momentum <=0 and slow momentum <=0; "
                     "rank #2 must have positive slow momentum and trend"
@@ -1080,9 +1075,7 @@ def main() -> None:
             )
         print()
     if args.save:
-        OUTPUT.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n"
-        )
+        OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n")
         print(f"\nsaved: {OUTPUT}")
 
 

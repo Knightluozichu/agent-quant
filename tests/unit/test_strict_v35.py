@@ -80,9 +80,7 @@ def test_strict_runner_applies_and_restores_all_research_patches(
     ) -> dict[str, Any]:
         observed["select_patched"] = audit.rq.select_target is not original_select
         observed["drop_rejects"] = not audit.rq.check_single_day_drop(shock_path())
-        observed["realtime"] = audit.rr.apply_server_realtime_filter(
-            {}, {}, [("161226", 1.0)]
-        )
+        observed["realtime"] = audit.rr.apply_server_realtime_filter({}, {}, [("161226", 1.0)])
         return {
             "params": {"enabled": params.enabled},
             "metrics": {"cost_multiplier": cost_multiplier},

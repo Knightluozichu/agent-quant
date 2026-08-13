@@ -59,11 +59,13 @@ def _trade_tail(trades: list[dict[str, Any]]) -> dict[str, Any]:
         elif action == "top_up" and entry_code == code:
             entry_cost += amount
         elif action == "sell" and entry_code == code and entry_cost > 0.0:
-            rows.append({
-                "exit_date": str(trade.get("date")),
-                "code": code,
-                "net_return": amount / entry_cost - 1.0,
-            })
+            rows.append(
+                {
+                    "exit_date": str(trade.get("date")),
+                    "code": code,
+                    "net_return": amount / entry_cost - 1.0,
+                }
+            )
             entry_code = None
             entry_cost = 0.0
 
@@ -94,9 +96,7 @@ def _evaluate(
     )
     tail = _trade_tail(result["trades"])
     result["trade_tail"] = tail
-    result["metrics"].update(
-        {key: value for key, value in tail.items() if key != "trade_returns"}
-    )
+    result["metrics"].update({key: value for key, value in tail.items() if key != "trade_returns"})
     return result
 
 
@@ -114,9 +114,7 @@ def _compact(result: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _assert_baseline_parity(
-    canonical: dict[str, Any], replay: dict[str, Any]
-) -> None:
+def _assert_baseline_parity(canonical: dict[str, Any], replay: dict[str, Any]) -> None:
     left = canonical["equity_curve"]
     right = replay["equity_curve"]
     if left["trade_date"].tolist() != right["trade_date"].tolist():
@@ -135,13 +133,9 @@ def _stress_scenarios() -> dict[str, Any]:
     rows: dict[str, Any] = {}
     for fraction in (0.50, 0.60):
         after_day1 = 1.0 - fraction * 0.05
-        switch_terminal = after_day1 * (
-            (1.0 - fraction) + fraction * gold_after_switch
-        )
+        switch_terminal = after_day1 * ((1.0 - fraction) + fraction * gold_after_switch)
         rows[f"stage{int(fraction * 100)}"] = {
-            "hold_silver_without_guard": (
-                (1.0 - fraction) + fraction * silver_terminal - 1.0
-            ),
+            "hold_silver_without_guard": ((1.0 - fraction) + fraction * silver_terminal - 1.0),
             "qualified_gold_switch_day1": switch_terminal - 1.0,
             "no_qualified_replacement_cash_day2": (
                 (1.0 - fraction) + fraction * silver_through_day2 - 1.0
@@ -192,8 +186,7 @@ def main() -> None:
     canonical = run_full_pool_strategy(data, v4.V4_PARAMS, cost_multiplier=1.0)
     _assert_baseline_parity(canonical, baseline)
     variants = {
-        label: evaluate(fraction, guard_mode)
-        for label, (fraction, guard_mode) in VARIANTS.items()
+        label: evaluate(fraction, guard_mode) for label, (fraction, guard_mode) in VARIANTS.items()
     }
     dates = rr.common_dates(data)
     data_end = str(dates[-1])
@@ -251,9 +244,7 @@ def main() -> None:
             "baseline_parity": "canonical V4 verified at 0x/1x/2x/3x costs",
         },
         "baseline": _compact(baseline),
-        "variants": {
-            label: _compact(result) for label, result in variants.items()
-        },
+        "variants": {label: _compact(result) for label, result in variants.items()},
         "segments": segments,
         "cost_pressure": cost_pressure,
         "stress_scenarios": _stress_scenarios(),
@@ -279,9 +270,10 @@ def main() -> None:
     print("\nsegments")
     for label, rows in segments.items():
         print(label, end=" ")
-        for name, row in [("V4", rows["baseline"]), *[
-            (variant, rows[variant]) for variant in VARIANTS
-        ]]:
+        for name, row in [
+            ("V4", rows["baseline"]),
+            *[(variant, rows[variant]) for variant in VARIANTS],
+        ]:
             print(
                 f"{name}={row['final_value']:,.0f}/{row['max_drawdown']:.1%}",
                 end=" ",
@@ -291,9 +283,10 @@ def main() -> None:
     print("\ncost pressure")
     for label, rows in cost_pressure.items():
         print(label, end=" ")
-        for name, row in [("V4", rows["baseline"]), *[
-            (variant, rows[variant]) for variant in VARIANTS
-        ]]:
+        for name, row in [
+            ("V4", rows["baseline"]),
+            *[(variant, rows[variant]) for variant in VARIANTS],
+        ]:
             print(
                 f"{name}={row['final_value']:,.0f}/{row['max_drawdown']:.1%}",
                 end=" ",
@@ -304,9 +297,7 @@ def main() -> None:
     print(json.dumps(payload["stress_scenarios"], ensure_ascii=False, indent=2))
 
     if args.save:
-        OUTPUT.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n"
-        )
+        OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n")
         print(f"\nsaved: {OUTPUT}")
 
 

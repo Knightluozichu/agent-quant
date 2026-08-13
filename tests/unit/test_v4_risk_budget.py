@@ -77,20 +77,26 @@ def test_position_budget_has_a_five_percent_deductible_and_ten_percent_limit() -
 def test_position_budget_resets_only_after_v4_has_changed_the_holding() -> None:
     params = rb.phase2_position_budget_candidate()
 
-    assert rb.position_target_exposure(
-        position_drawdown=-0.08,
-        one_day=-0.06,
-        three_day=-0.11,
-        holding_changed=False,
-        params=params,
-    ) == 0.0
-    assert rb.position_target_exposure(
-        position_drawdown=-0.08,
-        one_day=-0.06,
-        three_day=-0.11,
-        holding_changed=True,
-        params=params,
-    ) == 1.0
+    assert (
+        rb.position_target_exposure(
+            position_drawdown=-0.08,
+            one_day=-0.06,
+            three_day=-0.11,
+            holding_changed=False,
+            params=params,
+        )
+        == 0.0
+    )
+    assert (
+        rb.position_target_exposure(
+            position_drawdown=-0.08,
+            one_day=-0.06,
+            three_day=-0.11,
+            holding_changed=True,
+            params=params,
+        )
+        == 1.0
+    )
 
 
 def test_episode_budget_persists_across_holdings_until_half_recovery() -> None:
@@ -146,21 +152,30 @@ def test_constant_risk_budget_is_derived_from_twenty_percent_mdd_reduction() -> 
     assert list(candidates) == ["v4_constant80", "v4_constant80_shock"]
     assert candidates["v4_constant80"].constant_exposure == 0.80
     assert candidates["v4_constant80_shock"].constant_exposure == 0.80
-    assert rb.constant_target_exposure(
-        one_day=-0.01,
-        three_day=-0.02,
-        params=candidates["v4_constant80_shock"],
-    ) == 0.80
-    assert rb.constant_target_exposure(
-        one_day=-0.05,
-        three_day=-0.08,
-        params=candidates["v4_constant80_shock"],
-    ) == 0.50
-    assert rb.constant_target_exposure(
-        one_day=-0.01,
-        three_day=-0.10,
-        params=candidates["v4_constant80_shock"],
-    ) == 0.0
+    assert (
+        rb.constant_target_exposure(
+            one_day=-0.01,
+            three_day=-0.02,
+            params=candidates["v4_constant80_shock"],
+        )
+        == 0.80
+    )
+    assert (
+        rb.constant_target_exposure(
+            one_day=-0.05,
+            three_day=-0.08,
+            params=candidates["v4_constant80_shock"],
+        )
+        == 0.50
+    )
+    assert (
+        rb.constant_target_exposure(
+            one_day=-0.01,
+            three_day=-0.10,
+            params=candidates["v4_constant80_shock"],
+        )
+        == 0.0
+    )
 
 
 def test_constant_eighty_shock_budget_limits_documented_path_below_eight_percent() -> None:
@@ -176,30 +191,39 @@ def test_volatility_shock_composition_adds_no_new_parameter() -> None:
     assert params.mode == "volatility_shock"
     assert params.volatility_target == 0.30
     assert params.ewma_decay == 0.94
-    assert rb.target_exposure(
-        wealth=100.0,
-        peak=100.0,
-        one_day=-0.01,
-        three_day=-0.02,
-        annualized_volatility=0.60,
-        params=params,
-    ) == 0.5
-    assert rb.target_exposure(
-        wealth=100.0,
-        peak=100.0,
-        one_day=-0.05,
-        three_day=-0.08,
-        annualized_volatility=0.20,
-        params=params,
-    ) == 0.5
-    assert rb.target_exposure(
-        wealth=100.0,
-        peak=100.0,
-        one_day=-0.01,
-        three_day=-0.10,
-        annualized_volatility=0.20,
-        params=params,
-    ) == 0.0
+    assert (
+        rb.target_exposure(
+            wealth=100.0,
+            peak=100.0,
+            one_day=-0.01,
+            three_day=-0.02,
+            annualized_volatility=0.60,
+            params=params,
+        )
+        == 0.5
+    )
+    assert (
+        rb.target_exposure(
+            wealth=100.0,
+            peak=100.0,
+            one_day=-0.05,
+            three_day=-0.08,
+            annualized_volatility=0.20,
+            params=params,
+        )
+        == 0.5
+    )
+    assert (
+        rb.target_exposure(
+            wealth=100.0,
+            peak=100.0,
+            one_day=-0.01,
+            three_day=-0.10,
+            annualized_volatility=0.20,
+            params=params,
+        )
+        == 0.0
+    )
 
 
 def test_volatility_shock_robustness_is_a_seven_point_one_axis_neighborhood() -> None:
