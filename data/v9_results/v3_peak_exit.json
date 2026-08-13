@@ -1,0 +1,977 @@
+{
+  "meta": {
+    "common_date_count": 1614,
+    "common_start": "2019-12-05",
+    "common_end": "2026-08-10",
+    "backtest_start": "2020-06-19",
+    "initial_capital": 100000.0,
+    "execution": "14:50 same-day close approximation"
+  },
+  "variants": {
+    "baseline": {
+      "start": "2020-06-19",
+      "end": "2026-08-10",
+      "initial_capital": 100000.0,
+      "final_value": 1992179.2906647823,
+      "total_return": 18.921792906647823,
+      "cagr": 0.6277307598437127,
+      "sharpe": 1.673297023144758,
+      "max_drawdown": -0.4072722757280161,
+      "executed_buys": 100,
+      "executed_sells": 99
+    },
+    "peak_exit_4%": {
+      "start": "2020-06-19",
+      "end": "2026-08-10",
+      "initial_capital": 100000.0,
+      "final_value": 1572868.7987205642,
+      "total_return": 14.728687987205642,
+      "cagr": 0.56627978300492,
+      "ann_vol": 0.35465415059478866,
+      "sharpe": 1.5967098708846776,
+      "max_drawdown": -0.40731934855893104,
+      "time_below_10pct_dd": 0.46226415094339623,
+      "time_below_20pct_dd": 0.10107816711590296,
+      "executed_buys": 128,
+      "executed_sells": 127,
+      "turnover": 122900679.6654647,
+      "trail_exit_count": 27,
+      "trail_exit_avg_dd": -0.08207115560416464,
+      "trail_exit_events": [
+        {
+          "date": "2020-07-16",
+          "code": "159915",
+          "peak_gain": 0.25201072386058976,
+          "dd_from_peak": -0.08708065667380449,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2020-08-12",
+          "code": "161226",
+          "peak_gain": 0.30727470141150914,
+          "dd_from_peak": -0.09800664451827235,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2020-09-04",
+          "code": "513100",
+          "peak_gain": 0.306972160630697,
+          "dd_from_peak": -0.08652214891611676,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2020-12-02",
+          "code": "159985",
+          "peak_gain": 0.13632030505243087,
+          "dd_from_peak": -0.043624161073825496,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2021-11-04",
+          "code": "501018",
+          "peak_gain": 0.1376037959667853,
+          "dd_from_peak": -0.04588112617309692,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2022-02-25",
+          "code": "159985",
+          "peak_gain": 0.0703071672354949,
+          "dd_from_peak": -0.042091836734693966,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2022-03-11",
+          "code": "501018",
+          "peak_gain": 0.18433544303797467,
+          "dd_from_peak": -0.16566466265865065,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2022-03-29",
+          "code": "159985",
+          "peak_gain": 0.0573208722741434,
+          "dd_from_peak": -0.04007071302298182,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2022-07-12",
+          "code": "159915",
+          "peak_gain": 0.07159442724458209,
+          "dd_from_peak": -0.05308775731310955,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2022-08-23",
+          "code": "513100",
+          "peak_gain": 0.14738124238733263,
+          "dd_from_peak": -0.04989384288747334,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2022-11-10",
+          "code": "501018",
+          "peak_gain": 0.058320373250388746,
+          "dd_from_peak": -0.04775900073475381,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2022-12-19",
+          "code": "161226",
+          "peak_gain": 0.09615384615384603,
+          "dd_from_peak": -0.04183535762483137,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2024-07-12",
+          "code": "513100",
+          "peak_gain": 0.14119359534206688,
+          "dd_from_peak": -0.04846938775510212,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2024-10-10",
+          "code": "159915",
+          "peak_gain": 0.5883748517200476,
+          "dd_from_peak": -0.1882001493651979,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2024-12-20",
+          "code": "513100",
+          "peak_gain": 0.09483322432962726,
+          "dd_from_peak": -0.04599761051373952,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2025-01-27",
+          "code": "501018",
+          "peak_gain": 0.05034856700232382,
+          "dd_from_peak": -0.040560471976401336,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2025-04-23",
+          "code": "518880",
+          "peak_gain": 0.08969283276450501,
+          "dd_from_peak": -0.060385868203457815,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2025-06-20",
+          "code": "501018",
+          "peak_gain": 0.11274131274131283,
+          "dd_from_peak": -0.0700902151283831,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2025-09-04",
+          "code": "159915",
+          "peak_gain": 0.38720379146919437,
+          "dd_from_peak": -0.06012982576016401,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2025-10-20",
+          "code": "161226",
+          "peak_gain": 0.1667990468625895,
+          "dd_from_peak": -0.06943498978897211,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2025-11-05",
+          "code": "513100",
+          "peak_gain": 0.06780565936999472,
+          "dd_from_peak": -0.04400000000000004,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2025-12-29",
+          "code": "161226",
+          "peak_gain": 1.1897399859451863,
+          "dd_from_peak": -0.18388960205391525,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2026-02-09",
+          "code": "161226",
+          "peak_gain": 0.7085639856724193,
+          "dd_from_peak": -0.3600152468076996,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2026-03-26",
+          "code": "501018",
+          "peak_gain": 0.23574879227053147,
+          "dd_from_peak": -0.053557466770914774,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2026-06-04",
+          "code": "513100",
+          "peak_gain": 0.1364728495915426,
+          "dd_from_peak": -0.052854122621564525,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2026-08-03",
+          "code": "501018",
+          "peak_gain": 0.07308096740273395,
+          "dd_from_peak": -0.06908378245957869,
+          "trail": 0.04,
+          "activation": 0.05
+        },
+        {
+          "date": "2026-08-10",
+          "code": "161226",
+          "peak_gain": 0.07002938295788463,
+          "dd_from_peak": -0.06773455377574378,
+          "trail": 0.04,
+          "activation": 0.05
+        }
+      ]
+    },
+    "peak_exit_6%": {
+      "start": "2020-06-19",
+      "end": "2026-08-10",
+      "initial_capital": 100000.0,
+      "final_value": 1623269.9077953468,
+      "total_return": 15.23269907795347,
+      "cagr": 0.5743451949524618,
+      "ann_vol": 0.35644303867299093,
+      "sharpe": 1.611323921742737,
+      "max_drawdown": -0.40731836251306053,
+      "time_below_10pct_dd": 0.4366576819407008,
+      "time_below_20pct_dd": 0.10579514824797843,
+      "executed_buys": 116,
+      "executed_sells": 115,
+      "turnover": 117670052.23765548,
+      "trail_exit_count": 18,
+      "trail_exit_avg_dd": -0.10661399796000841,
+      "trail_exit_events": [
+        {
+          "date": "2020-07-16",
+          "code": "159915",
+          "peak_gain": 0.25201072386058976,
+          "dd_from_peak": -0.08708065667380449,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2020-08-12",
+          "code": "161226",
+          "peak_gain": 0.30727470141150914,
+          "dd_from_peak": -0.09800664451827235,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2020-09-04",
+          "code": "513100",
+          "peak_gain": 0.306972160630697,
+          "dd_from_peak": -0.08652214891611676,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2022-03-11",
+          "code": "501018",
+          "peak_gain": 0.18433544303797467,
+          "dd_from_peak": -0.16566466265865065,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2022-03-30",
+          "code": "159985",
+          "peak_gain": 0.0573208722741434,
+          "dd_from_peak": -0.06717737183264594,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2022-08-29",
+          "code": "513100",
+          "peak_gain": 0.14738124238733263,
+          "dd_from_peak": -0.06687898089171973,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2024-10-10",
+          "code": "159915",
+          "peak_gain": 0.5883748517200476,
+          "dd_from_peak": -0.1882001493651979,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2025-04-23",
+          "code": "518880",
+          "peak_gain": 0.08969283276450501,
+          "dd_from_peak": -0.060385868203457815,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2025-06-20",
+          "code": "501018",
+          "peak_gain": 0.11274131274131283,
+          "dd_from_peak": -0.0700902151283831,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2025-09-04",
+          "code": "159915",
+          "peak_gain": 0.38720379146919437,
+          "dd_from_peak": -0.06012982576016401,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2025-10-20",
+          "code": "161226",
+          "peak_gain": 0.1667990468625895,
+          "dd_from_peak": -0.06943498978897211,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2025-11-18",
+          "code": "513100",
+          "peak_gain": 0.06780565936999472,
+          "dd_from_peak": -0.07799999999999996,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2025-12-29",
+          "code": "161226",
+          "peak_gain": 1.1897399859451863,
+          "dd_from_peak": -0.18388960205391525,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2026-02-09",
+          "code": "161226",
+          "peak_gain": 0.7085639856724193,
+          "dd_from_peak": -0.3600152468076996,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2026-03-27",
+          "code": "501018",
+          "peak_gain": 0.23574879227053147,
+          "dd_from_peak": -0.07310398749022673,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2026-06-05",
+          "code": "513100",
+          "peak_gain": 0.1364728495915426,
+          "dd_from_peak": -0.06765327695560264,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2026-08-03",
+          "code": "501018",
+          "peak_gain": 0.07308096740273395,
+          "dd_from_peak": -0.06908378245957869,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2026-08-10",
+          "code": "161226",
+          "peak_gain": 0.07002938295788463,
+          "dd_from_peak": -0.06773455377574378,
+          "trail": 0.06,
+          "activation": 0.05
+        }
+      ]
+    },
+    "peak_exit_8%": {
+      "start": "2020-06-19",
+      "end": "2026-08-10",
+      "initial_capital": 100000.0,
+      "final_value": 1722854.957795345,
+      "total_return": 16.22854957795345,
+      "cagr": 0.5896835307617778,
+      "ann_vol": 0.3605357754020329,
+      "sharpe": 1.6355756376859483,
+      "max_drawdown": -0.40729647016802406,
+      "time_below_10pct_dd": 0.4494609164420485,
+      "time_below_20pct_dd": 0.14420485175202155,
+      "executed_buys": 110,
+      "executed_sells": 109,
+      "turnover": 111446977.51385547,
+      "trail_exit_count": 11,
+      "trail_exit_avg_dd": -0.14344170498329584,
+      "trail_exit_events": [
+        {
+          "date": "2020-07-16",
+          "code": "159915",
+          "peak_gain": 0.25201072386058976,
+          "dd_from_peak": -0.08708065667380449,
+          "trail": 0.08,
+          "activation": 0.05
+        },
+        {
+          "date": "2020-08-12",
+          "code": "161226",
+          "peak_gain": 0.30727470141150914,
+          "dd_from_peak": -0.09800664451827235,
+          "trail": 0.08,
+          "activation": 0.05
+        },
+        {
+          "date": "2020-09-04",
+          "code": "513100",
+          "peak_gain": 0.306972160630697,
+          "dd_from_peak": -0.08652214891611676,
+          "trail": 0.08,
+          "activation": 0.05
+        },
+        {
+          "date": "2022-03-11",
+          "code": "501018",
+          "peak_gain": 0.18433544303797467,
+          "dd_from_peak": -0.16566466265865065,
+          "trail": 0.08,
+          "activation": 0.05
+        },
+        {
+          "date": "2022-04-01",
+          "code": "159985",
+          "peak_gain": 0.0573208722741434,
+          "dd_from_peak": -0.1154979375368298,
+          "trail": 0.08,
+          "activation": 0.05
+        },
+        {
+          "date": "2022-09-01",
+          "code": "513100",
+          "peak_gain": 0.14738124238733263,
+          "dd_from_peak": -0.09341825902335454,
+          "trail": 0.08,
+          "activation": 0.05
+        },
+        {
+          "date": "2024-10-10",
+          "code": "159915",
+          "peak_gain": 0.5883748517200476,
+          "dd_from_peak": -0.1882001493651979,
+          "trail": 0.08,
+          "activation": 0.05
+        },
+        {
+          "date": "2025-12-29",
+          "code": "161226",
+          "peak_gain": 1.1897399859451863,
+          "dd_from_peak": -0.18388960205391525,
+          "trail": 0.08,
+          "activation": 0.05
+        },
+        {
+          "date": "2026-02-09",
+          "code": "161226",
+          "peak_gain": 0.7085639856724193,
+          "dd_from_peak": -0.3600152468076996,
+          "trail": 0.08,
+          "activation": 0.05
+        },
+        {
+          "date": "2026-03-31",
+          "code": "501018",
+          "peak_gain": 0.23574879227053147,
+          "dd_from_peak": -0.09343236903831109,
+          "trail": 0.08,
+          "activation": 0.05
+        },
+        {
+          "date": "2026-06-08",
+          "code": "513100",
+          "peak_gain": 0.1364728495915426,
+          "dd_from_peak": -0.10613107822410162,
+          "trail": 0.08,
+          "activation": 0.05
+        }
+      ]
+    },
+    "vol_target_40%": {
+      "start": "2020-06-19",
+      "end": "2026-08-10",
+      "initial_capital": 100000.0,
+      "final_value": 1701372.8626147807,
+      "total_return": 16.013728626147806,
+      "cagr": 0.586438807181511,
+      "ann_vol": 0.3329716034596456,
+      "sharpe": 1.7612276875513928,
+      "max_drawdown": -0.3322740282381602,
+      "time_below_10pct_dd": 0.41846361185983827,
+      "time_below_20pct_dd": 0.10983827493261455,
+      "executed_buys": 100,
+      "executed_sells": 99,
+      "turnover": 93532733.26870808,
+      "trail_exit_count": 0,
+      "trail_exit_avg_dd": 0.0,
+      "trail_exit_events": []
+    },
+    "vol_target_40%_plus_peak_exit_6%": {
+      "start": "2020-06-19",
+      "end": "2026-08-10",
+      "initial_capital": 100000.0,
+      "final_value": 1363491.1659453455,
+      "total_return": 12.634911659453456,
+      "cagr": 0.5302652791529678,
+      "ann_vol": 0.3210164222250946,
+      "sharpe": 1.6518322504421576,
+      "max_drawdown": -0.29118522955044135,
+      "time_below_10pct_dd": 0.37129380053908356,
+      "time_below_20pct_dd": 0.05525606469002695,
+      "executed_buys": 116,
+      "executed_sells": 115,
+      "turnover": 101643128.29020548,
+      "trail_exit_count": 18,
+      "trail_exit_avg_dd": -0.10661399796000841,
+      "trail_exit_events": [
+        {
+          "date": "2020-07-16",
+          "code": "159915",
+          "peak_gain": 0.25201072386058976,
+          "dd_from_peak": -0.08708065667380449,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2020-08-12",
+          "code": "161226",
+          "peak_gain": 0.30727470141150914,
+          "dd_from_peak": -0.09800664451827235,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2020-09-04",
+          "code": "513100",
+          "peak_gain": 0.306972160630697,
+          "dd_from_peak": -0.08652214891611676,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2022-03-11",
+          "code": "501018",
+          "peak_gain": 0.18433544303797467,
+          "dd_from_peak": -0.16566466265865065,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2022-03-30",
+          "code": "159985",
+          "peak_gain": 0.0573208722741434,
+          "dd_from_peak": -0.06717737183264594,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2022-08-29",
+          "code": "513100",
+          "peak_gain": 0.14738124238733263,
+          "dd_from_peak": -0.06687898089171973,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2024-10-10",
+          "code": "159915",
+          "peak_gain": 0.5883748517200476,
+          "dd_from_peak": -0.1882001493651979,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2025-04-23",
+          "code": "518880",
+          "peak_gain": 0.08969283276450501,
+          "dd_from_peak": -0.060385868203457815,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2025-06-20",
+          "code": "501018",
+          "peak_gain": 0.11274131274131283,
+          "dd_from_peak": -0.0700902151283831,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2025-09-04",
+          "code": "159915",
+          "peak_gain": 0.38720379146919437,
+          "dd_from_peak": -0.06012982576016401,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2025-10-20",
+          "code": "161226",
+          "peak_gain": 0.1667990468625895,
+          "dd_from_peak": -0.06943498978897211,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2025-11-18",
+          "code": "513100",
+          "peak_gain": 0.06780565936999472,
+          "dd_from_peak": -0.07799999999999996,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2025-12-29",
+          "code": "161226",
+          "peak_gain": 1.1897399859451863,
+          "dd_from_peak": -0.18388960205391525,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2026-02-09",
+          "code": "161226",
+          "peak_gain": 0.7085639856724193,
+          "dd_from_peak": -0.3600152468076996,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2026-03-27",
+          "code": "501018",
+          "peak_gain": 0.23574879227053147,
+          "dd_from_peak": -0.07310398749022673,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2026-06-05",
+          "code": "513100",
+          "peak_gain": 0.1364728495915426,
+          "dd_from_peak": -0.06765327695560264,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2026-08-03",
+          "code": "501018",
+          "peak_gain": 0.07308096740273395,
+          "dd_from_peak": -0.06908378245957869,
+          "trail": 0.06,
+          "activation": 0.05
+        },
+        {
+          "date": "2026-08-10",
+          "code": "161226",
+          "peak_gain": 0.07002938295788463,
+          "dd_from_peak": -0.06773455377574378,
+          "trail": 0.06,
+          "activation": 0.05
+        }
+      ]
+    }
+  },
+  "vol_target_grid": {
+    "30%": {
+      "start": "2020-06-19",
+      "end": "2026-08-10",
+      "initial_capital": 100000.0,
+      "final_value": 1630464.0666426548,
+      "total_return": 15.304640666426547,
+      "cagr": 0.5754792809129332,
+      "ann_vol": 0.31698132812460794,
+      "sharpe": 1.8154989895389284,
+      "max_drawdown": -0.27518883989282394,
+      "time_below_10pct_dd": 0.341644204851752,
+      "time_below_20pct_dd": 0.05929919137466307,
+      "executed_buys": 100,
+      "executed_sells": 99,
+      "turnover": 88644077.07116793,
+      "trail_exit_count": 0,
+      "trail_exit_avg_dd": 0.0,
+      "trail_exit_events": []
+    },
+    "35%": {
+      "start": "2020-06-19",
+      "end": "2026-08-10",
+      "initial_capital": 100000.0,
+      "final_value": 1713165.6802212328,
+      "total_return": 16.13165680221233,
+      "cagr": 0.588224249533845,
+      "ann_vol": 0.3273776895857886,
+      "sharpe": 1.796775614972694,
+      "max_drawdown": -0.3061043739639886,
+      "time_below_10pct_dd": 0.4110512129380054,
+      "time_below_20pct_dd": 0.07816711590296496,
+      "executed_buys": 100,
+      "executed_sells": 99,
+      "turnover": 92463583.77608731,
+      "trail_exit_count": 0,
+      "trail_exit_avg_dd": 0.0,
+      "trail_exit_events": []
+    },
+    "40%": {
+      "start": "2020-06-19",
+      "end": "2026-08-10",
+      "initial_capital": 100000.0,
+      "final_value": 1701372.8626147807,
+      "total_return": 16.013728626147806,
+      "cagr": 0.586438807181511,
+      "ann_vol": 0.3329716034596456,
+      "sharpe": 1.7612276875513928,
+      "max_drawdown": -0.3322740282381602,
+      "time_below_10pct_dd": 0.41846361185983827,
+      "time_below_20pct_dd": 0.10983827493261455,
+      "executed_buys": 100,
+      "executed_sells": 99,
+      "turnover": 93532733.26870808,
+      "trail_exit_count": 0,
+      "trail_exit_avg_dd": 0.0,
+      "trail_exit_events": []
+    },
+    "45%": {
+      "start": "2020-06-19",
+      "end": "2026-08-10",
+      "initial_capital": 100000.0,
+      "final_value": 1695238.0858147813,
+      "total_return": 15.952380858147812,
+      "cagr": 0.5855058966842979,
+      "ann_vol": 0.33864359762546903,
+      "sharpe": 1.7289737670807883,
+      "max_drawdown": -0.35667993505489703,
+      "time_below_10pct_dd": 0.42654986522911054,
+      "time_below_20pct_dd": 0.13881401617250674,
+      "executed_buys": 100,
+      "executed_sells": 99,
+      "turnover": 93781878.05340807,
+      "trail_exit_count": 0,
+      "trail_exit_avg_dd": 0.0,
+      "trail_exit_events": []
+    },
+    "50%": {
+      "start": "2020-06-19",
+      "end": "2026-08-10",
+      "initial_capital": 100000.0,
+      "final_value": 1705374.0433647812,
+      "total_return": 16.05374043364781,
+      "cagr": 0.5870457472856956,
+      "ann_vol": 0.3442257998713779,
+      "sharpe": 1.7054089132919406,
+      "max_drawdown": -0.3775561703821526,
+      "time_below_10pct_dd": 0.4366576819407008,
+      "time_below_20pct_dd": 0.19137466307277629,
+      "executed_buys": 100,
+      "executed_sells": 99,
+      "turnover": 94551104.39065808,
+      "trail_exit_count": 0,
+      "trail_exit_avg_dd": 0.0,
+      "trail_exit_events": []
+    },
+    "60%": {
+      "start": "2020-06-19",
+      "end": "2026-08-10",
+      "initial_capital": 100000.0,
+      "final_value": 1781306.363114782,
+      "total_return": 16.81306363114782,
+      "cagr": 0.5983438334868068,
+      "ann_vol": 0.35082793295702736,
+      "sharpe": 1.7055193651301916,
+      "max_drawdown": -0.3775561703821526,
+      "time_below_10pct_dd": 0.4339622641509434,
+      "time_below_20pct_dd": 0.19609164420485176,
+      "executed_buys": 100,
+      "executed_sells": 99,
+      "turnover": 98257748.70570807,
+      "trail_exit_count": 0,
+      "trail_exit_avg_dd": 0.0,
+      "trail_exit_events": []
+    }
+  },
+  "cost_pressure": {
+    "1x": {
+      "baseline_final": 1992179.2906647823,
+      "baseline_sharpe": 1.673297023144758,
+      "baseline_max_drawdown": -0.4072722757280161,
+      "vol30_final": 1630464.0666426548,
+      "vol30_sharpe": 1.8154989895389284,
+      "vol30_max_drawdown": -0.27518883989282394
+    },
+    "2x": {
+      "baseline_final": 1487183.914773984,
+      "baseline_sharpe": 1.4669938340594484,
+      "baseline_max_drawdown": -0.40766425441842175,
+      "vol30_final": 1243347.5866872082,
+      "vol30_sharpe": 1.5951904377122095,
+      "vol30_max_drawdown": -0.2864444620955978
+    },
+    "3x": {
+      "baseline_final": 1109219.031817004,
+      "baseline_sharpe": 1.2694881266783247,
+      "baseline_max_drawdown": -0.40801341857602563,
+      "vol30_final": 947377.7357990721,
+      "vol30_sharpe": 1.3835266844207963,
+      "vol30_max_drawdown": -0.2974485340151972
+    }
+  },
+  "segments": {
+    "IS": {
+      "vol30%": {
+        "start": "2020-06-19",
+        "end": "2023-12-29",
+        "initial_capital": 100000.0,
+        "final_value": 297394.1852926471,
+        "total_return": 1.9739418529264712,
+        "cagr": 0.3621572318576858,
+        "ann_vol": 0.2663207819555787,
+        "sharpe": 1.3598534413964445,
+        "max_drawdown": -0.27518883989282394,
+        "time_below_10pct_dd": 0.30921820303383896,
+        "time_below_20pct_dd": 0.09101516919486581,
+        "executed_buys": 52,
+        "executed_sells": 51,
+        "turnover": 23847236.23551793,
+        "trail_exit_count": 0,
+        "trail_exit_avg_dd": 0.0,
+        "trail_exit_events": []
+      },
+      "vol35%": {
+        "start": "2020-06-19",
+        "end": "2023-12-29",
+        "initial_capital": 100000.0,
+        "final_value": 289401.9814712248,
+        "total_return": 1.894019814712248,
+        "cagr": 0.3516748178452407,
+        "ann_vol": 0.2728181496537336,
+        "sharpe": 1.2890448025235623,
+        "max_drawdown": -0.3061043739639886,
+        "time_below_10pct_dd": 0.411901983663944,
+        "time_below_20pct_dd": 0.11668611435239207,
+        "executed_buys": 52,
+        "executed_sells": 51,
+        "turnover": 23785091.494737316,
+        "trail_exit_count": 0,
+        "trail_exit_avg_dd": 0.0,
+        "trail_exit_events": []
+      },
+      "vol40%": {
+        "start": "2020-06-19",
+        "end": "2023-12-29",
+        "initial_capital": 100000.0,
+        "final_value": 283745.2856647729,
+        "total_return": 1.837452856647729,
+        "cagr": 0.3441295908929227,
+        "ann_vol": 0.27749845012467916,
+        "sharpe": 1.2401135600516198,
+        "max_drawdown": -0.3322740282381602,
+        "time_below_10pct_dd": 0.4340723453908985,
+        "time_below_20pct_dd": 0.17152858809801633,
+        "executed_buys": 52,
+        "executed_sells": 51,
+        "turnover": 23716653.88875808,
+        "trail_exit_count": 0,
+        "trail_exit_avg_dd": 0.0,
+        "trail_exit_events": []
+      }
+    },
+    "OOS": {
+      "vol30%": {
+        "start": "2024-01-02",
+        "end": "2026-08-10",
+        "initial_capital": 100000.0,
+        "final_value": 517807.3644000023,
+        "total_return": 4.178073644000023,
+        "cagr": 0.8805728474498691,
+        "ann_vol": 0.37554451171110115,
+        "sharpe": 2.344789552209662,
+        "max_drawdown": -0.23423029026582198,
+        "time_below_10pct_dd": 0.2631578947368421,
+        "time_below_20pct_dd": 0.012759170653907496,
+        "executed_buys": 50,
+        "executed_sells": 49,
+        "turnover": 20830172.3107,
+        "trail_exit_count": 0,
+        "trail_exit_avg_dd": 0.0,
+        "trail_exit_events": []
+      },
+      "vol35%": {
+        "start": "2024-01-02",
+        "end": "2026-08-10",
+        "initial_capital": 100000.0,
+        "final_value": 563143.647800003,
+        "total_return": 4.63143647800003,
+        "cagr": 0.9421817204420406,
+        "ann_vol": 0.39061403114218685,
+        "sharpe": 2.412052935443782,
+        "max_drawdown": -0.248514487828578,
+        "time_below_10pct_dd": 0.2807017543859649,
+        "time_below_20pct_dd": 0.02073365231259968,
+        "executed_buys": 50,
+        "executed_sells": 49,
+        "turnover": 22838593.906999998,
+        "trail_exit_count": 0,
+        "trail_exit_avg_dd": 0.0,
+        "trail_exit_events": []
+      },
+      "vol40%": {
+        "start": "2024-01-02",
+        "end": "2026-08-10",
+        "initial_capital": 100000.0,
+        "final_value": 570265.481300003,
+        "total_return": 4.70265481300003,
+        "cagr": 0.9515787137584841,
+        "ann_vol": 0.3971261429061406,
+        "sharpe": 2.3961623548500217,
+        "max_drawdown": -0.24851307702953962,
+        "time_below_10pct_dd": 0.2679425837320574,
+        "time_below_20pct_dd": 0.02073365231259968,
+        "executed_buys": 50,
+        "executed_sells": 49,
+        "turnover": 23675603.5614,
+        "trail_exit_count": 0,
+        "trail_exit_avg_dd": 0.0,
+        "trail_exit_events": []
+      }
+    }
+  }
+}

@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import json
 import os
+import stat
+import tempfile
 import urllib.request
 from pathlib import Path
 
@@ -35,9 +37,46 @@ def load_config() -> dict:
 
 
 def save_config(cfg: dict) -> None:
+    """Persist config atomically so concurrent requests never read a partial JSON file."""
     LIVE_DIR.mkdir(parents=True, exist_ok=True)
-    with open(CONFIG_FILE, "w") as f:
-        json.dump(cfg, f, indent=2, ensure_ascii=False)
+    metadata: tuple[int, int, int] | None = None
+    try:
+        info = CONFIG_FILE.stat()
+        metadata = info.st_uid, info.st_gid, stat.S_IMODE(info.st_mode)
+    except OSError:
+        pass
+
+    temp_path: Path | None = None
+    try:
+        with tempfile.NamedTemporaryFile(
+            mode="w",
+            encoding="utf-8",
+            dir=LIVE_DIR,
+            prefix=f".{CONFIG_FILE.name}.",
+            suffix=".tmp",
+            delete=False,
+        ) as f:
+            temp_path = Path(f.name)
+            json.dump(cfg, f, indent=2, ensure_ascii=False)
+            f.flush()
+            os.fsync(f.fileno())
+
+        if metadata is not None and os.geteuid() == 0:
+            os.chown(temp_path, metadata[0], metadata[1])
+        temp_path.chmod(metadata[2] if metadata is not None else 0o600)
+        temp_path.replace(CONFIG_FILE)
+
+        try:
+            dir_fd = os.open(LIVE_DIR, os.O_RDONLY)
+        except OSError:
+            return
+        try:
+            os.fsync(dir_fd)
+        finally:
+            os.close(dir_fd)
+    finally:
+        if temp_path is not None and temp_path.exists():
+            temp_path.unlink()
 
 
 def get_bark_key() -> str | None:

@@ -1,0 +1,1374 @@
+{
+  "meta": {
+    "strategy": "production V3-G versus strict-drop V3",
+    "data_start": "2020-06-19",
+    "data_end": "2026-08-11",
+    "observations": 1485,
+    "v3g_launch_date": "2026-08-10",
+    "live_oos_observations": 1,
+    "recorded_variant_evaluations_lower_bound": 111,
+    "recorded_trials_are_correlated": true,
+    "current_white_trial_universe": 11,
+    "bootstrap_samples": 5000,
+    "baseline_definition": "same 10/20 momentum, risk and execution; only restore strict drop exclusion",
+    "canonical_parity": true,
+    "execution_model_warning": "historical official close is a same-price 14:50 execution proxy"
+  },
+  "strict_v3": {
+    "gate_params": {
+      "drop_threshold": 0.03,
+      "drop_lookback": 5,
+      "ret60_threshold": 0.01,
+      "gate_momentum_short": 10,
+      "gate_momentum_long": 20,
+      "gate_short_weight": 0.5,
+      "gate_momentum_threshold": 0.0,
+      "exempt_buffer": false,
+      "strict_drop_filter": true,
+      "score_short": 10,
+      "score_long": 20,
+      "score_short_weight": 0.5
+    },
+    "metrics": {
+      "start": "2020-06-19",
+      "end": "2026-08-11",
+      "observations": 1485,
+      "initial_value": 100000.0,
+      "final_value": 3480226.5016647726,
+      "total_return": 33.80226501664772,
+      "cagr": 0.7820644837377155,
+      "ann_vol": 0.3403778525478328,
+      "sharpe": 2.2976362236371215,
+      "max_drawdown": -0.228493648128262,
+      "cost_multiplier": 1.0,
+      "trade_legs": 203,
+      "early_rotations": 0,
+      "signal_days": 0,
+      "scheduled_lock_blocks": 0,
+      "realtime_filter_events": 0,
+      "risk_events": 334,
+      "reason_counts": {},
+      "ex_post_relative_5d_avg": 0.0,
+      "ex_post_relative_5d_win_rate": 0.0,
+      "ex_post_relative_10d_avg": 0.0,
+      "ex_post_relative_10d_win_rate": 0.0,
+      "ex_post_relative_20d_avg": 0.0,
+      "ex_post_relative_20d_win_rate": 0.0
+    }
+  },
+  "v3g": {
+    "gate_params": {
+      "drop_threshold": 0.03,
+      "drop_lookback": 5,
+      "ret60_threshold": 0.01,
+      "gate_momentum_short": 10,
+      "gate_momentum_long": 20,
+      "gate_short_weight": 0.5,
+      "gate_momentum_threshold": 0.0,
+      "exempt_buffer": true,
+      "strict_drop_filter": false,
+      "score_short": 10,
+      "score_long": 20,
+      "score_short_weight": 0.5
+    },
+    "metrics": {
+      "start": "2020-06-19",
+      "end": "2026-08-11",
+      "observations": 1485,
+      "initial_value": 100000.0,
+      "final_value": 3958583.7555147717,
+      "total_return": 38.58583755514772,
+      "cagr": 0.8198155571657546,
+      "ann_vol": 0.3448797852995521,
+      "sharpe": 2.377105275838906,
+      "max_drawdown": -0.2252772316778272,
+      "cost_multiplier": 1.0,
+      "trade_legs": 205,
+      "early_rotations": 0,
+      "signal_days": 0,
+      "scheduled_lock_blocks": 0,
+      "realtime_filter_events": 0,
+      "risk_events": 274,
+      "reason_counts": {},
+      "ex_post_relative_5d_avg": 0.0,
+      "ex_post_relative_5d_win_rate": 0.0,
+      "ex_post_relative_10d_avg": 0.0,
+      "ex_post_relative_10d_win_rate": 0.0,
+      "ex_post_relative_20d_avg": 0.0,
+      "ex_post_relative_20d_win_rate": 0.0
+    }
+  },
+  "gate_increment": {
+    "terminal_relative_to_strict_v3": 0.1374500348242207,
+    "decision_divergences": 14,
+    "annual": {
+      "years": [
+        {
+          "year": 2020,
+          "observations": 132,
+          "relative_log_contribution": 0.0,
+          "strict_v3_return": 1.006051734863635,
+          "v3g_return": 1.006051734863635,
+          "v3g_relative_to_strict_v3": 0.0
+        },
+        {
+          "year": 2021,
+          "observations": 242,
+          "relative_log_contribution": 0.0,
+          "strict_v3_return": 0.20081983594079755,
+          "v3g_return": 0.20081983594079755,
+          "v3g_relative_to_strict_v3": 0.0
+        },
+        {
+          "year": 2022,
+          "observations": 241,
+          "relative_log_contribution": 0.0,
+          "strict_v3_return": 0.3344761162536736,
+          "v3g_return": 0.3344761162536736,
+          "v3g_relative_to_strict_v3": 0.0
+        },
+        {
+          "year": 2023,
+          "observations": 242,
+          "relative_log_contribution": -0.004124327395699012,
+          "strict_v3_return": 0.06097061242468109,
+          "v3g_return": 0.056603833464809246,
+          "v3g_relative_to_strict_v3": -0.004115834037940276
+        },
+        {
+          "year": 2024,
+          "observations": 242,
+          "relative_log_contribution": 0.044238132096605653,
+          "strict_v3_return": 0.6201001410837517,
+          "v3g_return": 0.6933792605291278,
+          "v3g_relative_to_strict_v3": 0.04523122835873384
+        },
+        {
+          "year": 2025,
+          "observations": 243,
+          "relative_log_contribution": -8.12255010327334e-05,
+          "strict_v3_return": 2.192035451825003,
+          "v3g_return": 2.191776187675687,
+          "v3g_relative_to_strict_v3": -8.12222023310379e-05
+        },
+        {
+          "year": 2026,
+          "observations": 143,
+          "relative_log_contribution": 0.088756366249088,
+          "strict_v3_return": 0.9731668089919976,
+          "v3g_return": 1.1563050579233976,
+          "v3g_relative_to_strict_v3": 0.09281437742456101
+        }
+      ],
+      "positive_relative_years": 2,
+      "year_count": 7,
+      "post_2024_share_of_total_relative_log_return": 1.032023923958081,
+      "leave_one_year_out_relative_return": {
+        "2020": 0.1374500348242206,
+        "2021": 0.1374500348242206,
+        "2022": 0.1374500348242206,
+        "2023": 0.14215093853350225,
+        "2024": 0.08822813934701572,
+        "2025": 0.13754242852551046,
+        "2026": 0.040844683526998056
+      }
+    },
+    "rolling_252d": {
+      "window_trading_days": 252,
+      "step_trading_days": 63,
+      "windows": 20,
+      "positive_windows": 4,
+      "positive_rate": 0.2,
+      "median_relative_return": 0.0,
+      "minimum_relative_return": -0.0753851879792529,
+      "maximum_relative_return": 0.12580097014378103,
+      "rows": [
+        {
+          "start": "2020-06-19",
+          "end": "2021-07-05",
+          "relative_return": 0.0
+        },
+        {
+          "start": "2020-09-18",
+          "end": "2021-10-11",
+          "relative_return": 0.0
+        },
+        {
+          "start": "2020-12-24",
+          "end": "2022-01-07",
+          "relative_return": 0.0
+        },
+        {
+          "start": "2021-04-01",
+          "end": "2022-04-18",
+          "relative_return": 0.0
+        },
+        {
+          "start": "2021-07-06",
+          "end": "2022-07-20",
+          "relative_return": 0.0
+        },
+        {
+          "start": "2021-10-12",
+          "end": "2022-10-25",
+          "relative_return": 0.0
+        },
+        {
+          "start": "2022-01-10",
+          "end": "2023-01-30",
+          "relative_return": 0.0
+        },
+        {
+          "start": "2022-04-19",
+          "end": "2023-04-28",
+          "relative_return": 0.0
+        },
+        {
+          "start": "2022-07-21",
+          "end": "2023-08-02",
+          "relative_return": 0.0
+        },
+        {
+          "start": "2022-10-26",
+          "end": "2023-11-07",
+          "relative_return": 0.0
+        },
+        {
+          "start": "2023-01-31",
+          "end": "2024-02-05",
+          "relative_return": 0.12580097014378103
+        },
+        {
+          "start": "2023-05-04",
+          "end": "2024-05-17",
+          "relative_return": 0.04103908116736818
+        },
+        {
+          "start": "2023-08-03",
+          "end": "2024-08-15",
+          "relative_return": 0.04100977720434294
+        },
+        {
+          "start": "2023-11-08",
+          "end": "2024-11-21",
+          "relative_return": 0.04092193788179387
+        },
+        {
+          "start": "2024-02-06",
+          "end": "2025-02-27",
+          "relative_return": -0.0753851879792529
+        },
+        {
+          "start": "2024-05-20",
+          "end": "2025-06-03",
+          "relative_return": -0.00015765839830543776
+        },
+        {
+          "start": "2024-08-16",
+          "end": "2025-08-29",
+          "relative_return": -0.00014180885099317772
+        },
+        {
+          "start": "2024-11-22",
+          "end": "2025-12-04",
+          "relative_return": -6.133124610389867e-05
+        },
+        {
+          "start": "2025-02-28",
+          "end": "2026-03-17",
+          "relative_return": -7.26635369368936e-05
+        },
+        {
+          "start": "2025-06-04",
+          "end": "2026-06-22",
+          "relative_return": -1.915740138554777e-05
+        }
+      ]
+    },
+    "newey_west": {
+      "5": {
+        "observations": 1485.0,
+        "mean": 8.672656259189355e-05,
+        "standard_error": 0.00010305264184251605,
+        "t_stat": 0.8415753448070565,
+        "p_value_one_sided": 0.20001284735509717,
+        "max_lag": 5.0
+      },
+      "20": {
+        "observations": 1485.0,
+        "mean": 8.672656259189355e-05,
+        "standard_error": 0.00010167467608291157,
+        "t_stat": 0.8529809578264262,
+        "p_value_one_sided": 0.1968349320763131,
+        "max_lag": 20.0
+      },
+      "60": {
+        "observations": 1485.0,
+        "mean": 8.672656259189355e-05,
+        "standard_error": 8.00103314834965e-05,
+        "t_stat": 1.0839420482813822,
+        "p_value_one_sided": 0.13919524725237206,
+        "max_lag": 60.0
+      }
+    },
+    "moving_block_bootstrap": {
+      "5": {
+        "block_size": 5,
+        "bootstrap_samples": 5000,
+        "annualized_relative_return": 0.02209566571264143,
+        "ci90": [
+          -0.019539824645027876,
+          0.06968192643330318
+        ],
+        "ci95": [
+          -0.02775858035075476,
+          0.07862658325291967
+        ],
+        "probability_positive": 0.7906
+      },
+      "20": {
+        "block_size": 20,
+        "bootstrap_samples": 5000,
+        "annualized_relative_return": 0.02209566571264143,
+        "ci90": [
+          -0.016213280026968903,
+          0.07329289828994641
+        ],
+        "ci95": [
+          -0.022228809881595726,
+          0.0855723075448277
+        ],
+        "probability_positive": 0.799
+      },
+      "60": {
+        "block_size": 60,
+        "bootstrap_samples": 5000,
+        "annualized_relative_return": 0.02209566571264143,
+        "ci90": [
+          -0.006477003144162256,
+          0.06065431394211977
+        ],
+        "ci95": [
+          -0.010884421892278506,
+          0.06891905761895828
+        ],
+        "probability_positive": 0.8558
+      }
+    },
+    "white_reality_check_ret60_scan": {
+      "5": {
+        "observations": 1485,
+        "candidate_count": 11,
+        "block_size": 5,
+        "bootstrap_samples": 5000,
+        "selected_mean": 8.672656259189355e-05,
+        "best_mean": 8.672656259189355e-05,
+        "selected_rank": 2,
+        "observed_max_stat": 0.003342068601723094,
+        "bootstrap_p95": 0.010159406605949507,
+        "p_value": 0.40591881623675263
+      },
+      "20": {
+        "observations": 1485,
+        "candidate_count": 11,
+        "block_size": 20,
+        "bootstrap_samples": 5000,
+        "selected_mean": 8.672656259189355e-05,
+        "best_mean": 8.672656259189355e-05,
+        "selected_rank": 2,
+        "observed_max_stat": 0.003342068601723094,
+        "bootstrap_p95": 0.009157302342664911,
+        "p_value": 0.3919216156768646
+      },
+      "60": {
+        "observations": 1485,
+        "candidate_count": 11,
+        "block_size": 60,
+        "bootstrap_samples": 5000,
+        "selected_mean": 8.672656259189355e-05,
+        "best_mean": 8.672656259189355e-05,
+        "selected_rank": 2,
+        "observed_max_stat": 0.003342068601723094,
+        "bootstrap_p95": 0.007432290954536617,
+        "p_value": 0.3639272145570886
+      }
+    },
+    "ret60_cscv": {
+      "slices": 8,
+      "splits": 70,
+      "pbo": 0.7142857142857143,
+      "median_oos_rank_percentile": 0.13636363636363635,
+      "mean_oos_rank_percentile": 0.36428571428571427,
+      "selection_counts": {
+        "strict_v3": 15,
+        "ret60_0.01": 34,
+        "ret60_0.00": 20,
+        "ret60_0.10": 1
+      }
+    }
+  },
+  "gate_parameter_robustness": {
+    "neighbors": 12,
+    "neighbors_beating_strict_v3": 9,
+    "beat_rate": 0.75,
+    "minimum_relative": -0.12109994175620398,
+    "median_relative": 0.11512732707435502,
+    "maximum_relative": 0.1374500348242207,
+    "rows": [
+      {
+        "name": "ret60_0.000",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.0,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 10,
+          "score_long": 20,
+          "score_short_weight": 0.5
+        },
+        "final_value": 3803207.5973147713,
+        "relative_to_strict_v3": 0.09280461932448936,
+        "sharpe": 2.340798125545732,
+        "max_drawdown": -0.228493648128262
+      },
+      {
+        "name": "ret60_0.005",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.005,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 10,
+          "score_long": 20,
+          "score_short_weight": 0.5
+        },
+        "final_value": 3958583.7555147717,
+        "relative_to_strict_v3": 0.1374500348242207,
+        "sharpe": 2.377105275838906,
+        "max_drawdown": -0.2252772316778272
+      },
+      {
+        "name": "ret60_0.010",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 10,
+          "score_long": 20,
+          "score_short_weight": 0.5
+        },
+        "final_value": 3958583.7555147717,
+        "relative_to_strict_v3": 0.1374500348242207,
+        "sharpe": 2.377105275838906,
+        "max_drawdown": -0.2252772316778272
+      },
+      {
+        "name": "ret60_0.015",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.015,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 10,
+          "score_long": 20,
+          "score_short_weight": 0.5
+        },
+        "final_value": 3958583.7555147717,
+        "relative_to_strict_v3": 0.1374500348242207,
+        "sharpe": 2.377105275838906,
+        "max_drawdown": -0.2252772316778272
+      },
+      {
+        "name": "ret60_0.020",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.02,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 10,
+          "score_long": 20,
+          "score_short_weight": 0.5
+        },
+        "final_value": 3958583.7555147717,
+        "relative_to_strict_v3": 0.1374500348242207,
+        "sharpe": 2.377105275838906,
+        "max_drawdown": -0.2252772316778272
+      },
+      {
+        "name": "drop_0.025",
+        "params": {
+          "drop_threshold": 0.025,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 10,
+          "score_long": 20,
+          "score_short_weight": 0.5
+        },
+        "final_value": 3380843.381837481,
+        "relative_to_strict_v3": -0.028556509117941387,
+        "sharpe": 2.333657746419291,
+        "max_drawdown": -0.23025450278553738
+      },
+      {
+        "name": "drop_0.035",
+        "params": {
+          "drop_threshold": 0.035,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 10,
+          "score_long": 20,
+          "score_short_weight": 0.5
+        },
+        "final_value": 3058771.275014771,
+        "relative_to_strict_v3": -0.12109994175620398,
+        "sharpe": 2.1559750659155044,
+        "max_drawdown": -0.25458423176296274
+      },
+      {
+        "name": "lookback_4",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 4,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 10,
+          "score_long": 20,
+          "score_short_weight": 0.5
+        },
+        "final_value": 3580732.55146946,
+        "relative_to_strict_v3": 0.02887916914505717,
+        "sharpe": 2.228666575627337,
+        "max_drawdown": -0.22525816507955565
+      },
+      {
+        "name": "lookback_6",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 6,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 10,
+          "score_long": 20,
+          "score_short_weight": 0.5
+        },
+        "final_value": 3412288.2171647716,
+        "relative_to_strict_v3": -0.019521224974151097,
+        "sharpe": 2.306399350275593,
+        "max_drawdown": -0.218932965751087
+      },
+      {
+        "name": "gate_momentum_-0.01",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": -0.01,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 10,
+          "score_long": 20,
+          "score_short_weight": 0.5
+        },
+        "final_value": 3958583.7555147717,
+        "relative_to_strict_v3": 0.1374500348242207,
+        "sharpe": 2.377105275838906,
+        "max_drawdown": -0.2252772316778272
+      },
+      {
+        "name": "gate_momentum_+0.01",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.01,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 10,
+          "score_long": 20,
+          "score_short_weight": 0.5
+        },
+        "final_value": 3958583.7555147717,
+        "relative_to_strict_v3": 0.1374500348242207,
+        "sharpe": 2.377105275838906,
+        "max_drawdown": -0.2252772316778272
+      },
+      {
+        "name": "without_buffer_exemption",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": false,
+          "strict_drop_filter": false,
+          "score_short": 10,
+          "score_long": 20,
+          "score_short_weight": 0.5
+        },
+        "final_value": 3643225.1931647724,
+        "relative_to_strict_v3": 0.04683565607641604,
+        "sharpe": 2.3049243577316045,
+        "max_drawdown": -0.2252772316778272
+      }
+    ]
+  },
+  "momentum_selection": {
+    "candidate_count": 33,
+    "production_name": "period_10_20",
+    "production_rank_by_final": 1,
+    "candidates_within_10pct_of_production": 4,
+    "cscv": {
+      "slices": 8,
+      "splits": 70,
+      "pbo": 0.45714285714285713,
+      "median_oos_rank_percentile": 0.515625,
+      "mean_oos_rank_percentile": 0.47232142857142856,
+      "selection_counts": {
+        "period_3_15": 8,
+        "period_3_20": 1,
+        "period_15_20": 9,
+        "weight_0.6": 2,
+        "period_8_20": 3,
+        "weight_0.4": 17,
+        "period_10_20": 9,
+        "period_10_25": 8,
+        "period_8_15": 10,
+        "period_5_13": 1,
+        "period_8_25": 2
+      }
+    },
+    "rows": [
+      {
+        "name": "period_3_13",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 3,
+          "score_long": 13,
+          "score_short_weight": 0.5
+        },
+        "final_value": 1116731.8704524292,
+        "sharpe": 1.4943159748925716,
+        "max_drawdown": -0.4083023854977016
+      },
+      {
+        "name": "period_3_15",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 3,
+          "score_long": 15,
+          "score_short_weight": 0.5
+        },
+        "final_value": 1650837.1749035574,
+        "sharpe": 1.7670141940214057,
+        "max_drawdown": -0.3903141910974025
+      },
+      {
+        "name": "period_3_20",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 3,
+          "score_long": 20,
+          "score_short_weight": 0.5
+        },
+        "final_value": 2456311.574338332,
+        "sharpe": 2.000525823152667,
+        "max_drawdown": -0.2731252813463896
+      },
+      {
+        "name": "period_3_25",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 3,
+          "score_long": 25,
+          "score_short_weight": 0.5
+        },
+        "final_value": 2389879.6821708577,
+        "sharpe": 2.0229387373266214,
+        "max_drawdown": -0.22766866278918763
+      },
+      {
+        "name": "period_3_30",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 3,
+          "score_long": 30,
+          "score_short_weight": 0.5
+        },
+        "final_value": 1984250.539738435,
+        "sharpe": 1.8453988172657616,
+        "max_drawdown": -0.24508602156984372
+      },
+      {
+        "name": "period_5_13",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 5,
+          "score_long": 13,
+          "score_short_weight": 0.5
+        },
+        "final_value": 2929182.9127432904,
+        "sharpe": 2.168687264282411,
+        "max_drawdown": -0.2861773394496311
+      },
+      {
+        "name": "period_5_15",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 5,
+          "score_long": 15,
+          "score_short_weight": 0.5
+        },
+        "final_value": 2094752.1429968304,
+        "sharpe": 1.878066502257733,
+        "max_drawdown": -0.2661644499838922
+      },
+      {
+        "name": "period_5_20",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 5,
+          "score_long": 20,
+          "score_short_weight": 0.5
+        },
+        "final_value": 2245690.309664262,
+        "sharpe": 1.942865182124413,
+        "max_drawdown": -0.2571775361912024
+      },
+      {
+        "name": "period_5_25",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 5,
+          "score_long": 25,
+          "score_short_weight": 0.5
+        },
+        "final_value": 2097780.595133436,
+        "sharpe": 1.904760326663311,
+        "max_drawdown": -0.2342046937104374
+      },
+      {
+        "name": "period_5_30",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 5,
+          "score_long": 30,
+          "score_short_weight": 0.5
+        },
+        "final_value": 1663858.06804261,
+        "sharpe": 1.7395845906627363,
+        "max_drawdown": -0.2746263230994358
+      },
+      {
+        "name": "period_8_13",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 8,
+          "score_long": 13,
+          "score_short_weight": 0.5
+        },
+        "final_value": 1159369.5069576933,
+        "sharpe": 1.5085990375397547,
+        "max_drawdown": -0.38109511447172706
+      },
+      {
+        "name": "period_8_15",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 8,
+          "score_long": 15,
+          "score_short_weight": 0.5
+        },
+        "final_value": 1771045.7979122833,
+        "sharpe": 1.8358297529438865,
+        "max_drawdown": -0.3707836858834994
+      },
+      {
+        "name": "period_8_20",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 8,
+          "score_long": 20,
+          "score_short_weight": 0.5
+        },
+        "final_value": 3021461.4992315318,
+        "sharpe": 2.158896787068358,
+        "max_drawdown": -0.27463294629458035
+      },
+      {
+        "name": "period_8_25",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 8,
+          "score_long": 25,
+          "score_short_weight": 0.5
+        },
+        "final_value": 3093302.617880646,
+        "sharpe": 2.203033116995513,
+        "max_drawdown": -0.1895497071361668
+      },
+      {
+        "name": "period_8_30",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 8,
+          "score_long": 30,
+          "score_short_weight": 0.5
+        },
+        "final_value": 2446870.2571924897,
+        "sharpe": 2.2102345121685043,
+        "max_drawdown": -0.2545305477644966
+      },
+      {
+        "name": "period_10_13",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 10,
+          "score_long": 13,
+          "score_short_weight": 0.5
+        },
+        "final_value": 565869.7750222787,
+        "sharpe": 1.0022682892252914,
+        "max_drawdown": -0.4267009349238058
+      },
+      {
+        "name": "period_10_15",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 10,
+          "score_long": 15,
+          "score_short_weight": 0.5
+        },
+        "final_value": 1869993.807171263,
+        "sharpe": 1.775074420570203,
+        "max_drawdown": -0.2783560410801711
+      },
+      {
+        "name": "period_10_20",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 10,
+          "score_long": 20,
+          "score_short_weight": 0.5
+        },
+        "final_value": 3958583.7555147717,
+        "sharpe": 2.377105275838906,
+        "max_drawdown": -0.2252772316778272
+      },
+      {
+        "name": "period_10_25",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 10,
+          "score_long": 25,
+          "score_short_weight": 0.5
+        },
+        "final_value": 3339424.19756843,
+        "sharpe": 2.298864633489416,
+        "max_drawdown": -0.1895701266747859
+      },
+      {
+        "name": "period_10_30",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 10,
+          "score_long": 30,
+          "score_short_weight": 0.5
+        },
+        "final_value": 2029827.0806663365,
+        "sharpe": 2.04512784977719,
+        "max_drawdown": -0.23453804846699833
+      },
+      {
+        "name": "period_13_15",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 13,
+          "score_long": 15,
+          "score_short_weight": 0.5
+        },
+        "final_value": 1422206.3732434986,
+        "sharpe": 1.5792107161892193,
+        "max_drawdown": -0.30897956759591794
+      },
+      {
+        "name": "period_13_20",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 13,
+          "score_long": 20,
+          "score_short_weight": 0.5
+        },
+        "final_value": 2812316.6494284784,
+        "sharpe": 2.1015658190504203,
+        "max_drawdown": -0.2682969732929087
+      },
+      {
+        "name": "period_13_25",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 13,
+          "score_long": 25,
+          "score_short_weight": 0.5
+        },
+        "final_value": 2011812.2415129286,
+        "sharpe": 1.8690659071267026,
+        "max_drawdown": -0.25172530649847213
+      },
+      {
+        "name": "period_13_30",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 13,
+          "score_long": 30,
+          "score_short_weight": 0.5
+        },
+        "final_value": 1424800.688033162,
+        "sharpe": 1.7421760842275986,
+        "max_drawdown": -0.2169062839065551
+      },
+      {
+        "name": "period_15_20",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 15,
+          "score_long": 20,
+          "score_short_weight": 0.5
+        },
+        "final_value": 3893583.7310022335,
+        "sharpe": 2.3809204974069496,
+        "max_drawdown": -0.2569947681237359
+      },
+      {
+        "name": "period_15_25",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 15,
+          "score_long": 25,
+          "score_short_weight": 0.5
+        },
+        "final_value": 2034220.9685121817,
+        "sharpe": 1.8628347135042065,
+        "max_drawdown": -0.2604502268468144
+      },
+      {
+        "name": "period_15_30",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 15,
+          "score_long": 30,
+          "score_short_weight": 0.5
+        },
+        "final_value": 2112893.309052104,
+        "sharpe": 2.0719561224315983,
+        "max_drawdown": -0.256377830339906
+      },
+      {
+        "name": "period_20_25",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 20,
+          "score_long": 25,
+          "score_short_weight": 0.5
+        },
+        "final_value": 2667921.751179082,
+        "sharpe": 2.0906859072862836,
+        "max_drawdown": -0.229534302988726
+      },
+      {
+        "name": "period_20_30",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 20,
+          "score_long": 30,
+          "score_short_weight": 0.5
+        },
+        "final_value": 2620613.3549624193,
+        "sharpe": 2.0687802417579695,
+        "max_drawdown": -0.2506052638904881
+      },
+      {
+        "name": "weight_0.3",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 10,
+          "score_long": 20,
+          "score_short_weight": 0.3
+        },
+        "final_value": 3619334.582018236,
+        "sharpe": 2.3266901852317794,
+        "max_drawdown": -0.24354018561827984
+      },
+      {
+        "name": "weight_0.4",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 10,
+          "score_long": 20,
+          "score_short_weight": 0.4
+        },
+        "final_value": 3877327.4566061306,
+        "sharpe": 2.3746409761812823,
+        "max_drawdown": -0.2398576232504106
+      },
+      {
+        "name": "weight_0.6",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 10,
+          "score_long": 20,
+          "score_short_weight": 0.6
+        },
+        "final_value": 3105675.9969388917,
+        "sharpe": 2.16725580456186,
+        "max_drawdown": -0.29832740395695867
+      },
+      {
+        "name": "weight_0.7",
+        "params": {
+          "drop_threshold": 0.03,
+          "drop_lookback": 5,
+          "ret60_threshold": 0.01,
+          "gate_momentum_short": 10,
+          "gate_momentum_long": 20,
+          "gate_short_weight": 0.5,
+          "gate_momentum_threshold": 0.0,
+          "exempt_buffer": true,
+          "strict_drop_filter": false,
+          "score_short": 10,
+          "score_long": 20,
+          "score_short_weight": 0.7
+        },
+        "final_value": 2086970.8794477573,
+        "sharpe": 1.8460328792763585,
+        "max_drawdown": -0.29827723798556405
+      }
+    ]
+  },
+  "historical_governance_evidence": {
+    "gate_final_validate_passed": false,
+    "permutation_percentile": 91.66666666666666,
+    "strict_rolling_checks_passed": "0/4",
+    "expanded_peer_pool": "historical gate gain did not reproduce consistently; recorded as 0%/-13.2%",
+    "scope_warning": "historical validation used earlier H3/downsize variants and is supporting governance evidence, not the current-path statistic"
+  },
+  "assessment": {
+    "classification": "high_overfit_risk",
+    "gate_statistical_increment_pass": false,
+    "gate_local_neighborhood_pass": false,
+    "momentum_pbo_warning": false,
+    "interpretation": "V3-G combines a sparsely triggered gate with a momentum core selected on the same history; untouched post-launch evidence is effectively absent."
+  }
+}

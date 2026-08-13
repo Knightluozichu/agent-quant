@@ -49,6 +49,21 @@ cp .env.example .env
 uv run quant doctor
 ```
 
+### 同步服务器实盘状态并做盘中预演
+
+```bash
+# 只读拉取服务器持仓、现金、策略模式和 V4 状态，然后更新本地日线并 dry-run
+uv run python scripts/sync_server_preview.py
+
+# 仅同步状态，不获取行情、不运行策略
+uv run python scripts/sync_server_preview.py --state-only
+```
+
+脚本只读取服务器的 `state.json`、`strategy_mode.json` 和 V4 发布清单，不读取
+`.env`/`config.json`，也不会写服务器或连接券商。同步前会验证本地与服务器生产核心
+文件哈希；本地旧状态保存在 `data/live/server_sync_backups/`。盘中结果仅供观察，正式
+信号仍以服务器交易日 14:50 官方快照为准。
+
 ### 运行测试
 
 ```bash

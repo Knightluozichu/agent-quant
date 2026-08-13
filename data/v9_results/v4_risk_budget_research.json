@@ -1,0 +1,5387 @@
+{
+  "meta": {
+    "strategy": "frozen V4 signal path plus theory-first exposure budgeting",
+    "data_start": "2020-06-19",
+    "data_end": "2026-08-11",
+    "observations": 1485,
+    "design_date": "2026-08-12",
+    "live_oos_observations": 0,
+    "no_parameter_scan": true,
+    "candidate_count": 9,
+    "current_recorded_path_evaluations": 16,
+    "adaptive_research_sequence": true,
+    "phase1_candidate_count": 4,
+    "phase2_theory_revision_count": 1,
+    "phase2_reason": "phase 1 CPPI met drawdown control but lost return through persistent cash lock; phase 2 resets its loss budget only on a V4 holding change",
+    "phase3_theory_revision_count": 1,
+    "phase3_reason": "the maximum drawdown crossed many V4 holdings, so phase 3 preserves one accident state across rotations and retains minimum participation",
+    "phase4_theory_revision_count": 1,
+    "phase4_reason": "without a validated timing predictor, first-order risk and drawdown are approximately homogeneous in exposure; 80% is derived from the 20% MDD-reduction objective rather than selected from a return scan",
+    "phase5_composition_count": 1,
+    "phase5_reason": "volatility control reduced historical MDD while shock control addressed the documented clustered-loss path; their minimum adds no parameter",
+    "v4_params": {
+      "enabled": true,
+      "mode": "consensus",
+      "slow_gap": 0.0075,
+      "fast_5d_gap": 0.0225,
+      "fast_3d_gap": 0.01125,
+      "minimum_target_momentum": 0.0,
+      "minimum_hold_days": 3,
+      "confirmation_hits": 2,
+      "confirmation_window": 2
+    },
+    "safe_sleeve": "511880",
+    "controller_cost_model": "two ETF legs per exposure change, in addition to scaled V4 sleeve costs",
+    "no_lookahead": "exposure used on day T was fixed at T-1; T observations only set the next period exposure",
+    "execution_warning": "official close is a same-price 14:50 proxy; gap losses before the observation cannot be prevented",
+    "frozen_path_approximation_warning": "the exposure controller scales the archived V4 sleeve return and does not feed its lower equity path back into risk_overrides; an integrated engine replay is required before any implementation review"
+  },
+  "theory": {
+    "objective": "retain at least 80% of V4 CAGR while reducing MDD magnitude at least 20%, without adding negative years or failing 2x costs",
+    "volatility_rule": "x=min(1, 30% / EWMA annualized volatility), lambda=0.94",
+    "cppi_rule": "floor=80% of running peak; x=min(1, 5*(wealth-floor)/wealth)",
+    "shock_rule": "next-period x<=50% after held asset 1d<=-5%; x=0 after 3d<=-10%",
+    "position_budget_rule": "full exposure through 5% position drawdown, linear to zero at 10%, then reset only after frozen V4 changes the holding",
+    "episode_budget_rule": "at 10% portfolio drawdown use 50% exposure until recovery to 5%; at 20% use 25%; combine with the stricter asset-shock cap",
+    "constant_budget_rule": "80% frozen V4 sleeve plus 20% defense, daily rebalanced; the shock variant applies the pre-registered 50%/0% next-period caps",
+    "volatility_shock_rule": "x=min(1, 30%/EWMA volatility, 1d/3d shock cap)",
+    "guarantee_limit": "daily discrete execution creates gap risk; the 80% floor is soft, not a guaranteed payoff",
+    "primary_references": [
+      "https://doi.org/10.3386/w22208",
+      "https://doi.org/10.1016/0165-1889(92)90043-E"
+    ]
+  },
+  "baseline_v4": {
+    "params": {
+      "enabled": true,
+      "mode": "consensus",
+      "slow_gap": 0.0075,
+      "fast_5d_gap": 0.0225,
+      "fast_3d_gap": 0.01125,
+      "minimum_target_momentum": 0.0,
+      "minimum_hold_days": 3,
+      "confirmation_hits": 2,
+      "confirmation_window": 2
+    },
+    "metrics": {
+      "start": "2020-06-19",
+      "end": "2026-08-11",
+      "observations": 1485,
+      "initial_value": 100000.0,
+      "final_value": 5258017.614359309,
+      "total_return": 51.58017614359309,
+      "cagr": 0.9058718424980878,
+      "ann_vol": 0.35404509479095153,
+      "sharpe": 2.5586340718347373,
+      "max_drawdown": -0.28615770033824584,
+      "cost_multiplier": 1.0,
+      "trade_legs": 223,
+      "early_rotations": 39,
+      "signal_days": 184,
+      "scheduled_lock_blocks": 2,
+      "realtime_filter_events": 0,
+      "risk_events": 256,
+      "reason_counts": {
+        "slow": 39,
+        "fast": 39
+      },
+      "ex_post_relative_5d_avg": 0.02228795370300695,
+      "ex_post_relative_5d_win_rate": 0.5128205128205128,
+      "ex_post_relative_10d_avg": 0.04093190457950408,
+      "ex_post_relative_10d_win_rate": 0.6666666666666666,
+      "ex_post_relative_20d_avg": 0.03751800745507738,
+      "ex_post_relative_20d_win_rate": 0.6923076923076923,
+      "calmar": 3.1656385322754685,
+      "ulcer_index": 0.0912223265840271,
+      "daily_expected_shortfall_5pct": -0.04306251761350214,
+      "worst_1d_return": -0.16196569505550842
+    },
+    "annual": [
+      {
+        "year": 2020,
+        "return": 0.8852077318636362,
+        "end_value": 188520.77318636363
+      },
+      {
+        "year": 2021,
+        "return": 0.15838210117792495,
+        "end_value": 218379.08935930693
+      },
+      {
+        "year": 2022,
+        "return": 0.3620234830264468,
+        "end_value": 297437.4479093069
+      },
+      {
+        "year": 2023,
+        "return": 0.14472267413727113,
+        "end_value": 340483.3907593071
+      },
+      {
+        "year": 2024,
+        "return": 0.6882838306073644,
+        "end_value": 574832.6032093071
+      },
+      {
+        "year": 2025,
+        "return": 2.716639469789064,
+        "end_value": 2136445.5416093064
+      },
+      {
+        "year": 2026,
+        "return": 1.4611053789831856,
+        "end_value": 5258017.614359309
+      }
+    ],
+    "rolling_252": {
+      "window_days": 252,
+      "windows": 1234,
+      "negative_windows": 29,
+      "positive_rate": 0.9764991896272285,
+      "minimum_return": -0.11431935208315014,
+      "median_return": 0.36810227603241075,
+      "maximum_return": 7.613617784291796
+    }
+  },
+  "candidates": {
+    "vol30": {
+      "params": {
+        "mode": "volatility",
+        "volatility_target": 0.3,
+        "ewma_decay": 0.94,
+        "floor_ratio": 0.8,
+        "cppi_multiplier": 5.0,
+        "shock_1d": -0.05,
+        "shock_3d": -0.1,
+        "post_shock_exposure": 0.5,
+        "position_deductible": 0.05,
+        "position_loss_limit": 0.1,
+        "episode_trigger": 0.1,
+        "episode_recovery": 0.05,
+        "episode_severe": 0.2,
+        "episode_exposure": 0.5,
+        "episode_severe_exposure": 0.25,
+        "constant_exposure": 0.8
+      },
+      "metrics": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 2092287.58706757,
+        "total_return": 19.9228758706757,
+        "cagr": 0.6404163201128854,
+        "ann_vol": 0.2617907975988383,
+        "sharpe": 2.4462904196282844,
+        "max_drawdown": -0.19218141075067752,
+        "calmar": 3.332353101225362,
+        "ulcer_index": 0.06759534598931224,
+        "daily_expected_shortfall_5pct": -0.0331480427352494,
+        "worst_1d_return": -0.0683204282103088,
+        "cost_multiplier": 1.0,
+        "average_exposure": 0.8942085985035945,
+        "minimum_exposure": 0.23141858797499837,
+        "days_below_full_exposure": 493,
+        "zero_exposure_days": 0,
+        "controller_turnover": 13.934319934471462,
+        "controller_cost": 32058.064792158024,
+        "episode_days": 0,
+        "negative_years": 0
+      },
+      "annual": [
+        {
+          "year": 2020,
+          "return": 0.579066706989847,
+          "end_value": 157906.6706989847
+        },
+        {
+          "year": 2021,
+          "return": 0.15360414799622824,
+          "end_value": 182161.7903146232
+        },
+        {
+          "year": 2022,
+          "return": 0.4352930052556374,
+          "end_value": 261455.54346342283
+        },
+        {
+          "year": 2023,
+          "return": 0.14695941873144824,
+          "end_value": 299878.89815492235
+        },
+        {
+          "year": 2024,
+          "return": 0.4663456953157592,
+          "end_value": 439726.13142550335
+        },
+        {
+          "year": 2025,
+          "return": 1.8502488847356107,
+          "end_value": 1253328.9156846455
+        },
+        {
+          "year": 2026,
+          "return": 0.6693842780485388,
+          "end_value": 2092287.58706757
+        }
+      ],
+      "rolling_252": {
+        "window_days": 252,
+        "windows": 1234,
+        "negative_windows": 27,
+        "positive_rate": 0.9781199351701783,
+        "minimum_return": -0.11431935208315114,
+        "median_return": 0.353781726880953,
+        "maximum_return": 3.35725989021039
+      }
+    },
+    "cppi20": {
+      "params": {
+        "mode": "cppi",
+        "volatility_target": 0.3,
+        "ewma_decay": 0.94,
+        "floor_ratio": 0.8,
+        "cppi_multiplier": 5.0,
+        "shock_1d": -0.05,
+        "shock_3d": -0.1,
+        "post_shock_exposure": 0.5,
+        "position_deductible": 0.05,
+        "position_loss_limit": 0.1,
+        "episode_trigger": 0.1,
+        "episode_recovery": 0.05,
+        "episode_severe": 0.2,
+        "episode_exposure": 0.5,
+        "episode_severe_exposure": 0.25,
+        "constant_exposure": 0.8
+      },
+      "metrics": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 1289068.5137438467,
+        "total_return": 11.890685137438467,
+        "cagr": 0.5160611378528439,
+        "ann_vol": 0.27044533071689664,
+        "sharpe": 1.9081902301099773,
+        "max_drawdown": -0.17402737014158853,
+        "calmar": 2.965402151586713,
+        "ulcer_index": 0.10834032036994308,
+        "daily_expected_shortfall_5pct": -0.032148171518527245,
+        "worst_1d_return": -0.16391073949374488,
+        "cost_multiplier": 1.0,
+        "average_exposure": 0.5535421260699305,
+        "minimum_exposure": 0.15707824350899446,
+        "days_below_full_exposure": 1393,
+        "zero_exposure_days": 0,
+        "controller_turnover": 39.50636371982177,
+        "controller_cost": 47563.81860614147,
+        "episode_days": 0,
+        "negative_years": 0
+      },
+      "annual": [
+        {
+          "year": 2020,
+          "return": 0.6320054791270462,
+          "end_value": 163200.5479127046
+        },
+        {
+          "year": 2021,
+          "return": 0.01283065640964498,
+          "end_value": 165294.51806883834
+        },
+        {
+          "year": 2022,
+          "return": 0.15479277259487967,
+          "end_value": 190880.91481544825
+        },
+        {
+          "year": 2023,
+          "return": 0.03415496049907585,
+          "end_value": 197400.44492099737
+        },
+        {
+          "year": 2024,
+          "return": 0.17561096362902084,
+          "end_value": 232066.12727437116
+        },
+        {
+          "year": 2025,
+          "return": 1.903306445108222,
+          "end_value": 673759.0830069868
+        },
+        {
+          "year": 2026,
+          "return": 0.9132484388792712,
+          "end_value": 1289068.5137438467
+        }
+      ],
+      "rolling_252": {
+        "window_days": 252,
+        "windows": 1234,
+        "negative_windows": 92,
+        "positive_rate": 0.9254457050243112,
+        "minimum_return": -0.13912423177319777,
+        "median_return": 0.1414707445229293,
+        "maximum_return": 4.928201833010164
+      }
+    },
+    "shock_brake": {
+      "params": {
+        "mode": "shock",
+        "volatility_target": 0.3,
+        "ewma_decay": 0.94,
+        "floor_ratio": 0.8,
+        "cppi_multiplier": 5.0,
+        "shock_1d": -0.05,
+        "shock_3d": -0.1,
+        "post_shock_exposure": 0.5,
+        "position_deductible": 0.05,
+        "position_loss_limit": 0.1,
+        "episode_trigger": 0.1,
+        "episode_recovery": 0.05,
+        "episode_severe": 0.2,
+        "episode_exposure": 0.5,
+        "episode_severe_exposure": 0.25,
+        "constant_exposure": 0.8
+      },
+      "metrics": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 4821073.893787731,
+        "total_return": 47.210738937877316,
+        "cagr": 0.8791476448435838,
+        "ann_vol": 0.34971964872424915,
+        "sharpe": 2.51386402808835,
+        "max_drawdown": -0.29405479549457514,
+        "calmar": 2.9897408860989065,
+        "ulcer_index": 0.09376783109613133,
+        "daily_expected_shortfall_5pct": -0.042351861536671545,
+        "worst_1d_return": -0.16322274651292515,
+        "cost_multiplier": 1.0,
+        "average_exposure": 0.9936026936026936,
+        "minimum_exposure": 0.0,
+        "days_below_full_exposure": 17,
+        "zero_exposure_days": 2,
+        "controller_turnover": 15.459773315051907,
+        "controller_cost": 42683.64298615722,
+        "episode_days": 0,
+        "negative_years": 0
+      },
+      "annual": [
+        {
+          "year": 2020,
+          "return": 0.8497052748305933,
+          "end_value": 184970.52748305933
+        },
+        {
+          "year": 2021,
+          "return": 0.15801457055384072,
+          "end_value": 214198.56594841232
+        },
+        {
+          "year": 2022,
+          "return": 0.2825288458482027,
+          "end_value": 274715.8395681574
+        },
+        {
+          "year": 2023,
+          "return": 0.14472267413727002,
+          "end_value": 314473.4504983264
+        },
+        {
+          "year": 2024,
+          "return": 0.7074106585089845,
+          "end_value": 536935.32119894
+        },
+        {
+          "year": 2025,
+          "return": 2.56281106928654,
+          "end_value": 1912999.1058585073
+        },
+        {
+          "year": 2026,
+          "return": 1.5201652625049977,
+          "end_value": 4821073.893787731
+        }
+      ],
+      "rolling_252": {
+        "window_days": 252,
+        "windows": 1234,
+        "negative_windows": 29,
+        "positive_rate": 0.9764991896272285,
+        "minimum_return": -0.11691982287906277,
+        "median_return": 0.31178882035371647,
+        "maximum_return": 7.27423317924579
+      }
+    },
+    "v4_risk_budget": {
+      "params": {
+        "mode": "risk_budget",
+        "volatility_target": 0.3,
+        "ewma_decay": 0.94,
+        "floor_ratio": 0.8,
+        "cppi_multiplier": 5.0,
+        "shock_1d": -0.05,
+        "shock_3d": -0.1,
+        "post_shock_exposure": 0.5,
+        "position_deductible": 0.05,
+        "position_loss_limit": 0.1,
+        "episode_trigger": 0.1,
+        "episode_recovery": 0.05,
+        "episode_severe": 0.2,
+        "episode_exposure": 0.5,
+        "episode_severe_exposure": 0.25,
+        "constant_exposure": 0.8
+      },
+      "metrics": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 1248695.34669329,
+        "total_return": 11.4869534669329,
+        "cagr": 0.5082292197131908,
+        "ann_vol": 0.2679765209898491,
+        "sharpe": 1.8965438383777005,
+        "max_drawdown": -0.1741542427322853,
+        "calmar": 2.918270676267444,
+        "ulcer_index": 0.11029321510933919,
+        "daily_expected_shortfall_5pct": -0.03164518435392919,
+        "worst_1d_return": -0.16391073949374496,
+        "cost_multiplier": 1.0,
+        "average_exposure": 0.5410808589564349,
+        "minimum_exposure": 0.0,
+        "days_below_full_exposure": 1394,
+        "zero_exposure_days": 2,
+        "controller_turnover": 40.93634034069017,
+        "controller_cost": 47105.38872925374,
+        "episode_days": 0,
+        "negative_years": 0
+      },
+      "annual": [
+        {
+          "year": 2020,
+          "return": 0.606098104748642,
+          "end_value": 160609.8104748642
+        },
+        {
+          "year": 2021,
+          "return": 0.012050055663956671,
+          "end_value": 162545.16763126384
+        },
+        {
+          "year": 2022,
+          "return": 0.1257198981180685,
+          "end_value": 182980.32954545072
+        },
+        {
+          "year": 2023,
+          "return": 0.033097981596856174,
+          "end_value": 189036.60912533273
+        },
+        {
+          "year": 2024,
+          "return": 0.17561096362902906,
+          "end_value": 222233.51021499652
+        },
+        {
+          "year": 2025,
+          "return": 1.9085183572698985,
+          "end_value": 646370.2440608449
+        },
+        {
+          "year": 2026,
+          "return": 0.9318577211232921,
+          "end_value": 1248695.34669329
+        }
+      ],
+      "rolling_252": {
+        "window_days": 252,
+        "windows": 1234,
+        "negative_windows": 96,
+        "positive_rate": 0.9222042139384117,
+        "minimum_return": -0.13955717435352133,
+        "median_return": 0.12244126953603485,
+        "maximum_return": 4.934146217373663
+      }
+    },
+    "v4_position_budget": {
+      "params": {
+        "mode": "position_budget",
+        "volatility_target": 0.3,
+        "ewma_decay": 0.94,
+        "floor_ratio": 0.8,
+        "cppi_multiplier": 5.0,
+        "shock_1d": -0.05,
+        "shock_3d": -0.1,
+        "post_shock_exposure": 0.5,
+        "position_deductible": 0.05,
+        "position_loss_limit": 0.1,
+        "episode_trigger": 0.1,
+        "episode_recovery": 0.05,
+        "episode_severe": 0.2,
+        "episode_exposure": 0.5,
+        "episode_severe_exposure": 0.25,
+        "constant_exposure": 0.8
+      },
+      "metrics": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 4238750.465621516,
+        "total_return": 41.387504656215164,
+        "cagr": 0.8401839608189934,
+        "ann_vol": 0.3456525143477891,
+        "sharpe": 2.4307184989073045,
+        "max_drawdown": -0.2811765928662934,
+        "calmar": 2.9881006532379537,
+        "ulcer_index": 0.0901859168741248,
+        "daily_expected_shortfall_5pct": -0.04185282512831452,
+        "worst_1d_return": -0.16447979797034185,
+        "cost_multiplier": 1.0,
+        "average_exposure": 0.9900604021555558,
+        "minimum_exposure": 0.0,
+        "days_below_full_exposure": 39,
+        "zero_exposure_days": 3,
+        "controller_turnover": 21.534777318892676,
+        "controller_cost": 71875.24235281369,
+        "episode_days": 0,
+        "negative_years": 0
+      },
+      "annual": [
+        {
+          "year": 2020,
+          "return": 0.7495853245227764,
+          "end_value": 174958.53245227764
+        },
+        {
+          "year": 2021,
+          "return": 0.15352354429048343,
+          "end_value": 201818.78645821285
+        },
+        {
+          "year": 2022,
+          "return": 0.30238244330859,
+          "end_value": 262845.2442130218
+        },
+        {
+          "year": 2023,
+          "return": 0.1453695765741576,
+          "end_value": 301054.9460687999
+        },
+        {
+          "year": 2024,
+          "return": 0.7209390912935068,
+          "end_value": 518097.2253170562
+        },
+        {
+          "year": 2025,
+          "return": 2.5080707045599056,
+          "end_value": 1817521.6982485375
+        },
+        {
+          "year": 2026,
+          "return": 1.3321594838214068,
+          "end_value": 4238750.465621516
+        }
+      ],
+      "rolling_252": {
+        "window_days": 252,
+        "windows": 1234,
+        "negative_windows": 30,
+        "positive_rate": 0.9756888168557536,
+        "minimum_return": -0.11999139291414718,
+        "median_return": 0.3209867197525149,
+        "maximum_return": 6.874816828099059
+      }
+    },
+    "v4_episode_budget": {
+      "params": {
+        "mode": "episode_budget",
+        "volatility_target": 0.3,
+        "ewma_decay": 0.94,
+        "floor_ratio": 0.8,
+        "cppi_multiplier": 5.0,
+        "shock_1d": -0.05,
+        "shock_3d": -0.1,
+        "post_shock_exposure": 0.5,
+        "position_deductible": 0.05,
+        "position_loss_limit": 0.1,
+        "episode_trigger": 0.1,
+        "episode_recovery": 0.05,
+        "episode_severe": 0.2,
+        "episode_exposure": 0.5,
+        "episode_severe_exposure": 0.25,
+        "constant_exposure": 0.8
+      },
+      "metrics": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 2122826.8126281295,
+        "total_return": 20.228268126281296,
+        "cagr": 0.6442899664323107,
+        "ann_vol": 0.291139269956285,
+        "sharpe": 2.2129957478050004,
+        "max_drawdown": -0.19782611656422766,
+        "calmar": 3.2568498923302216,
+        "ulcer_index": 0.09075718004261091,
+        "daily_expected_shortfall_5pct": -0.03460355188123521,
+        "worst_1d_return": -0.16322274651292515,
+        "cost_multiplier": 1.0,
+        "average_exposure": 0.6430976430976431,
+        "minimum_exposure": 0.0,
+        "days_below_full_exposure": 1058,
+        "zero_exposure_days": 2,
+        "controller_turnover": 19.054968074945876,
+        "controller_cost": 34054.43630219009,
+        "episode_days": 1051,
+        "negative_years": 0
+      },
+      "annual": [
+        {
+          "year": 2020,
+          "return": 0.7692206923995284,
+          "end_value": 176922.06923995283
+        },
+        {
+          "year": 2021,
+          "return": 0.05904560447103657,
+          "end_value": 187368.53976249244
+        },
+        {
+          "year": 2022,
+          "return": 0.23703398541594045,
+          "end_value": 231781.25148396112
+        },
+        {
+          "year": 2023,
+          "return": 0.06372729763878926,
+          "end_value": 246552.04428437058
+        },
+        {
+          "year": 2024,
+          "return": 0.3105068217479934,
+          "end_value": 323108.135950581
+        },
+        {
+          "year": 2025,
+          "return": 2.161210874842136,
+          "end_value": 1021412.953116948
+        },
+        {
+          "year": 2026,
+          "return": 1.0783237633222709,
+          "end_value": 2122826.8126281295
+        }
+      ],
+      "rolling_252": {
+        "window_days": 252,
+        "windows": 1234,
+        "negative_windows": 40,
+        "positive_rate": 0.9675850891410048,
+        "minimum_return": -0.09378528974018963,
+        "median_return": 0.2190731461437383,
+        "maximum_return": 5.8724371977130705
+      }
+    },
+    "v4_constant80": {
+      "params": {
+        "mode": "constant",
+        "volatility_target": 0.3,
+        "ewma_decay": 0.94,
+        "floor_ratio": 0.8,
+        "cppi_multiplier": 5.0,
+        "shock_1d": -0.05,
+        "shock_3d": -0.1,
+        "post_shock_exposure": 0.5,
+        "position_deductible": 0.05,
+        "position_loss_limit": 0.1,
+        "episode_trigger": 0.1,
+        "episode_recovery": 0.05,
+        "episode_severe": 0.2,
+        "episode_exposure": 0.5,
+        "episode_severe_exposure": 0.25,
+        "constant_exposure": 0.8
+      },
+      "metrics": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 2496477.622568226,
+        "total_return": 23.96477622568226,
+        "cagr": 0.6882601313628955,
+        "ann_vol": 0.2831617106855036,
+        "sharpe": 2.4306257004052307,
+        "max_drawdown": -0.234336665051737,
+        "calmar": 2.937056952700684,
+        "ulcer_index": 0.07292441903218796,
+        "daily_expected_shortfall_5pct": -0.03445588723874309,
+        "worst_1d_return": -0.12961484686332464,
+        "cost_multiplier": 1.0,
+        "average_exposure": 0.8,
+        "minimum_exposure": 0.8,
+        "days_below_full_exposure": 1485,
+        "zero_exposure_days": 0,
+        "controller_turnover": 3.405949608521096,
+        "controller_cost": 5919.775939479058,
+        "episode_days": 0,
+        "negative_years": 0
+      },
+      "annual": [
+        {
+          "year": 2020,
+          "return": 0.6672689888641299,
+          "end_value": 166726.898886413
+        },
+        {
+          "year": 2021,
+          "return": 0.12796027874305516,
+          "end_value": 188061.3193418836
+        },
+        {
+          "year": 2022,
+          "return": 0.2884969881824033,
+          "end_value": 242316.44356562613
+        },
+        {
+          "year": 2023,
+          "return": 0.11640562138500887,
+          "end_value": 270523.43975068827
+        },
+        {
+          "year": 2024,
+          "return": 0.536774943918612,
+          "end_value": 415733.643951534
+        },
+        {
+          "year": 2025,
+          "return": 1.8811781748521543,
+          "end_value": 1197802.7015049162
+        },
+        {
+          "year": 2026,
+          "return": 1.0842143864191138,
+          "end_value": 2496477.622568226
+        }
+      ],
+      "rolling_252": {
+        "window_days": 252,
+        "windows": 1234,
+        "negative_windows": 29,
+        "positive_rate": 0.9764991896272285,
+        "minimum_return": -0.09068772461592967,
+        "median_return": 0.2903465340931577,
+        "maximum_return": 4.688148333130633
+      }
+    },
+    "v4_constant80_shock": {
+      "params": {
+        "mode": "constant_shock",
+        "volatility_target": 0.3,
+        "ewma_decay": 0.94,
+        "floor_ratio": 0.8,
+        "cppi_multiplier": 5.0,
+        "shock_1d": -0.05,
+        "shock_3d": -0.1,
+        "post_shock_exposure": 0.5,
+        "position_deductible": 0.05,
+        "position_loss_limit": 0.1,
+        "episode_trigger": 0.1,
+        "episode_recovery": 0.05,
+        "episode_severe": 0.2,
+        "episode_exposure": 0.5,
+        "episode_severe_exposure": 0.25,
+        "constant_exposure": 0.8
+      },
+      "metrics": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 2349414.2774835653,
+        "total_return": 22.49414277483565,
+        "cagr": 0.6716582743570432,
+        "ann_vol": 0.28019503779810273,
+        "sharpe": 2.3971098119197,
+        "max_drawdown": -0.23929988871074648,
+        "calmar": 2.806763839196388,
+        "ulcer_index": 0.07477806486593469,
+        "daily_expected_shortfall_5pct": -0.034001715911848605,
+        "worst_1d_return": -0.13024260589740821,
+        "cost_multiplier": 1.0,
+        "average_exposure": 0.7958922558922558,
+        "minimum_exposure": 0.0,
+        "days_below_full_exposure": 1485,
+        "zero_exposure_days": 2,
+        "controller_turnover": 12.578086514861857,
+        "controller_cost": 19946.464985442588,
+        "episode_days": 0,
+        "negative_years": 0
+      },
+      "annual": [
+        {
+          "year": 2020,
+          "return": 0.6331190713765749,
+          "end_value": 163311.9071376575
+        },
+        {
+          "year": 2021,
+          "return": 0.1278240925991483,
+          "end_value": 184187.1034781649
+        },
+        {
+          "year": 2022,
+          "return": 0.24289400749270773,
+          "end_value": 228925.04717045042
+        },
+        {
+          "year": 2023,
+          "return": 0.1164056213850111,
+          "end_value": 255573.20953691966
+        },
+        {
+          "year": 2024,
+          "return": 0.5475113461971206,
+          "end_value": 395502.4415423973
+        },
+        {
+          "year": 2025,
+          "return": 1.8093778867408892,
+          "end_value": 1111115.8134212422
+        },
+        {
+          "year": 2026,
+          "return": 1.1144639011566868,
+          "end_value": 2349414.2774835653
+        }
+      ],
+      "rolling_252": {
+        "window_days": 252,
+        "windows": 1234,
+        "negative_windows": 30,
+        "positive_rate": 0.9756888168557536,
+        "minimum_return": -0.09224276971109624,
+        "median_return": 0.2563571619149465,
+        "maximum_return": 4.5562253094836835
+      }
+    },
+    "v4_vol30_shock": {
+      "params": {
+        "mode": "volatility_shock",
+        "volatility_target": 0.3,
+        "ewma_decay": 0.94,
+        "floor_ratio": 0.8,
+        "cppi_multiplier": 5.0,
+        "shock_1d": -0.05,
+        "shock_3d": -0.1,
+        "post_shock_exposure": 0.5,
+        "position_deductible": 0.05,
+        "position_loss_limit": 0.1,
+        "episode_trigger": 0.1,
+        "episode_recovery": 0.05,
+        "episode_severe": 0.2,
+        "episode_exposure": 0.5,
+        "episode_severe_exposure": 0.25,
+        "constant_exposure": 0.8
+      },
+      "metrics": {
+        "start": "2020-06-19",
+        "end": "2026-08-11",
+        "observations": 1485,
+        "initial_value": 100000.0,
+        "final_value": 1940633.0264218987,
+        "total_return": 18.406330264218987,
+        "cagr": 0.6204482843526584,
+        "ann_vol": 0.2602902204509075,
+        "sharpe": 2.383678815430867,
+        "max_drawdown": -0.1921685763951002,
+        "calmar": 3.2286667049924516,
+        "ulcer_index": 0.06851667945629297,
+        "daily_expected_shortfall_5pct": -0.03324662491594329,
+        "worst_1d_return": -0.06918798721664952,
+        "cost_multiplier": 1.0,
+        "average_exposure": 0.892161287021551,
+        "minimum_exposure": 0.0,
+        "days_below_full_exposure": 494,
+        "zero_exposure_days": 2,
+        "controller_turnover": 18.378112147148453,
+        "controller_cost": 33622.08783775072,
+        "episode_days": 0,
+        "negative_years": 0
+      },
+      "annual": [
+        {
+          "year": 2020,
+          "return": 0.5405658513084632,
+          "end_value": 154056.58513084633
+        },
+        {
+          "year": 2021,
+          "return": 0.1533770861758197,
+          "end_value": 177685.33526441266
+        },
+        {
+          "year": 2022,
+          "return": 0.38965405231210637,
+          "end_value": 246921.14618662628
+        },
+        {
+          "year": 2023,
+          "return": 0.1469594187314478,
+          "end_value": 283208.53430271574
+        },
+        {
+          "year": 2024,
+          "return": 0.46204031824068137,
+          "end_value": 414062.29562041943
+        },
+        {
+          "year": 2025,
+          "return": 1.8075106567240438,
+          "end_value": 1162484.307501949
+        },
+        {
+          "year": 2026,
+          "return": 0.6693842780485406,
+          "end_value": 1940633.0264218987
+        }
+      ],
+      "rolling_252": {
+        "window_days": 252,
+        "windows": 1234,
+        "negative_windows": 27,
+        "positive_rate": 0.9781199351701783,
+        "minimum_return": -0.11691982287906333,
+        "median_return": 0.3320309302632919,
+        "maximum_return": 3.3219273579441406
+      }
+    }
+  },
+  "acceptance": {
+    "vol30": {
+      "cagr_retention": 0.7069612831179674,
+      "mdd_improvement": 0.3284073413942239,
+      "checks": {
+        "cagr_retention_at_least_80pct": false,
+        "mdd_reduction_at_least_20pct": true,
+        "no_additional_negative_calendar_year": true,
+        "positive_at_2x_cost": true,
+        "mdd_below_40pct_at_2x_cost": true,
+        "documented_shock_below_10pct": true
+      },
+      "passed": false
+    },
+    "cppi20": {
+      "cagr_retention": 0.5696844891764402,
+      "mdd_improvement": 0.3918480266794021,
+      "checks": {
+        "cagr_retention_at_least_80pct": false,
+        "mdd_reduction_at_least_20pct": true,
+        "no_additional_negative_calendar_year": true,
+        "positive_at_2x_cost": true,
+        "mdd_below_40pct_at_2x_cost": true,
+        "documented_shock_below_10pct": true
+      },
+      "passed": false
+    },
+    "shock_brake": {
+      "cagr_retention": 0.9704989200450168,
+      "mdd_improvement": -0.027597003844365364,
+      "checks": {
+        "cagr_retention_at_least_80pct": true,
+        "mdd_reduction_at_least_20pct": false,
+        "no_additional_negative_calendar_year": true,
+        "positive_at_2x_cost": true,
+        "mdd_below_40pct_at_2x_cost": true,
+        "documented_shock_below_10pct": true
+      },
+      "passed": false
+    },
+    "v4_risk_budget": {
+      "cagr_retention": 0.5610387649445717,
+      "mdd_improvement": 0.3914046606943288,
+      "checks": {
+        "cagr_retention_at_least_80pct": false,
+        "mdd_reduction_at_least_20pct": true,
+        "no_additional_negative_calendar_year": true,
+        "positive_at_2x_cost": true,
+        "mdd_below_40pct_at_2x_cost": true,
+        "documented_shock_below_10pct": true
+      },
+      "passed": false
+    },
+    "v4_position_budget": {
+      "cagr_retention": 0.9274865620086507,
+      "mdd_improvement": 0.01740686155243998,
+      "checks": {
+        "cagr_retention_at_least_80pct": true,
+        "mdd_reduction_at_least_20pct": false,
+        "no_additional_negative_calendar_year": true,
+        "positive_at_2x_cost": true,
+        "mdd_below_40pct_at_2x_cost": true,
+        "documented_shock_below_10pct": true
+      },
+      "passed": false
+    },
+    "v4_episode_budget": {
+      "cagr_retention": 0.7112374358116454,
+      "mdd_improvement": 0.3086814846135818,
+      "checks": {
+        "cagr_retention_at_least_80pct": false,
+        "mdd_reduction_at_least_20pct": true,
+        "no_additional_negative_calendar_year": true,
+        "positive_at_2x_cost": true,
+        "mdd_below_40pct_at_2x_cost": true,
+        "documented_shock_below_10pct": true
+      },
+      "passed": false
+    },
+    "v4_constant80": {
+      "cagr_retention": 0.7597764927375457,
+      "mdd_improvement": 0.18109257666403877,
+      "checks": {
+        "cagr_retention_at_least_80pct": false,
+        "mdd_reduction_at_least_20pct": false,
+        "no_additional_negative_calendar_year": true,
+        "positive_at_2x_cost": true,
+        "mdd_below_40pct_at_2x_cost": true,
+        "documented_shock_below_10pct": true
+      },
+      "passed": false
+    },
+    "v4_constant80_shock": {
+      "cagr_retention": 0.7414495548341994,
+      "mdd_improvement": 0.1637482114656087,
+      "checks": {
+        "cagr_retention_at_least_80pct": false,
+        "mdd_reduction_at_least_20pct": false,
+        "no_additional_negative_calendar_year": true,
+        "positive_at_2x_cost": true,
+        "mdd_below_40pct_at_2x_cost": true,
+        "documented_shock_below_10pct": true
+      },
+      "passed": false
+    },
+    "v4_vol30_shock": {
+      "cagr_retention": 0.6849183904885178,
+      "mdd_improvement": 0.3284521920327429,
+      "checks": {
+        "cagr_retention_at_least_80pct": false,
+        "mdd_reduction_at_least_20pct": true,
+        "no_additional_negative_calendar_year": true,
+        "positive_at_2x_cost": true,
+        "mdd_below_40pct_at_2x_cost": true,
+        "documented_shock_below_10pct": true
+      },
+      "passed": false
+    }
+  },
+  "cost_pressure": {
+    "0x": {
+      "baseline_v4": {
+        "params": {
+          "enabled": true,
+          "mode": "consensus",
+          "slow_gap": 0.0075,
+          "fast_5d_gap": 0.0225,
+          "fast_3d_gap": 0.01125,
+          "minimum_target_momentum": 0.0,
+          "minimum_hold_days": 3,
+          "confirmation_hits": 2,
+          "confirmation_window": 2
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 7285965.622454298,
+          "total_return": 71.85965622454297,
+          "cagr": 1.009796788151561,
+          "ann_vol": 0.35249289201757394,
+          "sharpe": 2.8647295052440844,
+          "max_drawdown": -0.270792442856309,
+          "cost_multiplier": 0.0,
+          "trade_legs": 223,
+          "early_rotations": 39,
+          "signal_days": 184,
+          "scheduled_lock_blocks": 2,
+          "realtime_filter_events": 0,
+          "risk_events": 192,
+          "reason_counts": {
+            "slow": 39,
+            "fast": 39
+          },
+          "ex_post_relative_5d_avg": 0.02228795370300695,
+          "ex_post_relative_5d_win_rate": 0.5128205128205128,
+          "ex_post_relative_10d_avg": 0.04093190457950408,
+          "ex_post_relative_10d_win_rate": 0.6666666666666666,
+          "ex_post_relative_20d_avg": 0.03751800745507738,
+          "ex_post_relative_20d_win_rate": 0.6923076923076923
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.9262524863251154,
+            "end_value": 192625.24863251153
+          },
+          {
+            "year": 2021,
+            "return": 0.21808601997926602,
+            "end_value": 234634.12245429252
+          },
+          {
+            "year": 2022,
+            "return": 0.43619060573739454,
+            "end_value": 336979.3224542924
+          },
+          {
+            "year": 2023,
+            "return": 0.19315191070463578,
+            "end_value": 402067.5224542925
+          },
+          {
+            "year": 2024,
+            "return": 0.7690325199920882,
+            "end_value": 711270.5224542926
+          },
+          {
+            "year": 2025,
+            "return": 2.93824365557663,
+            "end_value": 2801156.6224542926
+          },
+          {
+            "year": 2026,
+            "return": 1.6010561366149334,
+            "end_value": 7285965.622454298
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 19,
+          "positive_rate": 0.9846029173419774,
+          "minimum_return": -0.06275799212358946,
+          "median_return": 0.4385170824134724,
+          "maximum_return": 8.226592682882778
+        }
+      },
+      "vol30": {
+        "params": {
+          "mode": "volatility",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 2890567.2898432966,
+          "total_return": 27.905672898432968,
+          "cagr": 0.7290214786824472,
+          "ann_vol": 0.2614006818610099,
+          "sharpe": 2.7889042732875398,
+          "max_drawdown": -0.1798980143903307,
+          "calmar": 4.052415370748145,
+          "ulcer_index": 0.058154702310185914,
+          "daily_expected_shortfall_5pct": -0.03268227257251975,
+          "worst_1d_return": -0.06492694727122977,
+          "cost_multiplier": 0.0,
+          "average_exposure": 0.8949323552684079,
+          "minimum_exposure": 0.2318017897265519,
+          "days_below_full_exposure": 491,
+          "zero_exposure_days": 0,
+          "controller_turnover": 13.958855669184274,
+          "controller_cost": 0.0,
+          "episode_days": 0,
+          "negative_years": 0
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.6175666787554024,
+            "end_value": 161756.66787554024
+          },
+          {
+            "year": 2021,
+            "return": 0.21631111852928564,
+            "end_value": 196746.43363326852
+          },
+          {
+            "year": 2022,
+            "return": 0.5090122500296415,
+            "end_value": 296892.7785022461
+          },
+          {
+            "year": 2023,
+            "return": 0.1965048638997895,
+            "end_value": 355233.6535346603
+          },
+          {
+            "year": 2024,
+            "return": 0.5370051330628007,
+            "end_value": 545995.9489194254
+          },
+          {
+            "year": 2025,
+            "return": 2.0310827904729973,
+            "end_value": 1654958.924437644
+          },
+          {
+            "year": 2026,
+            "return": 0.7466096875035815,
+            "end_value": 2890567.2898432966
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 19,
+          "positive_rate": 0.9846029173419774,
+          "minimum_return": -0.06275799212358946,
+          "median_return": 0.42683687726899666,
+          "maximum_return": 3.6268061727983856
+        }
+      },
+      "cppi20": {
+        "params": {
+          "mode": "cppi",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 2364745.2483346607,
+          "total_return": 22.647452483346605,
+          "cagr": 0.6734289609283723,
+          "ann_vol": 0.28869354922710705,
+          "sharpe": 2.332677549364308,
+          "max_drawdown": -0.1690382298631119,
+          "calmar": 3.9838855475102815,
+          "ulcer_index": 0.0887160100308946,
+          "daily_expected_shortfall_5pct": -0.03380570748802988,
+          "worst_1d_return": -0.1617929912398512,
+          "cost_multiplier": 0.0,
+          "average_exposure": 0.657548511742161,
+          "minimum_exposure": 0.1863008097940996,
+          "days_below_full_exposure": 1356,
+          "zero_exposure_days": 0,
+          "controller_turnover": 43.55773016738665,
+          "controller_cost": 0.0,
+          "episode_days": 0,
+          "negative_years": 0
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.6904649238654437,
+            "end_value": 169046.49238654436
+          },
+          {
+            "year": 2021,
+            "return": 0.08989328174156519,
+            "end_value": 184242.63635407135
+          },
+          {
+            "year": 2022,
+            "return": 0.25066300088879623,
+            "end_value": 230425.44847424608
+          },
+          {
+            "year": 2023,
+            "return": 0.13556474722693368,
+            "end_value": 261663.01615131006
+          },
+          {
+            "year": 2024,
+            "return": 0.31908244520161455,
+            "end_value": 345155.09116369963
+          },
+          {
+            "year": 2025,
+            "return": 2.2417670668161915,
+            "end_value": 1118912.4074784217
+          },
+          {
+            "year": 2026,
+            "return": 1.1134319652990934,
+            "end_value": 2364745.2483346607
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 51,
+          "positive_rate": 0.9586709886547812,
+          "minimum_return": -0.09926108820226598,
+          "median_return": 0.2594440824339982,
+          "maximum_return": 5.893839275072258
+        }
+      },
+      "shock_brake": {
+        "params": {
+          "mode": "shock",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 6936266.375995321,
+          "total_return": 68.36266375995321,
+          "cagr": 0.9937707308171257,
+          "ann_vol": 0.3472109956145086,
+          "sharpe": 2.862152245663501,
+          "max_drawdown": -0.2745169949217847,
+          "calmar": 3.620069974539356,
+          "ulcer_index": 0.08028581124953924,
+          "daily_expected_shortfall_5pct": -0.04148384136111635,
+          "worst_1d_return": -0.16179299123985133,
+          "cost_multiplier": 0.0,
+          "average_exposure": 0.9936026936026936,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 17,
+          "zero_exposure_days": 2,
+          "controller_turnover": 15.456850978993511,
+          "controller_cost": 0.0,
+          "episode_days": 0,
+          "negative_years": 0
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.9070207275137157,
+            "end_value": 190702.07275137157
+          },
+          {
+            "year": 2021,
+            "return": 0.22135611833626267,
+            "end_value": 232915.14333429476
+          },
+          {
+            "year": 2022,
+            "return": 0.364607314763133,
+            "end_value": 317837.7083130822
+          },
+          {
+            "year": 2023,
+            "return": 0.19315191070463467,
+            "end_value": 379228.6689677364
+          },
+          {
+            "year": 2024,
+            "return": 0.79447476941791,
+            "end_value": 680516.2783025397
+          },
+          {
+            "year": 2025,
+            "return": 2.798220857094934,
+            "end_value": 2584751.121841327
+          },
+          {
+            "year": 2026,
+            "return": 1.6835335585632936,
+            "end_value": 6936266.375995321
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 20,
+          "positive_rate": 0.9837925445705025,
+          "minimum_return": -0.06408909497350057,
+          "median_return": 0.388685248008349,
+          "maximum_return": 7.917619076007677
+        }
+      },
+      "v4_risk_budget": {
+        "params": {
+          "mode": "risk_budget",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 2281332.157069047,
+          "total_return": 21.81332157069047,
+          "cagr": 0.6636761352203735,
+          "ann_vol": 0.2861272067894084,
+          "sharpe": 2.319514256149866,
+          "max_drawdown": -0.16927535706568264,
+          "calmar": 3.92068961912071,
+          "ulcer_index": 0.09003923988946214,
+          "daily_expected_shortfall_5pct": -0.03331768038030171,
+          "worst_1d_return": -0.16179299123985127,
+          "cost_multiplier": 0.0,
+          "average_exposure": 0.648354802903701,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 1360,
+          "zero_exposure_days": 2,
+          "controller_turnover": 45.94661884805106,
+          "controller_cost": 0.0,
+          "episode_days": 0,
+          "negative_years": 0
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.6676320293857774,
+            "end_value": 166763.20293857774
+          },
+          {
+            "year": 2021,
+            "return": 0.0850782675741879,
+            "end_value": 180951.12733971464
+          },
+          {
+            "year": 2022,
+            "return": 0.22879316142086537,
+            "end_value": 222351.50782643753
+          },
+          {
+            "year": 2023,
+            "return": 0.1347234207070629,
+            "end_value": 252307.46356018848
+          },
+          {
+            "year": 2024,
+            "return": 0.3190824452016223,
+            "end_value": 332814.3459755926
+          },
+          {
+            "year": 2025,
+            "return": 2.2054913923345634,
+            "end_value": 1066833.5212702195
+          },
+          {
+            "year": 2026,
+            "return": 1.1384143932342803,
+            "end_value": 2281332.157069047
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 51,
+          "positive_rate": 0.9586709886547812,
+          "minimum_return": -0.10001651998312655,
+          "median_return": 0.2449690590980933,
+          "maximum_return": 5.817381834526859
+        }
+      },
+      "v4_position_budget": {
+        "params": {
+          "mode": "position_budget",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 6149535.679732382,
+          "total_return": 60.49535679732382,
+          "cagr": 0.9550829035953987,
+          "ann_vol": 0.34310468811262546,
+          "sharpe": 2.7836486550189283,
+          "max_drawdown": -0.2635656981845743,
+          "calmar": 3.623699556406452,
+          "ulcer_index": 0.07766928457564727,
+          "daily_expected_shortfall_5pct": -0.0409115664150005,
+          "worst_1d_return": -0.1617929912398512,
+          "cost_multiplier": 0.0,
+          "average_exposure": 0.9900604021555558,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 39,
+          "zero_exposure_days": 3,
+          "controller_turnover": 21.52872223027507,
+          "controller_cost": 0.0,
+          "episode_days": 0,
+          "negative_years": 0
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.8094890368843772,
+            "end_value": 180948.9036884377
+          },
+          {
+            "year": 2021,
+            "return": 0.21419572488817384,
+            "end_value": 219707.38528170297
+          },
+          {
+            "year": 2022,
+            "return": 0.38254815925547314,
+            "end_value": 303756.04109605146
+          },
+          {
+            "year": 2023,
+            "return": 0.19544041555386582,
+            "end_value": 363122.2479948609
+          },
+          {
+            "year": 2024,
+            "return": 0.813527040973675,
+            "end_value": 658532.0159178291
+          },
+          {
+            "year": 2025,
+            "return": 2.748134906757826,
+            "end_value": 2468266.8360792156
+          },
+          {
+            "year": 2026,
+            "return": 1.4914387657943728,
+            "end_value": 6149535.679732382
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 19,
+          "positive_rate": 0.9846029173419774,
+          "minimum_return": -0.06568006668439652,
+          "median_return": 0.3994469754585922,
+          "maximum_return": 7.4689043154295565
+        }
+      },
+      "v4_episode_budget": {
+        "params": {
+          "mode": "episode_budget",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 3564426.1384247327,
+          "total_return": 34.64426138424733,
+          "cagr": 0.7890121237423171,
+          "ann_vol": 0.29850866901407314,
+          "sharpe": 2.6431799329255634,
+          "max_drawdown": -0.1938412521591122,
+          "calmar": 4.070403564534685,
+          "ulcer_index": 0.08212536215562198,
+          "daily_expected_shortfall_5pct": -0.03459386301300297,
+          "worst_1d_return": -0.1617929912398512,
+          "cost_multiplier": 0.0,
+          "average_exposure": 0.7205387205387206,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 828,
+          "zero_exposure_days": 2,
+          "controller_turnover": 19.482568353109468,
+          "controller_cost": 0.0,
+          "episode_days": 817,
+          "negative_years": 0
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.8116103408864932,
+            "end_value": 181161.03408864932
+          },
+          {
+            "year": 2021,
+            "return": 0.10594146949881322,
+            "end_value": 200353.50025592544
+          },
+          {
+            "year": 2022,
+            "return": 0.29759421200818337,
+            "end_value": 259977.54228766894
+          },
+          {
+            "year": 2023,
+            "return": 0.20862300066286932,
+            "end_value": 314214.8372646804
+          },
+          {
+            "year": 2024,
+            "return": 0.3022722454700304,
+            "end_value": 409193.2616846756
+          },
+          {
+            "year": 2025,
+            "return": 2.6660474202933555,
+            "end_value": 1500121.9014005288
+          },
+          {
+            "year": 2026,
+            "return": 1.376090993069929,
+            "end_value": 3564426.1384247327
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 38,
+          "positive_rate": 0.9692058346839546,
+          "minimum_return": -0.1004110705756075,
+          "median_return": 0.29154873643855805,
+          "maximum_return": 7.4674453640456235
+        }
+      },
+      "v4_constant80": {
+        "params": {
+          "mode": "constant",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 3271768.7301449603,
+          "total_return": 31.7176873014496,
+          "cagr": 0.7642380894542391,
+          "ann_vol": 0.2819657641264119,
+          "sharpe": 2.7103931990538155,
+          "max_drawdown": -0.22098455851733612,
+          "calmar": 3.4583325395302906,
+          "ulcer_index": 0.06353597434461998,
+          "daily_expected_shortfall_5pct": -0.03395130066032108,
+          "worst_1d_return": -0.12939885498595802,
+          "cost_multiplier": 0.0,
+          "average_exposure": 0.8,
+          "minimum_exposure": 0.8,
+          "days_below_full_exposure": 1485,
+          "zero_exposure_days": 0,
+          "controller_turnover": 3.390849884601781,
+          "controller_cost": 0.0,
+          "episode_days": 0,
+          "negative_years": 0
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.6986009943511136,
+            "end_value": 169860.09943511136
+          },
+          {
+            "year": 2021,
+            "return": 0.17556932374013745,
+            "end_value": 199682.32222336635
+          },
+          {
+            "year": 2022,
+            "return": 0.34640096355870154,
+            "end_value": 268852.4710471796
+          },
+          {
+            "year": 2023,
+            "return": 0.155150046048953,
+            "end_value": 310564.9443105243
+          },
+          {
+            "year": 2024,
+            "return": 0.5974805559477228,
+            "end_value": 496121.45989505
+          },
+          {
+            "year": 2025,
+            "return": 2.0228919857124974,
+            "end_value": 1499721.5850567308
+          },
+          {
+            "year": 2026,
+            "return": 1.181584077168028,
+            "end_value": 3271768.7301449603
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 17,
+          "positive_rate": 0.986223662884927,
+          "minimum_return": -0.047614627608122295,
+          "median_return": 0.3471563842739682,
+          "maximum_return": 5.020425896367807
+        }
+      },
+      "v4_constant80_shock": {
+        "params": {
+          "mode": "constant_shock",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 3146302.150145044,
+          "total_return": 30.46302150145044,
+          "cagr": 0.7530449450446375,
+          "ann_vol": 0.2784416418197099,
+          "sharpe": 2.704498293154843,
+          "max_drawdown": -0.22338165134829424,
+          "calmar": 3.371113699354375,
+          "ulcer_index": 0.06425920338845902,
+          "daily_expected_shortfall_5pct": -0.033351486927564115,
+          "worst_1d_return": -0.12939885498595805,
+          "cost_multiplier": 0.0,
+          "average_exposure": 0.7958922558922558,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 1485,
+          "zero_exposure_days": 2,
+          "controller_turnover": 12.565307271383576,
+          "controller_cost": 0.0,
+          "episode_days": 0,
+          "negative_years": 0
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.6732211005417794,
+            "end_value": 167322.11005417793
+          },
+          {
+            "year": 2021,
+            "return": 0.17746086681501483,
+            "end_value": 197015.23674170964
+          },
+          {
+            "year": 2022,
+            "return": 0.3053823960229911,
+            "end_value": 257180.22179092976
+          },
+          {
+            "year": 2023,
+            "return": 0.15515004604895077,
+            "end_value": 297081.7450446719
+          },
+          {
+            "year": 2024,
+            "return": 0.6111780583299824,
+            "end_value": 478651.5891463573
+          },
+          {
+            "year": 2025,
+            "return": 1.9574969606465134,
+            "end_value": 1415610.6201089753
+          },
+          {
+            "year": 2026,
+            "return": 1.2225759721291425,
+            "end_value": 3146302.150145044
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 18,
+          "positive_rate": 0.9854132901134521,
+          "minimum_return": -0.04842665489710596,
+          "median_return": 0.31678818193357583,
+          "maximum_return": 4.898724558348884
+        }
+      },
+      "v4_vol30_shock": {
+        "params": {
+          "mode": "volatility_shock",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 2706743.5431187414,
+          "total_return": 26.067435431187413,
+          "cagr": 0.7106283392906338,
+          "ann_vol": 0.25953774525341516,
+          "sharpe": 2.738053914265031,
+          "max_drawdown": -0.17956149366826346,
+          "calmar": 3.957576453465611,
+          "ulcer_index": 0.05879875900918192,
+          "daily_expected_shortfall_5pct": -0.03268227257251973,
+          "worst_1d_return": -0.06492694727122979,
+          "cost_multiplier": 0.0,
+          "average_exposure": 0.8928676910700093,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 492,
+          "zero_exposure_days": 2,
+          "controller_turnover": 18.435346654094353,
+          "controller_cost": 0.0,
+          "episode_days": 0,
+          "negative_years": 0
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.5824038567905536,
+            "end_value": 158240.38567905535
+          },
+          {
+            "year": 2021,
+            "return": 0.218422787242617,
+            "end_value": 192803.69177342133
+          },
+          {
+            "year": 2022,
+            "return": 0.4618863211434632,
+            "end_value": 281857.0796695251
+          },
+          {
+            "year": 2023,
+            "return": 0.19650486389979083,
+            "end_value": 337243.3667491776
+          },
+          {
+            "year": 2024,
+            "return": 0.5348222263047242,
+            "end_value": 517608.6149604734
+          },
+          {
+            "year": 2025,
+            "return": 1.9939858867479896,
+            "end_value": 1549712.8880508316
+          },
+          {
+            "year": 2026,
+            "return": 0.746609687503585,
+            "end_value": 2706743.5431187414
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 19,
+          "positive_rate": 0.9846029173419774,
+          "minimum_return": -0.06408909497350002,
+          "median_return": 0.40702759871205696,
+          "maximum_return": 3.590703555136055
+        }
+      }
+    },
+    "1x": {
+      "baseline_v4": {
+        "params": {
+          "enabled": true,
+          "mode": "consensus",
+          "slow_gap": 0.0075,
+          "fast_5d_gap": 0.0225,
+          "fast_3d_gap": 0.01125,
+          "minimum_target_momentum": 0.0,
+          "minimum_hold_days": 3,
+          "confirmation_hits": 2,
+          "confirmation_window": 2
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 5258017.614359309,
+          "total_return": 51.58017614359309,
+          "cagr": 0.9058718424980878,
+          "ann_vol": 0.35404509479095153,
+          "sharpe": 2.5586340718347373,
+          "max_drawdown": -0.28615770033824584,
+          "cost_multiplier": 1.0,
+          "trade_legs": 223,
+          "early_rotations": 39,
+          "signal_days": 184,
+          "scheduled_lock_blocks": 2,
+          "realtime_filter_events": 0,
+          "risk_events": 256,
+          "reason_counts": {
+            "slow": 39,
+            "fast": 39
+          },
+          "ex_post_relative_5d_avg": 0.02228795370300695,
+          "ex_post_relative_5d_win_rate": 0.5128205128205128,
+          "ex_post_relative_10d_avg": 0.04093190457950408,
+          "ex_post_relative_10d_win_rate": 0.6666666666666666,
+          "ex_post_relative_20d_avg": 0.03751800745507738,
+          "ex_post_relative_20d_win_rate": 0.6923076923076923,
+          "calmar": 3.1656385322754685,
+          "ulcer_index": 0.0912223265840271,
+          "daily_expected_shortfall_5pct": -0.04306251761350214,
+          "worst_1d_return": -0.16196569505550842
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.8852077318636362,
+            "end_value": 188520.77318636363
+          },
+          {
+            "year": 2021,
+            "return": 0.15838210117792495,
+            "end_value": 218379.08935930693
+          },
+          {
+            "year": 2022,
+            "return": 0.3620234830264468,
+            "end_value": 297437.4479093069
+          },
+          {
+            "year": 2023,
+            "return": 0.14472267413727113,
+            "end_value": 340483.3907593071
+          },
+          {
+            "year": 2024,
+            "return": 0.6882838306073644,
+            "end_value": 574832.6032093071
+          },
+          {
+            "year": 2025,
+            "return": 2.716639469789064,
+            "end_value": 2136445.5416093064
+          },
+          {
+            "year": 2026,
+            "return": 1.4611053789831856,
+            "end_value": 5258017.614359309
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 29,
+          "positive_rate": 0.9764991896272285,
+          "minimum_return": -0.11431935208315014,
+          "median_return": 0.36810227603241075,
+          "maximum_return": 7.613617784291796
+        }
+      },
+      "vol30": {
+        "params": {
+          "mode": "volatility",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 2092287.58706757,
+          "total_return": 19.9228758706757,
+          "cagr": 0.6404163201128854,
+          "ann_vol": 0.2617907975988383,
+          "sharpe": 2.4462904196282844,
+          "max_drawdown": -0.19218141075067752,
+          "calmar": 3.332353101225362,
+          "ulcer_index": 0.06759534598931224,
+          "daily_expected_shortfall_5pct": -0.0331480427352494,
+          "worst_1d_return": -0.0683204282103088,
+          "cost_multiplier": 1.0,
+          "average_exposure": 0.8942085985035945,
+          "minimum_exposure": 0.23141858797499837,
+          "days_below_full_exposure": 493,
+          "zero_exposure_days": 0,
+          "controller_turnover": 13.934319934471462,
+          "controller_cost": 32058.064792158024,
+          "episode_days": 0,
+          "negative_years": 0
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.579066706989847,
+            "end_value": 157906.6706989847
+          },
+          {
+            "year": 2021,
+            "return": 0.15360414799622824,
+            "end_value": 182161.7903146232
+          },
+          {
+            "year": 2022,
+            "return": 0.4352930052556374,
+            "end_value": 261455.54346342283
+          },
+          {
+            "year": 2023,
+            "return": 0.14695941873144824,
+            "end_value": 299878.89815492235
+          },
+          {
+            "year": 2024,
+            "return": 0.4663456953157592,
+            "end_value": 439726.13142550335
+          },
+          {
+            "year": 2025,
+            "return": 1.8502488847356107,
+            "end_value": 1253328.9156846455
+          },
+          {
+            "year": 2026,
+            "return": 0.6693842780485388,
+            "end_value": 2092287.58706757
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 27,
+          "positive_rate": 0.9781199351701783,
+          "minimum_return": -0.11431935208315114,
+          "median_return": 0.353781726880953,
+          "maximum_return": 3.35725989021039
+        }
+      },
+      "cppi20": {
+        "params": {
+          "mode": "cppi",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 1289068.5137438467,
+          "total_return": 11.890685137438467,
+          "cagr": 0.5160611378528439,
+          "ann_vol": 0.27044533071689664,
+          "sharpe": 1.9081902301099773,
+          "max_drawdown": -0.17402737014158853,
+          "calmar": 2.965402151586713,
+          "ulcer_index": 0.10834032036994308,
+          "daily_expected_shortfall_5pct": -0.032148171518527245,
+          "worst_1d_return": -0.16391073949374488,
+          "cost_multiplier": 1.0,
+          "average_exposure": 0.5535421260699305,
+          "minimum_exposure": 0.15707824350899446,
+          "days_below_full_exposure": 1393,
+          "zero_exposure_days": 0,
+          "controller_turnover": 39.50636371982177,
+          "controller_cost": 47563.81860614147,
+          "episode_days": 0,
+          "negative_years": 0
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.6320054791270462,
+            "end_value": 163200.5479127046
+          },
+          {
+            "year": 2021,
+            "return": 0.01283065640964498,
+            "end_value": 165294.51806883834
+          },
+          {
+            "year": 2022,
+            "return": 0.15479277259487967,
+            "end_value": 190880.91481544825
+          },
+          {
+            "year": 2023,
+            "return": 0.03415496049907585,
+            "end_value": 197400.44492099737
+          },
+          {
+            "year": 2024,
+            "return": 0.17561096362902084,
+            "end_value": 232066.12727437116
+          },
+          {
+            "year": 2025,
+            "return": 1.903306445108222,
+            "end_value": 673759.0830069868
+          },
+          {
+            "year": 2026,
+            "return": 0.9132484388792712,
+            "end_value": 1289068.5137438467
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 92,
+          "positive_rate": 0.9254457050243112,
+          "minimum_return": -0.13912423177319777,
+          "median_return": 0.1414707445229293,
+          "maximum_return": 4.928201833010164
+        }
+      },
+      "shock_brake": {
+        "params": {
+          "mode": "shock",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 4821073.893787731,
+          "total_return": 47.210738937877316,
+          "cagr": 0.8791476448435838,
+          "ann_vol": 0.34971964872424915,
+          "sharpe": 2.51386402808835,
+          "max_drawdown": -0.29405479549457514,
+          "calmar": 2.9897408860989065,
+          "ulcer_index": 0.09376783109613133,
+          "daily_expected_shortfall_5pct": -0.042351861536671545,
+          "worst_1d_return": -0.16322274651292515,
+          "cost_multiplier": 1.0,
+          "average_exposure": 0.9936026936026936,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 17,
+          "zero_exposure_days": 2,
+          "controller_turnover": 15.459773315051907,
+          "controller_cost": 42683.64298615722,
+          "episode_days": 0,
+          "negative_years": 0
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.8497052748305933,
+            "end_value": 184970.52748305933
+          },
+          {
+            "year": 2021,
+            "return": 0.15801457055384072,
+            "end_value": 214198.56594841232
+          },
+          {
+            "year": 2022,
+            "return": 0.2825288458482027,
+            "end_value": 274715.8395681574
+          },
+          {
+            "year": 2023,
+            "return": 0.14472267413727002,
+            "end_value": 314473.4504983264
+          },
+          {
+            "year": 2024,
+            "return": 0.7074106585089845,
+            "end_value": 536935.32119894
+          },
+          {
+            "year": 2025,
+            "return": 2.56281106928654,
+            "end_value": 1912999.1058585073
+          },
+          {
+            "year": 2026,
+            "return": 1.5201652625049977,
+            "end_value": 4821073.893787731
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 29,
+          "positive_rate": 0.9764991896272285,
+          "minimum_return": -0.11691982287906277,
+          "median_return": 0.31178882035371647,
+          "maximum_return": 7.27423317924579
+        }
+      },
+      "v4_risk_budget": {
+        "params": {
+          "mode": "risk_budget",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 1248695.34669329,
+          "total_return": 11.4869534669329,
+          "cagr": 0.5082292197131908,
+          "ann_vol": 0.2679765209898491,
+          "sharpe": 1.8965438383777005,
+          "max_drawdown": -0.1741542427322853,
+          "calmar": 2.918270676267444,
+          "ulcer_index": 0.11029321510933919,
+          "daily_expected_shortfall_5pct": -0.03164518435392919,
+          "worst_1d_return": -0.16391073949374496,
+          "cost_multiplier": 1.0,
+          "average_exposure": 0.5410808589564349,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 1394,
+          "zero_exposure_days": 2,
+          "controller_turnover": 40.93634034069017,
+          "controller_cost": 47105.38872925374,
+          "episode_days": 0,
+          "negative_years": 0
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.606098104748642,
+            "end_value": 160609.8104748642
+          },
+          {
+            "year": 2021,
+            "return": 0.012050055663956671,
+            "end_value": 162545.16763126384
+          },
+          {
+            "year": 2022,
+            "return": 0.1257198981180685,
+            "end_value": 182980.32954545072
+          },
+          {
+            "year": 2023,
+            "return": 0.033097981596856174,
+            "end_value": 189036.60912533273
+          },
+          {
+            "year": 2024,
+            "return": 0.17561096362902906,
+            "end_value": 222233.51021499652
+          },
+          {
+            "year": 2025,
+            "return": 1.9085183572698985,
+            "end_value": 646370.2440608449
+          },
+          {
+            "year": 2026,
+            "return": 0.9318577211232921,
+            "end_value": 1248695.34669329
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 96,
+          "positive_rate": 0.9222042139384117,
+          "minimum_return": -0.13955717435352133,
+          "median_return": 0.12244126953603485,
+          "maximum_return": 4.934146217373663
+        }
+      },
+      "v4_position_budget": {
+        "params": {
+          "mode": "position_budget",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 4238750.465621516,
+          "total_return": 41.387504656215164,
+          "cagr": 0.8401839608189934,
+          "ann_vol": 0.3456525143477891,
+          "sharpe": 2.4307184989073045,
+          "max_drawdown": -0.2811765928662934,
+          "calmar": 2.9881006532379537,
+          "ulcer_index": 0.0901859168741248,
+          "daily_expected_shortfall_5pct": -0.04185282512831452,
+          "worst_1d_return": -0.16447979797034185,
+          "cost_multiplier": 1.0,
+          "average_exposure": 0.9900604021555558,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 39,
+          "zero_exposure_days": 3,
+          "controller_turnover": 21.534777318892676,
+          "controller_cost": 71875.24235281369,
+          "episode_days": 0,
+          "negative_years": 0
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.7495853245227764,
+            "end_value": 174958.53245227764
+          },
+          {
+            "year": 2021,
+            "return": 0.15352354429048343,
+            "end_value": 201818.78645821285
+          },
+          {
+            "year": 2022,
+            "return": 0.30238244330859,
+            "end_value": 262845.2442130218
+          },
+          {
+            "year": 2023,
+            "return": 0.1453695765741576,
+            "end_value": 301054.9460687999
+          },
+          {
+            "year": 2024,
+            "return": 0.7209390912935068,
+            "end_value": 518097.2253170562
+          },
+          {
+            "year": 2025,
+            "return": 2.5080707045599056,
+            "end_value": 1817521.6982485375
+          },
+          {
+            "year": 2026,
+            "return": 1.3321594838214068,
+            "end_value": 4238750.465621516
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 30,
+          "positive_rate": 0.9756888168557536,
+          "minimum_return": -0.11999139291414718,
+          "median_return": 0.3209867197525149,
+          "maximum_return": 6.874816828099059
+        }
+      },
+      "v4_episode_budget": {
+        "params": {
+          "mode": "episode_budget",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 2122826.8126281295,
+          "total_return": 20.228268126281296,
+          "cagr": 0.6442899664323107,
+          "ann_vol": 0.291139269956285,
+          "sharpe": 2.2129957478050004,
+          "max_drawdown": -0.19782611656422766,
+          "calmar": 3.2568498923302216,
+          "ulcer_index": 0.09075718004261091,
+          "daily_expected_shortfall_5pct": -0.03460355188123521,
+          "worst_1d_return": -0.16322274651292515,
+          "cost_multiplier": 1.0,
+          "average_exposure": 0.6430976430976431,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 1058,
+          "zero_exposure_days": 2,
+          "controller_turnover": 19.054968074945876,
+          "controller_cost": 34054.43630219009,
+          "episode_days": 1051,
+          "negative_years": 0
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.7692206923995284,
+            "end_value": 176922.06923995283
+          },
+          {
+            "year": 2021,
+            "return": 0.05904560447103657,
+            "end_value": 187368.53976249244
+          },
+          {
+            "year": 2022,
+            "return": 0.23703398541594045,
+            "end_value": 231781.25148396112
+          },
+          {
+            "year": 2023,
+            "return": 0.06372729763878926,
+            "end_value": 246552.04428437058
+          },
+          {
+            "year": 2024,
+            "return": 0.3105068217479934,
+            "end_value": 323108.135950581
+          },
+          {
+            "year": 2025,
+            "return": 2.161210874842136,
+            "end_value": 1021412.953116948
+          },
+          {
+            "year": 2026,
+            "return": 1.0783237633222709,
+            "end_value": 2122826.8126281295
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 40,
+          "positive_rate": 0.9675850891410048,
+          "minimum_return": -0.09378528974018963,
+          "median_return": 0.2190731461437383,
+          "maximum_return": 5.8724371977130705
+        }
+      },
+      "v4_constant80": {
+        "params": {
+          "mode": "constant",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 2496477.622568226,
+          "total_return": 23.96477622568226,
+          "cagr": 0.6882601313628955,
+          "ann_vol": 0.2831617106855036,
+          "sharpe": 2.4306257004052307,
+          "max_drawdown": -0.234336665051737,
+          "calmar": 2.937056952700684,
+          "ulcer_index": 0.07292441903218796,
+          "daily_expected_shortfall_5pct": -0.03445588723874309,
+          "worst_1d_return": -0.12961484686332464,
+          "cost_multiplier": 1.0,
+          "average_exposure": 0.8,
+          "minimum_exposure": 0.8,
+          "days_below_full_exposure": 1485,
+          "zero_exposure_days": 0,
+          "controller_turnover": 3.405949608521096,
+          "controller_cost": 5919.775939479058,
+          "episode_days": 0,
+          "negative_years": 0
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.6672689888641299,
+            "end_value": 166726.898886413
+          },
+          {
+            "year": 2021,
+            "return": 0.12796027874305516,
+            "end_value": 188061.3193418836
+          },
+          {
+            "year": 2022,
+            "return": 0.2884969881824033,
+            "end_value": 242316.44356562613
+          },
+          {
+            "year": 2023,
+            "return": 0.11640562138500887,
+            "end_value": 270523.43975068827
+          },
+          {
+            "year": 2024,
+            "return": 0.536774943918612,
+            "end_value": 415733.643951534
+          },
+          {
+            "year": 2025,
+            "return": 1.8811781748521543,
+            "end_value": 1197802.7015049162
+          },
+          {
+            "year": 2026,
+            "return": 1.0842143864191138,
+            "end_value": 2496477.622568226
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 29,
+          "positive_rate": 0.9764991896272285,
+          "minimum_return": -0.09068772461592967,
+          "median_return": 0.2903465340931577,
+          "maximum_return": 4.688148333130633
+        }
+      },
+      "v4_constant80_shock": {
+        "params": {
+          "mode": "constant_shock",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 2349414.2774835653,
+          "total_return": 22.49414277483565,
+          "cagr": 0.6716582743570432,
+          "ann_vol": 0.28019503779810273,
+          "sharpe": 2.3971098119197,
+          "max_drawdown": -0.23929988871074648,
+          "calmar": 2.806763839196388,
+          "ulcer_index": 0.07477806486593469,
+          "daily_expected_shortfall_5pct": -0.034001715911848605,
+          "worst_1d_return": -0.13024260589740821,
+          "cost_multiplier": 1.0,
+          "average_exposure": 0.7958922558922558,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 1485,
+          "zero_exposure_days": 2,
+          "controller_turnover": 12.578086514861857,
+          "controller_cost": 19946.464985442588,
+          "episode_days": 0,
+          "negative_years": 0
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.6331190713765749,
+            "end_value": 163311.9071376575
+          },
+          {
+            "year": 2021,
+            "return": 0.1278240925991483,
+            "end_value": 184187.1034781649
+          },
+          {
+            "year": 2022,
+            "return": 0.24289400749270773,
+            "end_value": 228925.04717045042
+          },
+          {
+            "year": 2023,
+            "return": 0.1164056213850111,
+            "end_value": 255573.20953691966
+          },
+          {
+            "year": 2024,
+            "return": 0.5475113461971206,
+            "end_value": 395502.4415423973
+          },
+          {
+            "year": 2025,
+            "return": 1.8093778867408892,
+            "end_value": 1111115.8134212422
+          },
+          {
+            "year": 2026,
+            "return": 1.1144639011566868,
+            "end_value": 2349414.2774835653
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 30,
+          "positive_rate": 0.9756888168557536,
+          "minimum_return": -0.09224276971109624,
+          "median_return": 0.2563571619149465,
+          "maximum_return": 4.5562253094836835
+        }
+      },
+      "v4_vol30_shock": {
+        "params": {
+          "mode": "volatility_shock",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 1940633.0264218987,
+          "total_return": 18.406330264218987,
+          "cagr": 0.6204482843526584,
+          "ann_vol": 0.2602902204509075,
+          "sharpe": 2.383678815430867,
+          "max_drawdown": -0.1921685763951002,
+          "calmar": 3.2286667049924516,
+          "ulcer_index": 0.06851667945629297,
+          "daily_expected_shortfall_5pct": -0.03324662491594329,
+          "worst_1d_return": -0.06918798721664952,
+          "cost_multiplier": 1.0,
+          "average_exposure": 0.892161287021551,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 494,
+          "zero_exposure_days": 2,
+          "controller_turnover": 18.378112147148453,
+          "controller_cost": 33622.08783775072,
+          "episode_days": 0,
+          "negative_years": 0
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.5405658513084632,
+            "end_value": 154056.58513084633
+          },
+          {
+            "year": 2021,
+            "return": 0.1533770861758197,
+            "end_value": 177685.33526441266
+          },
+          {
+            "year": 2022,
+            "return": 0.38965405231210637,
+            "end_value": 246921.14618662628
+          },
+          {
+            "year": 2023,
+            "return": 0.1469594187314478,
+            "end_value": 283208.53430271574
+          },
+          {
+            "year": 2024,
+            "return": 0.46204031824068137,
+            "end_value": 414062.29562041943
+          },
+          {
+            "year": 2025,
+            "return": 1.8075106567240438,
+            "end_value": 1162484.307501949
+          },
+          {
+            "year": 2026,
+            "return": 0.6693842780485406,
+            "end_value": 1940633.0264218987
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 27,
+          "positive_rate": 0.9781199351701783,
+          "minimum_return": -0.11691982287906333,
+          "median_return": 0.3320309302632919,
+          "maximum_return": 3.3219273579441406
+        }
+      }
+    },
+    "2x": {
+      "baseline_v4": {
+        "params": {
+          "enabled": true,
+          "mode": "consensus",
+          "slow_gap": 0.0075,
+          "fast_5d_gap": 0.0225,
+          "fast_3d_gap": 0.01125,
+          "minimum_target_momentum": 0.0,
+          "minimum_hold_days": 3,
+          "confirmation_hits": 2,
+          "confirmation_window": 2
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 3666148.527217025,
+          "total_return": 35.661485272170246,
+          "cagr": 0.7972246725665426,
+          "ann_vol": 0.35604158967912325,
+          "sharpe": 2.239133561011871,
+          "max_drawdown": -0.30779732461592235,
+          "cost_multiplier": 2.0,
+          "trade_legs": 227,
+          "early_rotations": 39,
+          "signal_days": 184,
+          "scheduled_lock_blocks": 2,
+          "realtime_filter_events": 0,
+          "risk_events": 465,
+          "reason_counts": {
+            "slow": 39,
+            "fast": 39
+          },
+          "ex_post_relative_5d_avg": 0.02228795370300695,
+          "ex_post_relative_5d_win_rate": 0.5128205128205128,
+          "ex_post_relative_10d_avg": 0.04093190457950408,
+          "ex_post_relative_10d_win_rate": 0.6666666666666666,
+          "ex_post_relative_20d_avg": 0.03751800745507738,
+          "ex_post_relative_20d_win_rate": 0.6923076923076923
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.8453552807592462,
+            "end_value": 184535.5280759246
+          },
+          {
+            "year": 2021,
+            "return": 0.10134136356403434,
+            "end_value": 203236.61011714797
+          },
+          {
+            "year": 2022,
+            "return": 0.24907296658160027,
+            "end_value": 253857.3555170141
+          },
+          {
+            "year": 2023,
+            "return": 0.09818052011626688,
+            "end_value": 278781.20271701465
+          },
+          {
+            "year": 2024,
+            "return": 0.6106939662385265,
+            "end_value": 449031.201117015
+          },
+          {
+            "year": 2025,
+            "return": 2.5067191620536806,
+            "end_value": 1574626.3173170164
+          },
+          {
+            "year": 2026,
+            "return": 1.3282657522603354,
+            "end_value": 3666148.527217025
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 65,
+          "positive_rate": 0.9473257698541329,
+          "minimum_return": -0.1632072657941458,
+          "median_return": 0.26926486631750246,
+          "maximum_return": 7.058560688419995
+        }
+      },
+      "vol30": {
+        "params": {
+          "mode": "volatility",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 1462065.6600338481,
+          "total_return": 13.620656600338481,
+          "cagr": 0.5474570572359503,
+          "ann_vol": 0.2625334426444398,
+          "sharpe": 2.085285027772232,
+          "max_drawdown": -0.21119841145615936,
+          "calmar": 2.5921457148345626,
+          "ulcer_index": 0.08275068427687902,
+          "daily_expected_shortfall_5pct": -0.033674747501720954,
+          "worst_1d_return": -0.07180136299015222,
+          "cost_multiplier": 2.0,
+          "average_exposure": 0.8931890943594167,
+          "minimum_exposure": 0.23106125044037287,
+          "days_below_full_exposure": 494,
+          "zero_exposure_days": 0,
+          "controller_turnover": 13.953429590949847,
+          "controller_cost": 47637.76090316821,
+          "episode_days": 0,
+          "negative_years": 0
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.5411443017015338,
+            "end_value": 154114.43017015338
+          },
+          {
+            "year": 2021,
+            "return": 0.0935443675816583,
+            "end_value": 168530.96707562802
+          },
+          {
+            "year": 2022,
+            "return": 0.3214126471833574,
+            "end_value": 222698.9513357769
+          },
+          {
+            "year": 2023,
+            "return": 0.09925910774176838,
+            "end_value": 244803.8505403936
+          },
+          {
+            "year": 2024,
+            "return": 0.3984780942590791,
+            "end_value": 342352.8223710141
+          },
+          {
+            "year": 2025,
+            "return": 1.6773716476588052,
+            "end_value": 916605.7401121242
+          },
+          {
+            "year": 2026,
+            "return": 0.5950867380068996,
+            "end_value": 1462065.6600338481
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 46,
+          "positive_rate": 0.9627228525121556,
+          "minimum_return": -0.16320726579414568,
+          "median_return": 0.270623883572523,
+          "maximum_return": 3.1006724536156556
+        }
+      },
+      "cppi20": {
+        "params": {
+          "mode": "cppi",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 635846.9378758684,
+          "total_return": 5.358469378758684,
+          "cagr": 0.3513243267738424,
+          "ann_vol": 0.23487657066722564,
+          "sharpe": 1.4957827669904145,
+          "max_drawdown": -0.18217689944945437,
+          "calmar": 1.9284790104319378,
+          "ulcer_index": 0.13777250987857276,
+          "daily_expected_shortfall_5pct": -0.02907673661099718,
+          "worst_1d_return": -0.11823240970074579,
+          "cost_multiplier": 2.0,
+          "average_exposure": 0.393729942061351,
+          "minimum_exposure": 0.10618051754430652,
+          "days_below_full_exposure": 1416,
+          "zero_exposure_days": 0,
+          "controller_turnover": 31.669264902488433,
+          "controller_cost": 52146.26872157955,
+          "episode_days": 0,
+          "negative_years": 2
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.578108935724613,
+            "end_value": 157810.8935724613
+          },
+          {
+            "year": 2021,
+            "return": -0.027683617788894166,
+            "end_value": 153442.11711187742
+          },
+          {
+            "year": 2022,
+            "return": 0.01632233358378632,
+            "end_value": 155946.6505331799
+          },
+          {
+            "year": 2023,
+            "return": -0.012611662414406366,
+            "end_value": 153979.90402199802
+          },
+          {
+            "year": 2024,
+            "return": 0.005549920933782371,
+            "end_value": 154834.48031471152
+          },
+          {
+            "year": 2025,
+            "return": 1.3769445833274445,
+            "end_value": 368032.9792963734
+          },
+          {
+            "year": 2026,
+            "return": 0.7276901083471301,
+            "end_value": 635846.9378758684
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 486,
+          "positive_rate": 0.6061588330632091,
+          "minimum_return": -0.16917198287229063,
+          "median_return": 0.008883556741520637,
+          "maximum_return": 3.6227344827015484
+        }
+      },
+      "shock_brake": {
+        "params": {
+          "mode": "shock",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 3237338.069909934,
+          "total_return": 31.373380699099343,
+          "cagr": 0.7612027399951022,
+          "ann_vol": 0.3526984111412115,
+          "sharpe": 2.158225599973956,
+          "max_drawdown": -0.31956040286475407,
+          "calmar": 2.382030856048402,
+          "ulcer_index": 0.11846578324438578,
+          "daily_expected_shortfall_5pct": -0.04331907604845536,
+          "worst_1d_return": -0.16462402236348644,
+          "cost_multiplier": 2.0,
+          "average_exposure": 0.9936026936026936,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 17,
+          "zero_exposure_days": 2,
+          "controller_turnover": 15.462696621825566,
+          "controller_cost": 62532.628368402526,
+          "episode_days": 0,
+          "negative_years": 0
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.7943944632530775,
+            "end_value": 179439.44632530774
+          },
+          {
+            "year": 2021,
+            "return": 0.0976865658554702,
+            "end_value": 196968.26961583403
+          },
+          {
+            "year": 2022,
+            "return": 0.16561865054346092,
+            "end_value": 229589.88862948903
+          },
+          {
+            "year": 2023,
+            "return": 0.09818052011626577,
+            "end_value": 252131.14330856779
+          },
+          {
+            "year": 2024,
+            "return": 0.6240234129813012,
+            "end_value": 409466.8798748578
+          },
+          {
+            "year": 2025,
+            "return": 2.34119386396259,
+            "end_value": 1368108.2265337817
+          },
+          {
+            "year": 2026,
+            "return": 1.3662879932474383,
+            "end_value": 3237338.069909934
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 84,
+          "positive_rate": 0.9319286871961102,
+          "minimum_return": -0.16693302860860992,
+          "median_return": 0.2357919572039917,
+          "maximum_return": 6.675783756330012
+        }
+      },
+      "v4_risk_budget": {
+        "params": {
+          "mode": "risk_budget",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 619964.1529770874,
+          "total_return": 5.199641529770874,
+          "cagr": 0.34577182525874717,
+          "ann_vol": 0.23207742791784303,
+          "sharpe": 1.4898985582568276,
+          "max_drawdown": -0.18196381921365334,
+          "calmar": 1.900222949556572,
+          "ulcer_index": 0.13943126959536048,
+          "daily_expected_shortfall_5pct": -0.02850464006705781,
+          "worst_1d_return": -0.11729965146429697,
+          "cost_multiplier": 2.0,
+          "average_exposure": 0.3811947796701838,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 1417,
+          "zero_exposure_days": 2,
+          "controller_turnover": 32.584365455451376,
+          "controller_cost": 51507.06636381547,
+          "episode_days": 0,
+          "negative_years": 3
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.5492164684301013,
+            "end_value": 154921.64684301012
+          },
+          {
+            "year": 2021,
+            "return": -0.024871735435750164,
+            "end_value": 151068.47662946006
+          },
+          {
+            "year": 2022,
+            "return": -0.002424537266597082,
+            "end_value": 150702.20547806387
+          },
+          {
+            "year": 2023,
+            "return": -0.012531062896767198,
+            "end_value": 148813.74666253672
+          },
+          {
+            "year": 2024,
+            "return": 0.005509298833596521,
+            "end_value": 149633.60606344778
+          },
+          {
+            "year": 2025,
+            "return": 1.3766335824615168,
+            "end_value": 355624.25323520723
+          },
+          {
+            "year": 2026,
+            "return": 0.7433123509915611,
+            "end_value": 619964.1529770874
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 584,
+          "positive_rate": 0.526742301458671,
+          "minimum_return": -0.16910804484636288,
+          "median_return": 0.0024558266565408715,
+          "maximum_return": 3.6209601464054293
+        }
+      },
+      "v4_position_budget": {
+        "params": {
+          "mode": "position_budget",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 2822559.709923473,
+          "total_return": 27.225597099234733,
+          "cagr": 0.7223340297079899,
+          "ann_vol": 0.348659342774751,
+          "sharpe": 2.0717472360253053,
+          "max_drawdown": -0.3049895413337965,
+          "calmar": 2.3683895078796477,
+          "ulcer_index": 0.11371150155307262,
+          "daily_expected_shortfall_5pct": -0.04290136458184448,
+          "worst_1d_return": -0.16713769130321512,
+          "cost_multiplier": 2.0,
+          "average_exposure": 0.9900604021555558,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 39,
+          "zero_exposure_days": 3,
+          "controller_turnover": 21.540849473120335,
+          "controller_cost": 102190.78019610423,
+          "episode_days": 0,
+          "negative_years": 0
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.6918649731345801,
+            "end_value": 169186.497313458
+          },
+          {
+            "year": 2021,
+            "return": 0.09561979339864046,
+            "end_value": 185364.0752324105
+          },
+          {
+            "year": 2022,
+            "return": 0.18640299391478266,
+            "end_value": 219916.49381997684
+          },
+          {
+            "year": 2023,
+            "return": 0.09731424407861922,
+            "end_value": 241317.5011764882
+          },
+          {
+            "year": 2024,
+            "return": 0.6325063772878639,
+            "end_value": 393952.3596217886
+          },
+          {
+            "year": 2025,
+            "return": 2.2825954691637342,
+            "end_value": 1293186.2307608454
+          },
+          {
+            "year": 2026,
+            "return": 1.1826397797808457,
+            "end_value": 2822559.709923473
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 77,
+          "positive_rate": 0.9376012965964343,
+          "minimum_return": -0.1713127194446089,
+          "median_return": 0.24048527298500555,
+          "maximum_return": 6.321043885325716
+        }
+      },
+      "v4_episode_budget": {
+        "params": {
+          "mode": "episode_budget",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 1207035.1519713264,
+          "total_return": 11.070351519713265,
+          "cagr": 0.49992214316654593,
+          "ann_vol": 0.2631996161375949,
+          "sharpe": 1.8994030101669972,
+          "max_drawdown": -0.23046712783494683,
+          "calmar": 2.169168973740039,
+          "ulcer_index": 0.14632055033046737,
+          "daily_expected_shortfall_5pct": -0.03170956033147411,
+          "worst_1d_return": -0.107723503837817,
+          "cost_multiplier": 2.0,
+          "average_exposure": 0.5232323232323233,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 1202,
+          "zero_exposure_days": 2,
+          "controller_turnover": 24.5664372354294,
+          "controller_cost": 49784.28331207765,
+          "episode_days": 1196,
+          "negative_years": 2
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.7281237809878118,
+            "end_value": 172812.3780987812
+          },
+          {
+            "year": 2021,
+            "return": 0.0015880137082746604,
+            "end_value": 173086.8065241616
+          },
+          {
+            "year": 2022,
+            "return": -0.032866031863985956,
+            "end_value": 167398.13002570294
+          },
+          {
+            "year": 2023,
+            "return": -0.006899026402296338,
+            "end_value": 166243.24590696057
+          },
+          {
+            "year": 2024,
+            "return": 0.1699268930904565,
+            "end_value": 194492.44418120311
+          },
+          {
+            "year": 2025,
+            "return": 2.2349546041944364,
+            "end_value": 629174.2277850125
+          },
+          {
+            "year": 2026,
+            "return": 0.9184434114866,
+            "end_value": 1207035.1519713264
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 308,
+          "positive_rate": 0.7504051863857374,
+          "minimum_return": -0.21591046030289884,
+          "median_return": 0.03193809871724318,
+          "maximum_return": 5.78426107415904
+        }
+      },
+      "v4_constant80": {
+        "params": {
+          "mode": "constant",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 1853195.2978324788,
+          "total_return": 17.53195297832479,
+          "cagr": 0.6083338766412445,
+          "ann_vol": 0.2847168966398466,
+          "sharpe": 2.136627238567994,
+          "max_drawdown": -0.2531351435627933,
+          "calmar": 2.4031980233133443,
+          "ulcer_index": 0.09140082546479684,
+          "daily_expected_shortfall_5pct": -0.03503985427110979,
+          "worst_1d_return": -0.1298085412547985,
+          "cost_multiplier": 2.0,
+          "average_exposure": 0.8,
+          "minimum_exposure": 0.8,
+          "days_below_full_exposure": 1485,
+          "zero_exposure_days": 0,
+          "controller_turnover": 3.4292109652505367,
+          "controller_cost": 9540.90702893368,
+          "episode_days": 0,
+          "negative_years": 0
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.6367589183812592,
+            "end_value": 163675.8918381259
+          },
+          {
+            "year": 2021,
+            "return": 0.08209129420748096,
+            "end_value": 177112.25762968135
+          },
+          {
+            "year": 2022,
+            "return": 0.20044048889625898,
+            "end_value": 212612.72513849486
+          },
+          {
+            "year": 2023,
+            "return": 0.07888588120140039,
+            "end_value": 229384.86731567615
+          },
+          {
+            "year": 2024,
+            "return": 0.47796903608227415,
+            "end_value": 339023.7312384102
+          },
+          {
+            "year": 2025,
+            "return": 1.7456480594398092,
+            "end_value": 930839.8497787844
+          },
+          {
+            "year": 2026,
+            "return": 0.9908852186258394,
+            "end_value": 1853195.2978324788
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 63,
+          "positive_rate": 0.9489465153970826,
+          "minimum_return": -0.13196023081158592,
+          "median_return": 0.2133256934861254,
+          "maximum_return": 4.384031366932478
+        }
+      },
+      "v4_constant80_shock": {
+        "params": {
+          "mode": "constant_shock",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 1706745.9698913305,
+          "total_return": 16.067459698913304,
+          "cagr": 0.5869268231639728,
+          "ann_vol": 0.2823185232287751,
+          "sharpe": 2.0789525832435736,
+          "max_drawdown": -0.2605051785076271,
+          "calmar": 2.2530332276937393,
+          "ulcer_index": 0.09477129085240152,
+          "daily_expected_shortfall_5pct": -0.034731662788203325,
+          "worst_1d_return": -0.13106357327084822,
+          "cost_multiplier": 2.0,
+          "average_exposure": 0.7958922558922558,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 1485,
+          "zero_exposure_days": 2,
+          "controller_turnover": 12.598098794580913,
+          "controller_cost": 31670.60218880476,
+          "episode_days": 0,
+          "negative_years": 0
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.594197703757289,
+            "end_value": 159419.7703757289
+          },
+          {
+            "year": 2021,
+            "return": 0.08009462290240377,
+            "end_value": 172188.43676716072
+          },
+          {
+            "year": 2022,
+            "return": 0.15208723224732656,
+            "end_value": 198376.099540072
+          },
+          {
+            "year": 2023,
+            "return": 0.0788858812013995,
+            "end_value": 214025.17296158712
+          },
+          {
+            "year": 2024,
+            "return": 0.48594832664891774,
+            "end_value": 318030.3476230156
+          },
+          {
+            "year": 2025,
+            "return": 1.6682053706161524,
+            "end_value": 848570.2815466521
+          },
+          {
+            "year": 2026,
+            "return": 1.0113195182613737,
+            "end_value": 1706745.9698913305
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 73,
+          "positive_rate": 0.9408427876823339,
+          "minimum_return": -0.1341882393742414,
+          "median_return": 0.19202655592109408,
+          "maximum_return": 4.2328152661745735
+        }
+      },
+      "v4_vol30_shock": {
+        "params": {
+          "mode": "volatility_shock",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 1343692.1467955343,
+          "total_return": 12.436921467955344,
+          "cagr": 0.5263368819491585,
+          "ann_vol": 0.26139858424575985,
+          "sharpe": 2.013541440814809,
+          "max_drawdown": -0.21141545618266833,
+          "calmar": 2.4895856313097093,
+          "ulcer_index": 0.08389310717407689,
+          "daily_expected_shortfall_5pct": -0.033869441140102555,
+          "worst_1d_return": -0.0734490861725842,
+          "cost_multiplier": 2.0,
+          "average_exposure": 0.8911620065747535,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 495,
+          "zero_exposure_days": 2,
+          "controller_turnover": 18.357984053777134,
+          "controller_cost": 50172.442675293416,
+          "episode_days": 0,
+          "negative_years": 0
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.49948089178306043,
+            "end_value": 149948.08917830605
+          },
+          {
+            "year": 2021,
+            "return": 0.09139911422517333,
+            "end_value": 163653.21170896053
+          },
+          {
+            "year": 2022,
+            "return": 0.2789117269086743,
+            "end_value": 209298.01160085757
+          },
+          {
+            "year": 2023,
+            "return": 0.09925910774176727,
+            "end_value": 230072.74548448477
+          },
+          {
+            "year": 2024,
+            "return": 0.39225146552839707,
+            "end_value": 320319.1170789158
+          },
+          {
+            "year": 2025,
+            "return": 1.6298599181145739,
+            "end_value": 842394.4070116902
+          },
+          {
+            "year": 2026,
+            "return": 0.5950867380069007,
+            "end_value": 1343692.1467955343
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 49,
+          "positive_rate": 0.960291734197731,
+          "minimum_return": -0.16693302860860992,
+          "median_return": 0.2498555968878633,
+          "maximum_return": 3.064839921140744
+        }
+      }
+    },
+    "3x": {
+      "baseline_v4": {
+        "params": {
+          "enabled": true,
+          "mode": "consensus",
+          "slow_gap": 0.0075,
+          "fast_5d_gap": 0.0225,
+          "fast_3d_gap": 0.01125,
+          "minimum_target_momentum": 0.0,
+          "minimum_hold_days": 3,
+          "confirmation_hits": 2,
+          "confirmation_window": 2
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 15408.609976987505,
+          "total_return": -0.8459139002301249,
+          "cagr": -0.2624450414466104,
+          "ann_vol": 0.23114624662453512,
+          "sharpe": -1.1354068918666709,
+          "max_drawdown": -0.9446653280077268,
+          "cost_multiplier": 3.0,
+          "trade_legs": 779,
+          "early_rotations": 78,
+          "signal_days": 362,
+          "scheduled_lock_blocks": 19,
+          "realtime_filter_events": 0,
+          "risk_events": 323,
+          "reason_counts": {
+            "slow": 78,
+            "fast": 78
+          },
+          "ex_post_relative_5d_avg": 0.017720141439337807,
+          "ex_post_relative_5d_win_rate": 0.48717948717948717,
+          "ex_post_relative_10d_avg": 0.03030895750390184,
+          "ex_post_relative_10d_win_rate": 0.6410256410256411,
+          "ex_post_relative_20d_avg": 0.04013553073123817,
+          "ex_post_relative_20d_win_rate": 0.5844155844155844
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.8058780141228818,
+            "end_value": 180587.8014122882
+          },
+          {
+            "year": 2021,
+            "return": 0.04713590511087373,
+            "end_value": 189099.97088383912
+          },
+          {
+            "year": 2022,
+            "return": -0.3808182249075247,
+            "end_value": 117087.25564179089
+          },
+          {
+            "year": 2023,
+            "return": -0.47182082082284493,
+            "end_value": 61843.05057698683
+          },
+          {
+            "year": 2024,
+            "return": -0.47214989521984085,
+            "end_value": 32643.86072698718
+          },
+          {
+            "year": 2025,
+            "return": -0.43143807093737807,
+            "end_value": 18560.056426987394
+          },
+          {
+            "year": 2026,
+            "return": -0.16979724508905603,
+            "end_value": 15408.609976987505
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 1018,
+          "positive_rate": 0.17504051863857376,
+          "minimum_return": -0.6340245739824125,
+          "median_return": -0.4399963471469225,
+          "maximum_return": 0.844161382043237
+        }
+      },
+      "vol30": {
+        "params": {
+          "mode": "volatility",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 13005.201469438673,
+          "total_return": -0.8699479853056132,
+          "cagr": -0.28252436197811615,
+          "ann_vol": 0.19878927673370375,
+          "sharpe": -1.4212253629585017,
+          "max_drawdown": -0.9379123370337226,
+          "calmar": -0.30122683199971384,
+          "ulcer_index": 0.6339237140037806,
+          "daily_expected_shortfall_5pct": -0.031866445457664705,
+          "worst_1d_return": -0.10922830278269724,
+          "cost_multiplier": 3.0,
+          "average_exposure": 0.9612075385704401,
+          "minimum_exposure": 0.4004810236734939,
+          "days_below_full_exposure": 210,
+          "zero_exposure_days": 0,
+          "controller_turnover": 7.0769976873799125,
+          "controller_cost": 7145.718494208627,
+          "episode_days": 0,
+          "negative_years": 5
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.5035970911391534,
+            "end_value": 150359.70911391533
+          },
+          {
+            "year": 2021,
+            "return": 0.035985814839178065,
+            "end_value": 155770.52576536138
+          },
+          {
+            "year": 2022,
+            "return": -0.3390398197220187,
+            "end_value": 102958.11479186919
+          },
+          {
+            "year": 2023,
+            "return": -0.47182082082284527,
+            "end_value": 54380.33256039674
+          },
+          {
+            "year": 2024,
+            "return": -0.47214989521984174,
+            "end_value": 28704.664239985268
+          },
+          {
+            "year": 2025,
+            "return": -0.43199189871732735,
+            "end_value": 16304.481832910664
+          },
+          {
+            "year": 2026,
+            "return": -0.20235419912654817,
+            "end_value": 13005.201469438673
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 1000,
+          "positive_rate": 0.18962722852512157,
+          "minimum_return": -0.5862641207749029,
+          "median_return": -0.43907577957354277,
+          "maximum_return": 0.5191223284403013
+        }
+      },
+      "cppi20": {
+        "params": {
+          "mode": "cppi",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 138836.13065980136,
+          "total_return": 0.3883613065980136,
+          "cagr": 0.05485984077270545,
+          "ann_vol": 0.11675094365176071,
+          "sharpe": 0.46988777183967634,
+          "max_drawdown": -0.21162819234147556,
+          "calmar": 0.259227469486606,
+          "ulcer_index": 0.18581173522361794,
+          "daily_expected_shortfall_5pct": -0.014414241367275723,
+          "worst_1d_return": -0.0892318497217049,
+          "cost_multiplier": 3.0,
+          "average_exposure": 0.12740770730112913,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 1460,
+          "zero_exposure_days": 790,
+          "controller_turnover": 9.911233756506704,
+          "controller_cost": 13041.561952263815,
+          "episode_days": 0,
+          "negative_years": 5
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.526868536656542,
+            "end_value": 152686.8536656542
+          },
+          {
+            "year": 2021,
+            "return": -0.04731332214361572,
+            "end_value": 145462.731371076
+          },
+          {
+            "year": 2022,
+            "return": -0.049398992364560024,
+            "end_value": 138277.01901474816
+          },
+          {
+            "year": 2023,
+            "return": -0.0016291508160394264,
+            "end_value": 138051.74489638078
+          },
+          {
+            "year": 2024,
+            "return": -0.00023029251033968023,
+            "end_value": 138019.95261349183
+          },
+          {
+            "year": 2025,
+            "return": -0.00017983275553801192,
+            "end_value": 137995.13210509412
+          },
+          {
+            "year": 2026,
+            "return": 0.006094407403202773,
+            "end_value": 138836.13065980136
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 1110,
+          "positive_rate": 0.10048622366288493,
+          "minimum_return": -0.16406638301757914,
+          "median_return": -0.003290100388131989,
+          "maximum_return": 0.4870911985912372
+        }
+      },
+      "shock_brake": {
+        "params": {
+          "mode": "shock",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 13217.832869071133,
+          "total_return": -0.8678216713092887,
+          "cagr": -0.28062795377657934,
+          "ann_vol": 0.22869036132910703,
+          "sharpe": -1.2271087952531992,
+          "max_drawdown": -0.9476264598861169,
+          "calmar": -0.2961377353375131,
+          "ulcer_index": 0.661728720122379,
+          "daily_expected_shortfall_5pct": -0.03568745930050604,
+          "worst_1d_return": -0.11446530841315193,
+          "cost_multiplier": 3.0,
+          "average_exposure": 0.9949494949494949,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 12,
+          "zero_exposure_days": 3,
+          "controller_turnover": 11.954581441167406,
+          "controller_cost": 13074.565217283352,
+          "episode_days": 0,
+          "negative_years": 5
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.740266269075486,
+            "end_value": 174026.6269075486
+          },
+          {
+            "year": 2021,
+            "return": 0.0405194992806126,
+            "end_value": 181078.09869133646
+          },
+          {
+            "year": 2022,
+            "return": -0.4273777923398857,
+            "end_value": 103689.34063152914
+          },
+          {
+            "year": 2023,
+            "return": -0.4718208208228444,
+            "end_value": 54766.55082418155
+          },
+          {
+            "year": 2024,
+            "return": -0.4748016452056414,
+            "end_value": 28763.30239062177
+          },
+          {
+            "year": 2025,
+            "return": -0.4365873680324418,
+            "end_value": 16205.607903978971
+          },
+          {
+            "year": 2026,
+            "return": -0.18436673604661558,
+            "end_value": 13217.832869071133
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 1047,
+          "positive_rate": 0.15153970826580226,
+          "minimum_return": -0.6424027192863881,
+          "median_return": -0.4438053115770248,
+          "maximum_return": 0.7659296042171726
+        }
+      },
+      "v4_risk_budget": {
+        "params": {
+          "mode": "risk_budget",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 137515.59544809946,
+          "total_return": 0.3751559544809946,
+          "cagr": 0.05322021214147887,
+          "ann_vol": 0.11272569044678238,
+          "sharpe": 0.4721214119917416,
+          "max_drawdown": -0.2116704881972924,
+          "calmar": 0.25142953368101906,
+          "ulcer_index": 0.18722307811562006,
+          "daily_expected_shortfall_5pct": -0.013501595002411545,
+          "worst_1d_return": -0.09024353899416733,
+          "cost_multiplier": 3.0,
+          "average_exposure": 0.11661206185574095,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 1460,
+          "zero_exposure_days": 793,
+          "controller_turnover": 10.369727592866013,
+          "controller_cost": 13373.229394993406,
+          "episode_days": 0,
+          "negative_years": 5
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.4961252087293455,
+            "end_value": 149612.52087293455
+          },
+          {
+            "year": 2021,
+            "return": -0.04206605749280157,
+            "end_value": 143318.9119682507
+          },
+          {
+            "year": 2022,
+            "return": -0.04443674444184165,
+            "end_value": 136950.28610343474
+          },
+          {
+            "year": 2023,
+            "return": -0.0015742990367458853,
+            "end_value": 136734.68539994003
+          },
+          {
+            "year": 2024,
+            "return": -0.00020115560209932326,
+            "end_value": 136707.18045197055
+          },
+          {
+            "year": 2025,
+            "return": -0.0001798327555393442,
+            "end_value": 136682.59602300785
+          },
+          {
+            "year": 2026,
+            "return": 0.006094407403202773,
+            "end_value": 137515.59544809946
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 1101,
+          "positive_rate": 0.10777957860615883,
+          "minimum_return": -0.16770085223887554,
+          "median_return": -0.0032610526537686924,
+          "maximum_return": 0.46424005011962977
+        }
+      },
+      "v4_position_budget": {
+        "params": {
+          "mode": "position_budget",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 13112.984115938702,
+          "total_return": -0.8688701588406129,
+          "cagr": -0.28155985676296624,
+          "ann_vol": 0.22514073364304035,
+          "sharpe": -1.2505949154868534,
+          "max_drawdown": -0.9446027018021429,
+          "calmar": -0.29807225432004103,
+          "ulcer_index": 0.6573568880618224,
+          "daily_expected_shortfall_5pct": -0.035070446274176395,
+          "worst_1d_return": -0.10771437710708448,
+          "cost_multiplier": 3.0,
+          "average_exposure": 0.9948850394739914,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 18,
+          "zero_exposure_days": 1,
+          "controller_turnover": 8.389828562914989,
+          "controller_cost": 11703.805894771125,
+          "episode_days": 0,
+          "negative_years": 5
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.6356417371595633,
+            "end_value": 163564.17371595633
+          },
+          {
+            "year": 2021,
+            "return": 0.04064869755918221,
+            "end_value": 170212.8443448538
+          },
+          {
+            "year": 2022,
+            "return": -0.41459642469755,
+            "end_value": 99643.20764187683
+          },
+          {
+            "year": 2023,
+            "return": -0.47182082082284527,
+            "end_value": 52629.4676228653
+          },
+          {
+            "year": 2024,
+            "return": -0.47214989521984185,
+            "end_value": 27780.46999925339
+          },
+          {
+            "year": 2025,
+            "return": -0.43143807093737807,
+            "end_value": 15794.917613041802
+          },
+          {
+            "year": 2026,
+            "return": -0.16979724508905558,
+            "end_value": 13112.984115938702
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 1046,
+          "positive_rate": 0.15235008103727715,
+          "minimum_return": -0.6336103734198488,
+          "median_return": -0.44210875117120535,
+          "maximum_return": 0.6619078171425625
+        }
+      },
+      "v4_episode_budget": {
+        "params": {
+          "mode": "episode_budget",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 85902.55234355244,
+          "total_return": -0.1409744765644756,
+          "cagr": -0.024430216016060546,
+          "ann_vol": 0.15062998773430006,
+          "sharpe": -0.1621869349093595,
+          "max_drawdown": -0.5835462706959711,
+          "calmar": -0.04186508807077741,
+          "ulcer_index": 0.3744374162428126,
+          "daily_expected_shortfall_5pct": -0.019485184755476864,
+          "worst_1d_return": -0.11172966241010258,
+          "cost_multiplier": 3.0,
+          "average_exposure": 0.35084175084175084,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 1410,
+          "zero_exposure_days": 3,
+          "controller_turnover": 8.063917272060817,
+          "controller_cost": 10680.90707528213,
+          "episode_days": 1408,
+          "negative_years": 5
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.5924652500641003,
+            "end_value": 159246.52500641003
+          },
+          {
+            "year": 2021,
+            "return": 0.024165567658481102,
+            "end_value": 163094.80768083045
+          },
+          {
+            "year": 2022,
+            "return": -0.1279187516868071,
+            "end_value": 142231.92347569874
+          },
+          {
+            "year": 2023,
+            "return": -0.1482553219030549,
+            "end_value": 121145.28387591835
+          },
+          {
+            "year": 2024,
+            "return": -0.1475603307514688,
+            "end_value": 103269.04571820726
+          },
+          {
+            "year": 2025,
+            "return": -0.13136632938905013,
+            "end_value": 89702.97024269636
+          },
+          {
+            "year": 2026,
+            "return": -0.04236668962980472,
+            "end_value": 85902.55234355244
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 1022,
+          "positive_rate": 0.17179902755267423,
+          "minimum_return": -0.33205013105915404,
+          "median_return": -0.13658501576496518,
+          "maximum_return": 0.6233948472713924
+        }
+      },
+      "v4_constant80": {
+        "params": {
+          "mode": "constant",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 22580.10034592189,
+          "total_return": -0.7741989965407812,
+          "cagr": -0.21511206574096975,
+          "ann_vol": 0.18494540366097825,
+          "sharpe": -1.163111174881046,
+          "max_drawdown": -0.9009054496820825,
+          "calmar": -0.23877318737152708,
+          "ulcer_index": 0.6041990011595213,
+          "daily_expected_shortfall_5pct": -0.02848591515901551,
+          "worst_1d_return": -0.08632661038870174,
+          "cost_multiplier": 3.0,
+          "average_exposure": 0.8,
+          "minimum_exposure": 0.8,
+          "days_below_full_exposure": 1485,
+          "zero_exposure_days": 0,
+          "controller_turnover": 1.9544179591803088,
+          "controller_cost": 1978.375667028777,
+          "episode_days": 0,
+          "negative_years": 5
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.6064587459960189,
+            "end_value": 160645.8745996019
+          },
+          {
+            "year": 2021,
+            "return": 0.03811360875837,
+            "end_value": 166768.6686127373
+          },
+          {
+            "year": 2022,
+            "return": -0.3165577218762773,
+            "end_value": 113976.75879634934
+          },
+          {
+            "year": 2023,
+            "return": -0.4001718466078874,
+            "end_value": 68366.46875843246
+          },
+          {
+            "year": 2024,
+            "return": -0.4001801618125471,
+            "end_value": 41007.56422813051
+          },
+          {
+            "year": 2025,
+            "return": -0.36323466701839446,
+            "end_value": 26112.1952904901
+          },
+          {
+            "year": 2026,
+            "return": -0.1352661047941296,
+            "end_value": 22580.10034592189
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 1018,
+          "positive_rate": 0.17504051863857376,
+          "minimum_return": -0.5519932828496144,
+          "median_return": -0.37127841175038473,
+          "maximum_return": 0.6398674970743488
+        }
+      },
+      "v4_constant80_shock": {
+        "params": {
+          "mode": "constant_shock",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 20357.391364412855,
+          "total_return": -0.7964260863558714,
+          "cagr": -0.2282395623403164,
+          "ann_vol": 0.1831775126874396,
+          "sharpe": -1.2460020828526441,
+          "max_drawdown": -0.9043311593883507,
+          "calmar": -0.2523849366140247,
+          "ulcer_index": 0.6075146385155095,
+          "daily_expected_shortfall_5pct": -0.028604351726646923,
+          "worst_1d_return": -0.09160999982528185,
+          "cost_multiplier": 3.0,
+          "average_exposure": 0.7965656565656565,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 1485,
+          "zero_exposure_days": 3,
+          "controller_turnover": 9.598619494944835,
+          "controller_cost": 9411.47850948865,
+          "episode_days": 0,
+          "negative_years": 5
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.5558538136738682,
+            "end_value": 155585.3813673868
+          },
+          {
+            "year": 2021,
+            "return": 0.034413722627505416,
+            "end_value": 160939.65352665872
+          },
+          {
+            "year": 2022,
+            "return": -0.3474033289327808,
+            "end_value": 105028.68213420911
+          },
+          {
+            "year": 2023,
+            "return": -0.4001718466078843,
+            "end_value": 62999.160457770144
+          },
+          {
+            "year": 2024,
+            "return": -0.40187767005162933,
+            "end_value": 37681.20463779274
+          },
+          {
+            "year": 2025,
+            "return": -0.36654675560370775,
+            "end_value": 23869.281330570426
+          },
+          {
+            "year": 2026,
+            "return": -0.14713010909380586,
+            "end_value": 20357.391364412855
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 1043,
+          "positive_rate": 0.1547811993517018,
+          "minimum_return": -0.5579202515002368,
+          "median_return": -0.3738322684820151,
+          "maximum_return": 0.5825497019565291
+        }
+      },
+      "v4_vol30_shock": {
+        "params": {
+          "mode": "volatility_shock",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "metrics": {
+          "start": "2020-06-19",
+          "end": "2026-08-11",
+          "observations": 1485,
+          "initial_value": 100000.0,
+          "final_value": 11871.745125433103,
+          "total_return": -0.881282548745669,
+          "cagr": -0.29309482550416366,
+          "ann_vol": 0.19831951411335408,
+          "sharpe": -1.4778920108519356,
+          "max_drawdown": -0.9394540866129172,
+          "calmar": -0.3119841934595015,
+          "ulcer_index": 0.6346053998243839,
+          "daily_expected_shortfall_5pct": -0.032194909436517885,
+          "worst_1d_return": -0.11446530841315186,
+          "cost_multiplier": 3.0,
+          "average_exposure": 0.9589299060454257,
+          "minimum_exposure": 0.0,
+          "days_below_full_exposure": 211,
+          "zero_exposure_days": 3,
+          "controller_turnover": 12.392583823834903,
+          "controller_cost": 10097.994120530519,
+          "episode_days": 0,
+          "negative_years": 5
+        },
+        "annual": [
+          {
+            "year": 2020,
+            "return": 0.4589451751272706,
+            "end_value": 145894.51751272706
+          },
+          {
+            "year": 2021,
+            "return": 0.0323218789933446,
+            "end_value": 150610.10245356584
+          },
+          {
+            "year": 2022,
+            "return": -0.3603785381190374,
+            "end_value": 96333.45390539133
+          },
+          {
+            "year": 2023,
+            "return": -0.47182082082284493,
+            "end_value": 50881.3246110499
+          },
+          {
+            "year": 2024,
+            "return": -0.4748016452056404,
+            "end_value": 26722.78797548117
+          },
+          {
+            "year": 2025,
+            "return": -0.43658290641870967,
+            "end_value": 15056.075533534653
+          },
+          {
+            "year": 2026,
+            "return": -0.21149803619203666,
+            "end_value": 11871.745125433103
+          }
+        ],
+        "rolling_252": {
+          "window_days": 252,
+          "windows": 1234,
+          "negative_windows": 1016,
+          "positive_rate": 0.1766612641815235,
+          "minimum_return": -0.5864559496865815,
+          "median_return": -0.44013052202624064,
+          "maximum_return": 0.4687962848024865
+        }
+      }
+    }
+  },
+  "retrospective_segments": {
+    "retrospective_2020_2023": {
+      "baseline_v4": {
+        "start": "2020-06-19",
+        "end": "2023-12-29",
+        "observations": 857,
+        "initial_value": 100000.0,
+        "final_value": 340989.34870898543,
+        "total_return": 2.4098934870898545,
+        "cagr": 0.416035723180848,
+        "ann_vol": 0.28439895845105545,
+        "sharpe": 1.4628595176534271,
+        "max_drawdown": -0.28615770033824584
+      },
+      "vol30": {
+        "start": "2020-06-19",
+        "end": "2023-12-29",
+        "observations": 857,
+        "initial_value": 100000.0,
+        "final_value": 300324.51787259465,
+        "total_return": 2.0032451787259467,
+        "cagr": 0.3659500242401068,
+        "ann_vol": 0.24324637397277088,
+        "sharpe": 1.5044418474294357,
+        "max_drawdown": -0.19218141075067752
+      },
+      "cppi20": {
+        "start": "2020-06-19",
+        "end": "2023-12-29",
+        "observations": 857,
+        "initial_value": 100000.0,
+        "final_value": 197697.30710403167,
+        "total_return": 0.9769730710403166,
+        "cagr": 0.2132202616414347,
+        "ann_vol": 0.199853900460403,
+        "sharpe": 1.0668806620748439,
+        "max_drawdown": -0.17402737014158842
+      },
+      "shock_brake": {
+        "start": "2020-06-19",
+        "end": "2023-12-29",
+        "observations": 857,
+        "initial_value": 100000.0,
+        "final_value": 314940.7577049645,
+        "total_return": 2.149407577049645,
+        "cagr": 0.38448208399036243,
+        "ann_vol": 0.277722479467025,
+        "sharpe": 1.3844111025085868,
+        "max_drawdown": -0.29405479549457525
+      },
+      "v4_risk_budget": {
+        "start": "2020-06-19",
+        "end": "2023-12-29",
+        "observations": 857,
+        "initial_value": 100000.0,
+        "final_value": 189320.89328933656,
+        "total_return": 0.8932089328933657,
+        "cagr": 0.1984163888539685,
+        "ann_vol": 0.1943495998116052,
+        "sharpe": 1.020925121771825,
+        "max_drawdown": -0.1741542427322853
+      },
+      "v4_position_budget": {
+        "start": "2020-06-19",
+        "end": "2023-12-29",
+        "observations": 857,
+        "initial_value": 100000.0,
+        "final_value": 301502.31339239766,
+        "total_return": 2.0150231339239766,
+        "cagr": 0.36746700166788693,
+        "ann_vol": 0.2746907241054335,
+        "sharpe": 1.3377481269693092,
+        "max_drawdown": -0.2811765928662934
+      },
+      "v4_episode_budget": {
+        "start": "2020-06-19",
+        "end": "2023-12-29",
+        "observations": 857,
+        "initial_value": 100000.0,
+        "final_value": 246918.42035498278,
+        "total_return": 1.469184203549828,
+        "cagr": 0.2921710348078108,
+        "ann_vol": 0.2253650077761675,
+        "sharpe": 1.2964347823598021,
+        "max_drawdown": -0.19782611656422744
+      },
+      "v4_constant80": {
+        "start": "2020-06-19",
+        "end": "2023-12-29",
+        "observations": 857,
+        "initial_value": 100000.0,
+        "final_value": 270935.51885094587,
+        "total_return": 1.7093551885094587,
+        "cagr": 0.3266359892098034,
+        "ann_vol": 0.22740443474552227,
+        "sharpe": 1.4363659599485232,
+        "max_drawdown": -0.23433666505173711
+      },
+      "v4_constant80_shock": {
+        "start": "2020-06-19",
+        "end": "2023-12-29",
+        "observations": 857,
+        "initial_value": 100000.0,
+        "final_value": 255962.51546299018,
+        "total_return": 1.5596251546299018,
+        "cagr": 0.3054201898638249,
+        "ann_vol": 0.22283279800384123,
+        "sharpe": 1.3706249376205384,
+        "max_drawdown": -0.23929988871074648
+      },
+      "v4_vol30_shock": {
+        "start": "2020-06-19",
+        "end": "2023-12-29",
+        "observations": 857,
+        "initial_value": 100000.0,
+        "final_value": 283629.3818777697,
+        "total_return": 1.8362938187776972,
+        "cagr": 0.34397386958885234,
+        "ann_vol": 0.24058143142302688,
+        "sharpe": 1.4297606741894604,
+        "max_drawdown": -0.1921685763951002
+      }
+    },
+    "retrospective_2024_current": {
+      "baseline_v4": {
+        "start": "2024-01-02",
+        "end": "2026-08-11",
+        "observations": 628,
+        "initial_value": 100000.0,
+        "final_value": 1548076.248654795,
+        "total_return": 14.48076248654795,
+        "cagr": 1.8607692621441645,
+        "ann_vol": 0.4301506427868957,
+        "sharpe": 4.3258548914130595,
+        "max_drawdown": -0.18964260105592678
+      },
+      "vol30": {
+        "start": "2024-01-02",
+        "end": "2026-08-11",
+        "observations": 628,
+        "initial_value": 100000.0,
+        "final_value": 699425.9062468954,
+        "total_return": 5.994259062468954,
+        "cagr": 1.1091071605122726,
+        "ann_vol": 0.2846594077115135,
+        "sharpe": 3.8962603394309427,
+        "max_drawdown": -0.1410670251530688
+      },
+      "cppi20": {
+        "start": "2024-01-02",
+        "end": "2026-08-11",
+        "observations": 628,
+        "initial_value": 100000.0,
+        "final_value": 653498.3332317198,
+        "total_return": 5.534983332317198,
+        "cagr": 1.0548568046074456,
+        "ann_vol": 0.3433791898789082,
+        "sharpe": 3.0719881568228935,
+        "max_drawdown": -0.16987482347778882
+      },
+      "shock_brake": {
+        "start": "2024-01-02",
+        "end": "2026-08-11",
+        "observations": 628,
+        "initial_value": 100000.0,
+        "final_value": 1536830.7596229438,
+        "total_return": 14.368307596229439,
+        "cagr": 1.8527783374898212,
+        "ann_vol": 0.42762832367661935,
+        "sharpe": 4.332683863314272,
+        "max_drawdown": -0.1780485834175718
+      },
+      "v4_risk_budget": {
+        "start": "2024-01-02",
+        "end": "2026-08-11",
+        "observations": 628,
+        "initial_value": 100000.0,
+        "final_value": 661039.1565801376,
+        "total_return": 5.610391565801375,
+        "cagr": 1.06392188346558,
+        "ann_vol": 0.34303532419553556,
+        "sharpe": 3.1014936609243415,
+        "max_drawdown": -0.1698748234777887
+      },
+      "v4_position_budget": {
+        "start": "2024-01-02",
+        "end": "2026-08-11",
+        "observations": 628,
+        "initial_value": 100000.0,
+        "final_value": 1411426.6910360132,
+        "total_return": 13.114266910360131,
+        "cagr": 1.7611167632400413,
+        "ann_vol": 0.4225368754838712,
+        "sharpe": 4.16795992355291,
+        "max_drawdown": -0.1664930521700133
+      },
+      "v4_episode_budget": {
+        "start": "2024-01-02",
+        "end": "2026-08-11",
+        "observations": 628,
+        "initial_value": 100000.0,
+        "final_value": 861943.5419897262,
+        "total_return": 7.619435419897263,
+        "cagr": 1.2851324920979428,
+        "ann_vol": 0.36123436836646816,
+        "sharpe": 3.5576141271092747,
+        "max_drawdown": -0.1768137724289237
+      },
+      "v4_constant80": {
+        "start": "2024-01-02",
+        "end": "2026-08-11",
+        "observations": 628,
+        "initial_value": 100000.0,
+        "final_value": 924595.518385751,
+        "total_return": 8.245955183857511,
+        "cagr": 1.347484993621304,
+        "ann_vol": 0.34407710881794323,
+        "sharpe": 3.9162297028433826,
+        "max_drawdown": -0.15252206413277303
+      },
+      "v4_constant80_shock": {
+        "start": "2024-01-02",
+        "end": "2026-08-11",
+        "observations": 628,
+        "initial_value": 100000.0,
+        "final_value": 921028.955990084,
+        "total_return": 8.21028955990084,
+        "cagr": 1.34400666051013,
+        "ann_vol": 0.34233783726856376,
+        "sharpe": 3.925965856516637,
+        "max_drawdown": -0.14513938616306543
+      },
+      "v4_vol30_shock": {
+        "start": "2024-01-02",
+        "end": "2026-08-11",
+        "observations": 628,
+        "initial_value": 100000.0,
+        "final_value": 686915.5121496439,
+        "total_return": 5.869155121496439,
+        "cagr": 1.094552847681273,
+        "ann_vol": 0.28445425080787484,
+        "sharpe": 3.8479046967048216,
+        "max_drawdown": -0.14358896138594046
+      }
+    }
+  },
+  "documented_shock_scenario": {
+    "holding_returns": [
+      -0.05,
+      -0.08,
+      -0.03
+    ],
+    "exposure_used": [
+      1.0,
+      0.5,
+      0.0
+    ],
+    "v4_holding_return": -0.15222000000000002,
+    "risk_budget_return": -0.08800000000000008,
+    "position_budget_return": -0.08800000000000008,
+    "constant80_shock_exposure_used": [
+      0.8,
+      0.5,
+      0.0
+    ],
+    "constant80_shock_return": -0.07840000000000003,
+    "first_gap_is_unavoidable": true,
+    "execution_rule": "T-day 14:50 signal controls only the exposure after that observation"
+  },
+  "paired_block_bootstrap_selected": {
+    "selected": "v4_vol30_shock",
+    "results": {
+      "5": {
+        "block_size": 5,
+        "bootstrap_samples": 5000,
+        "probability_positive_terminal": 1.0,
+        "probability_joint_80pct_cagr_20pct_mdd_rule": 0.0348,
+        "probability_positive_cagr_and_mdd_at_most_20pct": 0.4436,
+        "cagr_retention_ci95": [
+          0.5609216080317654,
+          0.8319567600441706
+        ],
+        "mdd_improvement_ci95": [
+          -0.039917919654932604,
+          0.441892284487314
+        ],
+        "scope_warning": "resamples realized fixed-policy returns; it does not reselect parameters"
+      },
+      "20": {
+        "block_size": 20,
+        "bootstrap_samples": 5000,
+        "probability_positive_terminal": 1.0,
+        "probability_joint_80pct_cagr_20pct_mdd_rule": 0.0518,
+        "probability_positive_cagr_and_mdd_at_most_20pct": 0.5476,
+        "cagr_retention_ci95": [
+          0.5476554258853066,
+          0.847061433970313
+        ],
+        "mdd_improvement_ci95": [
+          -0.012757379151358822,
+          0.4193426306424872
+        ],
+        "scope_warning": "resamples realized fixed-policy returns; it does not reselect parameters"
+      },
+      "60": {
+        "block_size": 60,
+        "bootstrap_samples": 5000,
+        "probability_positive_terminal": 1.0,
+        "probability_joint_80pct_cagr_20pct_mdd_rule": 0.0912,
+        "probability_positive_cagr_and_mdd_at_most_20pct": 0.5172,
+        "cagr_retention_ci95": [
+          0.5335687186556362,
+          0.8973283046256072
+        ],
+        "mdd_improvement_ci95": [
+          -0.01165009099410388,
+          0.3755219192894079
+        ],
+        "scope_warning": "resamples realized fixed-policy returns; it does not reselect parameters"
+      }
+    }
+  },
+  "parameter_robustness": {
+    "definition": "one-axis center plus +/-20% risk and shock perturbations",
+    "points": 7,
+    "safety_profile_passes": 4,
+    "safety_profile_pass_rate": 0.5714285714285714,
+    "minimum_cagr": 0.5294177907427411,
+    "maximum_mdd_magnitude": 0.22315943091632162,
+    "rows": [
+      {
+        "name": "center",
+        "params": {
+          "mode": "volatility_shock",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "final_value": 1940633.0264218987,
+        "cagr": 0.6204482843526584,
+        "max_drawdown": -0.1921685763951002,
+        "sharpe": 2.383678815430867,
+        "average_exposure": 0.892161287021551,
+        "negative_years": 0,
+        "safety_profile_passed": true
+      },
+      {
+        "name": "volatility_80pct",
+        "params": {
+          "mode": "volatility_shock",
+          "volatility_target": 0.24,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "final_value": 1360442.1864723938,
+        "cagr": 0.5294177907427411,
+        "max_drawdown": -0.1822172665124122,
+        "sharpe": 2.2756290886302217,
+        "average_exposure": 0.8287460209895517,
+        "negative_years": 0,
+        "safety_profile_passed": true
+      },
+      {
+        "name": "volatility_120pct",
+        "params": {
+          "mode": "volatility_shock",
+          "volatility_target": 0.36,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "final_value": 2495795.55381713,
+        "cagr": 0.6881850457226715,
+        "max_drawdown": -0.22315943091632162,
+        "sharpe": 2.4563084314196835,
+        "average_exposure": 0.9263242772644508,
+        "negative_years": 0,
+        "safety_profile_passed": false
+      },
+      {
+        "name": "decay_0.90",
+        "params": {
+          "mode": "volatility_shock",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.9,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "final_value": 1876463.7045131216,
+        "cagr": 0.6116036512887124,
+        "max_drawdown": -0.20249081842472272,
+        "sharpe": 2.382621418083277,
+        "average_exposure": 0.9001467340103531,
+        "negative_years": 0,
+        "safety_profile_passed": false
+      },
+      {
+        "name": "decay_0.97",
+        "params": {
+          "mode": "volatility_shock",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.97,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.05,
+          "shock_3d": -0.1,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "final_value": 2124432.510349196,
+        "cagr": 0.6444923417447941,
+        "max_drawdown": -0.2006606654736105,
+        "sharpe": 2.410912285174553,
+        "average_exposure": 0.8808155777598967,
+        "negative_years": 0,
+        "safety_profile_passed": false
+      },
+      {
+        "name": "shock_80pct",
+        "params": {
+          "mode": "volatility_shock",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.04,
+          "shock_3d": -0.08,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "final_value": 1499758.2950237184,
+        "cagr": 0.5538815173375058,
+        "max_drawdown": -0.1932048192689897,
+        "sharpe": 2.1618562395354366,
+        "average_exposure": 0.8870956514142475,
+        "negative_years": 0,
+        "safety_profile_passed": true
+      },
+      {
+        "name": "shock_120pct",
+        "params": {
+          "mode": "volatility_shock",
+          "volatility_target": 0.3,
+          "ewma_decay": 0.94,
+          "floor_ratio": 0.8,
+          "cppi_multiplier": 5.0,
+          "shock_1d": -0.06,
+          "shock_3d": -0.12,
+          "post_shock_exposure": 0.5,
+          "position_deductible": 0.05,
+          "position_loss_limit": 0.1,
+          "episode_trigger": 0.1,
+          "episode_recovery": 0.05,
+          "episode_severe": 0.2,
+          "episode_exposure": 0.5,
+          "episode_severe_exposure": 0.25,
+          "constant_exposure": 0.8
+        },
+        "final_value": 2002726.5570689489,
+        "cagr": 0.6287766939457777,
+        "max_drawdown": -0.19218141075067818,
+        "sharpe": 2.4036399939907445,
+        "average_exposure": 0.8930630440763704,
+        "negative_years": 0,
+        "safety_profile_passed": true
+      }
+    ]
+  },
+  "recent_10_trading_days": [
+    {
+      "date": "2026-07-29",
+      "holding": "501018",
+      "v4_return": 0.020648812739804283,
+      "selected_return": 0.012747430775896204,
+      "exposure_used": 0.6174234372961256,
+      "next_exposure": 0.627770730791345,
+      "held_1d_return": 0.02390005431830522,
+      "held_3d_return": 0.03344298245614041,
+      "annualized_volatility": 0.4778814705518858
+    },
+    {
+      "date": "2026-07-30",
+      "holding": "501018",
+      "v4_return": 0.07245735210958468,
+      "selected_return": 0.04528723204794914,
+      "exposure_used": 0.627770730791345,
+      "next_exposure": 0.5532367785221958,
+      "held_1d_return": 0.07308096740273395,
+      "held_3d_return": 0.07364544976328236,
+      "annualized_volatility": 0.5422632978258586
+    },
+    {
+      "date": "2026-07-31",
+      "holding": "501018",
+      "v4_return": -0.02430287383605811,
+      "selected_return": -0.013434915544052775,
+      "exposure_used": 0.5532367785221958,
+      "next_exposure": 0.5616197013764647,
+      "held_1d_return": -0.024497795198432093,
+      "held_3d_return": 0.08147745790331351,
+      "annualized_volatility": 0.534169295102602
+    },
+    {
+      "date": "2026-08-03",
+      "holding": "501018",
+      "v4_return": -0.045332951379620845,
+      "selected_return": -0.02549129009320818,
+      "exposure_used": 0.5616197013764647,
+      "next_exposure": 0.5483724146837038,
+      "held_1d_return": -0.04570567553992977,
+      "held_3d_return": -0.001051524710830698,
+      "annualized_volatility": 0.5470734704498899
+    },
+    {
+      "date": "2026-08-04",
+      "holding": "501018",
+      "v4_return": 0.03026555644976156,
+      "selected_return": 0.016523004547155693,
+      "exposure_used": 0.5483724146837038,
+      "next_exposure": 0.5521744668803131,
+      "held_1d_return": 0.030526315789473735,
+      "held_3d_return": -0.040666340029397285,
+      "annualized_volatility": 0.5433065416714146
+    },
+    {
+      "date": "2026-08-05",
+      "holding": "161226",
+      "v4_return": -0.01912969264887659,
+      "selected_return": -0.010629774747262268,
+      "exposure_used": 0.5521744668803131,
+      "next_exposure": 0.5639295317038806,
+      "held_1d_return": -0.01634320735444328,
+      "held_3d_return": -0.03264691109994988,
+      "annualized_volatility": 0.531981361383163
+    },
+    {
+      "date": "2026-08-06",
+      "holding": "161226",
+      "v4_return": -0.003398730859888534,
+      "selected_return": -0.0019586643526895617,
+      "exposure_used": 0.5639295317038806,
+      "next_exposure": 0.581458054953787,
+      "held_1d_return": -0.003428011753182969,
+      "held_3d_return": 0.07615018508725546,
+      "annualized_volatility": 0.515944353069188
+    },
+    {
+      "date": "2026-08-07",
+      "holding": "161226",
+      "v4_return": 0.07307832054082379,
+      "selected_return": 0.04228430563709525,
+      "exposure_used": 0.581458054953787,
+      "next_exposure": 0.5214638797369272,
+      "held_1d_return": 0.07371007371007376,
+      "held_3d_return": 0.1506055818852028,
+      "annualized_volatility": 0.5753035093271401
+    },
+    {
+      "date": "2026-08-10",
+      "holding": "161226",
+      "v4_return": -0.06719355107022663,
+      "selected_return": -0.035054981593409425,
+      "exposure_used": 0.5214638797369272,
+      "next_exposure": 0.4870604324882632,
+      "held_1d_return": -0.06773455377574378,
+      "held_3d_return": -0.0024485798237021683,
+      "annualized_volatility": 0.6159399942782853
+    },
+    {
+      "date": "2026-08-11",
+      "holding": "161226",
+      "v4_return": -0.05889246174031121,
+      "selected_return": -0.02860577616817808,
+      "exposure_used": 0.4870604324882632,
+      "next_exposure": 0.4690591923590063,
+      "held_1d_return": -0.05940108001963673,
+      "held_3d_return": -0.058476658476658616,
+      "annualized_volatility": 0.6395781276372203
+    }
+  ],
+  "assessment": {
+    "classification": "provisional_shadow_candidate_high_uncertainty",
+    "preregistered_constraints_passed": false,
+    "safety_profile_checks": {
+      "positive_cagr": true,
+      "mdd_at_most_20pct": true,
+      "no_negative_calendar_year": true,
+      "positive_at_2x_cost": true,
+      "mdd_below_40pct_at_2x_cost": true,
+      "documented_shock_below_10pct": true
+    },
+    "safety_profile_passed": true,
+    "local_neighborhood_pass_rate": 0.5714285714285714,
+    "local_neighborhood_passed": false,
+    "bootstrap_20d_safety_probability": 0.5476,
+    "robustness_passed": false,
+    "production_status": "research_only_no_production_change",
+    "interpretation": "A historical pass can nominate a frozen shadow path, but zero untouched post-design observations cannot validate the controller."
+  }
+}
