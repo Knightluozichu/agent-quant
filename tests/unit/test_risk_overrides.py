@@ -57,10 +57,7 @@ def env():
     数据只保留到 TD (无未来函数口径, 与回测当日可用信息一致);
     idx_map 与回测 etf_data_at_date 一致: 各 code 在 TD 当日 (切片末行).
     """
-    data = {
-        c: df[df["trade_date"] <= TD].reset_index(drop=True)
-        for c, df in load_data().items()
-    }
+    data = {c: df[df["trade_date"] <= TD].reset_index(drop=True) for c, df in load_data().items()}
     codes = [*ETF_POOL, DEFENSE]
     common_dates = sorted(
         set.intersection(*[set(data[c]["trade_date"]) for c in codes if c in data])
@@ -105,7 +102,9 @@ def test_param_snapshot_matches_backtest_archive():
     assert ABS_WEAK == 0.08
     assert (DD_WARN, DD_HALF) == (-0.12, -0.25)
     assert (ACTION_HOLD, ACTION_TRADE, ACTION_EMERGENCY) == (
-        "hold", "trade", "emergency_defense",
+        "hold",
+        "trade",
+        "emergency_defense",
     )
 
 
@@ -121,10 +120,26 @@ def test_fixed_input_yields_fixed_output(env):
     data, common_dates, idx_map = env
     state = _holding_state(entry_price=4.722 / 1.538)  # 2026-02-02 自买入盈利 53.8%
 
-    r1 = assess(target=None, holding="161226", state=state, data=data, td=TD,
-                idx_map=idx_map, is_rebalance=False, common_dates=common_dates)
-    r2 = assess(target=None, holding="161226", state=state, data=data, td=TD,
-                idx_map=idx_map, is_rebalance=False, common_dates=common_dates)
+    r1 = assess(
+        target=None,
+        holding="161226",
+        state=state,
+        data=data,
+        td=TD,
+        idx_map=idx_map,
+        is_rebalance=False,
+        common_dates=common_dates,
+    )
+    r2 = assess(
+        target=None,
+        holding="161226",
+        state=state,
+        data=data,
+        td=TD,
+        idx_map=idx_map,
+        is_rebalance=False,
+        common_dates=common_dates,
+    )
 
     # 确定性: 两次结果逐字段一致
     assert r1 == r2
@@ -157,8 +172,16 @@ def test_snapshot_20260202_h1h2_event(env):
     cur = float(data["161226"].iloc[idx_map["161226"]]["close"])  # 4.722
     state = _holding_state(entry_price=cur / 1.538)  # 反推 entry_dd≈53.8%
 
-    r = assess(target=None, holding="161226", state=state, data=data, td=TD,
-               idx_map=idx_map, is_rebalance=False, common_dates=common_dates)
+    r = assess(
+        target=None,
+        holding="161226",
+        state=state,
+        data=data,
+        td=TD,
+        idx_map=idx_map,
+        is_rebalance=False,
+        common_dates=common_dates,
+    )
 
     h1h2 = [e for e in r.events if e["type"] == "改进-H1/H2降仓"]
     assert h1h2, f"未触发 H1/H2 降仓: events={r.events}"
@@ -166,7 +189,7 @@ def test_snapshot_20260202_h1h2_event(env):
     # 与回测存档 reason 逐字一致 (H2 当日 -10% 触发, H1 自买入盈利未触发)
     assert h1h2[0]["reason"] == "entry_dd=53.8% day=-10.0%"
     assert r.exposure == EXPO_REDUCE  # 1.0, 当前 V3-G 不降仓
-    assert r.action == ACTION_HOLD    # 非调仓日仅记录
+    assert r.action == ACTION_HOLD  # 非调仓日仅记录
 
 
 def test_legacy_reduced_exposure_is_cleared_when_downsize_disabled(env):
@@ -204,14 +227,22 @@ def test_legacy_state_without_risk_fields(env):
     # 无 entry_price / peak_equity / risk_exposure / cooldown_until
     state = {"cash": 100_000.0, "shares": 0}
 
-    r = assess(target=None, holding=None, state=state, data=data, td=TD,
-               idx_map=idx_map, is_rebalance=False, common_dates=common_dates)
+    r = assess(
+        target=None,
+        holding=None,
+        state=state,
+        data=data,
+        td=TD,
+        idx_map=idx_map,
+        is_rebalance=False,
+        common_dates=common_dates,
+    )
 
-    assert r.exposure == 1.0            # 默认满仓暴露
+    assert r.exposure == 1.0  # 默认满仓暴露
     assert r.action == ACTION_HOLD
     assert r.final_target is None
     assert r.cooldown_until is None
-    assert r.events == []               # 无风险事件
+    assert r.events == []  # 无风险事件
 
 
 def test_td_outside_common_dates_raises_value_error(env):
@@ -225,9 +256,16 @@ def test_td_outside_common_dates_raises_value_error(env):
     state = {"cash": 100_000.0, "shares": 0}
 
     with pytest.raises(ValueError):
-        assess(target=None, holding=None, state=state, data=data,
-               td=date(2099, 1, 1), idx_map=idx_map,
-               is_rebalance=False, common_dates=common_dates)
+        assess(
+            target=None,
+            holding=None,
+            state=state,
+            data=data,
+            td=date(2099, 1, 1),
+            idx_map=idx_map,
+            is_rebalance=False,
+            common_dates=common_dates,
+        )
 
 
 # --------------------------------------------------------------------------- #
@@ -250,8 +288,16 @@ def test_emergency_defense_on_flush(env):
         "cooldown_until": None,
     }
 
-    r = assess(target="518880", holding=None, state=state, data=data, td=TD,
-               idx_map=idx_map, is_rebalance=False, common_dates=common_dates)
+    r = assess(
+        target="518880",
+        holding=None,
+        state=state,
+        data=data,
+        td=TD,
+        idx_map=idx_map,
+        is_rebalance=False,
+        common_dates=common_dates,
+    )
 
     assert r.action == ACTION_EMERGENCY
     assert r.cooldown_until == TD
@@ -280,8 +326,16 @@ def test_cooldown_released_when_flush_day_is_rebalance_day(env):
         "cooldown_until": TD,  # 熔断日 = 调仓日
     }
 
-    r = assess(target=None, holding=None, state=state, data=data, td=TD,
-               idx_map=idx_map, is_rebalance=True, common_dates=common_dates)
+    r = assess(
+        target=None,
+        holding=None,
+        state=state,
+        data=data,
+        td=TD,
+        idx_map=idx_map,
+        is_rebalance=True,
+        common_dates=common_dates,
+    )
 
     assert r.cooldown_until is None  # 冷却立即解除 (回测怪癖, 必须保留)
-    assert r.action == ACTION_TRADE   # 走正常调仓路径
+    assert r.action == ACTION_TRADE  # 走正常调仓路径

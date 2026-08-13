@@ -158,18 +158,24 @@ def test_lock_and_confirmation_both_apply() -> None:
 
 
 def test_global_confirmation_can_bypass_internal_two_day_confirmation() -> None:
-    assert effective_signal_hits(
-        observed_hits=1,
-        required_hits=2,
-        globally_confirmed=True,
-        allow_global_immediate=True,
-    ) == 2
-    assert effective_signal_hits(
-        observed_hits=1,
-        required_hits=2,
-        globally_confirmed=False,
-        allow_global_immediate=True,
-    ) == 1
+    assert (
+        effective_signal_hits(
+            observed_hits=1,
+            required_hits=2,
+            globally_confirmed=True,
+            allow_global_immediate=True,
+        )
+        == 2
+    )
+    assert (
+        effective_signal_hits(
+            observed_hits=1,
+            required_hits=2,
+            globally_confirmed=False,
+            allow_global_immediate=True,
+        )
+        == 1
+    )
 
 
 def test_factor_snapshot_does_not_change_when_future_rows_are_appended() -> None:
@@ -194,18 +200,17 @@ def test_redirected_event_keeps_intended_pair_diagnostic_separate() -> None:
         "161226": pd.DataFrame({"trade_date": dates, "close": [100, 100, 100, 100, 100, 110]}),
         "511220": pd.DataFrame({"trade_date": dates, "close": [100, 100, 100, 100, 100, 90]}),
     }
-    index_maps = {
-        td: dict.fromkeys(data, i)
-        for i, td in enumerate(dates)
-    }
-    events = [{
-        "trade_date_raw": dates[0],
-        "date": str(dates[0]),
-        "from": "518880",
-        "to": "511220",
-        "intended_to": "161226",
-        "risk_redirected": True,
-    }]
+    index_maps = {td: dict.fromkeys(data, i) for i, td in enumerate(dates)}
+    events = [
+        {
+            "trade_date_raw": dates[0],
+            "date": str(dates[0]),
+            "from": "518880",
+            "to": "511220",
+            "intended_to": "161226",
+            "risk_redirected": True,
+        }
+    ]
 
     enriched = enrich_pair_rotation_events(events, data, dates, index_maps)
 

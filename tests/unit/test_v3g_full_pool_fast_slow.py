@@ -145,19 +145,28 @@ def test_gate_lock_and_confirmation_remain_mandatory() -> None:
     params = FullPoolParams(mode="slow", confirmation_hits=2)
 
     assert not decide_full_pool_handoff(
-        holding="held", factors=factors, params=params,
-        signal_hits=1, days_since_rotation=99,
+        holding="held",
+        factors=factors,
+        params=params,
+        signal_hits=1,
+        days_since_rotation=99,
     ).triggered
     assert not decide_full_pool_handoff(
-        holding="held", factors=factors, params=params,
-        signal_hits=2, days_since_rotation=2,
+        holding="held",
+        factors=factors,
+        params=params,
+        signal_hits=2,
+        days_since_rotation=2,
     ).triggered
 
     gated = dict(factors)
     gated["leader"] = asset("leader", eligible=False, slow=0.08, ret3=0.05, ret5=0.06)
     assert not decide_full_pool_handoff(
-        holding="held", factors=gated, params=FullPoolParams(mode="slow"),
-        signal_hits=1, days_since_rotation=99,
+        holding="held",
+        factors=gated,
+        params=FullPoolParams(mode="slow"),
+        signal_hits=1,
+        days_since_rotation=99,
     ).triggered
 
 
