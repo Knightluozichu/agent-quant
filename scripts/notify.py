@@ -141,16 +141,26 @@ def push_bark(
         headers={"Content-Type": "application/json; charset=utf-8"},
         method="POST",
     )
-    try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            result = json.loads(resp.read().decode("utf-8"))
-            if result.get("code") == 200:
-                return True
-            print(f"  ⚠️  Bark 返回异常: {result}")
-            return False
-    except Exception as e:
-        print(f"  ⚠️  Bark 推送失败: {e}")
-        return False
+    # 指数退避重试: 最多3次, 超时15s → 30s → 60s
+    max_retries = 3
+    for attempt in range(1, max_retries + 1):
+        try:
+            with urllib.request.urlopen(req, timeout=15 * attempt) as resp:
+                result = json.loads(resp.read().decode("utf-8"))
+                if result.get("code") == 200:
+                    return True
+                print(f"  ⚠️  Bark 返回异常: {result}")
+                return False
+        except Exception as e:
+            if attempt < max_retries:
+                wait = 2 ** attempt
+                print(f"  ⚠️  Bark 推送失败 (尝试 {attempt}/{max_retries}): {e}, {wait}s 后重试...")
+                import time
+                time.sleep(wait)
+            else:
+                print(f"  ⚠️  Bark 推送最终失败 (已重试 {max_retries} 次): {e}")
+                return False
+    return False
 
 
 def test_push() -> bool:

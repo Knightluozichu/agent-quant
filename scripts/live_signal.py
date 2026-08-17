@@ -31,18 +31,31 @@ import stat
 import sys
 import time
 from dataclasses import replace
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import pandas as pd
 
+# --------------------------------------------------------------------------- #
+# 时区辅助: 服务器已确认 Asia/Shanghai, 代码显式指定避免迁移时失效
+# --------------------------------------------------------------------------- #
+_UTC8 = __import__("datetime").timedelta(hours=8)
+_SH_TZ = timezone(
+    offset=datetime.strptime("+0800", "%z").utcoffset() or _UTC8
+)
+
+
+def _today_sh() -> date:
+    """返回 Asia/Shanghai 时区的当前日期 (用于全部实盘日期判断)."""
+    return datetime.now(_SH_TZ).date()
+
 # === 保证与回测100%一致: 直接复用回测的核心逻辑 ===
 sys.path.insert(0, str(Path(__file__).parent))
-import qixing_v4 as v4
-from notify import load_config, push_bark, save_config, set_bark_key, test_push
-from risk_overrides import ACTION_EMERGENCY, RiskDecision
-from risk_overrides import assess as risk_assess
-from run_qixing_v3 import (
+import qixing_v4 as v4  # noqa: E402
+from notify import load_config, push_bark, save_config, set_bark_key, test_push  # noqa: E402
+from risk_overrides import ACTION_EMERGENCY, RiskDecision  # noqa: E402
+from risk_overrides import assess as risk_assess  # noqa: E402
+from run_qixing_v3 import (  # noqa: E402
     A_SHARE_MA,
     DATA_DIR,
     DEFENSE,
@@ -91,7 +104,7 @@ def update_data(data: dict) -> dict:
     """
     import akshare as ak
 
-    today = date.today()
+    today = _today_sh()
     updated = []
 
     for code in ALL_CODES:
@@ -155,7 +168,7 @@ def check_data_freshness(data: dict) -> None:
         import akshare as ak
         cal = ak.tool_trade_date_hist_sina()
         cal_dates = sorted(pd.to_datetime(cal["trade_date"]).dt.date)
-        today = date.today()
+        today = _today_sh()
         past = [d for d in cal_dates if d < today]
         if not past:
             return
@@ -534,7 +547,9 @@ def _fetch_tencent_spot() -> dict[str, dict]:
         prev_close = float(parts[4]) if parts[4] else 0
         exchange_time = parts[30] if len(parts) > 30 else ""
         try:
-            exchange_ts = datetime.strptime(exchange_time, "%Y%m%d%H%M%S").timestamp()
+            # 显式使用 Asia/Shanghai 时区解析, 避免服务器迁移时失效
+            dt = datetime.strptime(exchange_time, "%Y%m%d%H%M%S").replace(tzinfo=_SH_TZ)
+            exchange_ts = dt.timestamp()
         except (TypeError, ValueError):
             exchange_ts = 0.0
         if price > 0:
@@ -563,10 +578,15 @@ def get_realtime_price(code: str) -> float | None:
 
 
 def account_value(state: dict, data: dict, td) -> float:
-    """账户总值 = 现金 + 持仓市值."""
+    """账户总值 = 现金 + 持仓市值 (停牌用最后已知价格回退)."""
     total = state["cash"]
     if state["holding"]:
         p = price_on(data, state["holding"], td)
+        if not p:
+            # 停牌回退: 使用最后已知收盘价
+            df = data.get(state["holding"])
+            if df is not None and not df.empty:
+                p = float(df["close"].iloc[-1])
         if p:
             total += state["shares"] * p
     return total
@@ -884,11 +904,14 @@ def inject_realtime(data: dict, spot_map: dict | None = None) -> dict:
     R8 策略信号通道: 8只ETF全部有效才注入, 任何一只缺失/无效则 fail-closed
     (不注入、不生成信号), 不用昨收填充。DEFENSE (货币基金) 仍用昨收 (非策略通道)。
     """
-    today = date.today()
+    today = _today_sh()
 
-    # 检查是否已有今天数据
-    sample_code = next(iter(data))
-    if data[sample_code]["trade_date"].max() >= today:
+    # 检查是否已有今天数据 (需全部 ETF 都有今天数据才跳过)
+    has_today = all(
+        data[c]["trade_date"].max() >= today
+        for c in data if c in ALL_CODES
+    )
+    if has_today:
         return data  # 已有今天数据, 无需注入
 
     # 腾讯实时行情 (复用 _fetch_tencent_spot, 与急跌保护同源)
@@ -1145,7 +1168,7 @@ def run(dry_run: bool = False) -> int:
     if not dry_run:
         data = update_data(data)
 
-    today = date.today()
+    today = _today_sh()
 
     # R4: 交易日历校验 - 非交易日 (周末/节假日) 跳过信号生成
     if not is_trading_day(today):
@@ -1252,11 +1275,7 @@ def run(dry_run: bool = False) -> int:
         print("     注: 此过滤为实盘保护, 回测中不存在(回测用真实收盘价自然触发)")
         # 从candidates中移除, 重新选目标
         candidates = [(c, s) for c, s in candidates if c not in dropped_codes]
-        if candidates:
-            target = candidates[0][0]
-            candidates[0][1]
-        else:
-            target = DEFENSE
+        target = candidates[0][0] if candidates else DEFENSE
 
     overlay = evaluate_v4_overlay(
         data=data,
@@ -1597,6 +1616,8 @@ def confirm_order(
                 raise ValueError(
                     f"卖出数量 {shares} 超过持仓 {state['shares']}"
                 )
+            if shares % 100 != 0:
+                raise ValueError(f"卖出股数必须是100的整数倍: {shares}")
             if shares != int(expected_sell.get("shares", state["shares"])):
                 raise ValueError("换仓卖出必须按待确认订单数量完整成交")
             amount = shares * price * (1 - FEE - SLIPPAGE)
@@ -1623,6 +1644,8 @@ def confirm_order(
                 raise ValueError(f"买入价格必须 > 0, 实际: {price}")
             if shares <= 0:
                 raise ValueError(f"买入数量必须 > 0, 实际: {shares}")
+            if shares % 100 != 0:
+                raise ValueError(f"买入股数必须是100的整数倍: {shares}")
             # 校验买入代码匹配 pending_order
             expected_code = expected_buy.get("code")
             if expected_code and code != expected_code:
@@ -1712,6 +1735,8 @@ def record_manual_trade(action: str, code: str, shares: int, price: float,
                 state["shares"] = 0
                 state["entry_price"] = 0.0
         elif action == "buy":
+            if shares % 100 != 0:
+                raise ValueError(f"买入股数必须是100的整数倍: {shares}")
             amount = shares * price * (1 + FEE + SLIPPAGE)
             if state["cash"] - amount < 0:
                 raise ValueError(

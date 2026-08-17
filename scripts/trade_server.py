@@ -17,8 +17,10 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import hmac
+import json
 import math
 import secrets
 import sys
@@ -51,22 +53,53 @@ _LOGIN_ATTEMPTS: dict[str, list[float]] = {}
 _LOGIN_RATE_LIMIT = 5
 _LOGIN_WINDOW = 60.0
 
-# 幂等去重: 已处理的 idempotency_key (内存, 保留 1 小时)
-_IDEMPOTENCY_STORE: dict[str, float] = {}
+# 幂等去重: 已处理的 idempotency_key (持久化到文件, 保留 1 小时)
+_IDEMPOTENCY_FILE = ls.LIVE_DIR / "idempotency.json"
 _IDEMPOTENCY_TTL = 3600.0
+
+def _load_idempotency() -> dict[str, float]:
+    if _IDEMPOTENCY_FILE.exists():
+        try:
+            with open(_IDEMPOTENCY_FILE) as f:
+                data = json.load(f)
+            if isinstance(data, dict):
+                now = time.time()
+                return {k: v for k, v in data.items() if now - v <= _IDEMPOTENCY_TTL}
+        except (json.JSONDecodeError, OSError):
+            pass
+    return {}
+
+def _save_idempotency(store: dict[str, float]) -> None:
+    try:
+        with open(_IDEMPOTENCY_FILE, "w") as f:
+            json.dump(store, f)
+    except OSError:
+        pass
 # 金额/数量安全上限 (拒绝超大值, 防输入错误/注入)
 MAX_TRADE_AMOUNT = 1e9
 
 
 def get_data() -> dict:
     global _DATA_CACHE, _DATA_CACHE_TIME
-    mtime = max(
-        (f.stat().st_mtime for f in ls.DATA_DIR.glob("*.parquet")), default=0.0
-    )
-    if _DATA_CACHE is None or mtime > _DATA_CACHE_TIME:
+    files = list(ls.DATA_DIR.glob("*.parquet"))
+    if not files:
+        if _DATA_CACHE is not None:
+            _DATA_CACHE = None
+            _DATA_CACHE_TIME = 0.0
+        return ls.load_data()
+    mtime = max(f.stat().st_mtime for f in files)
+    # 同时检查文件数量变化 (删除/新增)
+    cache_file_count = getattr(get_data, "_file_count", 0)
+    if (
+        _DATA_CACHE is None
+        or mtime > _DATA_CACHE_TIME
+        or len(files) != cache_file_count
+    ):
         _DATA_CACHE = ls.load_data()
         _DATA_CACHE_TIME = time.time()
-    return _DATA_CACHE
+        get_data._file_count = len(files)
+    # 返回副本防止 inject_realtime 污染全局缓存
+    return copy.deepcopy(_DATA_CACHE)
 
 
 def refresh_data() -> None:
@@ -234,7 +267,7 @@ def logout(request: Request, response: Response) -> dict:
 
 
 @app.get("/api/health")
-def api_health() -> dict:
+def api_health(_: None = Depends(require_token)) -> dict:
     """健康检查: 只返回安全的运行指标, 不暴露持仓/token/凭证."""
     state = ls.load_state()
     return {
@@ -580,12 +613,14 @@ class TradeRequest(BaseModel):
 def _check_idempotency(key: str | None) -> None:
     """幂等去重: 相同 idempotency_key 在 TTL 内重复提交 → 409."""
     now = time.time()
+    store = _load_idempotency()
     # 清理过期记录
-    for k in [k for k, t in _IDEMPOTENCY_STORE.items() if now - t > _IDEMPOTENCY_TTL]:
-        _IDEMPOTENCY_STORE.pop(k, None)
+    for k in [k for k, t in store.items() if now - t > _IDEMPOTENCY_TTL]:
+        store.pop(k, None)
+    _save_idempotency(store)
     if key is None:
         return
-    if key in _IDEMPOTENCY_STORE:
+    if key in store:
         raise HTTPException(
             status_code=409, detail="重复提交 (idempotency_key 已处理)"
         )
@@ -593,7 +628,9 @@ def _check_idempotency(key: str | None) -> None:
 
 def _record_idempotency(key: str | None) -> None:
     if key:
-        _IDEMPOTENCY_STORE[key] = time.time()
+        store = _load_idempotency()
+        store[key] = time.time()
+        _save_idempotency(store)
 
 
 @app.post("/api/confirm")
@@ -698,7 +735,14 @@ def api_trade(payload: TradeRequest, _: None = Depends(require_token)) -> dict:
 @app.post("/api/refresh")
 def api_refresh(_: None = Depends(require_token)) -> dict:
     refresh_data()
-    return {"ok": True}
+    # 刷新后尝试获取实时行情, 提示前端数据新鲜度
+    spot = ls._fetch_tencent_spot()
+    ok, reason = ls.validate_realtime_data(spot) if spot else (False, "无实时数据")
+    return {
+        "ok": True,
+        "realtime_ok": ok,
+        "realtime_reason": reason if not ok else None,
+    }
 
 
 def main() -> None:
