@@ -233,9 +233,11 @@ echo "  ✓ trade-web is-active"
 
 # 无 token 必须 401/403 (鉴权生效; 只看状态码, 不取 body)
 # is-active 到端口可连接有短暂竞态, 允许重试; 但返回码必须最终是 401/403
+# 注意: curl 失败时 -w 仍会输出 000, 不能用 || echo "000" 兜底 (会拼出 000000 提前 break)
 HTTP_CODE="000"
-for _ in {1..10}; do
-    HTTP_CODE=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PORT/api/health" 2>/dev/null || echo "000")
+for _ in {1..15}; do
+    CODE=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PORT/api/health" 2>/dev/null) || CODE="000"
+    HTTP_CODE="$CODE"
     [[ "$HTTP_CODE" != "000" ]] && break
     sleep 1
 done
@@ -273,7 +275,7 @@ with open(sys.argv[1], "w") as f:
     f.write(f'header = "Cookie: qx_token={token}"\n')
 PYEOF
 then
-    CODE=$(curl -s -K "$CURL_CONF" -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PORT/api/health" 2>/dev/null || echo "000")
+    CODE=$(curl -s -K "$CURL_CONF" -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PORT/api/health" 2>/dev/null) || CODE="000"
     if [[ "$CODE" != "200" ]]; then
         rm -f "$CURL_CONF"
         echo "  ❌ /api/health 带 token 返回 HTTP $CODE (预期 200)"
@@ -282,7 +284,7 @@ then
     echo "  ✓ /api/health 带 token 200"
 
     # 以下为软检查 (非交易时段/数据未就绪时可能异常, 不阻断)
-    CODE=$(curl -s -K "$CURL_CONF" -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PORT/api/status" 2>/dev/null || echo "000")
+    CODE=$(curl -s -K "$CURL_CONF" -o /dev/null -w '%{http_code}' "http://127.0.0.1:$PORT/api/status" 2>/dev/null) || CODE="000"
     if [[ "$CODE" == "200" ]]; then
         echo "  ✓ /api/status 200"
     else
