@@ -49,8 +49,9 @@ ssh root@106.52.243.51 'mkdir -p /opt/quant/deploy/staging/20260817'
 scp scripts/live_signal.py scripts/trade_server.py scripts/notify.py \
     root@106.52.243.51:/opt/quant/deploy/staging/20260817/
 
-# 配套: health_check.sh 鉴权适配 (部署后健康检查才不会误报)
-scp deploy/health_check.sh root@106.52.243.51:/opt/quant/deploy/health_check.sh
+# 部署脚本本身 + health_check.sh 鉴权适配 (部署后健康检查才不会误报)
+scp deploy/deploy_20260817.sh deploy/health_check.sh \
+    root@106.52.243.51:/opt/quant/deploy/
 ssh root@106.52.243.51 'chmod 0755 /opt/quant/deploy/health_check.sh'
 ```
 
@@ -137,7 +138,7 @@ ls -la /opt/quant/data/live/idempotency.json
 
 ```bash
 cd /opt/quant && /opt/quant/.venv/bin/python scripts/live_signal.py --notify-test
-# 应收到测试通知; 失败时观察日志是否有 15s→30s→60s 退避重试
+# 应收到测试通知; 失败时观察日志是否有 10s 超时 × 3 次 + 2s→4s 退避重试
 ```
 
 ### 验证 E: 部署清单已更新
@@ -213,10 +214,11 @@ cp "$BACKUP_DIR/state.json" /opt/quant/data/live/state.json
 ## 📝 变更摘要
 
 ```
-修复 13 个 bug:
-  live_signal.py: 时区统一、inject_realtime 全部检查、停牌回退、100股校验
-  trade_server.py: 幂等性持久化、health 鉴权、缓存文件数检查、deepcopy 防污染
-  notify.py: Bark 指数退避重试 (3次)
+本包在 3a20ac2 的 13 项修复之上, 叠加专家团审核后的 P0-P2 修复 (55f22cb):
+  部署层: 全程 systemd/staging+替换前备份/trap 回滚/.DEPLOYED_MANIFEST/--server 护栏
+  trade_server.py: 幂等原子写+锁、refresh 真注入、关闭 /docs、时区统一
+  live_signal.py: 卖出零股口径、停牌回退防未来函数、inject 空集守卫
+  notify.py: 退避定版 10s×3 + 2s→4s、4xx 不重试、失败落盘 notify_failures.log
 配套运维变更:
   deploy/health_check.sh: /api/health 鉴权适配 (取未过期 web_token, 取不到跳过)
 ```
