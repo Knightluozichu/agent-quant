@@ -294,5 +294,8 @@
 - [x] FIX-008 验收: ruff check 变更文件全绿; pytest 全量 exit=0 (约 300+ 通过);
       mypy 对 live_signal/trade_server/notify 零新增错误 (消掉 _file_count 旧错误);
       bash -n 部署脚本语法通过; CI 门禁 (notify.py mypy) 通过
-- [ ] FIX-009 服务器首演: 非交易时段按新 CHECKLIST 执行 deploy_20260817.sh,
-      先单独跑 health_check.sh 验证检查项 2 (token 提取仅代码级核对, 未实测)
+- [x] FIX-009 服务器首演完成 (2026-08-17 17:20, 备份 deploy/backup/20260817_172044):
+      首演发现并修复 curl 状态码兜底拼接 bug (1daffdc), 二次执行全部通过;
+      401 鉴权/is-active/journalctl 无异常/哈希一致/manifest 已写;
+      health_check.sh 检查项 2 实测: 无未过期 token 时跳过不误报 ✓;
+      数据新鲜度 ❌ 为预存在 (run_data_sync cron 21:30 未运行); 属主已归一化 quant
