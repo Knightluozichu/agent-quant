@@ -11,9 +11,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
-from strategy_lab.engine import backtest  # noqa: E402
-from strategy_lab.strategies import v3_select  # noqa: E402
+import run_qixing_v3 as rq
+from strategy_lab.engine import backtest
+from strategy_lab.strategies import v3_select
 
 PARAMS = {"mom_periods": (10, 20), "mom_weights": (0.5, 0.5), "rebalance_days": 5}
 CAPITAL = 100_000.0

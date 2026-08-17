@@ -299,3 +299,16 @@
       401 鉴权/is-active/journalctl 无异常/哈希一致/manifest 已写;
       health_check.sh 检查项 2 实测: 无未过期 token 时跳过不误报 ✓;
       数据新鲜度 ❌ 为预存在 (run_data_sync cron 21:30 未运行); 属主已归一化 quant
+
+## 2026-08-17 (晚): I-FIX-01~05 遗留项清零
+
+- [x] FIX-010 I-FIX-01 config 竞态: config.lock (fcntl.flock) 串行化
+      require_token/login/logout/set_password 读-改-写; 锁顺序
+      config.lock → idempotency.lock → state lock 全路径核对无反向获取
+- [x] FIX-011 I-FIX-04 请求体限制: 纯 ASGI middleware, >64KB → 413,
+      非法 Content-Length → 400; 测试 4 个新增 (并发 login 8 线程不丢 token/413/400)
+- [x] FIX-012 I-FIX-02 全仓 ruff check 归零: src/ 139 个全修
+      (DTZ 时区语义 15 处统一 Asia/Shanghai, pydantic 运行时注解文件保留运行时导入);
+      研究脚本 per-file-ignores 放宽纯风格规则, 正确性规则 36 个逐个修复;
+      tests/ 19 个修复; 全仓 ruff check = 0 errors, format --check 通过
+- [x] FIX-013 I-FIX-03 确认符合设计意图, 关闭; I-FIX-05 实测 deepcopy 0.2ms, 关闭

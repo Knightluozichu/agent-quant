@@ -12,8 +12,6 @@ Evolution: 20 rounds flywheel, checkpoint best weights
 from __future__ import annotations
 
 import json
-import time
-from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 
@@ -810,7 +808,7 @@ def run_flywheel_evolution(
     # Final summary
     print(f"\n{'=' * 70}")
     print(f"  进化完成! 最优: Round {best_round + 1}, 收益: {best_return:+.2%}")
-    print(f"  最优权重:")
+    print("  最优权重:")
     for i, (name, w) in enumerate(zip(ALL_FACTORS, best_weights)):
         bar = "█" * int(w * 50)
         print(f"    {name:15s}: {w:.4f} ({w * 100:.1f}%) {bar}")
@@ -888,7 +886,7 @@ def main():
     best_weights = evo_result["best_weights"]
     full_result = run_backtest_with_weights(data, index_df, best_weights)
 
-    print(f"\n  全周期回测结果:")
+    print("\n  全周期回测结果:")
     print(f"    总收益:   {full_result['total_return']:+.2%}")
     print(f"    年化收益: {full_result['ann_return']:+.2%}")
     print(f"    年化波动: {full_result['ann_vol']:.2%}")

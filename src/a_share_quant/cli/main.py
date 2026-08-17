@@ -14,14 +14,12 @@ from __future__ import annotations
 import sys
 from datetime import date
 from pathlib import Path
-from typing import Optional
 
 import typer
 from rich.console import Console
 from rich.table import Table
-from rich.panel import Panel
 
-from a_share_quant.settings import Settings, get_settings
+from a_share_quant.settings import get_settings
 
 app = typer.Typer(
     name="quant",
@@ -83,7 +81,7 @@ def doctor() -> None:
     try:
         settings = get_settings()
         check_ok("Settings 加载成功")
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         check_fail(f"Settings 加载失败: {e}")
         console.print("\n[red]配置加载失败，无法继续检查[/red]")
         raise typer.Exit(code=1) from e
@@ -199,7 +197,7 @@ def backtest_run(
     from a_share_quant.regime import RegimeDetector
     from a_share_quant.strategies import get_strategy
 
-    console.print(f"\n[bold cyan]📊 运行回测[/bold cyan]")
+    console.print("\n[bold cyan]📊 运行回测[/bold cyan]")
     console.print(f"  期间: {start} → {end}")
     console.print(f"  标的: {symbols}")
     console.print(f"  资金: {capital:,.0f}")
@@ -284,7 +282,7 @@ def backtest_run(
 
             # Check exit conditions
             if pos_info:
-                should_exit, reason = strat.should_exit(pos_info, df, regime, trade_date)
+                should_exit, _reason = strat.should_exit(pos_info, df, regime, trade_date)
                 if should_exit and pos_info.sellable > 0:
                     orders.append(
                         OrderEvent(
@@ -358,7 +356,7 @@ def strategy_list() -> None:
 @strategy_app.command("info")
 def strategy_info(name: str = typer.Argument(..., help="Strategy name")) -> None:
     """Show strategy details."""
-    from a_share_quant.strategies import get_strategy, STRATEGY_REGISTRY
+    from a_share_quant.strategies import STRATEGY_REGISTRY, get_strategy
 
     if name not in STRATEGY_REGISTRY:
         console.print(f"[red]未知策略: {name}[/red]")
@@ -368,7 +366,7 @@ def strategy_info(name: str = typer.Argument(..., help="Strategy name")) -> None
 
     console.print(f"\n[bold cyan]📊 {name}[/bold cyan]")
     console.print(f"  描述: {strat.description}")
-    console.print(f"\n[bold]默认参数:[/bold]")
+    console.print("\n[bold]默认参数:[/bold]")
     for key, value in strat.params.items():
         console.print(f"  {key}: {value}")
     console.print()
@@ -425,7 +423,7 @@ def data_test(
         except ImportError:
             console.print("  [red]✗[/red] jqdatasdk 未安装")
             console.print("  运行: uv pip install jqdatasdk")
-            raise typer.Exit(code=1)
+            raise typer.Exit(code=1) from None
         except Exception as e:
             console.print(f"  [red]✗[/red] 错误: {e}")
             raise typer.Exit(code=1) from e
@@ -460,7 +458,7 @@ def viz(
         console.print(f"  错误: {e}")
         raise typer.Exit(code=1) from e
 
-    console.print(f"\n[bold cyan]🚀 启动可视化仪表盘[/bold cyan]")
+    console.print("\n[bold cyan]🚀 启动可视化仪表盘[/bold cyan]")
     console.print(f"  地址: http://{host}:{port}")
     console.print(f"  数据源: {provider}")
     console.print(f"  调试模式: {'开启' if debug else '关闭'}")

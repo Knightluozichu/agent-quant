@@ -30,9 +30,9 @@ PROJECT_ROOT = Path(__file__).parent.parent
 OUTPUT_DIR = PROJECT_ROOT / "data" / "v9_results"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-from exp_short_window_patterns import close_matrix  # noqa: E402
-from exp_v3_r4_sameday import run_v3_r4_sameday  # noqa: E402
-from run_qixing_v3 import (  # noqa: E402
+from exp_short_window_patterns import close_matrix
+from exp_v3_r4_sameday import run_v3_r4_sameday
+from run_qixing_v3 import (
     DEFENSE,
     ETF_POOL,
     FEE,

@@ -15,9 +15,9 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
-from strategy_lab.engine import WARMUP, backtest, build_idx_map  # noqa: E402
-from strategy_lab.strategies import v3_select  # noqa: E402
+import run_qixing_v3 as rq
+from strategy_lab.engine import backtest, build_idx_map
+from strategy_lab.strategies import v3_select
 
 PARAMS = {"mom_periods": (10, 20), "mom_weights": (0.5, 0.5), "rebalance_days": 5}
 IS_END = pd.Timestamp("2024-01-01")
@@ -66,7 +66,7 @@ def main() -> None:
 
     is_corr = is_df["dispersion"].corr(is_df["fwd_ret"])
     oos_corr = oos_df["dispersion"].corr(oos_df["fwd_ret"])
-    print(f"\n  离散度 与 V3下期收益 相关性:")
+    print("\n  离散度 与 V3下期收益 相关性:")
     print(f"    样本内 2020-2024: {is_corr:+.3f}")
     print(f"    样本外 2024-2026: {oos_corr:+.3f}")
 
@@ -95,7 +95,7 @@ def main() -> None:
 
     is_hi, is_lo = hi_lo(is_df)
     oos_hi, oos_lo = hi_lo(oos_df)
-    print(f"\n  【核心检验】 高分散 vs 低分散:")
+    print("\n  【核心检验】 高分散 vs 低分散:")
     print(
         f"    样本内: 高 {is_hi * 100:+.2f}% vs 低 {is_lo * 100:+.2f}%  "
         f"({'高>低 ✓' if is_hi > is_lo else '高<低 ✗'})"

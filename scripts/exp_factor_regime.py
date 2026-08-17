@@ -15,9 +15,9 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
-from strategy_lab.engine import WARMUP, backtest, build_idx_map, get_common_dates  # noqa: E402
-from strategy_lab.strategies import v3_select  # noqa: E402
+import run_qixing_v3 as rq
+from strategy_lab.engine import backtest, build_idx_map
+from strategy_lab.strategies import v3_select
 
 PARAMS = {"mom_periods": (10, 20), "mom_weights": (0.5, 0.5), "rebalance_days": 5}
 IS_END = pd.Timestamp("2024-01-01")  # 样本内/外分界
@@ -120,7 +120,7 @@ def main() -> None:
     # 增强: 低组收益替换为0(持货币), 高组保留
     enh_rets = oos_df.apply(lambda r: r["fwd_ret"] if r[best_factor] > thr else 0.0, axis=1)
     enh_oos = (1 + enh_rets).prod() - 1
-    print(f"\n  【OOS 策略对比 2024-2026】")
+    print("\n  【OOS 策略对比 2024-2026】")
     print(f"    纯V3:        {plain_oos * 100:+.1f}%")
     print(f"    增强(低{best_factor}持币): {enh_oos * 100:+.1f}%")
     verdict = (

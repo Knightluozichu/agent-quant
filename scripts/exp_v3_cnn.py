@@ -36,7 +36,7 @@ OUTPUT_DIR = PROJECT_ROOT / "data" / "v9_results"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 sys.path.insert(0, str(Path(__file__).parent))
-from run_qixing_v3 import ETF_POOL, load_data  # noqa: E402
+from run_qixing_v3 import ETF_POOL, load_data
 
 WARMUP = 130
 INITIAL_CAPITAL = 100_000.0

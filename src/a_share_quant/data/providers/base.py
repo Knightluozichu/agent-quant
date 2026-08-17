@@ -10,11 +10,12 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from datetime import date
-from typing import Optional, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
-import pandas as pd
+if TYPE_CHECKING:
+    import pandas as pd
 
-from a_share_quant.data.schemas import SecurityInfo
+    from a_share_quant.data.schemas import SecurityInfo
 
 
 @runtime_checkable
@@ -54,7 +55,7 @@ class DataProvider(Protocol):
         """
         ...
 
-    def get_security_info(self, symbol: str) -> Optional[SecurityInfo]:
+    def get_security_info(self, symbol: str) -> SecurityInfo | None:
         """Get info for a specific security."""
         ...
 

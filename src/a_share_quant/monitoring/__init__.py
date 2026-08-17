@@ -10,12 +10,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date, datetime
-from typing import Optional
 
 import numpy as np
-import pandas as pd
 from scipy import stats
-
 
 # =============================================================================
 # Drift Detection Results
@@ -72,7 +69,7 @@ class StatisticalDriftDetector:
         baseline: np.ndarray,
         current: np.ndarray,
         metric_name: str,
-    ) -> Optional[DriftAlert]:
+    ) -> DriftAlert | None:
         """Detect drift using KS test."""
         if len(baseline) < 10 or len(current) < 10:
             return None
@@ -102,12 +99,12 @@ class StatisticalDriftDetector:
         baseline: np.ndarray,
         current: np.ndarray,
         metric_name: str,
-    ) -> Optional[DriftAlert]:
+    ) -> DriftAlert | None:
         """Detect drift in mean using t-test."""
         if len(baseline) < 10 or len(current) < 10:
             return None
 
-        t_stat, p_value = stats.ttest_ind(baseline, current)
+        _t_stat, p_value = stats.ttest_ind(baseline, current)
 
         if p_value < self.sensitivity:
             self._alert_counter += 1
@@ -161,7 +158,7 @@ class PerformanceDriftMonitor:
     ):
         self.baseline_window = baseline_window
         self.alert_threshold = alert_threshold
-        self._baseline: Optional[PerformanceWindow] = None
+        self._baseline: PerformanceWindow | None = None
         self._history: list[PerformanceWindow] = []
         self._detector = StatisticalDriftDetector()
 
@@ -260,7 +257,7 @@ class RegimeDriftMonitor:
             state: count / self._total_observations for state, count in self._current_counts.items()
         }
 
-    def check_drift(self) -> Optional[DriftAlert]:
+    def check_drift(self) -> DriftAlert | None:
         """Check for regime distribution drift."""
         if not self._baseline or self._total_observations < 20:
             return None

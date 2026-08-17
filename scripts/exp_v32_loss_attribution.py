@@ -24,8 +24,8 @@ OUTPUT_DIR = PROJECT_ROOT / "data" / "v9_results"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 sys.path.insert(0, str(Path(__file__).parent))
-from exp_short_window_patterns import close_matrix  # noqa: E402
-from run_qixing_v3 import ETF_POOL, load_data  # noqa: E402
+from exp_short_window_patterns import close_matrix
+from run_qixing_v3 import ETF_POOL, load_data
 
 
 def main() -> None:
@@ -124,7 +124,6 @@ def main() -> None:
         mean_d = ret_arr[mask].mean()
         # 年化贡献 = 日均 × 252 × 天数占比
         ann_contrib = mean_d * 252 * mask.mean()
-        deep = (vol20_arr[mask] > 0).sum()  # 占位
         print(
             f"  [{lo:.2f}, {hi:.2f})          {mask.sum():>6} {mean_d:>+10.4%} "
             f"{ann_contrib:>+10.1%}"
@@ -140,7 +139,6 @@ def main() -> None:
     print(f"  低波动 (vol20≤0.45) 持仓日均收益: {ret_arr[lv].mean():+.4%} ({lv.sum()}天)")
 
     # 高波动+高动量 (追高) 的后续表现: 持仓 vol20>0.5 且 mom10>0.15
-    from run_qixing_v3 import load_data as _ld
 
     hv_mom = 0.0
     hv_mom_n = 0

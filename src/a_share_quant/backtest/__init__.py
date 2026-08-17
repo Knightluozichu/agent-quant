@@ -14,13 +14,12 @@ Core loop:
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
-from datetime import date
-from typing import Callable, Optional, Protocol
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from a_share_quant.data.providers.base import DataProvider
 from a_share_quant.rules import (
     CashAccount,
     FeeCalculator,
@@ -29,6 +28,13 @@ from a_share_quant.rules import (
     SettlementRule,
 )
 
+if TYPE_CHECKING:
+    from collections.abc import Callable
+    from datetime import date
+
+    from a_share_quant.data.providers.base import DataProvider
+
+logger = logging.getLogger(__name__)
 
 # =============================================================================
 # Events
@@ -63,7 +69,7 @@ class OrderEvent:
     side: str  # BUY, SELL
     quantity: int
     order_type: str = "MARKET"  # MARKET, LIMIT
-    limit_price: Optional[float] = None
+    limit_price: float | None = None
     strategy_name: str = ""
 
 
@@ -111,7 +117,7 @@ class ExecutionSimulator:
         bar: dict,  # OHLCV for the day
         prev_close: float,
         board: str,
-    ) -> Optional[FillEvent]:
+    ) -> FillEvent | None:
         """Simulate order execution.
 
         Returns FillEvent if order can be filled, None otherwise.
@@ -137,15 +143,13 @@ class ExecutionSimulator:
         is_limit_up = abs(bar["close"] - upper_limit) < 0.01
         is_limit_down = abs(bar["close"] - lower_limit) < 0.01
 
-        if order.side == "BUY" and is_limit_up:
+        if order.side == "BUY" and is_limit_up and bar["open"] >= upper_limit:
             # At limit up, may not be able to buy
-            if bar["open"] >= upper_limit:
-                return None  # Opened at limit up, no sellers
+            return None  # Opened at limit up, no sellers
 
-        if order.side == "SELL" and is_limit_down:
+        if order.side == "SELL" and is_limit_down and bar["open"] <= lower_limit:
             # At limit down, may not be able to sell
-            if bar["open"] <= lower_limit:
-                return None  # Opened at limit down, no buyers
+            return None  # Opened at limit down, no buyers
 
         # Calculate fees
         amount = fill_price * order.quantity
@@ -329,8 +333,9 @@ class BacktestEngine:
             )
             if not cal.empty and "trade_date" in cal.columns:
                 return sorted(cal["trade_date"].tolist())
-        except Exception:
-            pass
+        except Exception as e:
+            # 交易日历接口不可用时回退到从行情数据提取交易日
+            logger.debug(f"Trading calendar unavailable, falling back to daily data: {e}")
 
         # Fallback: extract from data
         all_dates = set()
@@ -339,7 +344,7 @@ class BacktestEngine:
                 all_dates.update(df["trade_date"].tolist())
         return sorted(all_dates)
 
-    def _get_bar(self, symbol: str, trade_date: date) -> Optional[dict]:
+    def _get_bar(self, symbol: str, trade_date: date) -> dict | None:
         """Get OHLCV bar for symbol on date."""
         if symbol not in self._daily_data:
             return None
@@ -363,7 +368,7 @@ class BacktestEngine:
 
     def run(
         self,
-        strategy_fn: Optional[Callable[[date, dict, dict], list[OrderEvent]]] = None,
+        strategy_fn: Callable[[date, dict, dict], list[OrderEvent]] | None = None,
     ) -> BacktestResult:
         """Run the backtest.
 

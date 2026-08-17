@@ -20,8 +20,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
-import exp_v31_sharpe as ex  # noqa: E402
+import exp_v31_sharpe as ex
+import run_qixing_v3 as rq
 
 OUTPUT = Path(__file__).parent.parent / "data" / "qixing_results" / "v31_research_results.json"
 

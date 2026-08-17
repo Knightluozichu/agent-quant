@@ -15,10 +15,11 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
-from exp_sector_cycles import SECTORS, load_all as load_sectors  # noqa: E402
-from strategy_lab.engine import backtest  # noqa: E402
-from strategy_lab.strategies import v3_select  # noqa: E402
+import run_qixing_v3 as rq
+from exp_sector_cycles import SECTORS
+from exp_sector_cycles import load_all as load_sectors
+from strategy_lab.engine import backtest
+from strategy_lab.strategies import v3_select
 
 FEE = 0.0005
 SLIPPAGE = 0.001

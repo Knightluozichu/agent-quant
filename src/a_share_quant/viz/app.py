@@ -2,15 +2,15 @@
 
 from __future__ import annotations
 
-from dash import Dash, html, dcc
 import dash_bootstrap_components as dbc
+from dash import Dash, dcc, html
 
 from a_share_quant.viz.data_loader import DashboardDataLoader
 from a_share_quant.viz.layouts import (
+    create_evolution_layout,
     create_market_state_layout,
     create_positions_layout,
     create_trade_plan_layout,
-    create_evolution_layout,
 )
 
 
@@ -119,14 +119,13 @@ def _register_callbacks(app: Dash, loader: DashboardDataLoader) -> None:
         """
         if active_tab == "market-state":
             return create_market_state_layout(loader)
-        elif active_tab == "positions":
+        if active_tab == "positions":
             return create_positions_layout(loader)
-        elif active_tab == "trade-plan":
+        if active_tab == "trade-plan":
             return create_trade_plan_layout(loader)
-        elif active_tab == "evolution":
+        if active_tab == "evolution":
             return create_evolution_layout(loader)
-        else:
-            return html.Div("未知页面", className="text-danger")
+        return html.Div("未知页面", className="text-danger")
 
 
 def run_dashboard(
@@ -144,7 +143,7 @@ def run_dashboard(
         debug: Enable debug mode
     """
     app = create_app(provider_type)
-    print(f"\n🚀 启动仪表盘: http://{host}:{port}")
-    print(f"   数据源: {provider_type}")
-    print("   按 Ctrl+C 停止\n")
+    print(f"\n🚀 启动仪表盘: http://{host}:{port}")  # noqa: T201  # CLI 启动信息
+    print(f"   数据源: {provider_type}")  # noqa: T201  # CLI 启动信息
+    print("   按 Ctrl+C 停止\n")  # noqa: T201  # CLI 启动信息
     app.run(host=host, port=port, debug=debug)

@@ -20,16 +20,15 @@ import sys
 import warnings
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 warnings.filterwarnings("ignore")
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
-import exp_drop_gate_h3 as h3  # noqa: E402  # 含 run_v3_risk_h3
-from exp_drop_gate_exempt import select_target_exempt  # noqa: E402
+import exp_drop_gate_h3 as h3  # 含 run_v3_risk_h3
+import run_qixing_v3 as rq
+from exp_drop_gate_exempt import select_target_exempt
 
 OUTPUT_DIR = Path(rq.PROJECT_ROOT) / "data" / "v9_results"
 DATA_DIR = Path(rq.PROJECT_ROOT) / "data" / "cross_asset"
@@ -107,7 +106,7 @@ def main() -> None:
         b = next(i for i, d in enumerate(dates) if str(d) >= s1)
         return max(a - WARMUP, 0), min(b, n)
 
-    from exp_v32_tail_risk import IS_START, IS_END, OOS_START, OOS_END
+    from exp_v32_tail_risk import IS_END, IS_START, OOS_END, OOS_START
 
     OOS_END_ACTUAL = min(OOS_END, str(dates[-1]))
     segs = [

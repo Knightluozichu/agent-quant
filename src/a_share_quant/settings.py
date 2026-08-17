@@ -8,9 +8,8 @@ from __future__ import annotations
 
 from enum import StrEnum
 from pathlib import Path
-from typing import Optional
 
-from pydantic import Field, field_validator
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -81,11 +80,11 @@ class Settings(BaseSettings):
     # ------------------------------------------------------------------
     data_provider: DataProviderType = DataProviderType.MOCK
     data_start_date: str = "20100101"
-    data_end_date: Optional[str] = None
+    data_end_date: str | None = None
 
-    joinquant_username: Optional[str] = None
-    joinquant_password: Optional[str] = None
-    tushare_token: Optional[str] = None
+    joinquant_username: str | None = None
+    joinquant_password: str | None = None
+    tushare_token: str | None = None
     akshare_enabled: bool = False
 
     # ------------------------------------------------------------------
@@ -96,7 +95,7 @@ class Settings(BaseSettings):
     bar_frequency: str = "1d"
     signal_at: str = "close"
     execution_at: str = "next_open"
-    benchmark_symbol: Optional[str] = None
+    benchmark_symbol: str | None = None
     universe_profile: str = "liquid_etf_mvp"
     risk_profile: str = "paper_conservative"
     fee_profile: str = "cn_a_share_date_aware"
@@ -116,18 +115,18 @@ class Settings(BaseSettings):
     # Broker / paper trading
     # ------------------------------------------------------------------
     broker_provider: BrokerProviderType = BrokerProviderType.PAPER
-    broker_account_id: Optional[str] = None
-    qmt_install_path: Optional[str] = None
+    broker_account_id: str | None = None
+    qmt_install_path: str | None = None
     qmt_account_type: str = "STOCK"
-    ptrade_endpoint: Optional[str] = None
-    ptrade_account_id: Optional[str] = None
+    ptrade_endpoint: str | None = None
+    ptrade_account_id: str | None = None
 
     # ------------------------------------------------------------------
     # Notifications
     # ------------------------------------------------------------------
     notify_provider: NotifyProviderType = NotifyProviderType.CONSOLE
-    notify_webhook_url: Optional[str] = None
-    notify_email: Optional[str] = None
+    notify_webhook_url: str | None = None
+    notify_email: str | None = None
 
     # ------------------------------------------------------------------
     # Safety interlock

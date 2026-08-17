@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
-from dash import html
+from typing import TYPE_CHECKING
+
 import dash_bootstrap_components as dbc
+from dash import html
 
 from a_share_quant.viz.components.cards import MetricCard
 from a_share_quant.viz.components.charts import create_drawdown_chart
-from a_share_quant.viz.data_loader import DashboardDataLoader, PositionData
+
+if TYPE_CHECKING:
+    from a_share_quant.viz.data_loader import DashboardDataLoader, PositionData
 
 
 def create_positions_layout(loader: DashboardDataLoader) -> html.Div:

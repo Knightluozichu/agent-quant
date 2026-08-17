@@ -4,14 +4,14 @@ Provides unified data access through the DataProvider protocol.
 """
 
 from a_share_quant.data.providers.base import BaseDataProvider, DataProvider
-from a_share_quant.data.providers.mock import MockProvider
 from a_share_quant.data.providers.local_parquet import LocalParquetProvider
+from a_share_quant.data.providers.mock import MockProvider
 
 __all__ = [
     "BaseDataProvider",
     "DataProvider",
-    "MockProvider",
     "LocalParquetProvider",
+    "MockProvider",
     "get_data_provider",
 ]
 

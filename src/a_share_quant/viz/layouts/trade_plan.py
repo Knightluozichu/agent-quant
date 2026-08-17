@@ -2,11 +2,15 @@
 
 from __future__ import annotations
 
-from dash import html
+from typing import TYPE_CHECKING
+
 import dash_bootstrap_components as dbc
+from dash import html
 
 from a_share_quant.viz.components.cards import MetricCard
-from a_share_quant.viz.data_loader import DashboardDataLoader, TradeSignalData
+
+if TYPE_CHECKING:
+    from a_share_quant.viz.data_loader import DashboardDataLoader, TradeSignalData
 
 
 def create_trade_plan_layout(loader: DashboardDataLoader) -> html.Div:

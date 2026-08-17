@@ -5,12 +5,13 @@
 """
 
 from __future__ import annotations
+
 import json
 import warnings
 from pathlib import Path
+
 import numpy as np
 import pandas as pd
-from itertools import product
 
 warnings.filterwarnings("ignore")
 
@@ -262,7 +263,7 @@ def main():
             f"{'是' if r['drop_filter'] else '否':<8} {r['error']:>6.2f} {r['total']:>+9.0%} | {yr_str}"
         )
 
-    print(f"\n  原版参考:                                        | +27% +33% +76% +8% +55% +238%")
+    print("\n  原版参考:                                        | +27% +33% +76% +8% +55% +238%")
 
     # 保存最佳结果
     best = results[0]

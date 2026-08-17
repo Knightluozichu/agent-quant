@@ -9,14 +9,16 @@ Reads data from local Parquet files organized in a layered storage structure:
 
 from __future__ import annotations
 
-from datetime import date
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
 from a_share_quant.data.providers.base import BaseDataProvider
 from a_share_quant.data.schemas import SecurityInfo
+
+if TYPE_CHECKING:
+    from datetime import date
 
 
 class LocalParquetProvider(BaseDataProvider):
@@ -54,7 +56,7 @@ class LocalParquetProvider(BaseDataProvider):
             raise FileNotFoundError(msg)
         return pd.read_parquet(path)
 
-    def _read_symbol_parquet(self, subdir: str, symbol: str) -> Optional[pd.DataFrame]:
+    def _read_symbol_parquet(self, subdir: str, symbol: str) -> pd.DataFrame | None:
         """Read a per-symbol parquet file."""
         path = self._layer_path / subdir / f"{symbol}.parquet"
         if not path.exists():
@@ -100,7 +102,7 @@ class LocalParquetProvider(BaseDataProvider):
 
         return df.reset_index(drop=True)
 
-    def get_security_info(self, symbol: str) -> Optional[SecurityInfo]:
+    def get_security_info(self, symbol: str) -> SecurityInfo | None:
         """Get security info."""
         try:
             df = self.get_security_list(include_delisted=True)

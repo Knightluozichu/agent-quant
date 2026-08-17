@@ -27,7 +27,7 @@ PROJECT_ROOT = Path(__file__).parent.parent
 OUTPUT_DIR = PROJECT_ROOT / "data" / "v9_results"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-from exp_short_window_patterns import (  # noqa: E402
+from exp_short_window_patterns import (
     CATEGORIES,
     ETF_POOL,
     close_matrix,

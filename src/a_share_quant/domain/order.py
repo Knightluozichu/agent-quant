@@ -8,14 +8,17 @@ Strict separation of concerns:
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime  # noqa: TC003  # pydantic 在运行时解析字段注解
 from enum import StrEnum
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
-from a_share_quant.domain.strategy_decision import StrategyId
-from a_share_quant.domain.trade_plan import ExitReason
+from a_share_quant.domain.strategy_decision import (  # noqa: TC001  # pydantic 运行时解析
+    StrategyId,
+)
+from a_share_quant.domain.trade_plan import (  # noqa: TC001  # pydantic 运行时解析
+    ExitReason,
+)
 
 
 class OrderSide(StrEnum):
@@ -61,7 +64,7 @@ class Order(BaseModel):
     side: OrderSide = Field(description="Buy or sell")
     order_type: OrderType = Field(description="Market or limit")
     quantity: int = Field(gt=0, description="Order quantity in shares")
-    limit_price: Optional[float] = Field(
+    limit_price: float | None = Field(
         default=None,
         gt=0,
         description="Limit price (required for limit orders)",
@@ -69,19 +72,19 @@ class Order(BaseModel):
 
     # Timing
     created_at: datetime = Field(description="Order creation time")
-    submitted_at: Optional[datetime] = Field(
+    submitted_at: datetime | None = Field(
         default=None,
         description="Order submission time",
     )
-    filled_at: Optional[datetime] = Field(
+    filled_at: datetime | None = Field(
         default=None,
         description="Order fill time",
     )
-    cancelled_at: Optional[datetime] = Field(
+    cancelled_at: datetime | None = Field(
         default=None,
         description="Order cancellation time",
     )
-    expires_at: Optional[datetime] = Field(
+    expires_at: datetime | None = Field(
         default=None,
         description="Order expiry time",
     )
@@ -96,14 +99,14 @@ class Order(BaseModel):
         ge=0,
         description="Quantity filled so far",
     )
-    average_fill_price: Optional[float] = Field(
+    average_fill_price: float | None = Field(
         default=None,
         gt=0,
         description="Average fill price",
     )
 
     # Rejection info
-    rejection_reason: Optional[str] = Field(
+    rejection_reason: str | None = Field(
         default=None,
         description="Reason for rejection if applicable",
     )
@@ -246,7 +249,7 @@ class Position(BaseModel):
 
     # Timing
     opened_at: datetime = Field(description="Position open time")
-    closed_at: Optional[datetime] = Field(
+    closed_at: datetime | None = Field(
         default=None,
         description="Position close time",
     )
@@ -263,26 +266,26 @@ class Position(BaseModel):
     )
 
     # Exit tracking
-    exit_reason: Optional[ExitReason] = Field(
+    exit_reason: ExitReason | None = Field(
         default=None,
         description="Reason for exit if closed",
     )
 
     # Price tracking
     entry_price: float = Field(gt=0, description="Entry price")
-    current_price: Optional[float] = Field(
+    current_price: float | None = Field(
         default=None,
         description="Latest price",
     )
-    highest_price: Optional[float] = Field(
+    highest_price: float | None = Field(
         default=None,
         description="Highest price since entry (for trailing stop)",
     )
-    lowest_price: Optional[float] = Field(
+    lowest_price: float | None = Field(
         default=None,
         description="Lowest price since entry (for MAE)",
     )
-    current_stop_price: Optional[float] = Field(
+    current_stop_price: float | None = Field(
         default=None,
         description="Current trailing stop price",
     )
@@ -292,7 +295,7 @@ class Position(BaseModel):
         default=0.0,
         description="Realized P&L from partial closes",
     )
-    unrealized_pnl: Optional[float] = Field(
+    unrealized_pnl: float | None = Field(
         default=None,
         description="Unrealized P&L at current price",
     )

@@ -15,9 +15,9 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
-from exp_escape_signal import price_on  # noqa: E402
-from strategy_lab.engine import WARMUP, build_idx_map, get_common_dates  # noqa: E402
+import run_qixing_v3 as rq
+from exp_escape_signal import price_on
+from strategy_lab.engine import WARMUP, build_idx_map, get_common_dates
 
 FEE = 0.0005
 SLIPPAGE = 0.001

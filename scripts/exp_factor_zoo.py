@@ -16,8 +16,8 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
-from strategy_lab.engine import backtest  # noqa: E402
+import run_qixing_v3 as rq
+from strategy_lab.engine import backtest
 
 IS_END = date(2024, 1, 1)
 WEIGHT = 0.5  # 因子权重(z-score单位)

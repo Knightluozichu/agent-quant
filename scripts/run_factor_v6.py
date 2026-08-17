@@ -267,18 +267,18 @@ class FactorNN:
     def _activate(self, x):
         if self.activation == "relu":
             return np.maximum(0, x)
-        elif self.activation == "leaky_relu":
+        if self.activation == "leaky_relu":
             return np.where(x > 0, x, 0.01 * x)
-        elif self.activation == "tanh":
+        if self.activation == "tanh":
             return np.tanh(x)
         return np.maximum(0, x)
 
     def _activate_grad(self, x):
         if self.activation == "relu":
             return (x > 0).astype(float)
-        elif self.activation == "leaky_relu":
+        if self.activation == "leaky_relu":
             return np.where(x > 0, 1.0, 0.01)
-        elif self.activation == "tanh":
+        if self.activation == "tanh":
             return 1 - np.tanh(x) ** 2
         return (x > 0).astype(float)
 
@@ -300,7 +300,6 @@ class FactorNN:
 
     def backward(self, pred: np.ndarray, target: np.ndarray) -> dict:
         """BP: 计算梯度."""
-        n = len(pred)
         # d(loss)/d(pred) for Pearson correlation
         p = pred - pred.mean()
         t = target - target.mean()
@@ -777,10 +776,9 @@ def main():
         return
 
     # === Step 1: 因子聚类 ===
-    print(f"\n[Step 1] 因子聚类分析...")
+    print("\n[Step 1] 因子聚类分析...")
     all_dates = sorted(index_df["trade_date"].tolist())
-    # 用中间日期的面板做聚类
-    mid_date = all_dates[len(all_dates) // 2]
+    # 用采样日期的面板做聚类
     panels_sample = build_factor_panel(data, index_df, all_dates[::5])  # 每5天采样
 
     # 合并所有面板计算相关性
@@ -791,7 +789,7 @@ def main():
     if all_factor_vals:
         combined = pd.concat(all_factor_vals, ignore_index=True)
         corr_matrix = combined[ALL_FACTORS].corr()
-        print(f"  因子相关系数矩阵 (|r|>0.7 标记为同族):")
+        print("  因子相关系数矩阵 (|r|>0.7 标记为同族):")
         # 打印高相关对
         high_corr = []
         for i in range(len(ALL_FACTORS)):
@@ -804,7 +802,7 @@ def main():
         print(f"\n  确认6个聚类代表: {CLUSTER_REPS}")
 
     # === Step 2-6: 运行10个策略 ===
-    print(f"\n[Step 2-6] 运行10个策略变体...")
+    print("\n[Step 2-6] 运行10个策略变体...")
     # 构建日级因子面板 (跳过warmup)
     warmup_dates = all_dates[100:]  # 跳过前100天warmup
     print(f"  构建日级因子面板 ({len(warmup_dates)} 天)...")
@@ -826,10 +824,10 @@ def main():
 
     # === 输出10×5年度矩阵 ===
     print(f"\n{'=' * 70}")
-    print(f"  10策略 × 年度收益矩阵")
+    print("  10策略 × 年度收益矩阵")
     print(f"{'=' * 70}")
 
-    years = sorted(set(y for r in results.values() for y in r.get("yearly", {}).keys()))
+    years = sorted(set(y for r in results.values() for y in r.get("yearly", {})))
     header = (
         f"  {'策略':<20}"
         + "".join(f"{y:>8}" for y in years)
@@ -854,7 +852,7 @@ def main():
 
     # 基准线
     print(f"  {'-' * (20 + 8 * len(years) + 21)}")
-    print(f"  基准: 纯动量Top4 = 策略#1")
+    print("  基准: 纯动量Top4 = 策略#1")
 
     # === 保存 ===
     summary = {}

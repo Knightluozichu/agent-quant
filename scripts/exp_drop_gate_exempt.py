@@ -26,10 +26,9 @@ warnings.filterwarnings("ignore")
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
-import exp_drop_gate_h3 as h3mod  # noqa: E402
-import exp_v32_tail_risk as ev32  # noqa: E402
-from exp_v32_tail_risk import (  # noqa: E402
+import exp_drop_gate_h3 as h3mod
+import run_qixing_v3 as rq
+from exp_v32_tail_risk import (
     IS_END,
     IS_START,
     OOS_END,

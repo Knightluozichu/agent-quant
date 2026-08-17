@@ -134,6 +134,36 @@ known-first-party = ["a_share_quant"]
     "RUF002", # ambiguous unicode char in docstring (Chinese text is intentional)
     "S310",   # suspicious url open (known safe data sources)
 ]
+# 研究/实验脚本 (exp_*、run_*、archive_*、strategy_lab 等一次性分析代码):
+# 实验结果已归档, 放宽纯风格规则; 正确性规则 (F841/F401/F811 等) 仍全量强制。
+# 生产脚本 (live_signal/trade_server/notify/daily_calibrate/sync_server_preview 等)
+# 不在下列 glob 内, 保持全规则门禁。决策见 tasks/DECISIONS.md 2026-08-17。
+"scripts/exp_*.py" = [
+    "N803", "N806", "E501", "E402", "ARG001", "B007", "B905",
+    "RUF005", "RUF059", "SIM102", "SIM108", "SIM103", "RET504",
+    "C401", "C416", "UP031", "UP042", "TC001", "TC002", "TC003",
+    "S110", "E741", "C408",
+]
+"scripts/run_*.py" = [
+    "N803", "N806", "E501", "E402", "ARG001", "B007", "B905",
+    "RUF005", "RUF059", "SIM102", "SIM108", "SIM103", "RET504",
+    "C401", "C416", "UP031", "UP042", "TC001", "TC002", "TC003",
+    "S110", "E741", "C408",
+]
+"scripts/archive_*.py" = [
+    "N803", "N806", "E501", "E402", "ARG001", "B007", "B905",
+    "RUF005", "RUF059", "SIM102", "SIM108", "SIM103", "RET504",
+    "C401", "C416", "UP031", "UP042", "TC001", "TC002", "TC003",
+    "S110", "E741", "C408",
+]
+"scripts/strategy_lab/*.py" = [
+    "N803", "N806", "E501", "E402", "ARG001", "B007", "B905",
+    "RUF005", "RUF059", "SIM102", "SIM108", "SIM103", "RET504",
+    "C401", "C416", "UP031", "UP042", "TC001", "TC002", "TC003",
+    "S110", "E741", "C408",
+]
+"scripts/plot_strategy.py" = ["E501", "ARG001", "C408"]
+"scripts/next_rebalance.py" = ["E501", "ARG001", "C408"]
 
 # ---------------------------------------------------------------------------
 # mypy

@@ -26,9 +26,8 @@ warnings.filterwarnings("ignore")
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
-from exp_short_window_patterns import close_matrix  # noqa: E402
-from exp_v32_tail_risk import (  # noqa: E402
+import run_qixing_v3 as rq
+from exp_v32_tail_risk import (
     IS_END,
     IS_START,
     OOS_END,

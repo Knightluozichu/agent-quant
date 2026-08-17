@@ -25,10 +25,10 @@ warnings.filterwarnings("ignore")
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
-import exp_drop_gate_h3 as h3  # noqa: E402
-from exp_drop_gate_exempt import select_target_exempt  # noqa: E402
-from exp_v32_tail_risk import WARMUP  # noqa: E402
+import exp_drop_gate_h3 as h3
+import run_qixing_v3 as rq
+from exp_drop_gate_exempt import select_target_exempt
+from exp_v32_tail_risk import WARMUP
 
 OUTPUT_DIR = Path(rq.PROJECT_ROOT) / "data" / "v9_results"
 ORIG_SELECT = rq.select_target
@@ -141,8 +141,6 @@ def main():
         a = next(i for i, d in enumerate(dates) if str(d) >= s0)
         b = next(i for i, d in enumerate(dates) if str(d) >= s1)
         return max(a - WARMUP, 0), min(b, n)
-
-    from exp_v32_tail_risk import IS_START, IS_END, OOS_START, OOS_END
 
     # === 基线数据 ===
     r_base = run_base(data)

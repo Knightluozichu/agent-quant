@@ -19,8 +19,6 @@ import sys
 import warnings
 from pathlib import Path
 
-import numpy as np
-
 warnings.filterwarnings("ignore")
 
 PROJECT_ROOT = Path(__file__).parent.parent
@@ -28,10 +26,10 @@ OUTPUT_DIR = PROJECT_ROOT / "data" / "v9_results"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 sys.path.insert(0, str(Path(__file__).parent))
-import exp_v32_tail_risk as t  # noqa: E402
-from exp_short_window_patterns import close_matrix  # noqa: E402
-from exp_v3_r4_sameday import run_v3_r4_sameday  # noqa: E402
-from run_qixing_v3 import load_data  # noqa: E402
+import exp_v32_tail_risk as t
+from exp_short_window_patterns import close_matrix
+from exp_v3_r4_sameday import run_v3_r4_sameday
+from run_qixing_v3 import load_data
 
 WARMUP = 130
 

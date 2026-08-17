@@ -321,11 +321,6 @@ def run_backtest(
     # 调仓日
     rebalance_dates = trading_dates[::rebalance]
 
-    # WF训练用 (NN策略需要)
-    use_nn = strategy == "nn_gate_vol"
-    use_gate = strategy in ("nn_gate_vol", "v42")
-    use_vol = strategy == "nn_gate_vol"
-
     cash = initial_capital
     holdings: dict[str, int] = {}
     equity_history = []
@@ -537,7 +532,6 @@ def calc_benchmarks(data: dict, index_df: pd.DataFrame, start_date, end_date) ->
     idx = index_df[(index_df["trade_date"] >= start_date) & (index_df["trade_date"] <= end_date)]
     if not idx.empty:
         benchmarks["沪深300"] = {}
-        idx_c = idx.set_index("trade_date")["close"]
         for year in sorted(set(idx["trade_date"].apply(lambda x: x.year))):
             ydf = idx[idx["trade_date"].apply(lambda x: x.year) == year]
             if len(ydf) >= 2:
@@ -611,7 +605,7 @@ def main():
     print(f"\n  数据: {all_dates[0]} ~ {all_dates[-1]} ({len(all_dates)}天)")
 
     # 构建日级因子面板
-    print(f"  构建因子面板...")
+    print("  构建因子面板...")
     warmup_dates = all_dates[80:]
     panels = build_factor_panel(data, index_df, warmup_dates)
     print(f"  有效面板: {len(panels)}天")
@@ -643,7 +637,7 @@ def main():
     # === 年度矩阵 ===
     years = list(range(2022, 2027))
     print(f"\n{'=' * 75}")
-    print(f"  年度收益矩阵 (含基准)")
+    print("  年度收益矩阵 (含基准)")
     print(f"{'=' * 75}")
 
     header = (
@@ -686,7 +680,7 @@ def main():
 
     # === 超额收益 ===
     print(f"\n{'=' * 75}")
-    print(f"  超额收益 (vs 沪深300)")
+    print("  超额收益 (vs 沪深300)")
     print(f"{'=' * 75}")
     header2 = f"  {'策略':<22}" + "".join(f"{y:>8}" for y in years)
     print(header2)

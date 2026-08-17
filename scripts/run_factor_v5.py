@@ -16,15 +16,15 @@
 
 from __future__ import annotations
 
-import json
 import warnings
 from datetime import date
 from pathlib import Path
+from typing import ClassVar
 
 import numpy as np
 import pandas as pd
 from scipy import stats
-from scipy.cluster.hierarchy import linkage, fcluster
+from scipy.cluster.hierarchy import fcluster, linkage
 from scipy.spatial.distance import squareform
 
 warnings.filterwarnings("ignore", category=stats.ConstantInputWarning)
@@ -195,7 +195,7 @@ class ExpertModels:
     Momentum-dominant: trend expert starts with higher weight.
     """
 
-    EXPERT_FACTORS = {
+    EXPERT_FACTORS: ClassVar[dict[str, list[str]]] = {
         "trend": ["momentum", "trend", "volume_trend"],
         "reversal": ["reversal", "rsi", "bias"],  # bias inverted in calc
         "breakout": ["breakout", "momentum_accel", "obv"],
@@ -311,7 +311,7 @@ def correlation_cluster_weights(
     5. Cap: max_per_cluster ETFs per cluster get weight
     """
     if len(selected) <= 1:
-        return {s: 1.0 for s in selected}
+        return dict.fromkeys(selected, 1.0)
 
     # Compute returns matrix
     ret_matrix = []
@@ -515,7 +515,7 @@ def run_v5_backtest(
     prev_factor_df = None
 
     # Factor calculator (reuse from v4.3)
-    from run_factor_v43 import FactorCalc, CROSS_FACTORS
+    from run_factor_v43 import FactorCalc
 
     calc = FactorCalc()
     calc.load_external()
@@ -784,7 +784,7 @@ def main():
     result = run_v5_backtest(data, index_df, initial_capital=100_000)
 
     eq = result["equity_curve"]
-    print(f"\n  年度收益:")
+    print("\n  年度收益:")
     print(f"  {'年份':<6} {'年初':>10} {'年末':>10} {'收益':>8} {'回撤':>8}")
     print(f"  {'-' * 46}")
     prev = 100_000.0
@@ -828,13 +828,13 @@ def main():
     # Expert weight evolution
     if result["expert_weights"]:
         last_ew = result["expert_weights"][-1]
-        print(f"\n  最终专家权重:")
+        print("\n  最终专家权重:")
         for k, v in last_ew.items():
             if k.startswith("w_"):
                 print(f"    {k[2:]:<10}: {v:.1%}")
 
     # 2023 stress test
-    print(f"\n[2/2] 2023压力测试...")
+    print("\n[2/2] 2023压力测试...")
     from datetime import date as dt_date
 
     r2023 = run_v5_backtest(
@@ -859,7 +859,7 @@ def main():
                 print(f"    {e['date']} {e['symbol']} {e['reason']} ret={e['return']:+.1%}")
 
     # Benchmark comparison
-    print(f"\n  基准对比 (全周期):")
+    print("\n  基准对比 (全周期):")
     idx_c = index_df["close"].values
     bench_300 = (idx_c[-1] - idx_c[0]) / idx_c[0]
     print(f"    沪深300: {bench_300:+.1%}")

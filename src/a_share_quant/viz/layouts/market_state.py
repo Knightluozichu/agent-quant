@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
-from dash import html, dcc
-import dash_bootstrap_components as dbc
+from typing import TYPE_CHECKING
 
-from a_share_quant.viz.components.cards import StateCard, MetricCard
+import dash_bootstrap_components as dbc
+from dash import html
+
+from a_share_quant.viz.components.cards import MetricCard, StateCard
 from a_share_quant.viz.components.charts import create_heatmap, create_pie_chart
-from a_share_quant.viz.data_loader import DashboardDataLoader
+
+if TYPE_CHECKING:
+    from a_share_quant.viz.data_loader import DashboardDataLoader
 
 
 def create_market_state_layout(loader: DashboardDataLoader) -> html.Div:

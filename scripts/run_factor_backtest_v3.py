@@ -9,7 +9,6 @@ Runs v3 strategy on 4.3 years of data with:
 from __future__ import annotations
 
 import sys
-from datetime import date
 from pathlib import Path
 
 import numpy as np
@@ -19,11 +18,10 @@ PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from a_share_quant.factors.v3 import (
+    CrashProtector,
+    FlywheelEvolution,
     V3Config,
     V3Portfolio,
-    FlywheelEvolution,
-    CrashProtector,
-    risk_parity_weights,
 )
 from a_share_quant.regime import RegimeDetector
 
@@ -469,11 +467,11 @@ def print_report(result: dict, wf_results: list, flywheel_status: dict, data: di
         print(f"  平均超额: {avg_excess:+.2%} | 胜率: {win_rate:.0%} ({wins}/{n_windows})")
 
         if avg_excess > 0.005:
-            print(f"  ✓ 样本外正超额，v3有泛化能力")
+            print("  ✓ 样本外正超额，v3有泛化能力")
         elif avg_excess > -0.01:
-            print(f"  △ 样本外接近零，alpha边际")
+            print("  △ 样本外接近零，alpha边际")
         else:
-            print(f"  ✗ 样本外为负，仍需改进")
+            print("  ✗ 样本外为负，仍需改进")
 
     # Flywheel
     print(f"\n{'=' * 70}")

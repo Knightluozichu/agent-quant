@@ -9,13 +9,9 @@
 
 from __future__ import annotations
 
-import itertools
 import json
 import sys
-import time
 from pathlib import Path
-
-import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -129,7 +125,7 @@ def main():
     print(f"\n  ★ 第2轮最优: {best_mom[2]} (评分={best_score_r2:.3f})")
 
     # === 第三轮: A股均线 (锁定前两轮) ===
-    print(f"\n  [第3轮] A_SHARE_MA 均线周期")
+    print("\n  [第3轮] A_SHARE_MA 均线周期")
     print(f"  {'MA':<10} {'年化':>8} {'夏普':>6} {'回撤':>8} {'评分':>8}")
     print(f"  {'-' * 44}")
 
@@ -165,14 +161,13 @@ def main():
     }
 
     print(f"\n{'=' * 70}")
-    print(f"  最终最优参数组合")
+    print("  最终最优参数组合")
     print(f"{'=' * 70}")
     for k, v in final_params.items():
         print(f"    {k} = {v}")
 
     # 跑最终结果
     final_result = run_with_params(data, final_params)
-    eq = final_result["equity_curve"]
 
     print(f"\n  总收益: {final_result['total_return']:+.1%}")
     print(f"  年化:   {final_result['ann_return']:+.1%}")
@@ -189,7 +184,7 @@ def main():
 
     # === 与当前生产参数对比 ===
     print(f"\n{'=' * 70}")
-    print(f"  对比: 当前生产参数 vs 优化后参数")
+    print("  对比: 当前生产参数 vs 优化后参数")
     print(f"{'=' * 70}")
     baseline = run_with_params(data, {"DROP_LOOKBACK": 3})  # 当前生产
     print(f"  {'指标':<10} {'当前(3日)':>12} {'优化后':>12} {'提升':>12}")

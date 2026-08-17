@@ -10,23 +10,17 @@ import sys
 from datetime import date
 from pathlib import Path
 
-import numpy as np
 import pandas as pd
 
 # Add project to path
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
-from a_share_quant.regime import RegimeDetector, REGIME_STRATEGY_MAP
-from a_share_quant.strategies import get_strategy, PositionInfo, StrategySignal
 from a_share_quant.backtest import (
-    BacktestConfig,
-    BacktestEngine,
     MetricsCalculator,
-    OrderEvent,
     PerformanceMetrics,
 )
-
+from a_share_quant.regime import RegimeDetector
 
 # =============================================================================
 # Data Loading
@@ -98,12 +92,11 @@ class RegimeRotationStrategy:
         # Generate signal
         if self.position is None and target is not None:
             return "BUY", target
-        elif self.position is not None and target is None:
+        if self.position is not None and target is None:
             return "SELL", self.position
-        elif self.position is not None and target != self.position:
+        if self.position is not None and target != self.position:
             return "SWITCH", target
-        else:
-            return "HOLD", self.position or ""
+        return "HOLD", self.position or ""
 
 
 # =============================================================================
@@ -378,7 +371,7 @@ def print_report(result: dict, benchmark_equity: pd.Series) -> None:
             )
 
     # Regime distribution
-    print(f"\n--- 市场状态分布 ---")
+    print("\n--- 市场状态分布 ---")
     state_counts = {}
     for r in regime_history:
         state_counts[r["state"]] = state_counts.get(r["state"], 0) + 1

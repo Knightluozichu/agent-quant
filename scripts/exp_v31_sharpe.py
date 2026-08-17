@@ -22,10 +22,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import numpy as np  # noqa: E402
-import pandas as pd  # noqa: E402
-
-import run_qixing_v3 as rq  # noqa: E402
+import numpy as np
+import pandas as pd
+import run_qixing_v3 as rq
 
 INITIAL = 100_000.0
 WARMUP = 130
@@ -112,7 +111,7 @@ def select_target_v31(data, dmap, idx_map, holding, P):
     threshold = 0.0 if best_score > 0.10 else 0.05
 
     if holding and holding != rq.DEFENSE:
-        cur_score = dict((c[0], c[1]) for c in candidates).get(holding, -999.0)
+        cur_score = {c[0]: c[1] for c in candidates}.get(holding, -999.0)
         if cur_score > 0:
             target = best_target if best_score > cur_score + threshold else holding
         else:
@@ -360,7 +359,7 @@ def main() -> None:
         "+P1+P2+P4拥挤惩罚": {**chosen, "crowd_penalty": 0.7},
         "全量P1+P2+P3+P4": {**chosen, "use_vol_mom": True, "crowd_penalty": 0.7},
     }
-    print(f"\n  [3] 机制消融对比 (夏普)")
+    print("\n  [3] 机制消融对比 (夏普)")
     print(f"  {'配置':<22} {'IS':>6} {'OOS':>6} {'全周期':>6} {'全周期回撤':>9} {'退出次':>5}")
     # 真实镜像基线 (含涨跌停检查的 run_qixing_v3_same_day)
     print(
@@ -393,7 +392,7 @@ def main() -> None:
     )
     eq = r_best["equity"]
     eq["year"] = eq["trade_date"].dt.year
-    print(f"\n      年度明细:")
+    print("\n      年度明细:")
     print(f"      {'年份':<6} {'收益':>8} {'波动':>8} {'夏普':>6} {'回撤':>8}")
     prev = None
     for year in sorted(eq["year"].unique()):
@@ -408,7 +407,7 @@ def main() -> None:
     print(f"\n      10万 → {final:,.0f} ({final / INITIAL - 1:+.0%})")
 
     # === 4. 参数扰动 ±20% 稳健性 ===
-    print(f"\n  [5] 参数扰动稳健性 (全周期夏普)")
+    print("\n  [5] 参数扰动稳健性 (全周期夏普)")
     base_sharpe = mfull["sharpe"]
     for label, pmod in [
         ("σ_target -20%", {"vol_target": chosen["vol_target"] * 0.8}),
@@ -425,7 +424,7 @@ def main() -> None:
         print(f"      {flag} {label:<16} 夏普 {mp['sharpe']:.2f} (基准 {base_sharpe:.2f})")
 
     # === 5. 成本压力 ===
-    print(f"\n  [6] 成本压力测试 (推荐配置)")
+    print("\n  [6] 成本压力测试 (推荐配置)")
     for mult in [2.0, 3.0]:
         rc = run_v31(data, P_best, dmap, cost_multiplier=mult)
         mc = metrics(rc["equity"], "2020-01-01", "2026-12-31")
@@ -562,7 +561,7 @@ def gain_scan() -> None:
         rq.MOM_PERIODS, rq.MOM_WEIGHTS = orig_p, orig_w
 
     # 最优放大方案的成本压力测试
-    print(f"\n  [D1 th=0.10 成本压力测试]")
+    print("\n  [D1 th=0.10 成本压力测试]")
     for mult in [2.0, 3.0]:
         eq = run_v31(data, {"daily_strong": True, "strong_th": 0.10}, dmap, cost_multiplier=mult)[
             "equity"
@@ -676,7 +675,7 @@ def compare() -> None:
     print(f"  {'P2退出次数':<10} {'-':>12} {r['n_exits']:>12}")
 
     # 年度对比
-    print(f"\n  年度对比:")
+    print("\n  年度对比:")
     print(
         f"  {'年份':<6} {'V3收益':>8} {'V3.1收益':>9} {'V3夏普':>6} {'V3.1夏普':>7} {'V3回撤':>7} {'V3.1回撤':>8}"
     )

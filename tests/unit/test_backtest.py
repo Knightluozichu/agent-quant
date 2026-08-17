@@ -9,7 +9,6 @@ from a_share_quant.backtest import (
     BacktestConfig,
     BacktestEngine,
     ExecutionSimulator,
-    FillEvent,
     MetricsCalculator,
     OrderEvent,
     PerformanceMetrics,

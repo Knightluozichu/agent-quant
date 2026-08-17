@@ -16,7 +16,6 @@ import json
 import warnings
 from datetime import date as dt_date
 from pathlib import Path
-from typing import Callable
 
 import numpy as np
 import pandas as pd
@@ -111,10 +110,7 @@ def check_single_day_drop(close: np.ndarray) -> bool:
     """近3日有单日跌>3% → 排除."""
     if len(close) < 4:
         return True
-    for i in range(-3, 0):
-        if (close[i] - close[i - 1]) / close[i - 1] < -0.03:
-            return False
-    return True
+    return all((close[i] - close[i - 1]) / close[i - 1] >= -0.03 for i in range(-3, 0))
 
 
 def check_a_share_weak(data: dict, as_of_idx: int) -> bool:
@@ -363,7 +359,7 @@ def main():
             print(f"  公共日期: {min(common)} ~ {max(common)} ({len(common)}天)")
 
         # 1. IS/OOS
-        print(f"\n  [1/3] IS/OOS...", end=" ", flush=True)
+        print("\n  [1/3] IS/OOS...", end=" ", flush=True)
         is_oos = run_is_oos(data, pool)
         oos = is_oos["OOS"]
         if "error" not in oos:
@@ -377,7 +373,7 @@ def main():
             print(f"ERROR: {oos.get('error', 'unknown')}")
 
         # 2. 滚动窗口
-        print(f"  [2/3] Rolling...", end=" ", flush=True)
+        print("  [2/3] Rolling...", end=" ", flush=True)
         rolling = run_rolling(data, pool)
         print(f"正收益={rolling['positive']}/3 {'PASS' if rolling['passed'] else 'FAIL'}")
         for wname, wr in rolling["windows"].items():
@@ -389,7 +385,7 @@ def main():
                 print(f"    {wname}: {wr.get('error', 'ERR')}")
 
         # 3. 全回测
-        print(f"  [3/3] Full...", end=" ", flush=True)
+        print("  [3/3] Full...", end=" ", flush=True)
         full = run_full(data, pool)
         if "error" not in full:
             print(
@@ -434,7 +430,7 @@ def main():
         )
 
     # 年度对比
-    print(f"\n  年度收益对比:")
+    print("\n  年度收益对比:")
     header = f"  {'年份':<6}"
     for pool_name, _ in POOLS:
         short = pool_name.split("_")[0]

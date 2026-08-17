@@ -25,14 +25,14 @@ warnings.filterwarnings("ignore")
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
+import run_qixing_v3 as rq
 
 OUTPUT_DIR = Path(rq.PROJECT_ROOT) / "data" / "v9_results"
 DROP_THR = -0.03
 RET60_THR = 0.01
 
-import torch  # noqa: E402
-import torch.nn as nn  # noqa: E402
+import torch
+import torch.nn as nn
 
 
 def collect_events(data: dict) -> list[dict]:

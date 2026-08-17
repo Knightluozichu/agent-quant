@@ -6,14 +6,21 @@ including which strategies were considered, selected, or rejected.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime  # noqa: TC003  # pydantic 在运行时解析字段注解
 from enum import StrEnum
-from typing import Optional
+from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
-from a_share_quant.domain.market_state import MarketRegime, MarketState
-from a_share_quant.domain.stock_state import StockState
+from a_share_quant.domain.market_state import (  # noqa: TC001  # pydantic 运行时解析
+    MarketState,
+)
+from a_share_quant.domain.stock_state import (  # noqa: TC001  # pydantic 运行时解析
+    StockState,
+)
+
+if TYPE_CHECKING:
+    from a_share_quant.domain.market_state import MarketRegime
 
 
 class StrategyId(StrEnum):
@@ -91,7 +98,7 @@ class StrategyDecision(BaseModel):
         default_factory=list,
         description="All evaluated strategies with results",
     )
-    winning_strategy: Optional[StrategyId] = Field(
+    winning_strategy: StrategyId | None = Field(
         default=None,
         description="The selected strategy (None means cash/no trade)",
     )

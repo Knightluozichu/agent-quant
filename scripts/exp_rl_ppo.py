@@ -34,8 +34,8 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 FEAT_DIR = PROJECT_ROOT / "data" / "v9_results" / "cnn_feats"
 
 sys.path.insert(0, str(Path(__file__).parent))
-from exp_v3_r4_sameday import run_v3_r4_sameday  # noqa: E402
-from run_qixing_v3 import ETF_POOL, load_data  # noqa: E402
+from exp_v3_r4_sameday import run_v3_r4_sameday
+from run_qixing_v3 import ETF_POOL, load_data
 
 WARMUP = 130
 INITIAL_CAPITAL = 100_000.0

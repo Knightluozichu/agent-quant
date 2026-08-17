@@ -1,20 +1,18 @@
 """Tests for risk management and evolution."""
 
-from datetime import date, datetime
+from datetime import date
 
-import pytest
-
-from a_share_quant.risk import (
-    DrawdownController,
-    PositionSizer,
-    PortfolioRiskManager,
-    RiskLimits,
-)
 from a_share_quant.evolution import (
     EvolutionManager,
     StrategyPerformance,
     StrategyStatus,
     StrategyVersion,
+)
+from a_share_quant.risk import (
+    DrawdownController,
+    PortfolioRiskManager,
+    PositionSizer,
+    RiskLimits,
 )
 
 
@@ -99,7 +97,7 @@ class TestPortfolioRiskManager:
         rm = PortfolioRiskManager()
         rm.update_state(1_000_000, date(2024, 1, 1))
 
-        can_open, checks = rm.can_open_position(
+        can_open, _checks = rm.can_open_position(
             equity=1_000_000,
             cash=500_000,
             current_positions=3,

@@ -9,13 +9,11 @@ Core risk controls:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import date
-from typing import Optional
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-import numpy as np
-import pandas as pd
-
+if TYPE_CHECKING:
+    from datetime import date
 
 # =============================================================================
 # Position Sizing
@@ -193,7 +191,7 @@ class PortfolioRiskManager:
         self.limits = limits or RiskLimits()
         self._peak_equity: float = 0.0
         self._daily_start_equity: float = 0.0
-        self._trade_date: Optional[date] = None
+        self._trade_date: date | None = None
 
     def update_state(self, equity: float, trade_date: date) -> None:
         """Update risk manager state."""
@@ -215,7 +213,8 @@ class PortfolioRiskManager:
         return RiskCheckResult(
             passed=passed,
             rule_id="DRAWDOWN",
-            message=f"Drawdown {drawdown:.1%} {'within' if passed else 'exceeds'} limit {self.limits.max_drawdown:.1%}",
+            message=f"Drawdown {drawdown:.1%} {'within' if passed else 'exceeds'} "
+            f"limit {self.limits.max_drawdown:.1%}",
             current_value=drawdown,
             limit_value=self.limits.max_drawdown,
         )
@@ -231,7 +230,8 @@ class PortfolioRiskManager:
         return RiskCheckResult(
             passed=passed,
             rule_id="DAILY_LOSS",
-            message=f"Daily return {daily_return:.1%} {'within' if passed else 'exceeds'} limit -{self.limits.max_daily_loss:.1%}",
+            message=f"Daily return {daily_return:.1%} {'within' if passed else 'exceeds'} "
+            f"limit -{self.limits.max_daily_loss:.1%}",
             current_value=daily_return,
             limit_value=-self.limits.max_daily_loss,
         )
@@ -242,7 +242,8 @@ class PortfolioRiskManager:
         return RiskCheckResult(
             passed=passed,
             rule_id="POSITION_COUNT",
-            message=f"Positions {current_positions} {'within' if passed else 'exceeds'} limit {self.limits.max_positions}",
+            message=f"Positions {current_positions} {'within' if passed else 'exceeds'} "
+            f"limit {self.limits.max_positions}",
             current_value=current_positions,
             limit_value=self.limits.max_positions,
         )
@@ -254,7 +255,8 @@ class PortfolioRiskManager:
         return RiskCheckResult(
             passed=passed,
             rule_id="CASH_RESERVE",
-            message=f"Cash {cash_pct:.1%} {'above' if passed else 'below'} minimum {self.limits.min_cash_reserve:.1%}",
+            message=f"Cash {cash_pct:.1%} {'above' if passed else 'below'} "
+            f"minimum {self.limits.min_cash_reserve:.1%}",
             current_value=cash_pct,
             limit_value=self.limits.min_cash_reserve,
         )
@@ -308,16 +310,15 @@ class DrawdownController:
         """
         if current_drawdown >= self.halt_level:
             return 0.0
-        elif current_drawdown >= self.critical_level:
+        if current_drawdown >= self.critical_level:
             return 0.0  # No new positions
-        elif current_drawdown >= self.warning_level:
+        if current_drawdown >= self.warning_level:
             # Linear reduction from 1.0 to 0.5
             progress = (current_drawdown - self.warning_level) / (
                 self.critical_level - self.warning_level
             )
             return 1.0 - 0.5 * progress
-        else:
-            return 1.0
+        return 1.0
 
     def should_halt_trading(self, current_drawdown: float) -> bool:
         """Check if trading should be halted."""

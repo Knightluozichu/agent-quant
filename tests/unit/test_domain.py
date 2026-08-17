@@ -129,7 +129,7 @@ class TestMarketState:
 
     def test_probabilities_validation(self) -> None:
         """Probabilities must sum to 1.0."""
-        with pytest.raises(ValueError, match="sum to 1.0"):
+        with pytest.raises(ValueError, match=r"sum to 1\.0"):
             MarketState(
                 as_of=datetime(2026, 7, 20),
                 direction=MarketDirection.UP,

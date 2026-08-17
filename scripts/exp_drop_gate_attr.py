@@ -24,8 +24,8 @@ warnings.filterwarnings("ignore")
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
-import exp_v32_tail_risk as ev32  # noqa: E402
+import exp_v32_tail_risk as ev32
+import run_qixing_v3 as rq
 from exp_v32_tail_risk import IS_END, IS_START, OUTPUT_DIR, WARMUP, run_v3_risk
 
 ORIG_CHECK = rq.check_single_day_drop

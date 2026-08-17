@@ -10,17 +10,18 @@ from __future__ import annotations
 
 import hashlib
 import json
+from datetime import UTC
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import yaml
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 
 class ConfigMeta(BaseModel):
     """Metadata about a loaded configuration."""
 
-    source_path: Optional[str] = None
+    source_path: str | None = None
     config_hash: str = ""
     loaded_at: str = ""
     version: str = "1.0"
@@ -159,7 +160,7 @@ class ConfigLoader:
         Returns:
             Tuple of (config, metadata)
         """
-        from datetime import datetime, timezone
+        from datetime import datetime
 
         config = self.load_with_overrides(filename, overrides)
         config_hash = self.compute_hash(config)
@@ -167,7 +168,7 @@ class ConfigLoader:
         meta = ConfigMeta(
             source_path=str(self.config_dir / filename),
             config_hash=config_hash,
-            loaded_at=datetime.now(timezone.utc).isoformat(),
+            loaded_at=datetime.now(UTC).isoformat(),
             version=config.get("version", "1.0"),
         )
 

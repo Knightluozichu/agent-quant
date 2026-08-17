@@ -25,7 +25,7 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent))
-from run_qixing_v3 import (  # noqa: E402
+from run_qixing_v3 import (
     A_SHARE_ETF,
     CATEGORIES,
     DEFENSE,
@@ -229,7 +229,7 @@ def main() -> None:
     print("=" * 70)
     data = load_data()
     print(f"\n  数据: {len(data)}只ETF (与V3同一份缓存, 隔离规则差异)")
-    print(f"\n  回测中 (日频)...")
+    print("\n  回测中 (日频)...")
     res = run_original(data)
     eq = res["eq_df"]
 

@@ -2,12 +2,15 @@
 
 from __future__ import annotations
 
-from dash import html
-import dash_bootstrap_components as dbc
+from typing import TYPE_CHECKING
 
-from a_share_quant.viz.components.cards import MetricCard
+import dash_bootstrap_components as dbc
+from dash import html
+
 from a_share_quant.viz.components.charts import create_equity_curve
-from a_share_quant.viz.data_loader import DashboardDataLoader, EvolutionData
+
+if TYPE_CHECKING:
+    from a_share_quant.viz.data_loader import DashboardDataLoader, EvolutionData
 
 
 def create_evolution_layout(loader: DashboardDataLoader) -> html.Div:
@@ -234,25 +237,24 @@ def _get_promotion_status_message(evo: EvolutionData) -> dbc.Alert:
             color="success",
             className="mb-0",
         )
-    elif evo.promotion_progress >= 0.7:
+    if evo.promotion_progress >= 0.7:
         return dbc.Alert(
             "挑战者表现良好，继续积累样本。",
             color="info",
             className="mb-0",
         )
-    elif evo.current_trades < evo.min_trades_required:
+    if evo.current_trades < evo.min_trades_required:
         remaining = evo.min_trades_required - evo.current_trades
         return dbc.Alert(
             f"样本量不足，还需 {remaining} 笔交易。",
             color="warning",
             className="mb-0",
         )
-    else:
-        return dbc.Alert(
-            "挑战者表现未达标，继续观察。",
-            color="secondary",
-            className="mb-0",
-        )
+    return dbc.Alert(
+        "挑战者表现未达标，继续观察。",
+        color="secondary",
+        className="mb-0",
+    )
 
 
 def _create_metrics_comparison(evo: EvolutionData) -> dbc.Table:

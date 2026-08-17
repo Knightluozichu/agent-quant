@@ -19,8 +19,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from strategy_lab.strategies import REGISTRY  # noqa: E402
-from strategy_lab.validate import run_validation  # noqa: E402
+from strategy_lab.strategies import REGISTRY
+from strategy_lab.validate import run_validation
 
 
 def main() -> None:

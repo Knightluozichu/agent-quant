@@ -11,15 +11,22 @@ Simulates real trading without actual money:
 from __future__ import annotations
 
 import json
+import logging
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import date, datetime, timedelta, timezone, tzinfo
 from pathlib import Path
-from typing import Optional
+from zoneinfo import ZoneInfo
 
-import pandas as pd
+from a_share_quant.rules import CashAccount, FeeCalculator, PositionLedger
 
-from a_share_quant.rules import CashAccount, PositionLedger, FeeCalculator
+logger = logging.getLogger(__name__)
 
+# 成交时间戳一律使用 Asia/Shanghai, 不依赖运行环境本地时区
+_SH_TZ: tzinfo
+try:
+    _SH_TZ = ZoneInfo("Asia/Shanghai")
+except Exception:  # 极简环境缺 tzdata 时回退固定 +08:00 (1991 年后上海无夏令时)
+    _SH_TZ = timezone(timedelta(hours=8), name="Asia/Shanghai")
 
 # =============================================================================
 # Paper Orders
@@ -35,11 +42,11 @@ class PaperOrder:
     side: str  # BUY, SELL
     quantity: int
     order_type: str = "MARKET"
-    limit_price: Optional[float] = None
+    limit_price: float | None = None
     status: str = "PENDING"  # PENDING, FILLED, CANCELLED, REJECTED
     created_at: datetime = field(default_factory=datetime.now)
-    filled_at: Optional[datetime] = None
-    fill_price: Optional[float] = None
+    filled_at: datetime | None = None
+    fill_price: float | None = None
     fill_quantity: int = 0
     commission: float = 0.0
     reject_reason: str = ""
@@ -91,7 +98,7 @@ class PaperBroker:
         self._state_file = Path(state_file)
         self._orders: list[PaperOrder] = []
         self._order_counter = 0
-        self._current_date: Optional[date] = None
+        self._current_date: date | None = None
 
         # Try to restore state
         self._restore_state()
@@ -108,7 +115,7 @@ class PaperBroker:
         """Get all positions."""
         return self._positions.get_all_positions()
 
-    def get_position(self, symbol: str) -> Optional[dict]:
+    def get_position(self, symbol: str) -> dict | None:
         """Get position for a symbol."""
         positions = self._positions.positions.get(symbol)
         if not positions:
@@ -125,7 +132,7 @@ class PaperBroker:
         side: str,
         quantity: int,
         order_type: str = "MARKET",
-        limit_price: Optional[float] = None,
+        limit_price: float | None = None,
         strategy_name: str = "",
     ) -> PaperOrder:
         """Submit a new order."""
@@ -142,10 +149,8 @@ class PaperBroker:
 
         # Validate order
         if side == "BUY":
-            if limit_price:
-                required = limit_price * quantity * 1.001  # Include estimated fees
-            else:
-                required = quantity * 100  # Estimate
+            # Include estimated fees / rough estimate
+            required = limit_price * quantity * 1.001 if limit_price else quantity * 100
             if required > self.available_cash:
                 order.status = "REJECTED"
                 order.reject_reason = "Insufficient funds"
@@ -218,7 +223,7 @@ class PaperBroker:
                 self._account.apply_trade(amount, costs["total"], "SELL", trade_date)
 
             order.status = "FILLED"
-            order.filled_at = datetime.now()
+            order.filled_at = datetime.now(_SH_TZ)
             order.fill_price = fill_price
             order.fill_quantity = order.quantity
             order.commission = costs["total"]
@@ -235,7 +240,7 @@ class PaperBroker:
                 return True
         return False
 
-    def get_orders(self, status: Optional[str] = None) -> list[PaperOrder]:
+    def get_orders(self, status: str | None = None) -> list[PaperOrder]:
         """Get orders, optionally filtered by status."""
         if status:
             return [o for o in self._orders if o.status == status]
@@ -307,8 +312,9 @@ class PaperBroker:
                     for lot in lots_data
                 ]
 
-        except Exception:
-            pass  # Start fresh if restore fails
+        except Exception as e:
+            # 状态恢复失败时从全新状态开始, 仅记录
+            logger.debug(f"Paper state restore failed, starting fresh: {e}")
 
 
 # =============================================================================

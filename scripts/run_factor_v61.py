@@ -13,7 +13,6 @@ V6.1修复:
 
 from __future__ import annotations
 
-import json
 import warnings
 from datetime import date
 from pathlib import Path
@@ -262,18 +261,18 @@ class FactorNN:
     def _activate(self, x):
         if self.activation == "relu":
             return np.maximum(0, x)
-        elif self.activation == "leaky_relu":
+        if self.activation == "leaky_relu":
             return np.where(x > 0, x, 0.01 * x)
-        elif self.activation == "tanh":
+        if self.activation == "tanh":
             return np.tanh(x)
         return np.maximum(0, x)
 
     def _activate_grad(self, x):
         if self.activation == "relu":
             return (x > 0).astype(float)
-        elif self.activation == "leaky_relu":
+        if self.activation == "leaky_relu":
             return np.where(x > 0, 1.0, 0.01)
-        elif self.activation == "tanh":
+        if self.activation == "tanh":
             return 1 - np.tanh(x) ** 2
         return (x > 0).astype(float)
 

@@ -588,7 +588,7 @@ def load_data():
 def main():
     print("=" * 75)
     print("  V7.1: 前2年训练 / 后2年测试")
-    print(f"  训练集: 2022-01 ~ 2023-12 | 测试集: 2024-01 ~ 2026-04")
+    print("  训练集: 2022-01 ~ 2023-12 | 测试集: 2024-01 ~ 2026-04")
     print(f"  调仓: 月频({REBALANCE}天) | Top4")
     print("=" * 75)
 
@@ -597,7 +597,7 @@ def main():
     print(f"\n  数据: {all_dates[0]} ~ {all_dates[-1]} ({len(all_dates)}天)")
 
     # 构建全周期因子面板
-    print(f"  构建因子面板...")
+    print("  构建因子面板...")
     panels = build_factor_panel(data, all_dates[80:])
     print(f"  有效面板: {len(panels)}天")
 
@@ -608,10 +608,10 @@ def main():
     print(f"  测试期: {test_dates[0]} ~ {test_dates[-1]} ({len(test_dates)}天)")
 
     # === 训练阶段 ===
-    print(f"\n[训练] 在2022-2023数据上训练模型...")
+    print("\n[训练] 在2022-2023数据上训练模型...")
 
     # B: NN训练
-    print(f"  训练NN-8 (6因子→8隐藏→1输出)...")
+    print("  训练NN-8 (6因子→8隐藏→1输出)...")
     X_list, y_list = [], []
     for td in train_dates[::5]:
         if td not in panels:
@@ -641,17 +641,17 @@ def main():
     print(f"    训练集IC: {train_ic:.4f}")
 
     # C: AdamW因子权重优化
-    print(f"  优化v4.2因子权重 (AdamW, 16因子)...")
+    print("  优化v4.2因子权重 (AdamW, 16因子)...")
     factor_weights = optimize_factor_weights(
         panels, data, train_dates, ALL_FACTORS, lr=0.01, epochs=200
     )
-    print(f"    优化后权重:")
+    print("    优化后权重:")
     for fname, w in sorted(zip(ALL_FACTORS, factor_weights), key=lambda x: -x[1]):
         if w > 0.03:
             print(f"      {fname:<16} {w:.3f}")
 
     # === 测试阶段 ===
-    print(f"\n[测试] 在2024-2026数据上回测 (纯OOS)...")
+    print("\n[测试] 在2024-2026数据上回测 (纯OOS)...")
 
     strategies = [
         ("A: 纯动量Top4", "momentum", None, None),
@@ -675,7 +675,7 @@ def main():
         )
         results[name] = r
         if "error" in r:
-            print(f"ERROR")
+            print("ERROR")
         else:
             print(
                 f"收益{r['total_return']:+.1%} | 夏普{r['sharpe']:.2f} | "
@@ -683,7 +683,7 @@ def main():
             )
 
     # 也跑训练期(对比用)
-    print(f"\n[对比] 训练期(2022-2023)表现...")
+    print("\n[对比] 训练期(2022-2023)表现...")
     train_results = {}
     for name, strat, nn_model, fw in strategies:
         r = run_backtest(
@@ -724,7 +724,7 @@ def main():
     test_years = [2024, 2025, 2026]
 
     print(f"\n{'=' * 75}")
-    print(f"  完整年度矩阵 (训练期 + 测试期)")
+    print("  完整年度矩阵 (训练期 + 测试期)")
     print(f"{'=' * 75}")
     header = (
         f"  {'策略':<20}"
@@ -772,7 +772,7 @@ def main():
 
     # 超额
     print(f"\n{'=' * 75}")
-    print(f"  OOS超额收益 (vs 沪深300, 仅2024-2026)")
+    print("  OOS超额收益 (vs 沪深300, 仅2024-2026)")
     print(f"{'=' * 75}")
     for name, _, _, _ in strategies:
         r = results[name]

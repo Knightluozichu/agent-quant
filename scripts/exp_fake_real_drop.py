@@ -15,8 +15,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
-from strategy_lab.engine import WARMUP, get_common_dates  # noqa: E402
+import run_qixing_v3 as rq
 
 DROP_THR = -0.05  # 单日大跌阈值
 HORIZON = 5  # 观察后续5日
@@ -83,11 +82,11 @@ def main() -> None:
     print(
         f"\n  【基准】 大跌后5日: 继续跌(真跌) {base_cont:.0f}% | 反弹(假摔) {100 - base_cont:.0f}% | 平均 {base_avg:+.2f}%"
     )
-    print(f"\n  【因子1: 成交量】 放量=真跌? 缩量=假摔?")
+    print("\n  【因子1: 成交量】 放量=真跌? 缩量=假摔?")
     split_report(df, "vol_ratio", "缩量组", "放量组")
-    print(f"\n  【因子2: 趋势位置】 大涨后跌=真跌? 平淡跌=假摔?")
+    print("\n  【因子2: 趋势位置】 大涨后跌=真跌? 平淡跌=假摔?")
     split_report(df, "ret60", "前期平淡组", "前期大涨组")
-    print(f"\n  【因子3: 波动率环境】 高波动=假摔? 低波动=真跌?")
+    print("\n  【因子3: 波动率环境】 高波动=假摔? 低波动=真跌?")
     split_report(df, "vol20", "低波动组", "高波动组")
     print("=" * 64)
     print("  判读: 若某因子高低组'继续跌%'差距大(>10百分点), 说明它有区分力;")

@@ -12,13 +12,14 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from datetime import date
-from typing import Optional
+from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from a_share_quant.backtest import OrderEvent
-from a_share_quant.regime import RegimeState
+if TYPE_CHECKING:
+    from datetime import date
+
+    from a_share_quant.regime import RegimeState
 
 
 @dataclass
@@ -29,9 +30,9 @@ class StrategySignal:
     action: str  # BUY, SELL, HOLD
     strength: float  # 0-1
     reason: str
-    entry_price: Optional[float] = None
-    stop_loss: Optional[float] = None
-    take_profit: Optional[float] = None
+    entry_price: float | None = None
+    stop_loss: float | None = None
+    take_profit: float | None = None
     max_holding_days: int = 20
     metadata: dict = field(default_factory=dict)
 
@@ -64,9 +65,9 @@ class BaseStrategy(ABC):
         symbol: str,
         df: pd.DataFrame,
         regime: RegimeState,
-        position: Optional[PositionInfo],
+        position: PositionInfo | None,
         as_of_date: date,
-    ) -> Optional[StrategySignal]:
+    ) -> StrategySignal | None:
         """Generate trading signal.
 
         Args:
@@ -121,9 +122,9 @@ class TrendHoldStrategy(BaseStrategy):
         symbol: str,
         df: pd.DataFrame,
         regime: RegimeState,
-        position: Optional[PositionInfo],
+        position: PositionInfo | None,
         as_of_date: date,
-    ) -> Optional[StrategySignal]:
+    ) -> StrategySignal | None:
         # Only trade in bullish regimes
         if not regime.is_bullish:
             return None
@@ -142,19 +143,22 @@ class TrendHoldStrategy(BaseStrategy):
         current_volume = volume[-1]
 
         # Entry: Price above MA and volume spike
-        if position is None:
-            if current_price > ma and current_volume > avg_volume * self.params["volume_ratio"]:
-                stop_loss = current_price * (1 - self.params["trailing_stop_pct"])
-                return StrategySignal(
-                    symbol=symbol,
-                    action="BUY",
-                    strength=min(0.9, regime.confidence + 0.1),
-                    reason=f"突破MA{self.params['ma_period']}，放量确认",
-                    entry_price=current_price,
-                    stop_loss=stop_loss,
-                    take_profit=current_price * 1.20,
-                    max_holding_days=self.params["max_holding_days"],
-                )
+        if (
+            position is None
+            and current_price > ma
+            and current_volume > avg_volume * self.params["volume_ratio"]
+        ):
+            stop_loss = current_price * (1 - self.params["trailing_stop_pct"])
+            return StrategySignal(
+                symbol=symbol,
+                action="BUY",
+                strength=min(0.9, regime.confidence + 0.1),
+                reason=f"突破MA{self.params['ma_period']}，放量确认",
+                entry_price=current_price,
+                stop_loss=stop_loss,
+                take_profit=current_price * 1.20,
+                max_holding_days=self.params["max_holding_days"],
+            )
 
         return None
 
@@ -220,9 +224,9 @@ class PullbackSwingStrategy(BaseStrategy):
         symbol: str,
         df: pd.DataFrame,
         regime: RegimeState,
-        position: Optional[PositionInfo],
+        position: PositionInfo | None,
         as_of_date: date,
-    ) -> Optional[StrategySignal]:
+    ) -> StrategySignal | None:
         # Need uptrend or flat
         if regime.is_bearish:
             return None
@@ -306,9 +310,9 @@ class RangeMeanReversionStrategy(BaseStrategy):
         symbol: str,
         df: pd.DataFrame,
         regime: RegimeState,
-        position: Optional[PositionInfo],
+        position: PositionInfo | None,
         as_of_date: date,
-    ) -> Optional[StrategySignal]:
+    ) -> StrategySignal | None:
         # Best in flat/low volatility
         if regime.is_bearish and regime.oscillation.value == "HIGH":
             return None
@@ -321,24 +325,22 @@ class RangeMeanReversionStrategy(BaseStrategy):
         ma = pd.Series(close).rolling(self.params["bb_period"]).mean().iloc[-1]
         std = pd.Series(close).rolling(self.params["bb_period"]).std().iloc[-1]
 
-        upper_band = ma + self.params["bb_std"] * std
         lower_band = ma - self.params["bb_std"] * std
         current_price = close[-1]
 
         # Entry: Price at or below lower band
-        if position is None:
-            if current_price <= lower_band * 1.01:
-                stop_loss = current_price * (1 - self.params["stop_loss_pct"])
-                return StrategySignal(
-                    symbol=symbol,
-                    action="BUY",
-                    strength=0.7,
-                    reason="触及布林带下轨",
-                    entry_price=current_price,
-                    stop_loss=stop_loss,
-                    take_profit=ma,  # Target middle band
-                    max_holding_days=self.params["max_holding_days"],
-                )
+        if position is None and current_price <= lower_band * 1.01:
+            stop_loss = current_price * (1 - self.params["stop_loss_pct"])
+            return StrategySignal(
+                symbol=symbol,
+                action="BUY",
+                strength=0.7,
+                reason="触及布林带下轨",
+                entry_price=current_price,
+                stop_loss=stop_loss,
+                take_profit=ma,  # Target middle band
+                max_holding_days=self.params["max_holding_days"],
+            )
 
         return None
 
@@ -419,9 +421,9 @@ class BearReboundStrategy(BaseStrategy):
         symbol: str,
         df: pd.DataFrame,
         regime: RegimeState,
-        position: Optional[PositionInfo],
+        position: PositionInfo | None,
         as_of_date: date,
-    ) -> Optional[StrategySignal]:
+    ) -> StrategySignal | None:
         # Only in bearish regimes
         if not regime.is_bearish:
             return None
@@ -435,20 +437,19 @@ class BearReboundStrategy(BaseStrategy):
         current_price = close[-1]
 
         # Entry: RSI oversold
-        if position is None:
-            if rsi < self.params["rsi_oversold"]:
-                stop_loss = current_price * (1 - self.params["stop_loss_pct"])
-                target = current_price * (1 + self.params["target_pct"])
-                return StrategySignal(
-                    symbol=symbol,
-                    action="BUY",
-                    strength=0.5,
-                    reason=f"RSI={rsi:.1f}超卖",
-                    entry_price=current_price,
-                    stop_loss=stop_loss,
-                    take_profit=target,
-                    max_holding_days=self.params["max_holding_days"],
-                )
+        if position is None and rsi < self.params["rsi_oversold"]:
+            stop_loss = current_price * (1 - self.params["stop_loss_pct"])
+            target = current_price * (1 + self.params["target_pct"])
+            return StrategySignal(
+                symbol=symbol,
+                action="BUY",
+                strength=0.5,
+                reason=f"RSI={rsi:.1f}超卖",
+                entry_price=current_price,
+                stop_loss=stop_loss,
+                take_profit=target,
+                max_holding_days=self.params["max_holding_days"],
+            )
 
         return None
 
@@ -497,9 +498,9 @@ class CashDefenseStrategy(BaseStrategy):
         symbol: str,
         df: pd.DataFrame,
         regime: RegimeState,
-        position: Optional[PositionInfo],
+        position: PositionInfo | None,
         as_of_date: date,
-    ) -> Optional[StrategySignal]:
+    ) -> StrategySignal | None:
         # Never buy in defense mode
         return None
 

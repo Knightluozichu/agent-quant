@@ -302,7 +302,6 @@ def backtest_no_lookahead(
     equity_history: list[dict] = []
     trade_log: list[dict] = []
     decision_log: list[dict] = []
-    n_trades = 0
     signal_counter = 0
 
     # 初始化 select_fn 的持久状态 (如 _mom_history)
@@ -658,7 +657,7 @@ def print_comparison(name: str, res: dict, initial: float):
     if "n_cancelled" in res:
         print(f"  取消次数: {res['n_cancelled']:>10}次")
 
-    print(f"\n  年度明细:")
+    print("\n  年度明细:")
     print(f"  {'年份':<6} {'年初':>10} {'年末':>10} {'收益':>8} {'回撤':>8}")
     print(f"  {'-' * 46}")
     prev = initial

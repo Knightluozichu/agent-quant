@@ -6,12 +6,12 @@
 from __future__ import annotations
 
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-import run_qixing_v3 as rq  # noqa: E402
+import run_qixing_v3 as rq
 
 
 @dataclass

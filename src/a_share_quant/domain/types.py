@@ -9,12 +9,12 @@ This module defines fundamental value types used throughout the system:
 
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date
 from decimal import Decimal
 from enum import StrEnum
 from typing import Annotated
 
-from pydantic import Field, field_validator
+from pydantic import Field
 
 
 class Exchange(StrEnum):

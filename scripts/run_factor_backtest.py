@@ -10,7 +10,6 @@ Changes from v1:
 from __future__ import annotations
 
 import sys
-from datetime import date
 from pathlib import Path
 
 import numpy as np
@@ -21,14 +20,10 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 
 from a_share_quant.factors import (
     FactorConfig,
-    FactorEngine,
     FactorPortfolio,
-    RiskOverlay,
     WalkForwardValidator,
-    REGIME_FACTOR_MAP,
 )
 from a_share_quant.regime import RegimeDetector
-
 
 # =============================================================================
 # Data Loading
@@ -303,7 +298,7 @@ def print_report(result: dict, data: dict[str, pd.DataFrame], wf_results: list) 
         print("-" * 75)
         print(f"  平均超额: {avg_excess:+.2%} | 胜率: {win_rate:.0%} ({wins}/{n_windows})")
 
-        print(f"\n  过拟合检验:")
+        print("\n  过拟合检验:")
         if avg_excess > 0.01:
             print(f"  ✓ 样本外正超额 ({avg_excess:+.2%})，策略有泛化能力")
         elif avg_excess > -0.01:
@@ -345,7 +340,7 @@ if __name__ == "__main__":
 
     tradable = {k: v for k, v in data.items() if not k.startswith("000")}
     print(f"  可交易: {len(tradable)} 只ETF")
-    print(f"  指数: 000300.XSHG, 000905.XSHG\n")
+    print("  指数: 000300.XSHG, 000905.XSHG\n")
 
     print("运行多因子 v2 回测...")
     result = run_factor_backtest_v2(data)

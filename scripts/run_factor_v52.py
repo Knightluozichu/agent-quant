@@ -351,13 +351,13 @@ def main():
     print(f"  范围: {index_df['trade_date'].min()} ~ {index_df['trade_date'].max()}")
 
     # === Full period ===
-    print(f"\n[1/3] 全周期回测 (本金10万)...")
+    print("\n[1/3] 全周期回测 (本金10万)...")
     result = run_v52_backtest(data, index_df, initial_capital=100_000)
 
     eq = result["equity_curve"]
     decisions = pd.DataFrame(result["decision_log"])
 
-    print(f"\n  年度收益:")
+    print("\n  年度收益:")
     print(f"  {'年份':<6} {'年初':>10} {'年末':>10} {'收益':>8} {'回撤':>8} {'平均股票仓位':>10}")
     print(f"  {'-' * 58}")
     prev = 100_000.0
@@ -395,7 +395,7 @@ def main():
     print(f"  交易次数: {result['n_trades']}")
 
     # === 2023 stress test ===
-    print(f"\n[2/3] 2023压力测试...")
+    print("\n[2/3] 2023压力测试...")
     from datetime import date as dt_date
 
     r2023 = run_v52_backtest(
@@ -424,11 +424,8 @@ def main():
                 print(f"    {m}月: Gate={gate_str}, 仓位{md['stock_fraction'].mean():.0%}")
 
     # === Comparison ===
-    print(f"\n[3/3] 策略对比...")
-    # Pure momentum (no filter, no vol scaling)
-    r_pure = run_v52_backtest(data, index_df, initial_capital=100_000)
-    # We need a "pure momentum" baseline - hack: set MA_PERIOD very low
-    # Actually just report from previous runs
+    print("\n[3/3] 策略对比...")
+    # Pure momentum baseline 不在此处重跑, 直接对比沪深300
     idx_c = index_df["close"].values
     bench_300 = (idx_c[-1] - idx_c[0]) / idx_c[0]
 

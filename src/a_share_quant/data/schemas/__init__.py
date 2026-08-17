@@ -6,11 +6,13 @@ This ensures strategy code never directly depends on third-party SDKs.
 
 from __future__ import annotations
 
-from datetime import date, datetime
-from typing import Optional
+from datetime import date  # noqa: TC003  # pydantic 在运行时解析字段注解
+from typing import TYPE_CHECKING
 
-import pandas as pd
 from pydantic import BaseModel, Field
+
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 class SecurityInfo(BaseModel):
@@ -22,8 +24,8 @@ class SecurityInfo(BaseModel):
     name: str = Field(description="Security name")
     security_type: str = Field(description="stock, etf, index, etc.")
     board: str = Field(default="main", description="Trading board")
-    list_date: Optional[date] = Field(default=None, description="IPO date")
-    delist_date: Optional[date] = Field(default=None, description="Delisting date")
+    list_date: date | None = Field(default=None, description="IPO date")
+    delist_date: date | None = Field(default=None, description="Delisting date")
     is_st: bool = Field(default=False, description="Is ST stock")
 
 
@@ -39,11 +41,11 @@ class DailyBar(BaseModel):
     volume: float  # 成交量（股/份）
     amount: float  # 成交额（元）
     # Optional fields
-    pre_close: Optional[float] = None  # 前收盘价
-    limit_up: Optional[float] = None  # 涨停价
-    limit_down: Optional[float] = None  # 跌停价
+    pre_close: float | None = None  # 前收盘价
+    limit_up: float | None = None  # 涨停价
+    limit_down: float | None = None  # 跌停价
     is_suspended: bool = False  # 是否停牌
-    turnover_rate: Optional[float] = None  # 换手率
+    turnover_rate: float | None = None  # 换手率
 
 
 class AdjustmentFactor(BaseModel):
@@ -68,8 +70,8 @@ class SuspensionInfo(BaseModel):
 
     symbol: str
     suspend_date: date
-    resume_date: Optional[date] = None
-    reason: Optional[str] = None
+    resume_date: date | None = None
+    reason: str | None = None
 
 
 class IndexInfo(BaseModel):

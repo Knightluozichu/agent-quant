@@ -32,9 +32,9 @@ warnings.filterwarnings("ignore")
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
-import exp_drop_gate_h3 as h3  # noqa: E402
-from exp_drop_gate_exempt import select_target_exempt  # noqa: E402
+import exp_drop_gate_h3 as h3
+import run_qixing_v3 as rq
+from exp_drop_gate_exempt import select_target_exempt
 
 OUTPUT_DIR = Path(rq.PROJECT_ROOT) / "data" / "v9_results"
 WARMUP = 130

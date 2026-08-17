@@ -137,16 +137,27 @@
 
 ## 2026-08-17: 3a20ac2 修复批次遗留项 (非阻断)
 
-- [ ] I-FIX-01 require_token 的 config.json 读-改-写竞态 (预存在): 每个鉴权请求
+- [x] I-FIX-01 require_token 的 config.json 读-改-写竞态 (预存在): 每个鉴权请求
       load→cleanup→save, 与并发 login 的 token 追加存在丢 token 窗口。建议 token
       存储迁出 config.json 或加锁。本次未修 (超出 3a20ac2 范围)。
+      → 已于 2026-08-17 修复: 新增 data/live/config.lock (fcntl.flock),
+      require_token/login/logout/set_password 的读-改-写全部由 _config_lock()
+      串行化; 锁顺序约定 config.lock → idempotency.lock → state lock。
 - [x] I-FIX-02 scripts/ 下 exp_* 研究脚本存在大量预存在 lint/format 违规
       (ruff format --check 对 live_signal/trade_server/notify 等也会重排,
       属仓库历史存量; CI format 门禁实际未生效)。未在本次修复中整体重排,
-      避免淹没真实 diff。已于 2026-08-17 做全仓一次性格式化提交 (157 文件, 纯 format);
-      ruff check 的存量违规仍未处理, 保留本条目跟踪 check 部分。
-- [ ] I-FIX-03 /api/refresh 后 /api/equity 权益曲线末端改用实时注入价 (行为变化,
-      方向符合修复意图, 前端口径知悉即可)。
-- [ ] I-FIX-04 trade_server 无请求体大小限制/全局超时; 绑定 127.0.0.1 前提下风险低,
+      避免淹没真实 diff。已于 2026-08-17 做全仓一次性格式化提交 (157 文件, 纯 format)。
+      → check 部分已于同日清零: src/ 139 个全修 (含 DTZ 时区语义 15 处统一
+      Asia/Shanghai); 研究脚本经 per-file-ignores 放宽纯风格规则, 正确性规则
+      (F841/B023/F601 等 36 个) 逐个修复; tests/ 19 个修复。全仓 ruff check = 0 errors。
+- [x] I-FIX-03 /api/refresh 后 /api/equity 权益曲线末端改用实时注入价 (行为变化,
+      方向符合修复意图, 前端口径知悉即可)。→ 2026-08-17 确认: 行为即设计意图, 关闭。
+- [x] I-FIX-04 trade_server 无请求体大小限制/全局超时; 绑定 127.0.0.1 前提下风险低,
       若未来暴露公网 (反代+TLS) 需一并处理。
-- [ ] I-FIX-05 get_data() 每请求 deepcopy 全量 ETF 日线, 数据量增长后关注接口延迟。
+      → 已于 2026-08-17 修复请求体部分: 纯 ASGI middleware
+      (_BodySizeLimitMiddleware), Content-Length 超 64KB 直接 413, 非法
+      Content-Length 返回 400; chunked 请求不 buffer 全量 (注释说明, 由
+      pydantic 字段级长度限制兜底)。全局超时仍未加, 暴露公网时需处理。
+- [x] I-FIX-05 get_data() 每请求 deepcopy 全量 ETF 日线, 数据量增长后关注接口延迟。
+      → 2026-08-17 实测: 8 标的 22702 行 deepcopy 平均 0.2ms (pyarrow 后端),
+      对日频系统可忽略, 无需优化, 关闭。

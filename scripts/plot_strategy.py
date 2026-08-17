@@ -11,12 +11,12 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import matplotlib  # noqa: E402
+import matplotlib
 
 matplotlib.use("Agg")
-import matplotlib.dates as mdates  # noqa: E402
-import matplotlib.pyplot as plt  # noqa: E402
-import pandas as pd  # noqa: E402
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
+import pandas as pd
 
 # 中文字体 (macOS / Linux 兼容)
 matplotlib.rcParams["font.sans-serif"] = [
@@ -91,7 +91,7 @@ def main() -> None:
     ax3.set_ylabel("收益 %")
     ax3.axhline(0, color="black", linewidth=0.8)
     ax3.grid(True, axis="y", alpha=0.3)
-    for b, r in zip(bars, rets):
+    for b, r in zip(bars, rets, strict=False):
         ax3.text(
             b.get_x() + b.get_width() / 2,
             r + (3 if r >= 0 else -6),

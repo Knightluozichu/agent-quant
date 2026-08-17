@@ -14,9 +14,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
-from strategy_lab.engine import build_idx_map, get_common_dates  # noqa: E402
-import live_signal as ls  # noqa: E402
+import live_signal as ls
+import run_qixing_v3 as rq
+from strategy_lab.engine import build_idx_map, get_common_dates
 
 REBALANCE_DAYS = rq.REBALANCE_DAYS
 
@@ -36,7 +36,6 @@ def find_next_rebalance(trading_dates: list, last_rb_str: str | None):
     if idx is not None and idx + REBALANCE_DAYS < len(trading_dates):
         nxt = trading_dates[idx + REBALANCE_DAYS]
         # 距今交易日数
-        latest = trading_dates[-1]
         latest_idx = len(trading_dates) - 1
         days_left = (idx + REBALANCE_DAYS) - latest_idx
         return nxt, days_left
@@ -89,7 +88,7 @@ def main() -> None:
 
     # 基于最新数据预览信号
     idx_map = build_idx_map(data, latest)
-    target, candidates, best_score, a_share_weak = rq.select_target(data, idx_map, holding)
+    target, candidates, _best_score, a_share_weak = rq.select_target(data, idx_map, holding)
 
     print("=" * 62)
     print("  七星V3 · 下个调仓日预览")
@@ -105,13 +104,13 @@ def main() -> None:
     if a_share_weak:
         print("  ⚠️  A股走弱(创业板<MA20), 已排除创业板")
 
-    print(f"\n  【最新动量排行】")
+    print("\n  【最新动量排行】")
     ranked = sorted(candidates, key=lambda x: -x[1])
     for code, score in ranked:
         tag = " ◀当前目标" if code == target else ""
         print(f"    {ls.name_of(code):<10} {score * 100:+6.2f}%{tag}")
 
-    print(f"\n  【调仓预览】(基于最新数据, 实际以调仓日当天为准)")
+    print("\n  【调仓预览】(基于最新数据, 实际以调仓日当天为准)")
     if target == holding:
         print(f"    → 继续持有 {ls.name_of(holding)}, 无需操作")
     else:

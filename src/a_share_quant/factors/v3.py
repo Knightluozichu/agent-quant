@@ -14,12 +14,13 @@ Anti-overfitting: all parameters are academic defaults, no optimization on test 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date
-from typing import Optional
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 
+if TYPE_CHECKING:
+    from datetime import date
 
 # =============================================================================
 # Configuration
@@ -234,7 +235,7 @@ def risk_parity_weights(vols: dict[str, float]) -> dict[str, float]:
 
     if total == 0:
         n = len(vols)
-        return {s: 1.0 / n for s in vols}
+        return dict.fromkeys(vols, 1.0 / n)
 
     weights = {s: iv / total for s, iv in inv_vols.items()}
 
@@ -288,7 +289,7 @@ class V3Portfolio:
         regime_state: str,
         equity: float,
         index_symbol: str = "",
-    ) -> Optional[V3Signal]:
+    ) -> V3Signal | None:
         """Generate v3 rebalancing signal."""
         if not self.should_rebalance():
             return None
@@ -379,12 +380,12 @@ class V3Portfolio:
         # Regime-based
         if regime_state == "DOWN_HIGH":
             return 0.2
-        elif regime_state.startswith("DOWN"):
+        if regime_state.startswith("DOWN"):
             return 0.4
-        elif regime_state.startswith("FLAT"):
+        if regime_state.startswith("FLAT"):
             return 0.7
-        else:  # UP
-            return 1.0
+        # UP
+        return 1.0
 
 
 # =============================================================================
@@ -514,10 +515,7 @@ class FlywheelEvolution:
             return False
 
         # Challenger must beat champion
-        if challenger.total_return > self.champion.total_return + 0.01:
-            return True
-
-        return False
+        return challenger.total_return > self.champion.total_return + 0.01
 
     def promote(self) -> str:
         """Promote challenger to champion."""

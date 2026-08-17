@@ -26,8 +26,8 @@ warnings.filterwarnings("ignore")
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
-import exp_drop_gate_h3 as h3  # noqa: E402
+import exp_drop_gate_h3 as h3
+import run_qixing_v3 as rq
 
 OUTPUT_DIR = Path(rq.PROJECT_ROOT) / "data" / "v9_results"
 WARMUP = 130
@@ -98,7 +98,7 @@ def main() -> None:
     rq.select_target = wrapped
     h3.select_target = wrapped
     h3.H3_ENABLED = False
-    rep = h3.run_v3_risk_h3(data)
+    h3.run_v3_risk_h3(data)  # 返回值不用, 副作用(wrapped 统计 GATE_STATS)生效
     rq.check_single_day_drop = h3.ORIG_CHECK
     rq.select_target = ORIG_SELECT
     h3.select_target = ORIG_SELECT

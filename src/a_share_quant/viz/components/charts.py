@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any
 
 import plotly.graph_objects as go
-import plotly.express as px
 from dash import dcc
 
 
@@ -41,7 +40,7 @@ def create_heatmap(
     fig.update_layout(
         title=title,
         height=350,
-        margin=dict(l=20, r=20, t=40, b=20),
+        margin={"l": 20, "r": 20, "t": 40, "b": 20},
     )
     return dcc.Graph(figure=fig)
 
@@ -73,7 +72,7 @@ def create_pie_chart(
     fig.update_layout(
         title=title,
         height=300,
-        margin=dict(l=20, r=20, t=40, b=20),
+        margin={"l": 20, "r": 20, "t": 40, "b": 20},
         showlegend=True,
     )
     return dcc.Graph(figure=fig)
@@ -103,7 +102,7 @@ def create_time_series(
             x=x,
             y=y,
             mode="lines",
-            line=dict(color=color, width=2),
+            line={"color": color, "width": 2},
             fill="tozeroy" if fill else None,
         )
     )
@@ -111,7 +110,7 @@ def create_time_series(
         title=title,
         yaxis_title=yaxis_title,
         height=300,
-        margin=dict(l=20, r=20, t=40, b=20),
+        margin={"l": 20, "r": 20, "t": 40, "b": 20},
         hovermode="x unified",
     )
     return dcc.Graph(figure=fig)
@@ -141,7 +140,7 @@ def create_equity_curve(
             y=champion,
             mode="lines",
             name="Champion",
-            line=dict(color="#2ca02c", width=2),
+            line={"color": "#2ca02c", "width": 2},
         )
     )
 
@@ -152,7 +151,7 @@ def create_equity_curve(
                 y=challenger,
                 mode="lines",
                 name="Challenger",
-                line=dict(color="#ff7f0e", width=2, dash="dash"),
+                line={"color": "#ff7f0e", "width": 2, "dash": "dash"},
             )
         )
 
@@ -163,7 +162,7 @@ def create_equity_curve(
                 y=benchmark,
                 mode="lines",
                 name="Benchmark",
-                line=dict(color="#7f7f7f", width=1, dash="dot"),
+                line={"color": "#7f7f7f", "width": 1, "dash": "dot"},
             )
         )
 
@@ -171,9 +170,9 @@ def create_equity_curve(
         title=title,
         yaxis_title="累计收益",
         height=400,
-        margin=dict(l=20, r=20, t=40, b=20),
+        margin={"l": 20, "r": 20, "t": 40, "b": 20},
         hovermode="x unified",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        legend={"orientation": "h", "yanchor": "bottom", "y": 1.02, "xanchor": "right", "x": 1},
     )
     return dcc.Graph(figure=fig)
 
@@ -211,7 +210,7 @@ def create_candlestick(
         title=title,
         yaxis_title="价格",
         height=400,
-        margin=dict(l=20, r=20, t=40, b=20),
+        margin={"l": 20, "r": 20, "t": 40, "b": 20},
         xaxis_rangeslider_visible=False,
     )
     return dcc.Graph(figure=fig)
@@ -236,7 +235,7 @@ def create_drawdown_chart(
             y=drawdowns,
             mode="lines",
             fill="tozeroy",
-            line=dict(color="#d62728", width=1),
+            line={"color": "#d62728", "width": 1},
             fillcolor="rgba(214, 39, 40, 0.3)",
         )
     )
@@ -245,7 +244,7 @@ def create_drawdown_chart(
         yaxis_title="回撤",
         yaxis_tickformat=".1%",
         height=250,
-        margin=dict(l=20, r=20, t=40, b=20),
+        margin={"l": 20, "r": 20, "t": 40, "b": 20},
         hovermode="x unified",
     )
     return dcc.Graph(figure=fig)

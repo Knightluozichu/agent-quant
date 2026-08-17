@@ -12,12 +12,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date
-from decimal import Decimal
-from enum import Enum
-from typing import Optional
-
-from a_share_quant.config import load_market_rules_config
-
+from enum import StrEnum
 
 # =============================================================================
 # Fee Rules
@@ -34,15 +29,13 @@ class FeeSchedule:
     commission: float = 0.00025
     min_commission: float = 5.0
     transfer_fee: float = 0.00001
-    effective_until: Optional[date] = None
+    effective_until: date | None = None
 
     def is_effective(self, on_date: date) -> bool:
         """Check if this schedule is effective on the given date."""
         if on_date < self.effective_from:
             return False
-        if self.effective_until and on_date > self.effective_until:
-            return False
-        return True
+        return not (self.effective_until and on_date > self.effective_until)
 
 
 class FeeCalculator:
@@ -131,14 +124,12 @@ class PriceLimitRule:
     board: str
     limit_pct: float
     effective_from: date
-    effective_until: Optional[date] = None
+    effective_until: date | None = None
 
     def is_effective(self, on_date: date) -> bool:
         if on_date < self.effective_from:
             return False
-        if self.effective_until and on_date > self.effective_until:
-            return False
-        return True
+        return not (self.effective_until and on_date > self.effective_until)
 
 
 class PriceLimitCalculator:
@@ -234,7 +225,7 @@ class SettlementRule:
 # =============================================================================
 
 
-class OrderState(str, Enum):
+class OrderState(StrEnum):
     """Order lifecycle states."""
 
     CREATED = "CREATED"
@@ -416,7 +407,7 @@ class PositionLedger:
 
     def update_settlement(self, current_date: date) -> None:
         """Update sellable status based on T+1 rule."""
-        for symbol, lots in self.positions.items():
+        for _symbol, lots in self.positions.items():
             for lot in lots:
                 lot.sellable = self._settlement.can_sell(lot.buy_date, current_date)
 
@@ -454,7 +445,7 @@ class PositionLedger:
         realized_cost = 0.0
 
         # Sell from oldest lots first (FIFO)
-        for lot in sorted(lots, key=lambda l: l.buy_date):
+        for lot in sorted(lots, key=lambda x: x.buy_date):
             if not lot.sellable or remaining <= 0:
                 continue
             sell_qty = min(lot.quantity, remaining)
@@ -463,7 +454,7 @@ class PositionLedger:
             remaining -= sell_qty
 
         # Remove empty lots
-        self.positions[symbol] = [l for l in lots if l.quantity > 0]
+        self.positions[symbol] = [lot for lot in lots if lot.quantity > 0]
         if not self.positions[symbol]:
             del self.positions[symbol]
 

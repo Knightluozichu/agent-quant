@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from dash import html
+from typing import ClassVar
+
 import dash_bootstrap_components as dbc
+from dash import html
 
 
 class MetricCard:
@@ -15,7 +17,7 @@ class MetricCard:
         value: str,
         subtitle: str = "",
         color: str = "primary",
-        icon: str = "",
+        icon: str = "",  # noqa: ARG004  # 保留给后续图标支持
     ) -> dbc.Card:
         """Render a metric card.
 
@@ -45,7 +47,7 @@ class MetricCard:
 class StateCard:
     """Market state display card with color coding."""
 
-    STATE_COLORS = {
+    STATE_COLORS: ClassVar[dict[str, str]] = {
         "UP_LOW": "success",
         "UP_MEDIUM": "info",
         "UP_HIGH": "warning",
@@ -57,7 +59,7 @@ class StateCard:
         "DOWN_HIGH": "dark",
     }
 
-    STATE_LABELS = {
+    STATE_LABELS: ClassVar[dict[str, str]] = {
         "UP_LOW": "上涨 + 低波动",
         "UP_MEDIUM": "上涨 + 中波动",
         "UP_HIGH": "上涨 + 高波动",

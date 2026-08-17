@@ -15,10 +15,9 @@ from __future__ import annotations
 
 import json
 import warnings
-from dataclasses import dataclass
+from collections.abc import Callable
 from datetime import date as dt_date
 from pathlib import Path
-from typing import Callable
 
 import numpy as np
 import pandas as pd
@@ -550,7 +549,7 @@ def run_all_experiments():
             print(f"\n  --- {model_name} ---")
 
             # 1. IS/OOS
-            print(f"    [1/3] IS/OOS...", end=" ", flush=True)
+            print("    [1/3] IS/OOS...", end=" ", flush=True)
             is_oos = run_is_oos(data, pool, score_fn)
             oos_info = is_oos["OOS"]
             if "error" not in oos_info:
@@ -562,7 +561,7 @@ def run_all_experiments():
                 print(f"ERROR: {oos_info}")
 
             # 2. 滚动窗口
-            print(f"    [2/3] Rolling...", end=" ", flush=True)
+            print("    [2/3] Rolling...", end=" ", flush=True)
             rolling = run_rolling(data, pool, score_fn, baseline_fn=score_m0)
             print(
                 f"Wins={rolling['wins_vs_baseline']}/{rolling['valid_windows']} "
@@ -570,7 +569,7 @@ def run_all_experiments():
             )
 
             # 3. 全回测
-            print(f"    [3/3] Full...", end=" ", flush=True)
+            print("    [3/3] Full...", end=" ", flush=True)
             full = run_full(data, pool, score_fn)
             if "error" not in full:
                 print(
@@ -605,7 +604,6 @@ def run_all_experiments():
         for model_name, res in all_results[pool_name].items():
             oos = res["is_oos"]["OOS"]
             full = res["full"]
-            oos_sharpe = oos.get("sharpe", -99) if "error" not in oos else -99
             rows.append((model_name, oos, full, res["is_oos"]["passed"], res["rolling"]["passed"]))
 
         rows.sort(

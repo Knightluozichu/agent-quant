@@ -23,7 +23,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
+import run_qixing_v3 as rq
 
 DROP_THR = -0.03  # 对齐生产 DROP_THRESHOLD
 HORIZON = 5  # 观察后续5日
@@ -84,7 +84,7 @@ def stats(d: pd.DataFrame, label: str) -> dict | None:
     cont = (d["fwd5"] < 0).mean() * 100
     avg = d["fwd5"].mean() * 100
     print(f"    {label:<32} {len(d):>3}次 | 继续跌 {cont:>3.0f}% | 后5日均 {avg:+.2f}%")
-    return {"n": int(len(d)), "cont_pct": float(cont), "avg_fwd": float(avg)}
+    return {"n": len(d), "cont_pct": float(cont), "avg_fwd": float(avg)}
 
 
 def threshold_scan(df: pd.DataFrame) -> list[dict]:
@@ -104,9 +104,9 @@ def threshold_scan(df: pd.DataFrame) -> list[dict]:
         rows.append(
             {
                 "ret60_thr": round(float(thr), 2),
-                "lo_n": int(len(lo)),
+                "lo_n": len(lo),
                 "lo_cont_pct": round(float(lo_cont), 1),
-                "hi_n": int(len(hi)),
+                "hi_n": len(hi),
                 "hi_cont_pct": round(float(hi_cont), 1),
                 "spread_pp": round(float(hi_cont - lo_cont), 1),
             }
@@ -136,19 +136,19 @@ def main() -> None:
         f"\n  【基准】 大跌后5日: 继续跌(真跌) {base_cont:.0f}% | "
         f"反弹(假摔) {100 - base_cont:.0f}% | 平均 {base_avg:+.2f}%"
     )
-    print(f"          注: 生产过滤-3%口径, 阈值比原实验(-5%)低, 事件更噪")
+    print("          注: 生产过滤-3%口径, 阈值比原实验(-5%)低, 事件更噪")
 
-    print(f"\n  【因子: 趋势位置 ret60 中位数分组】")
+    print("\n  【因子: 趋势位置 ret60 中位数分组】")
     med = df["ret60"].median()
     print(f"    ret60中位数 = {med:+.1%}")
     stats(df[df["ret60"] <= med], "前期平淡组(ret60<=中位)")
     stats(df[df["ret60"] > med], "前期大涨组(ret60>中位)")
 
-    print(f"\n  【因子: MA20 位置】")
+    print("\n  【因子: MA20 位置】")
     stats(df[df["above_ma20"]], "大跌日仍在MA20上方")
     stats(df[~df["above_ma20"]], "大跌日已跌破MA20")
 
-    print(f"\n  【门控组合 (方案A核心统计)】")
+    print("\n  【门控组合 (方案A核心统计)】")
     r = {}
     r["gate_low_ma20"] = stats(
         df[(df["ret60"] <= med) & df["above_ma20"]], "平淡 + 未破MA20 (放行)"
@@ -162,10 +162,10 @@ def main() -> None:
     )
     r["gate_hi"] = stats(df[df["ret60"] > med], "前期大涨 (照旧排除)")
 
-    print(f"\n  【箱体确认因子 (区分箱体震荡 vs 下跌趋势)】")
+    print("\n  【箱体确认因子 (区分箱体震荡 vs 下跌趋势)】")
     r["box_ok_all"] = stats(df[df["box_ok"]], "箱体确认 (pos60中段+MA60走平/上)")
     r["box_ng_all"] = stats(df[~df["box_ok"]], "非箱体 (贴近低点/MA60向下)")
-    print(f"  → 仅看 ret60<0 组:")
+    print("  → 仅看 ret60<0 组:")
     lo_ret60 = df[df["ret60"] < 0]
     r["box_ok_low"] = stats(lo_ret60[lo_ret60["box_ok"]], "ret60<0 + 箱体确认 (精化放行)")
     r["box_ng_low"] = stats(lo_ret60[~lo_ret60["box_ok"]], "ret60<0 + 非箱体 (下跌趋势, 不放行)")
@@ -178,7 +178,7 @@ def main() -> None:
         "ret60<0 + 非箱体 + 动量>0 (下跌趋势误放行风险)",
     )
 
-    print(f"\n  【ret60 阈值扫描 (找区分度最大分割点)】")
+    print("\n  【ret60 阈值扫描 (找区分度最大分割点)】")
     scan = threshold_scan(df)
 
     result = {

@@ -50,6 +50,7 @@ EXTENDED_SYMBOLS = {
 def fetch_extended():
     """Fetch extended ETF data."""
     import jqdatasdk
+
     from a_share_quant.settings import get_settings
 
     settings = get_settings()
@@ -97,7 +98,7 @@ def fetch_extended():
                 fetched += 1
                 print(f"         → {len(df)} 条")
             else:
-                print(f"         → 无数据")
+                print("         → 无数据")
 
         except Exception as e:
             print(f"         → 错误: {e}")

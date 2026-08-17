@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import hashlib
 from datetime import date, timedelta
-from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -136,7 +135,7 @@ class MockProvider(BaseDataProvider):
         # Generate OHLCV
         data = []
         prev_close = initial_price
-        for i, (day, close) in enumerate(zip(trading_days, prices)):
+        for i, (day, close) in enumerate(zip(trading_days, prices, strict=False)):
             # Intraday range
             intraday_vol = abs(returns[i]) + daily_vol * 0.5
             high = close * (1 + rng.uniform(0, intraday_vol))
@@ -222,7 +221,7 @@ class MockProvider(BaseDataProvider):
 
         return pd.DataFrame([s.model_dump() for s in securities])
 
-    def get_security_info(self, symbol: str) -> Optional[SecurityInfo]:
+    def get_security_info(self, symbol: str) -> SecurityInfo | None:
         """Get info for a specific security."""
         return self._securities.get(symbol)
 

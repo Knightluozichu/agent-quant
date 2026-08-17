@@ -14,15 +14,20 @@ The TradePlan must include:
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime  # noqa: TC003  # pydantic 在运行时解析字段注解
 from enum import StrEnum
-from typing import Optional
 
 from pydantic import BaseModel, Field, model_validator
 
-from a_share_quant.domain.market_state import MarketState
-from a_share_quant.domain.stock_state import StockState
-from a_share_quant.domain.strategy_decision import StrategyId
+from a_share_quant.domain.market_state import (  # noqa: TC001  # pydantic 运行时解析
+    MarketState,
+)
+from a_share_quant.domain.stock_state import (  # noqa: TC001  # pydantic 运行时解析
+    StockState,
+)
+from a_share_quant.domain.strategy_decision import (  # noqa: TC001  # pydantic 运行时解析
+    StrategyId,
+)
 
 
 class TradePlanStatus(StrEnum):
@@ -122,7 +127,7 @@ class TradePlan(BaseModel):
     earliest_sell_time: datetime = Field(
         description="Earliest time to sell (T+1 after buy for A-shares)"
     )
-    expiry_time: Optional[datetime] = Field(
+    expiry_time: datetime | None = Field(
         default=None,
         description="Plan expires if not executed by this time",
     )
@@ -134,7 +139,7 @@ class TradePlan(BaseModel):
     # Versioning
     strategy_version: str = Field(default="v1")
     model_version: str = Field(default="v1")
-    factor_snapshot_id: Optional[str] = Field(
+    factor_snapshot_id: str | None = Field(
         default=None,
         description="Reference to factor snapshot used",
     )
@@ -174,7 +179,7 @@ class TradePlan(BaseModel):
         le=1,
         description="Ratio of position to close at TP1",
     )
-    take_profit_2: Optional[float] = Field(
+    take_profit_2: float | None = Field(
         default=None,
         gt=0,
         description="Second take profit target price",
@@ -229,7 +234,7 @@ class TradePlan(BaseModel):
         default=TradePlanStatus.PENDING,
         description="Current status of the plan",
     )
-    rejection_reason: Optional[str] = Field(
+    rejection_reason: str | None = Field(
         default=None,
         description="Reason if plan was rejected",
     )

@@ -11,13 +11,22 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import datetime, timedelta, timezone, tzinfo
 from pathlib import Path
-from typing import Optional
+from typing import TYPE_CHECKING
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
-from a_share_quant.backtest import BacktestResult, PerformanceMetrics
+if TYPE_CHECKING:
+    from a_share_quant.backtest import BacktestResult
+
+# 报告时间戳一律使用 Asia/Shanghai, 不依赖运行环境本地时区
+_SH_TZ: tzinfo
+try:
+    _SH_TZ = ZoneInfo("Asia/Shanghai")
+except Exception:  # 极简环境缺 tzdata 时回退固定 +08:00 (1991 年后上海无夏令时)
+    _SH_TZ = timezone(timedelta(hours=8), name="Asia/Shanghai")
 
 
 @dataclass
@@ -71,11 +80,11 @@ class ReportGenerator:
     def generate(
         self,
         result: BacktestResult,
-        run_id: Optional[str] = None,
+        run_id: str | None = None,
     ) -> BacktestReport:
         """Generate a complete report from backtest result."""
         if run_id is None:
-            run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
+            run_id = datetime.now(_SH_TZ).strftime("%Y%m%d_%H%M%S")
 
         # Convert equity curve to list of dicts
         equity_data = []
@@ -87,9 +96,9 @@ class ReportGenerator:
                 }
             )
 
-        report = BacktestReport(
+        return BacktestReport(
             run_id=run_id,
-            timestamp=datetime.now(),
+            timestamp=datetime.now(_SH_TZ),
             config={
                 "start_date": result.config.start_date.isoformat(),
                 "end_date": result.config.end_date.isoformat(),
@@ -108,9 +117,7 @@ class ReportGenerator:
             },
         )
 
-        return report
-
-    def save_json(self, report: BacktestReport, filename: Optional[str] = None) -> Path:
+    def save_json(self, report: BacktestReport, filename: str | None = None) -> Path:
         """Save report as JSON file."""
         if filename is None:
             filename = f"backtest_{report.run_id}.json"
@@ -173,7 +180,7 @@ class ReportGenerator:
 
         return "\n".join(lines)
 
-    def save_summary(self, report: BacktestReport, filename: Optional[str] = None) -> Path:
+    def save_summary(self, report: BacktestReport, filename: str | None = None) -> Path:
         """Save summary as text file."""
         if filename is None:
             filename = f"summary_{report.run_id}.txt"

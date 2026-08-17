@@ -14,7 +14,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
+import run_qixing_v3 as rq
 
 # === 去掉豆粕ETF ===
 REMOVED = "159985"

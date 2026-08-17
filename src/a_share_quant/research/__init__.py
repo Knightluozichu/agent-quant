@@ -10,13 +10,11 @@ Implements:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import date, timedelta
-from typing import Optional
 
 import numpy as np
 import pandas as pd
-
 
 # =============================================================================
 # Time Splitting
@@ -161,10 +159,7 @@ class WalkForwardValidator:
 
     def validate_no_overlap(self, windows: list[WalkForwardWindow]) -> bool:
         """Verify test windows don't overlap with training."""
-        for w in windows:
-            if w.test_start <= w.train_end:
-                return False
-        return True
+        return all(w.test_start > w.train_end for w in windows)
 
 
 # =============================================================================
@@ -244,7 +239,6 @@ class RandomBaseline(BaselineStrategy):
 
         equity = [initial_capital]
         position = 0  # 0 = no position, 1 = long
-        entry_price = 0.0
 
         for i in range(1, n):
             price = prices.iloc[i]
@@ -254,7 +248,6 @@ class RandomBaseline(BaselineStrategy):
                 # Random entry
                 if rng.random() < self.trade_probability:
                     position = 1
-                    entry_price = prev_price
                 equity.append(equity[-1])
             else:
                 # Update equity with price change

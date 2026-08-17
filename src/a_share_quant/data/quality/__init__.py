@@ -6,9 +6,10 @@ Ensures data integrity before it enters the research pipeline.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date
+from typing import TYPE_CHECKING
 
-import pandas as pd
+if TYPE_CHECKING:
+    import pandas as pd
 
 
 @dataclass
@@ -171,7 +172,7 @@ class DataQualityChecker:
                     rule_id="DUPLICATE_ROWS",
                     severity="error",
                     symbol="*",
-                    description=f"Duplicate symbol/date rows found",
+                    description="Duplicate symbol/date rows found",
                     affected_rows=int(n_dupes),
                 )
             )

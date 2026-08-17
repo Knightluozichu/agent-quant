@@ -11,14 +11,17 @@ Detection based on:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
-from enum import Enum
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 
+if TYPE_CHECKING:
+    from datetime import date
 
-class Direction(str, Enum):
+
+class Direction(StrEnum):
     """Market direction."""
 
     UP = "UP"
@@ -26,7 +29,7 @@ class Direction(str, Enum):
     DOWN = "DOWN"
 
 
-class Oscillation(str, Enum):
+class Oscillation(StrEnum):
     """Market oscillation/volatility level."""
 
     LOW = "LOW"

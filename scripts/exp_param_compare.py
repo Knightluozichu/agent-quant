@@ -12,8 +12,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
-from strategy_lab.engine import backtest  # noqa: E402
+import run_qixing_v3 as rq
+from strategy_lab.engine import backtest
 
 ORIG = {
     "MOM_PERIODS": rq.MOM_PERIODS,

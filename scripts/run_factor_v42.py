@@ -657,7 +657,7 @@ def run_flywheel_v42(data, index_df, n_rounds=20, lr=0.03):
 
     print(f"\n{'=' * 70}")
     print(f"  v4.2 飞轮: {n_rounds}轮 | AdamW lr={lr} | {N_FACTORS}因子 + bond_gate")
-    print(f"  修复: 动量加速度 + Rank标准化 + Conviction + 债券切换")
+    print("  修复: 动量加速度 + Rank标准化 + Conviction + 债券切换")
     print(f"{'=' * 70}")
 
     for ri in range(n_rounds):
@@ -772,7 +772,7 @@ def main():
     eq["trade_date"] = pd.to_datetime(eq["trade_date"])
     eq["year"] = eq["trade_date"].dt.year
 
-    print(f"\n  年度收益:")
+    print("\n  年度收益:")
     print(f"  {'年份':<6} {'年初':>10} {'年末':>10} {'收益':>8} {'回撤':>8}")
     print(f"  {'-' * 46}")
     prev = 100_000.0
@@ -799,7 +799,7 @@ def main():
     print(f"  债券切换次数: {result['n_bond_switches']}")
 
     # Factor weights
-    print(f"\n  因子权重:")
+    print("\n  因子权重:")
     for i in np.argsort(weights)[::-1]:
         bar = "█" * int(weights[i] * 60)
         print(f"    {ALL_FACTORS[i]:<16}: {weights[i] * 100:.1f}% {bar}")

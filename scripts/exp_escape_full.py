@@ -11,13 +11,12 @@ import sys
 from pathlib import Path
 
 import numpy as np
-import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
-from exp_escape_signal import backtest_escape, check_escape, price_on  # noqa: E402
-from strategy_lab.engine import WARMUP, build_idx_map, get_common_dates  # noqa: E402
+import run_qixing_v3 as rq
+from exp_escape_signal import backtest_escape, check_escape, price_on
+from strategy_lab.engine import WARMUP, build_idx_map, get_common_dates
 
 POOL_FULL = list(rq.ETF_POOL.keys())  # 8个(含豆粕, ~6.5年)
 POOL_10Y = [c for c in POOL_FULL if c != "159985"]  # 去豆粕, ~10年
@@ -116,7 +115,6 @@ def main() -> None:
         ("10年池 ~10年(去豆粕)", POOL_10Y),
     ]:
         rows = run_with_pool(pool, data)
-        span = ""
         print("=" * 70)
         print(f"  【{label}】 全周期真实收益 (不切分IS/OOS)")
         print("=" * 70)

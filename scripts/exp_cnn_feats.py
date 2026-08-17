@@ -28,14 +28,14 @@ OUT_DIR = PROJECT_ROOT / "data" / "v9_results" / "cnn_feats"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 sys.path.insert(0, str(Path(__file__).parent))
-from exp_v3_cnn import (  # noqa: E402
+from exp_v3_cnn import (
     FWD,
     SEQ_N,
     KlineCNN,
     render_tech_image,
     train_cnn,
 )
-from run_qixing_v3 import ETF_POOL, load_data  # noqa: E402
+from run_qixing_v3 import ETF_POOL, load_data
 
 DEVICE = "mps" if torch.backends.mps.is_available() else "cpu"
 TEST_START = "2023-07-03"

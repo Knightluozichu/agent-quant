@@ -7,6 +7,7 @@ These tests scan tracked files for common secret patterns and ensure
 from __future__ import annotations
 
 import re
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -38,9 +39,12 @@ SKIP_PATTERNS = [
 
 def get_tracked_files() -> list[Path]:
     """Get list of git-tracked files."""
+    git = shutil.which("git")
+    if git is None:
+        return []
     try:
-        result = subprocess.run(
-            ["git", "ls-files"],
+        result = subprocess.run(  # noqa: S603  # 固定命令 git ls-files, 无外部输入
+            [git, "ls-files"],
             capture_output=True,
             text=True,
             check=True,

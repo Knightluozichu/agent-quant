@@ -114,7 +114,7 @@ def fetch_etf_history() -> None:
         time.sleep(1.0)
 
     # Fetch indices via stock_zh_index_daily (sina source)
-    print(f"\n  --- 指数数据 ---")
+    print("\n  --- 指数数据 ---")
     for sina_symbol, name in INDEX_UNIVERSE.items():
         code = sina_symbol[2:]
         cache_file = DATA_DIR / f"index_{code}.parquet"
@@ -158,7 +158,7 @@ def fetch_etf_history() -> None:
         time.sleep(1.0)
 
     # Build combined dataset
-    print(f"\n  --- 合并数据集 ---")
+    print("\n  --- 合并数据集 ---")
     all_files = list(DATA_DIR.glob("*.parquet"))
     all_dfs = []
     for f in all_files:

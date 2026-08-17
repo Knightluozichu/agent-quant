@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import json
 import sys
-from collections import Counter
 from pathlib import Path
 
 import numpy as np
@@ -19,8 +18,7 @@ import pandas as pd
 
 PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
-from scripts.run_qixing_v3 import (  # noqa: E402
-    A_SHARE_ETF,
+from scripts.run_qixing_v3 import (
     DEFENSE,
     ETF_POOL,
     load_data,

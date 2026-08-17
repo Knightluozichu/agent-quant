@@ -7,7 +7,6 @@
 
 from __future__ import annotations
 
-import sys
 import time
 from pathlib import Path
 
@@ -16,7 +15,7 @@ import numpy as np
 import pandas as pd
 
 matplotlib.use("Agg")
-import matplotlib.pyplot as plt  # noqa: E402
+import matplotlib.pyplot as plt
 
 matplotlib.rcParams["font.sans-serif"] = [
     "Arial Unicode MS",
@@ -80,7 +79,7 @@ def fetch_all() -> None:
             df.to_parquet(f, index=False)
             print(f"{len(df)}天 ({df['trade_date'].min()}~{df['trade_date'].max()})")
             time.sleep(1.0)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             print(f"失败: {e}")
 
 

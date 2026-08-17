@@ -7,14 +7,16 @@
 
 from __future__ import annotations
 
-import sys, warnings
+import sys
+import warnings
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 warnings.filterwarnings("ignore")
-import run_qixing_v3 as rq
-import numpy as np
 import json
+
+import numpy as np
+import run_qixing_v3 as rq
 
 data = rq.load_data()
 DROP_THR, RET60_THR = -0.03, 0.01
@@ -113,7 +115,7 @@ print(f"  因 动量<=0 排除: {mom_only}次 ({mom_only / len(low_fake) * 100:.
 print(f"  两者都排除: {both}次 ({both / len(low_fake) * 100:.0f}%)")
 
 # 按资产分解
-print(f"\n  按资产分解 (低开虚跌):")
+print("\n  按资产分解 (低开虚跌):")
 for code in rq.ETF_POOL:
     grp = [e for e in low_fake if e["code"] == code]
     if not grp:
@@ -127,12 +129,12 @@ for code in rq.ETF_POOL:
 print("\n" + "=" * 90)
 print("  分析师3 (策略顾问): 阈值调整覆盖分析")
 print("=" * 90)
-print(f"  命中的2次低开虚跌:")
+print("  命中的2次低开虚跌:")
 for e in [e for e in low_fake if e["gate_hit"]]:
     print(f"    {e['date']} {e['name']} ret60={e['ret60']:+.3f} mom={e['mom']:+.3f}")
 
 # 阈值扫描: 放宽 ret60_thr 能覆盖多少
-print(f"\n  放宽 ret60_thr 对低开虚跌的覆盖率:")
+print("\n  放宽 ret60_thr 对低开虚跌的覆盖率:")
 for thr in [0.01, 0.02, 0.03, 0.05, 0.10, 0.20]:
     hit2 = sum(1 for e in low_fake if e["ret60"] < thr and e["mom"] > 0)
     print(
@@ -143,7 +145,7 @@ for thr in [0.01, 0.02, 0.03, 0.05, 0.10, 0.20]:
         print(f"      (相对 thr=0.01 新增 {len(extra)} 次)")
 
 # 放宽动量阈值
-print(f"\n  放宽 mom_thr 对低开虚跌的覆盖率 (ret60<0.01 固定):")
+print("\n  放宽 mom_thr 对低开虚跌的覆盖率 (ret60<0.01 固定):")
 for mthr in [0, -0.02, -0.05, -0.10]:
     hit3 = sum(1 for e in low_fake if e["ret60"] < 0.01 and e["mom"] > mthr)
     print(
@@ -151,14 +153,14 @@ for mthr in [0, -0.02, -0.05, -0.10]:
     )
 
 # 关键洞察: 低开虚跌品种的 ret60 分布
-print(f"\n  低开虚跌77次的 ret60 分布:")
+print("\n  低开虚跌77次的 ret60 分布:")
 ret60s = [e["ret60"] for e in low_fake]
 for lo, hi in [(-1, -0.1), (-0.1, 0), (0, 0.01), (0.01, 0.1), (0.1, 0.2), (0.2, 0.3), (0.3, 10)]:
     cnt = sum(1 for r in ret60s if lo <= r < hi)
     print(f"    [{lo:+.1f}, {hi:+.1f}): {cnt}次 ({cnt / len(ret60s) * 100:.0f}%)")
 
 # 低开虚跌 vs 低开真跌 的区分度
-print(f"\n  低开虚跌 vs 低开真跌 的区分度 (ret60/动量/vol20):")
+print("\n  低开虚跌 vs 低开真跌 的区分度 (ret60/动量/vol20):")
 for label in ["低开虚跌", "低开真跌"]:
     grp = [e for e in events if e["type"] == label]
     ret60s = [e["ret60"] for e in grp]

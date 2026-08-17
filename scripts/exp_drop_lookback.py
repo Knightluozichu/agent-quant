@@ -40,7 +40,7 @@ def main():
 
     # === 总体对比 ===
     print(f"\n{'=' * 70}")
-    print(f"  总体指标对比")
+    print("  总体指标对比")
     print(f"{'=' * 70}")
     print(f"  {'指标':<12} {'3日窗口':>12} {'5日窗口':>12} {'差异':>12}")
     print(f"  {'-' * 50}")
@@ -61,7 +61,7 @@ def main():
 
     # === 年度对比 ===
     print(f"\n{'=' * 70}")
-    print(f"  年度收益对比")
+    print("  年度收益对比")
     print(f"{'=' * 70}")
     print(f"  {'年份':<6} {'3日窗口':>10} {'5日窗口':>10} {'差异':>10} {'胜者':>6}")
     print(f"  {'-' * 46}")
@@ -84,7 +84,7 @@ def main():
 
     # === 年度回撤对比 ===
     print(f"\n{'=' * 70}")
-    print(f"  年度最大回撤对比")
+    print("  年度最大回撤对比")
     print(f"{'=' * 70}")
     print(f"  {'年份':<6} {'3日窗口':>10} {'5日窗口':>10} {'差异':>10}")
     print(f"  {'-' * 40}")
@@ -98,16 +98,16 @@ def main():
     ann_diff = r5["ann_return"] - r3["ann_return"]
     dd_diff = r5["max_drawdown"] - r3["max_drawdown"]
     sharpe_diff = r5["sharpe"] - r3["sharpe"]
-    print(f"  结论:")
+    print("  结论:")
     print(f"    年化收益变化: {ann_diff:+.2%}")
     print(f"    最大回撤变化: {dd_diff:+.2%} (负=改善)")
     print(f"    夏普变化:     {sharpe_diff:+.3f}")
     if ann_diff > 0 and sharpe_diff > 0:
-        print(f"    → 5日窗口优于3日窗口")
+        print("    → 5日窗口优于3日窗口")
     elif ann_diff < 0 and sharpe_diff < 0:
-        print(f"    → 3日窗口优于5日窗口")
+        print("    → 3日窗口优于5日窗口")
     else:
-        print(f"    → 两者各有优劣,需权衡")
+        print("    → 两者各有优劣,需权衡")
     print(f"{'=' * 70}")
 
 

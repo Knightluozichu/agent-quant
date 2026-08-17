@@ -19,10 +19,10 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
-import run_qixing_v3 as rq  # noqa: E402
+import run_qixing_v3 as rq
 
-from .engine import WARMUP, backtest, get_common_dates  # noqa: E402
-from .strategies import Strategy  # noqa: E402
+from .engine import WARMUP, backtest, get_common_dates
+from .strategies import Strategy
 
 OUTPUT_DIR = Path(__file__).parent.parent.parent / "data" / "qixing_results"
 TRAIN_RATIO = 0.70  # 样本外切分: 前70%训练

@@ -11,9 +11,9 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
-from strategy_lab.engine import backtest  # noqa: E402
-from strategy_lab.strategies import v3_select  # noqa: E402
+import run_qixing_v3 as rq
+from strategy_lab.engine import backtest
+from strategy_lab.strategies import v3_select
 
 # 权重组合: (10日权重, 20日权重)
 WEIGHT_COMBOS = [
@@ -43,7 +43,7 @@ def main() -> None:
         results.append((w, res))
         tag = "  ←当前" if w == (0.5, 0.5) else ""
         print(
-            f"  {str(w):<16}{res['total_return'] * 100:>+11.1f}%"
+            f"  {w!s:<16}{res['total_return'] * 100:>+11.1f}%"
             f"{res['ann_return'] * 100:>+9.1f}%{res['sharpe']:>8.2f}"
             f"{res['max_drawdown'] * 100:>9.1f}%{tag}"
         )

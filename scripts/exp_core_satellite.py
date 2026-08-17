@@ -11,9 +11,9 @@ from __future__ import annotations
 
 import json
 import warnings
+from collections.abc import Callable
 from datetime import date as dt_date
 from pathlib import Path
-from typing import Callable
 
 import numpy as np
 import pandas as pd
@@ -390,7 +390,7 @@ def validate_strategy(name: str, run_fn: Callable, initial_capital: float = INIT
     print(f"\n  === {name} ===")
 
     # 1. IS/OOS
-    print(f"    [1/3] IS/OOS...", end=" ", flush=True)
+    print("    [1/3] IS/OOS...", end=" ", flush=True)
     is_eq = run_fn(start_date=None, end_date="2021-12-31")
     oos_eq = run_fn(start_date="2022-01-01", end_date=None)
     is_m = calc_metrics(is_eq, initial_capital)
@@ -410,7 +410,7 @@ def validate_strategy(name: str, run_fn: Callable, initial_capital: float = INIT
         print(f"ERROR: {oos_m}")
 
     # 2. 滚动窗口
-    print(f"    [2/3] Rolling...", end=" ", flush=True)
+    print("    [2/3] Rolling...", end=" ", flush=True)
     windows = [
         ("W1", "2019-08-01", "2022-07-31"),
         ("W2", "2022-08-01", "2025-07-31"),
@@ -434,7 +434,7 @@ def validate_strategy(name: str, run_fn: Callable, initial_capital: float = INIT
             )
 
     # 3. 全回测
-    print(f"    [3/3] Full...", end=" ", flush=True)
+    print("    [3/3] Full...", end=" ", flush=True)
     full_eq = run_fn(start_date=None, end_date=None)
     full_m = calc_metrics(full_eq, initial_capital)
     if "error" not in full_m:
@@ -543,7 +543,7 @@ def main():
             print(f"  {label:<28} ERROR")
 
     # 年度对比
-    print(f"\n  年度收益对比:")
+    print("\n  年度收益对比:")
     print(f"  {'年份':<6} {'纯Core':>10} {'纯Sat':>10} {'组合':>10}")
     print(f"  {'-' * 40}")
 
@@ -564,7 +564,7 @@ def main():
         print(f"  {year:<6} {c_str:>10} {s_str:>10} {m_str:>10}")
 
     # === 增量贡献分析 ===
-    print(f"\n  卫星仓增量贡献:")
+    print("\n  卫星仓增量贡献:")
     if "error" not in core_results["full"] and "error" not in combined_results["full"]:
         delta_ret = combined_results["full"]["ann_return"] - core_results["full"]["ann_return"]
         delta_sharpe = combined_results["full"]["sharpe"] - core_results["full"]["sharpe"]

@@ -27,11 +27,11 @@ OUT_DIR = PROJECT_ROOT / "data" / "v9_results"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 sys.path.insert(0, str(Path(__file__).parent))
-from exp_cnn_feats import Featurizer, build_dataset, train_cnn  # noqa: E402
-from exp_rl_ppo import ETFEnv, ppo_eval, ppo_train  # noqa: E402
-from exp_short_window_patterns import close_matrix  # noqa: E402
-from exp_v3_r4_sameday import run_v3_r4_sameday  # noqa: E402
-from run_qixing_v3 import ETF_POOL, load_data  # noqa: E402
+from exp_cnn_feats import Featurizer, build_dataset, train_cnn
+from exp_rl_ppo import ETFEnv, ppo_eval, ppo_train
+from exp_short_window_patterns import close_matrix
+from exp_v3_r4_sameday import run_v3_r4_sameday
+from run_qixing_v3 import ETF_POOL, load_data
 
 DEVICE = "mps" if torch.backends.mps.is_available() else "cpu"
 LR, LAYERS, FILTERS, DROPOUT = 1e-3, 3, 32, 0.3

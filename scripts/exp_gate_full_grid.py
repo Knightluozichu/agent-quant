@@ -19,9 +19,9 @@ warnings.filterwarnings("ignore")
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
-import exp_drop_gate_h3 as h3  # noqa: E402
-from exp_drop_gate_exempt import select_target_exempt  # noqa: E402
+import exp_drop_gate_h3 as h3
+import run_qixing_v3 as rq
+from exp_drop_gate_exempt import select_target_exempt
 
 OUTPUT_DIR = Path(rq.PROJECT_ROOT) / "data" / "v9_results"
 ORIG_SELECT = rq.select_target
@@ -126,7 +126,6 @@ def run_with_params(data, ret60_thr, drop_thr, drop_lookback) -> dict:
         "max_dd": rep["max_drawdown"],
         "n_trades": rep["n_trades"],
         "divergences": div,
-        "base_final": rep_base["final_value"],
         "base_sharpe": rep_base["sharpe"],
     }
 

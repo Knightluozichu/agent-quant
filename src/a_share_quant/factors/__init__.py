@@ -17,12 +17,13 @@ Anti-overfitting principles maintained:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date, timedelta
-from typing import Optional
+from typing import TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 
+if TYPE_CHECKING:
+    from datetime import date
 
 # =============================================================================
 # Factor Configuration
@@ -293,7 +294,7 @@ class FactorEngine:
         else:
             # All IC negative → equal weight (defensive)
             n = len(active_factors)
-            weights = {f: 1.0 / n for f in active_factors}
+            weights = dict.fromkeys(active_factors, 1.0 / n)
 
         return weights
 
@@ -377,12 +378,12 @@ class RiskOverlay:
         # Rule 3: Regime-based
         if regime_state == "DOWN_HIGH":
             return 0.0
-        elif regime_state.startswith("DOWN"):
+        if regime_state.startswith("DOWN"):
             return 0.4
-        elif regime_state.startswith("FLAT"):
+        if regime_state.startswith("FLAT"):
             return 0.8
-        else:  # UP
-            return 1.0
+        # UP
+        return 1.0
 
     @property
     def current_drawdown(self) -> float:
@@ -430,7 +431,7 @@ class FactorPortfolio:
         trade_date: date,
         regime_state: str = "",
         equity: float = 1_000_000.0,
-    ) -> Optional[RebalanceSignal]:
+    ) -> RebalanceSignal | None:
         """Generate rebalancing signal."""
         if not self.should_rebalance(trade_date):
             return None
@@ -461,7 +462,7 @@ class FactorPortfolio:
         # Weight by position scale
         if selected:
             base_weight = position_scale / len(selected)
-            weights = {s: base_weight for s in selected}
+            weights = dict.fromkeys(selected, base_weight)
         else:
             weights = {}
 
@@ -571,7 +572,7 @@ class WalkForwardValidator:
         data: dict[str, pd.DataFrame],
         benchmark_symbol: str,
         window: dict,
-    ) -> Optional[WalkForwardResult]:
+    ) -> WalkForwardResult | None:
         """Run a single walk-forward window."""
         from a_share_quant.regime import RegimeDetector
 

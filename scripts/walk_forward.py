@@ -31,13 +31,6 @@ PROJECT_ROOT = Path(__file__).parent.parent
 sys.path.insert(0, str(Path(__file__).parent))
 
 from run_qixing_v3 import (  # noqa: E402
-    A_SHARE_MA,
-    DROP_LOOKBACK,
-    ETF_POOL,
-    DEFENSE,
-    MOM_PERIODS,
-    MOM_WEIGHTS,
-    REBALANCE_DAYS,
     _compute_data_hash,
     _compute_param_hash,
     load_data,
@@ -146,7 +139,7 @@ def run_walk_forward(data: dict) -> list[dict]:
             f" → test {seg['test_start']} ~ {seg['test_end']}"
         )
         if seg.get("contaminated"):
-            print(f"  ⚠️  此段测试期落在已污染区间 (2023-2024)")
+            print("  ⚠️  此段测试期落在已污染区间 (2023-2024)")
         print(f"  {'=' * 50}")
 
         # 筛选测试期数据
@@ -167,7 +160,7 @@ def run_walk_forward(data: dict) -> list[dict]:
             continue
 
         # 运行基准参数回测
-        print(f"  运行基准参数回测...")
+        print("  运行基准参数回测...")
         result = _run_backtest_with_params(test_data, 5, 15)
 
         if "error" in result:
@@ -207,7 +200,7 @@ def run_walk_forward(data: dict) -> list[dict]:
             print(f"  ⚠️  交易数 {n_trades} < {MIN_TRADES_PER_SEGMENT}, 标记为低交易量")
 
         # 参数扰动稳定性检查
-        print(f"\n  参数扰动 ±20% 稳定性检查:")
+        print("\n  参数扰动 ±20% 稳定性检查:")
         perturbation_results = []
         for pert in PARAM_PERTURBATIONS:
             pert_result = _run_backtest_with_params(
@@ -344,7 +337,7 @@ def main():
 
     # 计算 PBO
     print(f"\n  {'=' * 50}")
-    print(f"  PBO (Probability of Backtest Overfitting)")
+    print("  PBO (Probability of Backtest Overfitting)")
     print(f"  {'=' * 50}")
     pbo_result = calculate_pbo(wf_results)
     print(f"  {pbo_result.get('interpretation', pbo_result.get('reason', 'N/A'))}")
@@ -356,7 +349,7 @@ def main():
 
     # 汇总
     print(f"\n  {'=' * 50}")
-    print(f"  Walk-forward 汇总")
+    print("  Walk-forward 汇总")
     print(f"  {'=' * 50}")
     print(f"  {'段落':<8} {'交易':>6} {'夏普':>8} {'收益':>10} {'回撤':>8} {'稳定':>6}")
     print(f"  {'-' * 50}")
@@ -376,7 +369,7 @@ def main():
     if clean_results:
         avg_sharpe = np.mean([r["sharpe"] for r in clean_results])
         avg_return = np.mean([r["total_return"] for r in clean_results])
-        print(f"\n  OOS 平均 (排除已污染段落):")
+        print("\n  OOS 平均 (排除已污染段落):")
         print(f"    夏普: {avg_sharpe:.2f} | 平均收益: {avg_return:+.1%}")
 
     # 保存结果

@@ -5,14 +5,25 @@ Bridges existing modules (regime, strategies, risk, evolution) to the dashboard.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta
-from typing import Any, Optional
-
-import pandas as pd
+from dataclasses import dataclass
+from datetime import date, datetime, timedelta, timezone, tzinfo
+from typing import Any
+from zoneinfo import ZoneInfo
 
 from a_share_quant.data.providers import get_data_provider
-from a_share_quant.regime import RegimeDetector, RegimeState
+from a_share_quant.regime import RegimeDetector
+
+# 行情查询的 "今天" 一律按 Asia/Shanghai, 不依赖运行环境本地时区
+_SH_TZ: tzinfo
+try:
+    _SH_TZ = ZoneInfo("Asia/Shanghai")
+except Exception:  # 极简环境缺 tzdata 时回退固定 +08:00 (1991 年后上海无夏令时)
+    _SH_TZ = timezone(timedelta(hours=8), name="Asia/Shanghai")
+
+
+def _today_sh() -> date:
+    """返回 Asia/Shanghai 时区的当前日期."""
+    return datetime.now(_SH_TZ).date()
 
 
 @dataclass
@@ -38,8 +49,8 @@ class PositionData:
     market_value: float
     unrealized_pnl: float
     unrealized_pnl_pct: float
-    stop_loss: Optional[float] = None
-    take_profit: Optional[float] = None
+    stop_loss: float | None = None
+    take_profit: float | None = None
     days_held: int = 0
 
 
@@ -52,8 +63,8 @@ class TradeSignalData:
     strategy: str
     reason: str
     confidence: float
-    target_price: Optional[float] = None
-    stop_loss: Optional[float] = None
+    target_price: float | None = None
+    stop_loss: float | None = None
     rejected: bool = False
     reject_reason: str = ""
 
@@ -63,7 +74,7 @@ class EvolutionData:
     """Champion/Challenger data for dashboard."""
 
     champion_name: str
-    challenger_name: Optional[str]
+    challenger_name: str | None
     champion_metrics: dict[str, float]
     challenger_metrics: dict[str, float]
     promotion_progress: float  # 0-1
@@ -90,7 +101,7 @@ class DashboardDataLoader:
             symbol: Index symbol to analyze
             lookback_days: Days of history to analyze
         """
-        end_date = date.today()
+        end_date = _today_sh()
         start_date = end_date - timedelta(days=lookback_days)
 
         # Get historical data

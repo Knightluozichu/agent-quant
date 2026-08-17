@@ -11,9 +11,8 @@ Implements the 9-state market model: Direction × Oscillation Level.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime  # noqa: TC003  # pydantic 在运行时解析字段注解
 from enum import StrEnum
-from typing import Optional
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -171,7 +170,7 @@ class MarketState(BaseModel):
         default=False,
         description="Whether a regime transition was detected",
     )
-    previous_regime: Optional[MarketRegime] = Field(
+    previous_regime: MarketRegime | None = Field(
         default=None,
         description="Previous regime if transition detected",
     )

@@ -13,10 +13,9 @@ Symbol format conversion:
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime, timedelta
-from functools import lru_cache
+from datetime import date, datetime, timedelta, timezone, tzinfo
 from pathlib import Path
-from typing import Optional
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
@@ -25,6 +24,18 @@ from a_share_quant.data.schemas import SecurityInfo
 from a_share_quant.settings import get_settings
 
 logger = logging.getLogger(__name__)
+
+# 交易日相关时间一律使用 Asia/Shanghai, 不依赖运行环境本地时区
+_SH_TZ: tzinfo
+try:
+    _SH_TZ = ZoneInfo("Asia/Shanghai")
+except Exception:  # 极简环境缺 tzdata 时回退固定 +08:00 (1991 年后上海无夏令时)
+    _SH_TZ = timezone(timedelta(hours=8), name="Asia/Shanghai")
+
+
+def _today_sh() -> date:
+    """返回 Asia/Shanghai 时区的当前日期."""
+    return datetime.now(_SH_TZ).date()
 
 
 # =============================================================================
@@ -41,9 +52,9 @@ def to_jq_symbol(symbol: str) -> str:
     code, exchange = symbol.split(".")
     if exchange == "SSE":
         return f"{code}.XSHG"
-    elif exchange == "SZSE":
+    if exchange == "SZSE":
         return f"{code}.XSHE"
-    elif exchange == "BSE":
+    if exchange == "BSE":
         return f"{code}.XBJE"
     return symbol
 
@@ -57,9 +68,9 @@ def from_jq_symbol(jq_symbol: str) -> str:
     code, exchange = jq_symbol.split(".")
     if exchange == "XSHG":
         return f"{code}.SSE"
-    elif exchange == "XSHE":
+    if exchange == "XSHE":
         return f"{code}.SZSE"
-    elif exchange == "XBJE":
+    if exchange == "XBJE":
         return f"{code}.BSE"
     return jq_symbol
 
@@ -75,10 +86,10 @@ class QuotaTracker:
     def __init__(self, daily_limit: int = 500_000):
         self.daily_limit = daily_limit
         self._used_today = 0
-        self._last_reset = date.today()
+        self._last_reset = _today_sh()
 
     def _maybe_reset(self) -> None:
-        today = date.today()
+        today = _today_sh()
         if today != self._last_reset:
             self._used_today = 0
             self._last_reset = today
@@ -120,8 +131,8 @@ class JoinQuantProvider(BaseDataProvider):
 
     def __init__(
         self,
-        username: Optional[str] = None,
-        password: Optional[str] = None,
+        username: str | None = None,
+        password: str | None = None,
         cache_dir: Path | str = "data/jq_cache",
         daily_quota: int = 500_000,
     ):
@@ -171,8 +182,9 @@ class JoinQuantProvider(BaseDataProvider):
             try:
                 quota = jqdatasdk.get_query_count()
                 logger.info(f"JQData quota: {quota}")
-            except Exception:
-                pass
+            except Exception as e:
+                # 配额查询失败不影响认证流程, 仅记录
+                logger.debug(f"JQData quota query failed: {e}")
 
         except ImportError as e:
             raise ImportError("jqdatasdk not installed. Run: pip install jqdatasdk") from e
@@ -182,17 +194,18 @@ class JoinQuantProvider(BaseDataProvider):
         safe_key = key.replace("/", "_").replace(".", "_")
         return self._cache_dir / category / f"{safe_key}.parquet"
 
-    def _read_cache(self, category: str, key: str) -> Optional[pd.DataFrame]:
+    def _read_cache(self, category: str, key: str) -> pd.DataFrame | None:
         """Read from cache if exists and fresh."""
         path = self._get_cache_path(category, key)
         if path.exists():
             # Cache valid for 1 day
-            mtime = datetime.fromtimestamp(path.stat().st_mtime)
-            if datetime.now() - mtime < timedelta(days=1):
+            mtime = datetime.fromtimestamp(path.stat().st_mtime, tz=_SH_TZ)
+            if datetime.now(_SH_TZ) - mtime < timedelta(days=1):
                 try:
                     return pd.read_parquet(path)
-                except Exception:
-                    pass
+                except Exception as e:
+                    # 缓存损坏时回退到 API 拉取, 仅记录
+                    logger.debug(f"Cache read failed for {path}: {e}")
         return None
 
     def _write_cache(self, category: str, key: str, df: pd.DataFrame) -> None:
@@ -225,7 +238,7 @@ class JoinQuantProvider(BaseDataProvider):
         else:
             # API call
             start = start_date or "2005-01-01"
-            end = end_date or (date.today() + timedelta(days=365)).isoformat()
+            end = end_date or (_today_sh() + timedelta(days=365)).isoformat()
 
             if not self._quota.consume(1000):
                 raise RuntimeError("Daily quota exceeded")
@@ -301,12 +314,12 @@ class JoinQuantProvider(BaseDataProvider):
         if exchange:
             df = df[df["exchange"] == exchange]
         if not include_delisted and "end_date" in df.columns:
-            today = date.today()
+            today = _today_sh()
             df = df[df["end_date"].isna() | (df["end_date"] >= today)]
 
         return df.reset_index(drop=True)
 
-    def get_security_info(self, symbol: str) -> Optional[SecurityInfo]:
+    def get_security_info(self, symbol: str) -> SecurityInfo | None:
         """Get security info."""
         self._ensure_auth()
 
@@ -367,7 +380,8 @@ class JoinQuantProvider(BaseDataProvider):
             estimated_rows = len(jq_symbols) * days
             if not self._quota.consume(estimated_rows):
                 raise RuntimeError(
-                    f"Daily quota exceeded. Need ~{estimated_rows}, remaining {self._quota.remaining}"
+                    f"Daily quota exceeded. Need ~{estimated_rows}, "
+                    f"remaining {self._quota.remaining}"
                 )
 
             # API call
@@ -431,7 +445,7 @@ class JoinQuantProvider(BaseDataProvider):
         self._ensure_auth()
 
         jq_symbol = to_jq_symbol(index_symbol)
-        d = trade_date or date.today()
+        d = trade_date or _today_sh()
 
         cache_key = f"index_stocks_{index_symbol}_{d}"
         cached = self._read_cache("index", cache_key)
@@ -468,7 +482,8 @@ class JoinQuantProvider(BaseDataProvider):
             info["jq_total"] = jq_quota.get("total", 0)
             info["jq_used"] = jq_quota.get("used", 0)
             info["jq_remaining"] = jq_quota.get("spare", 0)
-        except Exception:
-            pass
+        except Exception as e:
+            # 配额信息仅用于展示, 查询失败不阻塞
+            logger.debug(f"JQData quota info query failed: {e}")
 
         return info

@@ -6,9 +6,8 @@ including its trading status, trend, and technical characteristics.
 
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime  # noqa: TC003  # pydantic 在运行时解析字段注解
 from enum import StrEnum
-from typing import Optional
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -78,39 +77,39 @@ class StockState(BaseModel):
 
     # Price levels
     current_price: float = Field(description="Current/latest price")
-    prev_close: Optional[float] = Field(
+    prev_close: float | None = Field(
         default=None,
         description="Previous close price",
     )
-    limit_up_price: Optional[float] = Field(
+    limit_up_price: float | None = Field(
         default=None,
         description="Today's limit up price",
     )
-    limit_down_price: Optional[float] = Field(
+    limit_down_price: float | None = Field(
         default=None,
         description="Today's limit down price",
     )
 
     # Technical levels
-    support_level: Optional[float] = Field(
+    support_level: float | None = Field(
         default=None,
         description="Key support level",
     )
-    resistance_level: Optional[float] = Field(
+    resistance_level: float | None = Field(
         default=None,
         description="Key resistance level",
     )
-    atr: Optional[float] = Field(
+    atr: float | None = Field(
         default=None,
         description="Average True Range",
     )
 
     # Volume and liquidity
-    volume_ratio: Optional[float] = Field(
+    volume_ratio: float | None = Field(
         default=None,
         description="Volume ratio vs average",
     )
-    turnover_rate: Optional[float] = Field(
+    turnover_rate: float | None = Field(
         default=None,
         description="Turnover rate (换手率)",
     )
@@ -122,11 +121,11 @@ class StockState(BaseModel):
     )
 
     # Suspension info
-    suspension_reason: Optional[str] = Field(
+    suspension_reason: str | None = Field(
         default=None,
         description="Reason for suspension if applicable",
     )
-    expected_resume_date: Optional[datetime] = Field(
+    expected_resume_date: datetime | None = Field(
         default=None,
         description="Expected resumption date if known",
     )
@@ -137,7 +136,7 @@ class StockState(BaseModel):
         ge=0,
         description="Number of days suspended",
     )
-    days_since_ipo: Optional[int] = Field(
+    days_since_ipo: int | None = Field(
         default=None,
         ge=0,
         description="Days since IPO (for new listing rules)",

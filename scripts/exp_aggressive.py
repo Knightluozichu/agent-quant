@@ -9,13 +9,11 @@ import sys
 from datetime import date
 from pathlib import Path
 
-import numpy as np
-
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
-from strategy_lab.engine import backtest  # noqa: E402
-from strategy_lab.strategies import v3_select  # noqa: E402
+import run_qixing_v3 as rq
+from strategy_lab.engine import backtest
+from strategy_lab.strategies import v3_select
 
 PARAMS = {"mom_periods": (10, 20), "mom_weights": (0.5, 0.5), "rebalance_days": 5}
 
@@ -87,7 +85,7 @@ def main() -> None:
         dds.append(res["max_drawdown"] * 100)
         fw = res["final_equity"] / 10000
         print(
-            f"  {str(s):<13}{f'{fw:.1f}万':<12}"
+            f"  {s!s:<13}{f'{fw:.1f}万':<12}"
             f"{res['ann_return'] * 100:>+8.1f}%{res['max_drawdown'] * 100:>9.1f}%"
         )
         s = add_months(s, 3)

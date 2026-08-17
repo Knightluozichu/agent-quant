@@ -6,8 +6,6 @@ Data range: 2025-04-11 to 2026-04-18 (trial account limit).
 
 from __future__ import annotations
 
-import sys
-from datetime import date
 from pathlib import Path
 
 import pandas as pd
@@ -36,10 +34,11 @@ SYMBOLS = {
 def fetch_and_cache():
     """Fetch data from JQData and cache to Parquet."""
     import jqdatasdk
+
     from a_share_quant.settings import get_settings
 
     settings = get_settings()
-    print(f"认证 JQData...")
+    print("认证 JQData...")
     jqdatasdk.auth(settings.joinquant_username, settings.joinquant_password)
     print("认证成功\n")
 
@@ -90,7 +89,7 @@ def fetch_and_cache():
                 all_data.append(df)
                 print(f"         → {len(df)} 条, 已缓存")
             else:
-                print(f"         → 无数据")
+                print("         → 无数据")
 
         except Exception as e:
             print(f"         → 错误: {e}")
@@ -104,7 +103,7 @@ def fetch_and_cache():
 
         # Summary
         print(f"\n{'=' * 50}")
-        print(f"数据摘要:")
+        print("数据摘要:")
         print(f"  标的数: {combined['symbol'].nunique()}")
         print(f"  日期范围: {combined['trade_date'].min()} ~ {combined['trade_date'].max()}")
         print(f"  总行数: {len(combined)}")

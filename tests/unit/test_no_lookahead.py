@@ -13,11 +13,9 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
-from datetime import date
 
 import numpy as np
 import pandas as pd
-import pytest
 
 # 确保能 import scripts 模块
 PROJECT_ROOT = Path(__file__).parent.parent.parent
@@ -26,7 +24,6 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 from run_qixing_v3 import (  # noqa: E402
     DEFENSE,
     ETF_POOL,
-    REBALANCE_DAYS,
     _check_tradable,
     _compute_data_hash,
     _compute_param_hash,
@@ -58,7 +55,7 @@ def _make_synthetic_data(
         flat_codes: 横盘代码 (动量≈0)
     """
     if codes is None:
-        codes = list(ETF_POOL.keys()) + [DEFENSE]
+        codes = [*list(ETF_POOL.keys()), DEFENSE]
     if flat_codes is None:
         flat_codes = []
 

@@ -35,7 +35,7 @@ OUTPUT_DIR = PROJECT_ROOT / "data" / "v9_results"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # 复用实验脚本的数据口径
-from exp_short_window_patterns import (  # noqa: E402
+from exp_short_window_patterns import (
     BIG_MOVE,
     CATEGORIES,
     close_matrix,

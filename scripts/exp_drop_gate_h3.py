@@ -26,10 +26,9 @@ warnings.filterwarnings("ignore")
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
-from exp_v32_tail_risk import (  # noqa: E402
+import run_qixing_v3 as rq
+from exp_v32_tail_risk import (
     DEFENSE_SEQ,
-    EXPO_REDUCE,
     H1_DD,
     H2_DAY,
     INITIAL_CAPITAL,

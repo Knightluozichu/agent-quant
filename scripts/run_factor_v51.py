@@ -338,11 +338,11 @@ def main():
     print(f"  范围: {index_df['trade_date'].min()} ~ {index_df['trade_date'].max()}")
 
     # === Full period ===
-    print(f"\n[1/3] 全周期回测 (本金10万)...")
+    print("\n[1/3] 全周期回测 (本金10万)...")
     result = run_v51_backtest(data, index_df, initial_capital=100_000)
 
     eq = result["equity_curve"]
-    print(f"\n  年度收益:")
+    print("\n  年度收益:")
     print(f"  {'年份':<6} {'年初':>10} {'年末':>10} {'收益':>8} {'回撤':>8} {'平均仓位':>8}")
     print(f"  {'-' * 56}")
     prev = 100_000.0
@@ -383,7 +383,7 @@ def main():
     print(f"  交易次数: {result['n_trades']}")
 
     # === 2023 stress test ===
-    print(f"\n[2/3] 2023压力测试...")
+    print("\n[2/3] 2023压力测试...")
     from datetime import date as dt_date
 
     r2023 = run_v51_backtest(
@@ -408,11 +408,8 @@ def main():
             )
 
     # === Benchmark comparison ===
-    print(f"\n[3/3] 基准对比...")
-    # Pure momentum (no vol scaling)
-    r_pure = run_v51_backtest(data, index_df, initial_capital=100_000)
-    # Override: run with scale always = 1.0 (pure momentum)
-    # We'll compute this differently
+    print("\n[3/3] 基准对比...")
+    # Pure momentum baseline 不在此处重跑, 直接对比沪深300
     idx_c = index_df["close"].values
     bench_300 = (idx_c[-1] - idx_c[0]) / idx_c[0]
 
@@ -452,7 +449,7 @@ def main():
 
     # Improvement
     dd_improve = r_nomgmt["max_drawdown"] - result["max_drawdown"]
-    print(f"\n  波动率管理贡献:")
+    print("\n  波动率管理贡献:")
     print(
         f"    回撤改善: {dd_improve:+.1%} (从{r_nomgmt['max_drawdown']:.1%}→{result['max_drawdown']:.1%})"
     )

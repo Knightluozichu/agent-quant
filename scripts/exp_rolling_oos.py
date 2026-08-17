@@ -16,8 +16,8 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
-from exp_factor_zoo import (  # noqa: E402
+import run_qixing_v3 as rq
+from exp_factor_zoo import (
     f_breakout,
     f_low_vol,
     f_mom_short,
@@ -25,7 +25,7 @@ from exp_factor_zoo import (  # noqa: E402
     f_strength,
     f_vol_trend,
 )
-from strategy_lab.engine import backtest  # noqa: E402
+from strategy_lab.engine import backtest
 
 WEIGHT = 0.5
 

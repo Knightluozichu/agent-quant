@@ -6,15 +6,25 @@ including all orders, fills, daily positions, and attribution.
 
 from __future__ import annotations
 
-from datetime import datetime
-from typing import Optional
+from datetime import datetime  # noqa: TC003  # pydantic 在运行时解析字段注解
 
 from pydantic import BaseModel, Field
 
-from a_share_quant.domain.market_state import MarketRegime
-from a_share_quant.domain.order import Fill, Order, Position
-from a_share_quant.domain.strategy_decision import StrategyId
-from a_share_quant.domain.trade_plan import ExitReason, TradePlan
+from a_share_quant.domain.market_state import (  # noqa: TC001  # pydantic 运行时解析
+    MarketRegime,
+)
+from a_share_quant.domain.order import (  # noqa: TC001  # pydantic 运行时解析
+    Fill,
+    Order,
+    Position,
+)
+from a_share_quant.domain.strategy_decision import (  # noqa: TC001  # pydantic 运行时解析
+    StrategyId,
+)
+from a_share_quant.domain.trade_plan import (  # noqa: TC001  # pydantic 运行时解析
+    ExitReason,
+    TradePlan,
+)
 
 
 class FailureReasonCode(BaseModel):
@@ -225,28 +235,28 @@ class TradeLedger(BaseModel):
         default_factory=list,
         description="All fills for this trade",
     )
-    position: Optional[Position] = Field(
+    position: Position | None = Field(
         default=None,
         description="The position record",
     )
 
     # Timing
     signal_time: datetime = Field(description="Signal generation time")
-    entry_time: Optional[datetime] = Field(
+    entry_time: datetime | None = Field(
         default=None,
         description="Actual entry time",
     )
-    exit_time: Optional[datetime] = Field(
+    exit_time: datetime | None = Field(
         default=None,
         description="Actual exit time",
     )
 
     # P&L
-    entry_price: Optional[float] = Field(
+    entry_price: float | None = Field(
         default=None,
         description="Average entry price",
     )
-    exit_price: Optional[float] = Field(
+    exit_price: float | None = Field(
         default=None,
         description="Average exit price",
     )
@@ -292,27 +302,27 @@ class TradeLedger(BaseModel):
     )
 
     # Exit
-    exit_reason: Optional[ExitReason] = Field(
+    exit_reason: ExitReason | None = Field(
         default=None,
         description="Reason for exit",
     )
-    failure_reason: Optional[str] = Field(
+    failure_reason: str | None = Field(
         default=None,
         description="Failure reason code if trade was a loss",
     )
 
     # Attribution
-    attribution: Optional[AttributionBreakdown] = Field(
+    attribution: AttributionBreakdown | None = Field(
         default=None,
         description="Full attribution breakdown",
     )
 
     # Context
-    entry_regime: Optional[MarketRegime] = Field(
+    entry_regime: MarketRegime | None = Field(
         default=None,
         description="Market regime at entry",
     )
-    exit_regime: Optional[MarketRegime] = Field(
+    exit_regime: MarketRegime | None = Field(
         default=None,
         description="Market regime at exit",
     )
@@ -323,7 +333,7 @@ class TradeLedger(BaseModel):
 
     # Versioning
     model_version: str = Field(default="v1")
-    data_snapshot_id: Optional[str] = Field(
+    data_snapshot_id: str | None = Field(
         default=None,
         description="Data snapshot used",
     )
@@ -347,7 +357,7 @@ class TradeLedger(BaseModel):
             (self.net_pnl / (self.entry_price * self.quantity)) * 100 if self.quantity > 0 else 0.0
         )
 
-    def get_failure_reason_code(self) -> Optional[FailureReasonCode]:
+    def get_failure_reason_code(self) -> FailureReasonCode | None:
         """Get the failure reason code object."""
         if self.failure_reason is None:
             return None

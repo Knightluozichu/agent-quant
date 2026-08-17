@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import json
 import sys
-from collections import Counter
 from pathlib import Path
 
 import numpy as np
@@ -92,7 +91,6 @@ def run_v3_with_holding_analysis(
     # 详细持仓期动量追踪
     holding_periods: list[dict] = []
     current_holding_start: str | None = None
-    current_holding_code: str | None = None
     current_mom_track: list[dict] = []  # 当前持仓期的逐日动量
 
     # 决策记录(含动量详细信息)
@@ -101,10 +99,7 @@ def run_v3_with_holding_analysis(
     # 回撤事件记录
     drawdown_events: list[dict] = []
     peak_equity = initial_capital
-    peak_date = None
     in_drawdown = False
-    dd_start = None
-    dd_start_equity = None
 
     for td in trading_dates:
         # === 调仓日: 记录动量并执行交易 ===
@@ -170,7 +165,6 @@ def run_v3_with_holding_analysis(
                         # 记录当前持仓期结束
                         if current_holding_start is not None:
                             exit_mom = holding_mom
-                            exit_mom_d1 = holding_mom_d1
                             mom_values = [
                                 m["momentum"]
                                 for m in current_mom_track
@@ -221,7 +215,6 @@ def run_v3_with_holding_analysis(
 
                         # 重置持仓期追踪
                         current_holding_start = None
-                        current_holding_code = None
                         current_mom_track = []
                         holding = None
                         holding_shares = 0
@@ -239,7 +232,6 @@ def run_v3_with_holding_analysis(
                             holding_shares = shares
                             # 新持仓期开始
                             current_holding_start = td
-                            current_holding_code = target
                             # 记录买入时的动量
                             target_idx = etf_data_at_date.get(target)
                             if target_idx is not None:
@@ -274,21 +266,13 @@ def run_v3_with_holding_analysis(
         # === 回撤事件追踪 ===
         if equity > peak_equity:
             peak_equity = equity
-            peak_date = td
             if in_drawdown:
-                # 回撤结束
-                dd_end = td
-                dd_depth = (
-                    dd_start_equity - dd_start_equity * (1 + (equity - peak_equity) / peak_equity)
-                ) / dd_start_equity
-                # 简化: 记录回撤事件
+                # 回撤结束 (净值创新高)
                 in_drawdown = False
 
         drawdown = (equity - peak_equity) / peak_equity
         if drawdown < -0.05 and not in_drawdown:  # 5%回撤开始
             in_drawdown = True
-            dd_start = td
-            dd_start_equity = peak_equity
             drawdown_events.append(
                 {
                     "start_date": str(td),
@@ -660,7 +644,7 @@ def print_analysis_report(
     print("=" * 78)
 
     # === 1. 基础回测表现 ===
-    print(f"\n  【1】V3基准回测表现")
+    print("\n  【1】V3基准回测表现")
     print(f"  {'-' * 60}")
     res = v3_baseline
     print(f"    总收益:    {res['total_return']:>+8.1%}")
@@ -680,13 +664,13 @@ def print_analysis_report(
         print(f"      均值: {entry['mean']:.1%}  |  中位数: {entry['median']:.1%}")
         print(f"      最小值: {entry['min']:.1%}  |  最大值: {entry['max']:.1%}")
         print(f"      25分位: {entry['p25']:.1%}  |  75分位: {entry['p75']:.1%}")
-        print(f"      分布:")
+        print("      分布:")
         dist = entry.get("distribution", {})
         for k, v in dist.items():
             print(f"        {k}: {v:.1%}")
 
     if trend := pat.get("momentum_trend"):
-        print(f"\n  [2b] 持仓期内动量趋势:")
+        print("\n  [2b] 持仓期内动量趋势:")
         print(
             f"      上升趋势: {trend['positive']}次 ({trend['positive'] / pat['total_holding_periods']:.1%})"
         )
@@ -696,7 +680,7 @@ def print_analysis_report(
         print(f"      持平:     {trend['flat']}次")
 
     if pte := pat.get("momentum_peak_to_exit"):
-        print(f"\n  [2c] 动量峰值→退出衰减:")
+        print("\n  [2c] 动量峰值→退出衰减:")
         print(f"      平均衰减: {pte['mean']:.1%}")
         print(f"      中位数衰减: {pte['median']:.1%}")
         print(f"      最大衰减: {pte['max']:.1%}")
@@ -705,12 +689,12 @@ def print_analysis_report(
         print(f"      衰减>5%的: {pte['pct_decay_over_5pct']:.1%}")
 
     if pth := pat.get("peaked_then_held"):
-        print(f"\n  [2d] 动量过峰后仍持有:")
+        print("\n  [2d] 动量过峰后仍持有:")
         print(f"      次数: {pth['count']} ({pth['pct']:.1%})")
         print(f"      平均衰减幅度: {pth['avg_decay']:.1%}")
 
     # === 3. 动量一阶导分析 ===
-    print(f"\n  【3】动量一阶导(变化率)分析")
+    print("\n  【3】动量一阶导(变化率)分析")
     print(f"  {'-' * 60}")
 
     d1a = pat.get("momentum_d1_analysis", {})
@@ -720,7 +704,7 @@ def print_analysis_report(
     )
 
     # 展示各ETF的动量特征
-    print(f"\n  [3a] 各ETF持仓期动量特征:")
+    print("\n  [3a] 各ETF持仓期动量特征:")
     print(
         f"  {'ETF':<10} {'次数':<6} {'入场动量均值':<12} {'峰值→退出衰减':<14} {'衰减>2%比例':<12}"
     )
@@ -740,7 +724,7 @@ def print_analysis_report(
         )
 
     # === 4. 回撤事件分析 ===
-    print(f"\n  【4】回撤事件分析 (5%以上回撤)")
+    print("\n  【4】回撤事件分析 (5%以上回撤)")
     print(f"  {'-' * 60}")
     print(f"    总回撤事件: {len(drawdown_events)}次")
     print(f"    最大回撤: {v3_baseline['max_drawdown']:.1%}")
@@ -756,7 +740,7 @@ def print_analysis_report(
             )
 
     # === 5. 动量一阶导退出模拟 ===
-    print(f"\n  【5】动量一阶导(一阶导)退出信号模拟")
+    print("\n  【5】动量一阶导(一阶导)退出信号模拟")
     print(f"  {'-' * 60}")
 
     # 找最佳的动量一阶导阈值
@@ -787,45 +771,45 @@ def print_analysis_report(
     )
 
     # === 6. 结论 ===
-    print(f"\n  【6】核心结论与建议")
+    print("\n  【6】核心结论与建议")
     print(f"  {'-' * 60}")
 
     # 结论1: 动量衰减验证
     decay_pct = pte.get("pct_with_decay", 0) if pte else 0
     decay_gt_2 = pte.get("pct_decay_over_2pct", 0) if pte else 0
-    print(f"\n  [6a] 动量衰减假设验证:")
+    print("\n  [6a] 动量衰减假设验证:")
     print(f"      - 入场动量均值: {entry['mean']:.1%}" if entry else "")
     print(f"      - 动量峰值→退出平均衰减: {pte['mean']:.1%}" if pte else "")
     print(f"      - {decay_pct:.0%}的持仓期存在动量衰减, {decay_gt_2:.0%}衰减>2%")
     if decay_gt_2 > 0.5:
-        print(f"      ✓ 假设成立: 大部分持仓期存在显著的动量衰减")
+        print("      ✓ 假设成立: 大部分持仓期存在显著的动量衰减")
     else:
-        print(f"      △ 部分成立: 动量衰减普遍存在但幅度有限")
+        print("      △ 部分成立: 动量衰减普遍存在但幅度有限")
 
     # 结论2: 回撤与动量衰减关系
     d1_neg_pct = d1a.get("negative_exit_pct", 0) if d1a else 0
-    print(f"\n  [6b] 回撤与动量衰减关系:")
+    print("\n  [6b] 回撤与动量衰减关系:")
     print(f"      - {d1_neg_pct:.0%}的持仓期在退出时动量一阶导为负")
     print(f"      - 动量过峰后仍持有: {pth['count']}次 ({pth['pct']:.1%})" if pth else "")
     if d1_neg_pct > 0.6:
-        print(f"      ✓ 核心猜想成立: 大部分回撤发生在动量衰减但未及时退出时")
+        print("      ✓ 核心猜想成立: 大部分回撤发生在动量衰减但未及时退出时")
     else:
-        print(f"      △ 部分成立: 动量衰减是回撤的重要原因之一")
+        print("      △ 部分成立: 动量衰减是回撤的重要原因之一")
 
     # 结论3: 动量一阶导有效性
     d1_improvement = best_d1[1]["sharpe"] - v3_baseline["sharpe"]
     dd_improvement = best_dd_d1[1]["max_drawdown"] - v3_baseline["max_drawdown"]
-    print(f"\n  [6c] 动量一阶导退出信号有效性:")
+    print("\n  [6c] 动量一阶导退出信号有效性:")
     if d1_improvement > 0.1 and dd_improvement > 0.02:
         print(f"      ✓ 有效: 夏普提升{d1_improvement:.2f}, 回撤改善{dd_improvement:.1%}")
         print(f"      - 推荐阈值: {best_d1[0]:.1%}")
     elif d1_improvement > 0:
         print(f"      △ 轻微改善: 夏普提升{d1_improvement:.2f}, 回撤改善{dd_improvement:.1%}")
-        print(f"      - 考虑作为辅助信号, 不单独使用")
+        print("      - 考虑作为辅助信号, 不单独使用")
     else:
         print(f"      ✗ 无效: 动量一阶导退出信号降低夏普({d1_improvement:+.2f})")
-        print(f"      - 动量一阶导本身不适合作为独立退出信号")
-        print(f"      - 建议结合其他信号(如A股MA15走弱)综合判断")
+        print("      - 动量一阶导本身不适合作为独立退出信号")
+        print("      - 建议结合其他信号(如A股MA15走弱)综合判断")
     print(f"\n{'=' * 78}")
 
 
@@ -942,7 +926,6 @@ def simulate_momentum_d1_exit_no_lookahead(
                     data, etf_data_at_date, holding
                 )
 
-            next_td = trading_dates[i + 1] if i + 1 < len(trading_dates) else None
             pending_signal = {"target": target, "holding": holding}
 
     if not equity_history:
@@ -1157,7 +1140,6 @@ def main():
     for threshold in thresholds:
         res = simulate_momentum_d1_exit(data, mom_d1_threshold=threshold)
         d1_results.append((threshold, res))
-        name = f"d1_exit_{threshold:+.2f}".replace(".", "p").replace("-", "neg")
         print(
             f"  阈值 {threshold:+6.1%}: 年化{res['ann_return']:>+7.1%}  "
             f"夏普{res['sharpe']:.2f}  回撤{res['max_drawdown']:.1%}  "
@@ -1179,7 +1161,7 @@ def main():
     print("=" * 78)
     print("  补充分析A: 无未来函数(T+1开盘成交)口径下D1退出信号验证")
     print("=" * 78)
-    print(f"\n  V3无未来函数基准: 年化+48.8%  夏普1.33  回撤-40.7%")
+    print("\n  V3无未来函数基准: 年化+48.8%  夏普1.33  回撤-40.7%")
     print(f"\n  {'阈值':<8} {'年化':>8} {'夏普':>8} {'回撤':>8} {'交易':>6} {'触发':>6}")
     print(f"  {'-' * 46}")
     nl_thresholds = [0.0, -0.02, -0.05, -0.08]

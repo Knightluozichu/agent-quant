@@ -16,7 +16,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
+import run_qixing_v3 as rq
 
 INITIAL = 100_000.0
 
@@ -73,7 +73,7 @@ def main() -> None:
         for r in rt_log[-5:]:
             print(f"      {r['date']} 剔除 {r['name']} (当日{r['intraday_ret']:+.1%})")
 
-    print(f"\n  【C模式近期决策 (最近6个调仓日)】")
+    print("\n  【C模式近期决策 (最近6个调仓日)】")
     for d in lm["decision_log"][-6:]:
         print(f"    {d['date']} → {d['target_name']} (候选{d['n_candidates']}个)")
 

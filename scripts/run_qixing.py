@@ -49,8 +49,9 @@ SLIPPAGE = 0.001
 
 def fetch_etf_data():
     """用akshare新浪源拉取ETF历史数据."""
-    import akshare as ak
     import time
+
+    import akshare as ak
 
     all_data = {}
     all_codes = list(ETF_POOL.keys()) + [DEFENSE_ETF]
@@ -108,7 +109,7 @@ def calc_momentum_score(close: np.ndarray) -> float:
             m20 = (close[-1] - close[-20]) / close[-20] if len(close) >= 20 else 0
             m60 = (close[-1] - close[-60]) / close[-60]
             return m20 * 0.5 + m60 * 0.5
-        elif len(close) >= 21:
+        if len(close) >= 21:
             return (close[-1] - close[-20]) / close[-20]
         return 0.0
 
@@ -286,12 +287,12 @@ def main():
     print("=" * 70)
     print("  七星跨资产ETF动量轮动 — 本地复现")
     print(f"  ETF池: {list(ETF_POOL.values())}")
-    print(f"  防御: 货币基金(511880) | 调仓: 月频(20天) | 持仓: Top1")
-    print(f"  动量: 20日×0.4 + 60日×0.3 + 120日×0.3 | 全<0→货币基金")
+    print("  防御: 货币基金(511880) | 调仓: 月频(20天) | 持仓: Top1")
+    print("  动量: 20日×0.4 + 60日×0.3 + 120日×0.3 | 全<0→货币基金")
     print("=" * 70)
 
     # 拉取数据
-    print(f"\n[1/3] 拉取ETF数据...")
+    print("\n[1/3] 拉取ETF数据...")
     data = fetch_etf_data()
     print(f"  成功: {len(data)}/{len(ETF_POOL) + 1} 只")
 
@@ -300,7 +301,7 @@ def main():
         return
 
     # 回测
-    print(f"\n[2/3] 回测...")
+    print("\n[2/3] 回测...")
     result = run_qixing_backtest(data, rebalance=20, top_n=1)
 
     if "error" in result:
@@ -308,7 +309,7 @@ def main():
         return
 
     eq = result["equity_curve"]
-    print(f"\n  年度收益:")
+    print("\n  年度收益:")
     print(f"  {'年份':<6} {'年初':>10} {'年末':>10} {'收益':>8} {'回撤':>8}")
     print(f"  {'-' * 46}")
     prev = 100_000.0
@@ -325,7 +326,6 @@ def main():
 
     final = eq["equity"].iloc[-1]
     total_ret = (final / 100_000) - 1
-    n_years = len(eq) / (252 / 20)  # 调仓次数→年数
     print(f"  {'-' * 46}")
     print(f"\n  10万 → {final:,.0f} ({total_ret:+.1%})")
     print(
@@ -349,18 +349,18 @@ def main():
         for s in d["selected"]:
             name = ETF_POOL.get(s, "货币基金")
             selected_counts[name] += 1
-    print(f"\n  持仓分布:")
+    print("\n  持仓分布:")
     for name, count in selected_counts.most_common():
         print(f"    {name:<10} {count}期 ({count / len(decisions):.0%})")
 
     # 对比基准
-    print(f"\n[3/3] 基准对比...")
+    print("\n[3/3] 基准对比...")
     # 沪深300
     if "159915" in data:
         cyb = data["159915"]
         cyb_years = {}
         for year in sorted(eq["year"].unique()):
-            ydf = cyb[cyb["trade_date"].apply(lambda x: x.year == year)]
+            ydf = cyb[cyb["trade_date"].apply(lambda x, y=year: x.year == y)]
             if len(ydf) >= 2:
                 cyb_years[year] = (ydf["close"].iloc[-1] - ydf["close"].iloc[0]) / ydf[
                     "close"

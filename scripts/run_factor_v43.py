@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import json
 import warnings
-from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 
@@ -391,7 +390,6 @@ def purged_walk_forward(
     logits = np.zeros(N_CROSS)
     m = np.zeros(N_CROSS)
     v = np.zeros(N_CROSS)
-    t_step = 0
 
     oos_results = []  # Each round's OOS performance
     round_weights = []  # Weights used in each OOS period
@@ -399,7 +397,7 @@ def purged_walk_forward(
     print(f"\n{'=' * 70}")
     print(f"  V4.3 Purged Walk-Forward: {n_rounds}轮")
     print(f"  Train: {train_size}天 | Purge: {purge_days}天 | Test: {test_size}天")
-    print(f"  规则: 不选checkpoint, OOS拼接, 权重只用历史数据")
+    print("  规则: 不选checkpoint, OOS拼接, 权重只用历史数据")
     print(f"{'=' * 70}")
 
     for ri in range(n_rounds):
@@ -419,8 +417,8 @@ def purged_walk_forward(
         weights = _softmax(logits)
         grad = _compute_ic_gradient(calc, tradable, data, weights, sample_pts)
 
-        # AdamW step
-        t_step += 1
+        # AdamW step (ri 从 0 开始且 break 只发生在后续迭代, 故 t_step == ri + 1)
+        t_step = ri + 1
         logits -= lr * 0.01 * logits  # weight decay
         m = 0.9 * m + 0.1 * grad
         v = 0.999 * v + 0.001 * grad**2
@@ -969,7 +967,7 @@ def main():
         data, index_df, final_weights, dt_date(2023, 1, 1), dt_date(2023, 12, 31)
     )
     if not attr_2023.empty:
-        print(f"\n  2023年归因 (每期平均):")
+        print("\n  2023年归因 (每期平均):")
         print(f"  {'层级':<20} {'平均收益':>10} {'累计':>10}")
         print(f"  {'-' * 42}")
         for col in [
@@ -991,7 +989,7 @@ def main():
         conv_contrib = attr_2023["C_conviction"].mean() - attr_2023["B_risk_parity"].mean()
         gate_contrib = attr_2023["D_gate"].mean() - attr_2023["C_conviction"].mean()
         exec_contrib = attr_2023["E_execution"].mean() - attr_2023["D_gate"].mean()
-        print(f"\n  贡献分解:")
+        print("\n  贡献分解:")
         print(f"    选股贡献: {sel_contrib * 100:+.3f}%/期")
         print(f"    风险平价: {rp_contrib * 100:+.3f}%/期")
         print(f"    Conviction: {conv_contrib * 100:+.3f}%/期")
@@ -1024,10 +1022,10 @@ def main():
         print(f"  {CROSS_FACTORS[i]:<16} {final_weights[i] * 100:>7.1f}% {note}")
 
     # Conviction audit
-    print(f"\n  Conviction审计:")
-    print(f"    breakout因子Rank后范围: 约[-2.5, +2.5] (21只ETF)")
-    print(f"    原始breakout>0.6 → 触发conviction")
-    print(f"    需验证: 2023年有多少次触发?")
+    print("\n  Conviction审计:")
+    print("    breakout因子Rank后范围: 约[-2.5, +2.5] (21只ETF)")
+    print("    原始breakout>0.6 → 触发conviction")
+    print("    需验证: 2023年有多少次触发?")
 
     # Count conviction triggers in 2023
     calc = FactorCalc()

@@ -275,7 +275,7 @@ def detect_regime(index_df: pd.DataFrame, as_of_date: date) -> str:
     ret_20d = (close[-1] - close[-20]) / close[-20]
     if ma20 > ma60 * 1.01 and ret_20d > 0.02:
         return "UP"
-    elif ma20 < ma60 * 0.99 and ret_20d < -0.02:
+    if ma20 < ma60 * 0.99 and ret_20d < -0.02:
         return "DOWN"
     return "FLAT"
 
@@ -775,7 +775,7 @@ def run_flywheel_v41(
 
     print(f"\n{'=' * 70}")
     print(f"  v4.1 飞轮进化: {n_rounds} 轮 | AdamW lr={lr} | 19 可学习参数")
-    print(f"  (16因子权重 + 3风控参数: 降仓比例/防御配比/健康阈值)")
+    print("  (16因子权重 + 3风控参数: 降仓比例/防御配比/健康阈值)")
     print(f"  数据: {all_dates[0]} ~ {all_dates[-1]} ({n_total} 天)")
     print(f"{'=' * 70}")
 
@@ -840,10 +840,10 @@ def run_flywheel_v41(
     print(f"  进化完成! 最优 Round {best_round + 1}, 收益: {best_return:+.2%}")
     fw = optimizer.get_factor_weights()
     rp = optimizer.get_risk_params()
-    print(f"\n  因子权重 Top5:")
+    print("\n  因子权重 Top5:")
     for i in np.argsort(fw)[-5:][::-1]:
         print(f"    {ALL_FACTORS[i]:15s}: {fw[i] * 100:.1f}%")
-    print(f"\n  学习到的风控参数:")
+    print("\n  学习到的风控参数:")
     print(
         f"    降仓比例 (stress_reduce):    {rp['stress_reduce']:.3f}  (回撤时最多降{rp['stress_reduce'] * 100:.0f}%)"
     )
@@ -927,7 +927,7 @@ def main():
     eq["trade_date"] = pd.to_datetime(eq["trade_date"])
     eq["year"] = eq["trade_date"].dt.year
 
-    print(f"\n  年度收益 (本金10万):")
+    print("\n  年度收益 (本金10万):")
     print(f"  {'年份':<6} {'年初':>10} {'年末':>10} {'收益':>8} {'回撤':>8}")
     print(f"  {'-' * 46}")
     prev = 100_000.0

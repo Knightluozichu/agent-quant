@@ -7,7 +7,6 @@ This gives us enough data for 5+ walk-forward windows with statistical significa
 from __future__ import annotations
 
 import sys
-from datetime import date
 from pathlib import Path
 
 import numpy as np
@@ -283,7 +282,7 @@ def print_report(
         print(f"  年化超额: {annual_excess:+.2%}")
         print(f"  胜率: {win_rate:.0%} ({wins}/{n_windows})")
 
-        print(f"\n  过拟合检验:")
+        print("\n  过拟合检验:")
         if avg_excess > 0.01:
             print(f"  ✓ 样本外正超额 ({avg_excess:+.2%})，策略有泛化能力")
         elif avg_excess > -0.005:
@@ -296,9 +295,9 @@ def print_report(
             positive_windows = sum(1 for r in wf_results if r.excess_return > 0)
             print(f"  一致性: {positive_windows}/{n_windows} 个窗口为正")
             if positive_windows >= n_windows * 0.6:
-                print(f"  ✓ 多数窗口为正，策略一致性可接受")
+                print("  ✓ 多数窗口为正，策略一致性可接受")
             else:
-                print(f"  △ 正窗口不足60%，策略稳定性待观察")
+                print("  △ 正窗口不足60%，策略稳定性待观察")
 
     # Recent rebalances
     print(f"\n{'=' * 70}")

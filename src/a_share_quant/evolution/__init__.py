@@ -14,15 +14,27 @@ Key principles:
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import date, datetime
-from enum import Enum
-from typing import Optional
 import hashlib
 import json
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone, tzinfo
+from enum import StrEnum
+from zoneinfo import ZoneInfo
+
+# 审计时间戳一律使用 Asia/Shanghai, 不依赖运行环境本地时区
+_SH_TZ: tzinfo
+try:
+    _SH_TZ = ZoneInfo("Asia/Shanghai")
+except Exception:  # 极简环境缺 tzdata 时回退固定 +08:00 (1991 年后上海无夏令时)
+    _SH_TZ = timezone(timedelta(hours=8), name="Asia/Shanghai")
 
 
-class StrategyStatus(str, Enum):
+def _now_sh() -> datetime:
+    """返回 Asia/Shanghai 时区的当前时间."""
+    return datetime.now(_SH_TZ)
+
+
+class StrategyStatus(StrEnum):
     """Strategy lifecycle status."""
 
     CHALLENGER = "CHALLENGER"  # Being tested
@@ -63,10 +75,10 @@ class StrategyVersion:
     params: dict
     status: StrategyStatus = StrategyStatus.CHALLENGER
     created_at: datetime = field(default_factory=datetime.now)
-    promoted_at: Optional[datetime] = None
-    retired_at: Optional[datetime] = None
+    promoted_at: datetime | None = None
+    retired_at: datetime | None = None
     performance: StrategyPerformance = field(default_factory=StrategyPerformance)
-    parent_version: Optional[int] = None  # For tracking lineage
+    parent_version: int | None = None  # For tracking lineage
     notes: str = ""
 
     @property
@@ -139,7 +151,7 @@ class EvolutionManager:
     def register_champion(self, strategy: StrategyVersion) -> None:
         """Register initial champion for a strategy type."""
         strategy.status = StrategyStatus.CHAMPION
-        strategy.promoted_at = datetime.now()
+        strategy.promoted_at = _now_sh()
         self._champions[strategy.strategy_id] = strategy
 
     def add_challenger(self, strategy: StrategyVersion) -> bool:
@@ -158,7 +170,7 @@ class EvolutionManager:
         self._challengers[sid].append(strategy)
         return True
 
-    def get_champion(self, strategy_id: str) -> Optional[StrategyVersion]:
+    def get_champion(self, strategy_id: str) -> StrategyVersion | None:
         """Get current champion for a strategy type."""
         return self._champions.get(strategy_id)
 
@@ -258,7 +270,7 @@ class EvolutionManager:
 
         # Record promotion
         record = PromotionRecord(
-            timestamp=datetime.now(),
+            timestamp=_now_sh(),
             champion_id=strategy_id,
             champion_version=champion.version if champion else 0,
             challenger_id=strategy_id,
@@ -273,12 +285,12 @@ class EvolutionManager:
         # Demote old champion
         if champion:
             champion.status = StrategyStatus.RETIRED
-            champion.retired_at = datetime.now()
+            champion.retired_at = _now_sh()
             self._retired.append(champion)
 
         # Promote challenger
         challenger.status = StrategyStatus.CHAMPION
-        challenger.promoted_at = datetime.now()
+        challenger.promoted_at = _now_sh()
         self._champions[strategy_id] = challenger
 
         # Remove from challengers

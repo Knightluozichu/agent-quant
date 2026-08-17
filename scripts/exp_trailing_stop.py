@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent))
-import run_qixing_v3 as rq  # noqa: E402
+import run_qixing_v3 as rq
 
 # === 止损参数 ===
 TRAILING_STOP = {
@@ -83,7 +83,6 @@ def run_with_stop_loss(
 
     # 调仓日集合
     rebalance_set = set(trading_dates[:: rq.REBALANCE_DAYS])
-    rebalance_counter = 0
 
     for di, td in enumerate(trading_dates):
         # === 每日: 更新持仓价格 & 检查止损 ===
@@ -103,11 +102,9 @@ def run_with_stop_loss(
             equity_peak = cur_equity
 
         # --- 账户级熔断检查 ---
-        breaker_triggered = False
         if use_equity_breaker and di >= breaker_until and holding and holding != rq.DEFENSE:
             acct_dd = (cur_equity - equity_peak) / equity_peak
             if acct_dd < -equity_breaker_pct:
-                breaker_triggered = True
                 stop_events.append(
                     {
                         "date": str(td),

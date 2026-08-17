@@ -1,16 +1,13 @@
 """Tests for paper trading."""
 
+import tempfile
 from datetime import date
 from pathlib import Path
-import tempfile
-
-import pytest
 
 from a_share_quant.paper import (
     DailyScheduler,
     DailySignal,
     PaperBroker,
-    PaperOrder,
 )
 
 

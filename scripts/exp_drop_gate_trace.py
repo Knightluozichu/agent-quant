@@ -21,7 +21,7 @@ import pandas as pd
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-import run_qixing_v3 as rq  # noqa: E402
+import run_qixing_v3 as rq
 
 WARMUP = 130
 RET60_THR = 0.00
@@ -113,7 +113,7 @@ def main() -> None:
         avg = v.mean() * 100
         print(f"    {label:<24} {len(d):>3}次 | 后5日继续跌 {cont:>3.0f}% | 平均 {avg:+.2f}%")
         return {
-            "n": int(len(d)),
+            "n": len(d),
             "cont_pct": round(float(cont), 1),
             "avg_fwd": round(float(avg), 2),
         }
@@ -140,8 +140,8 @@ def main() -> None:
 
     result = {
         "n_triggered": total,
-        "n_passed": int(len(passed)),
-        "n_excluded": int(len(excluded)),
+        "n_passed": len(passed),
+        "n_excluded": len(excluded),
         "all": report(df_out, "全部触发"),
         "passed": g_passed,
         "excluded": g_excluded,
