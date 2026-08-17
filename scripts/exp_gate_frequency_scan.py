@@ -13,6 +13,7 @@
 用法: uv run python scripts/exp_gate_frequency_scan.py
 输出: data/v9_results/gate_frequency_scan.json
 """
+
 from __future__ import annotations
 
 import json
@@ -37,6 +38,7 @@ DECISIONS: list[tuple] = []
 
 def make_gated_par(ret60_thr: float, mom_thr: float):
     """参数化门控: ret60>=thr 排除; 动量>mom_thr 才放行."""
+
     def gated(close: np.ndarray) -> bool:
         if len(close) < rq.DROP_LOOKBACK + 1:
             return True
@@ -58,19 +60,22 @@ def make_gated_par(ret60_thr: float, mom_thr: float):
         if 0.5 * r10 + 0.5 * r20 <= mom_thr:
             return False
         return True
+
     return gated
 
 
 def make_exempt_par(ret60_thr: float):
     """参数化豁免: 放行类型持仓 (ret60<thr 且近5日暴跌) 不享缓冲."""
+
     def exempt_select(data, etf_data_at_date, holding):
         t, c, s, a = ORIG_SELECT(data, etf_data_at_date, holding)
         if holding and holding in etf_data_at_date and holding != rq.DEFENSE:
-            hclose = data[holding]["close"].values[:etf_data_at_date[holding] + 1].astype(float)
+            hclose = data[holding]["close"].values[: etf_data_at_date[holding] + 1].astype(float)
             if len(hclose) > rq.DROP_LOOKBACK + 1 and len(hclose) > 61:
                 drop = any(
                     (hclose[i] - hclose[i - 1]) / hclose[i - 1] < rq.DROP_THRESHOLD
-                    for i in range(-rq.DROP_LOOKBACK, 0))
+                    for i in range(-rq.DROP_LOOKBACK, 0)
+                )
                 ret60 = (hclose[-1] - hclose[-61]) / hclose[-61]
                 if drop and ret60 < ret60_thr:
                     # 重新评估: 强制换最强 (threshold=0)
@@ -83,6 +88,7 @@ def make_exempt_par(ret60_thr: float):
                         else:
                             t = best_target
         return t, c, s, a
+
     return exempt_select
 
 
@@ -156,8 +162,10 @@ def main() -> None:
     # 基线 (决策日志)
     rep_base, log_base = run_variant(data, h3.ORIG_CHECK, None, False, log=True)
     base_final = rep_base["final_value"]
-    print(f"\n  基线: 期末 {base_final:,.0f} 夏普 {rep_base['sharpe']:.2f} "
-          f"回撤 {rep_base['max_drawdown']:.1%}")
+    print(
+        f"\n  基线: 期末 {base_final:,.0f} 夏普 {rep_base['sharpe']:.2f} "
+        f"回撤 {rep_base['max_drawdown']:.1%}"
+    )
 
     rows = []
     for ret60_thr in (0.00, 0.10, 0.20, 0.30):
@@ -168,40 +176,53 @@ def main() -> None:
                 rep, log = run_variant(data, gate_fn, ex_fn, True, log=True)
                 div = count_divergence(log_base, log)
                 diff = rep["final_value"] / base_final - 1
-                rows.append({
-                    "ret60_thr": ret60_thr, "mom_thr": mom_thr,
-                    "exempt": exempt, "final": rep["final_value"],
-                    "diff_vs_base": diff, "sharpe": rep["sharpe"],
-                    "max_dd": rep["max_drawdown"], "divergences": div,
-                    "n_trades": rep["n_trades"],
-                })
-                print(f"  thr={ret60_thr:+.2f} mom={mom_thr:+.2f} "
-                      f"豁免={'on' if exempt else 'off'}: "
-                      f"期末{rep['final_value']:>12,.0f} ({diff:+.1%}) "
-                      f"夏普{rep['sharpe']:.2f} 分歧{div:>3}次")
+                rows.append(
+                    {
+                        "ret60_thr": ret60_thr,
+                        "mom_thr": mom_thr,
+                        "exempt": exempt,
+                        "final": rep["final_value"],
+                        "diff_vs_base": diff,
+                        "sharpe": rep["sharpe"],
+                        "max_dd": rep["max_drawdown"],
+                        "divergences": div,
+                        "n_trades": rep["n_trades"],
+                    }
+                )
+                print(
+                    f"  thr={ret60_thr:+.2f} mom={mom_thr:+.2f} "
+                    f"豁免={'on' if exempt else 'off'}: "
+                    f"期末{rep['final_value']:>12,.0f} ({diff:+.1%}) "
+                    f"夏普{rep['sharpe']:.2f} 分歧{div:>3}次"
+                )
 
     # === 分析: 分歧次数与表现的关系 ===
     print("\n" + "=" * 80)
     print("  分歧次数 vs 表现 (有效样本量与收益的关系):")
     active = [r for r in rows if r["divergences"] >= 3]
     for r in sorted(active, key=lambda x: -x["diff_vs_base"]):
-        print(f"    分歧{r['divergences']:>3}次 thr={r['ret60_thr']:+.2f} "
-              f"mom={r['mom_thr']:+.2f} 豁免={'on' if r['exempt'] else 'off'}: "
-              f"{r['diff_vs_base']:+.1%}")
+        print(
+            f"    分歧{r['divergences']:>3}次 thr={r['ret60_thr']:+.2f} "
+            f"mom={r['mom_thr']:+.2f} 豁免={'on' if r['exempt'] else 'off'}: "
+            f"{r['diff_vs_base']:+.1%}"
+        )
     if not active:
         print("    (无分歧≥3次的变体)")
 
     # 判定: 是否存在 分歧≥5 且 全周期≥基线 的参数区
     robust = [r for r in rows if r["divergences"] >= 5 and r["diff_vs_base"] >= 0]
-    print(f"\n  判定: 分歧≥5 且 全周期≥基线 的参数区: "
-          f"{len(robust)} 个 {'✅ 机制有信号' if robust else '❌ 无稳健参数区'}")
+    print(
+        f"\n  判定: 分歧≥5 且 全周期≥基线 的参数区: "
+        f"{len(robust)} 个 {'✅ 机制有信号' if robust else '❌ 无稳健参数区'}"
+    )
     for r in robust[:5]:
-        print(f"    thr={r['ret60_thr']:+.2f} mom={r['mom_thr']:+.2f} "
-              f"豁免={'on' if r['exempt'] else 'off'} 分歧{r['divergences']}次 "
-              f"{r['diff_vs_base']:+.1%}")
+        print(
+            f"    thr={r['ret60_thr']:+.2f} mom={r['mom_thr']:+.2f} "
+            f"豁免={'on' if r['exempt'] else 'off'} 分歧{r['divergences']}次 "
+            f"{r['diff_vs_base']:+.1%}"
+        )
 
-    out = {"base_final": base_final, "rows": rows,
-           "robust_zone": [r for r in robust]}
+    out = {"base_final": base_final, "rows": rows, "robust_zone": [r for r in robust]}
     path = OUTPUT_DIR / "gate_frequency_scan.json"
     path.write_text(json.dumps(out, indent=2, ensure_ascii=False, default=str))
     print(f"\n  ✓ 结果已保存: {path}")

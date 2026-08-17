@@ -4,6 +4,7 @@
 并分析各逃离信号触发后是继续跌(逃对)还是反弹(逃错)——即对跌势的敏感性。
 用法: uv run python scripts/exp_escape_full.py
 """
+
 from __future__ import annotations
 
 import sys
@@ -18,7 +19,7 @@ import run_qixing_v3 as rq  # noqa: E402
 from exp_escape_signal import backtest_escape, check_escape, price_on  # noqa: E402
 from strategy_lab.engine import WARMUP, build_idx_map, get_common_dates  # noqa: E402
 
-POOL_FULL = list(rq.ETF_POOL.keys())            # 8个(含豆粕, ~6.5年)
+POOL_FULL = list(rq.ETF_POOL.keys())  # 8个(含豆粕, ~6.5年)
 POOL_10Y = [c for c in POOL_FULL if c != "159985"]  # 去豆粕, ~10年
 
 CONFIGS = [
@@ -102,7 +103,7 @@ def trigger_analysis(data, etype, param, horizon=5) -> dict:
     return {
         "n": len(arr),
         "pct_continued_drop": float((arr < 0).mean() * 100),  # 继续跌=逃对
-        "pct_rebounded": float((arr > 0).mean() * 100),        # 反弹=逃错
+        "pct_rebounded": float((arr > 0).mean() * 100),  # 反弹=逃错
         "avg_fwd": float(arr.mean() * 100),
     }
 
@@ -110,8 +111,10 @@ def trigger_analysis(data, etype, param, horizon=5) -> dict:
 def main() -> None:
     data = rq.load_data()
 
-    for label, pool in [("全池8资产 ~6.5年(含豆粕)", POOL_FULL),
-                        ("10年池 ~10年(去豆粕)", POOL_10Y)]:
+    for label, pool in [
+        ("全池8资产 ~6.5年(含豆粕)", POOL_FULL),
+        ("10年池 ~10年(去豆粕)", POOL_10Y),
+    ]:
         rows = run_with_pool(pool, data)
         span = ""
         print("=" * 70)
@@ -121,9 +124,11 @@ def main() -> None:
         print("  " + "-" * 60)
         for name, r in rows:
             final = (1 + r["total_return"]) * 10
-            print(f"  {name:<16}{f'{final:.1f}万':>12}{r['total_return']*100:>+9.0f}%"
-                  f"{r['ann_return']*100:>+8.1f}%{r['sharpe']:>8.2f}"
-                  f"{r['max_drawdown']*100:>8.1f}%")
+            print(
+                f"  {name:<16}{f'{final:.1f}万':>12}{r['total_return'] * 100:>+9.0f}%"
+                f"{r['ann_return'] * 100:>+8.1f}%{r['sharpe']:>8.2f}"
+                f"{r['max_drawdown'] * 100:>8.1f}%"
+            )
         print()
 
     # 跌势敏感性分析 (全池)
@@ -139,8 +144,10 @@ def main() -> None:
         if ta["n"] == 0:
             print(f"  {name:<16}{'0':>8}")
             continue
-        print(f"  {name:<16}{ta['n']:>8}{ta['pct_continued_drop']:>9.0f}%"
-              f"{ta['pct_rebounded']:>8.0f}%{ta['avg_fwd']:>+11.2f}%")
+        print(
+            f"  {name:<16}{ta['n']:>8}{ta['pct_continued_drop']:>9.0f}%"
+            f"{ta['pct_rebounded']:>8.0f}%{ta['avg_fwd']:>+11.2f}%"
+        )
     print("=" * 70)
     print("  判读: '继续跌%'高=该信号真能识别跌势; '反弹%'高=信号是假摔诱捕(逃错)。")
 

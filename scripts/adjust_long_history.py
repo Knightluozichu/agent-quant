@@ -5,6 +5,7 @@
 只处理ETF价格文件(文件名为纯数字代码), 跳过指数/因子文件。
 用法: uv run python scripts/adjust_long_history.py
 """
+
 from __future__ import annotations
 
 from pathlib import Path

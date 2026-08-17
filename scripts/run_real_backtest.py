@@ -32,6 +32,7 @@ from a_share_quant.backtest import (
 # Data Loading
 # =============================================================================
 
+
 def load_real_data() -> dict[str, pd.DataFrame]:
     """Load cached real data from Parquet files."""
     data_dir = PROJECT_ROOT / "data" / "real"
@@ -53,6 +54,7 @@ def load_real_data() -> dict[str, pd.DataFrame]:
 # =============================================================================
 # Simple Strategy: Regime-based ETF rotation
 # =============================================================================
+
 
 class RegimeRotationStrategy:
     """Simple regime-based ETF rotation strategy.
@@ -107,6 +109,7 @@ class RegimeRotationStrategy:
 # =============================================================================
 # Backtest Runner
 # =============================================================================
+
 
 def run_backtest(
     data: dict[str, pd.DataFrame],
@@ -173,16 +176,22 @@ def run_backtest(
             if qty > 0:
                 cost = qty * price
                 fee = max(cost * commission_rate, min_commission)
-                cash -= (cost + fee)
+                cash -= cost + fee
                 shares = qty
                 holding_symbol = target
                 entry_price = price
                 entry_date = td
-                trades.append({
-                    "date": td, "action": "BUY", "symbol": target,
-                    "price": price, "quantity": qty, "fee": fee,
-                    "regime": regime.state_id,
-                })
+                trades.append(
+                    {
+                        "date": td,
+                        "action": "BUY",
+                        "symbol": target,
+                        "price": price,
+                        "quantity": qty,
+                        "fee": fee,
+                        "regime": regime.state_id,
+                    }
+                )
                 strategy.position = target
 
         elif action == "SELL" and holding_symbol is not None and holding_symbol in prices:
@@ -190,15 +199,22 @@ def run_backtest(
             revenue = shares * price
             fee = max(revenue * commission_rate, min_commission)
             tax = revenue * stamp_tax_rate
-            cash += (revenue - fee - tax)
+            cash += revenue - fee - tax
 
             pnl = (price - entry_price) * shares - fee - tax
-            trades.append({
-                "date": td, "action": "SELL", "symbol": holding_symbol,
-                "price": price, "quantity": shares, "fee": fee + tax,
-                "pnl": pnl, "regime": regime.state_id,
-                "holding_days": (td - entry_date).days if entry_date else 0,
-            })
+            trades.append(
+                {
+                    "date": td,
+                    "action": "SELL",
+                    "symbol": holding_symbol,
+                    "price": price,
+                    "quantity": shares,
+                    "fee": fee + tax,
+                    "pnl": pnl,
+                    "regime": regime.state_id,
+                    "holding_days": (td - entry_date).days if entry_date else 0,
+                }
+            )
             shares = 0
             holding_symbol = None
             entry_price = 0.0
@@ -211,14 +227,21 @@ def run_backtest(
                 revenue = shares * price
                 fee = max(revenue * commission_rate, min_commission)
                 tax = revenue * stamp_tax_rate
-                cash += (revenue - fee - tax)
+                cash += revenue - fee - tax
                 pnl = (price - entry_price) * shares - fee - tax
-                trades.append({
-                    "date": td, "action": "SELL", "symbol": holding_symbol,
-                    "price": price, "quantity": shares, "fee": fee + tax,
-                    "pnl": pnl, "regime": regime.state_id,
-                    "holding_days": (td - entry_date).days if entry_date else 0,
-                })
+                trades.append(
+                    {
+                        "date": td,
+                        "action": "SELL",
+                        "symbol": holding_symbol,
+                        "price": price,
+                        "quantity": shares,
+                        "fee": fee + tax,
+                        "pnl": pnl,
+                        "regime": regime.state_id,
+                        "holding_days": (td - entry_date).days if entry_date else 0,
+                    }
+                )
 
             # Buy new
             new_price = prices[target]
@@ -226,16 +249,22 @@ def run_backtest(
             if qty > 0:
                 cost = qty * new_price
                 fee = max(cost * commission_rate, min_commission)
-                cash -= (cost + fee)
+                cash -= cost + fee
                 shares = qty
                 holding_symbol = target
                 entry_price = new_price
                 entry_date = td
-                trades.append({
-                    "date": td, "action": "BUY", "symbol": target,
-                    "price": new_price, "quantity": qty, "fee": fee,
-                    "regime": regime.state_id,
-                })
+                trades.append(
+                    {
+                        "date": td,
+                        "action": "BUY",
+                        "symbol": target,
+                        "price": new_price,
+                        "quantity": qty,
+                        "fee": fee,
+                        "regime": regime.state_id,
+                    }
+                )
                 strategy.position = target
             else:
                 shares = 0
@@ -303,6 +332,7 @@ def run_buy_and_hold(
 # Report
 # =============================================================================
 
+
 def print_report(result: dict, benchmark_equity: pd.Series) -> None:
     """Print backtest report."""
     metrics: PerformanceMetrics = result["metrics"]
@@ -340,10 +370,12 @@ def print_report(result: dict, benchmark_equity: pd.Series) -> None:
         print(f"\n--- 交易明细 (共 {len(sell_trades)} 笔平仓) ---")
         for t in sell_trades[:10]:
             pnl_str = f"{t.get('pnl', 0):+,.0f}"
-            print(f"  {t['date']} {t['symbol'][:6]} "
-                  f"盈亏:{pnl_str:>10} "
-                  f"持有:{t.get('holding_days', 0):>3}天 "
-                  f"状态:{t['regime']}")
+            print(
+                f"  {t['date']} {t['symbol'][:6]} "
+                f"盈亏:{pnl_str:>10} "
+                f"持有:{t.get('holding_days', 0):>3}天 "
+                f"状态:{t['regime']}"
+            )
 
     # Regime distribution
     print(f"\n--- 市场状态分布 ---")

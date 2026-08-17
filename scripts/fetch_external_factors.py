@@ -28,7 +28,9 @@ def fetch_northbound():
     cache_file = DATA_DIR / "northbound.parquet"
     if cache_file.exists():
         df = pd.read_parquet(cache_file)
-        print(f"  [缓存] 北向资金: {len(df)} 条 ({df['trade_date'].min()} ~ {df['trade_date'].max()})")
+        print(
+            f"  [缓存] 北向资金: {len(df)} 条 ({df['trade_date'].min()} ~ {df['trade_date'].max()})"
+        )
         return
 
     print("  [拉取] 北向资金历史数据...")
@@ -74,7 +76,9 @@ def fetch_northbound():
 
                 df = df[[c for c in keep_cols if c in df.columns]].reset_index(drop=True)
                 df.to_parquet(cache_file, index=False)
-                print(f"    保存: {len(df)} 条 ({df['trade_date'].min()} ~ {df['trade_date'].max()})")
+                print(
+                    f"    保存: {len(df)} 条 ({df['trade_date'].min()} ~ {df['trade_date'].max()})"
+                )
             else:
                 print(f"    警告: 未找到日期列, 列名: {df.columns.tolist()}")
         else:
@@ -112,10 +116,12 @@ def fetch_pe_percentile():
             # Try index_value_hist_funddb (韭圈儿)
             df = ak.index_value_hist_funddb(symbol=name, indicator="市盈率")
             if df is not None and not df.empty:
-                df = df.rename(columns={
-                    df.columns[0]: "trade_date",
-                    df.columns[1]: "pe",
-                })
+                df = df.rename(
+                    columns={
+                        df.columns[0]: "trade_date",
+                        df.columns[1]: "pe",
+                    }
+                )
                 df["trade_date"] = pd.to_datetime(df["trade_date"]).dt.date
                 df["index_code"] = code
 
@@ -162,7 +168,9 @@ def fetch_pe_percentile():
         print(f"  合并PE数据: {len(combined)} 条, {combined['index_code'].nunique()} 个指数")
     else:
         print("  警告: 无PE数据, 创建空占位")
-        pd.DataFrame({"index_code": [], "trade_date": [], "pe": []}).to_parquet(cache_file, index=False)
+        pd.DataFrame({"index_code": [], "trade_date": [], "pe": []}).to_parquet(
+            cache_file, index=False
+        )
 
 
 def main():

@@ -21,9 +21,11 @@ import pandas as pd
 # Position Sizing
 # =============================================================================
 
+
 @dataclass
 class PositionSizeResult:
     """Result of position sizing calculation."""
+
     symbol: str
     quantity: int
     amount: float
@@ -65,8 +67,12 @@ class PositionSizer:
         risk_per_share = abs(price - stop_loss_price)
         if risk_per_share <= 0:
             return PositionSizeResult(
-                symbol="", quantity=0, amount=0, pct_of_equity=0,
-                method="fixed_fractional", reason="Invalid stop loss"
+                symbol="",
+                quantity=0,
+                amount=0,
+                pct_of_equity=0,
+                method="fixed_fractional",
+                reason="Invalid stop loss",
             )
 
         # Position size based on risk
@@ -112,8 +118,12 @@ class PositionSizer:
         """
         if avg_loss <= 0 or win_rate <= 0:
             return PositionSizeResult(
-                symbol="", quantity=0, amount=0, pct_of_equity=0,
-                method="kelly", reason="Invalid parameters"
+                symbol="",
+                quantity=0,
+                amount=0,
+                pct_of_equity=0,
+                method="kelly",
+                reason="Invalid parameters",
             )
 
         # Kelly formula: f = (bp - q) / b
@@ -152,9 +162,11 @@ class PositionSizer:
 # Portfolio Risk Limits
 # =============================================================================
 
+
 @dataclass
 class RiskLimits:
     """Portfolio-level risk limits."""
+
     max_drawdown: float = 0.15  # Max 15% drawdown
     max_daily_loss: float = 0.05  # Max 5% daily loss
     max_positions: int = 10
@@ -166,6 +178,7 @@ class RiskLimits:
 @dataclass
 class RiskCheckResult:
     """Result of a risk check."""
+
     passed: bool
     rule_id: str
     message: str
@@ -268,6 +281,7 @@ class PortfolioRiskManager:
 # Drawdown Control
 # =============================================================================
 
+
 class DrawdownController:
     """Control trading based on drawdown levels.
 
@@ -298,7 +312,9 @@ class DrawdownController:
             return 0.0  # No new positions
         elif current_drawdown >= self.warning_level:
             # Linear reduction from 1.0 to 0.5
-            progress = (current_drawdown - self.warning_level) / (self.critical_level - self.warning_level)
+            progress = (current_drawdown - self.warning_level) / (
+                self.critical_level - self.warning_level
+            )
             return 1.0 - 0.5 * progress
         else:
             return 1.0

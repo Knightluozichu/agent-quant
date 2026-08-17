@@ -167,14 +167,12 @@ class TestEvolutionManager:
 
     def test_max_challengers(self):
         em = EvolutionManager(max_challengers=2)
-        champion = StrategyVersion(
-            strategy_id="TEST", version=1, name="Test", params={}
-        )
+        champion = StrategyVersion(strategy_id="TEST", version=1, name="Test", params={})
         em.register_champion(champion)
 
         for i in range(3):
             challenger = StrategyVersion(
-                strategy_id="TEST", version=i+2, name=f"Test v{i+2}", params={}
+                strategy_id="TEST", version=i + 2, name=f"Test v{i + 2}", params={}
             )
             result = em.add_challenger(challenger)
             if i < 2:
@@ -185,17 +183,13 @@ class TestEvolutionManager:
     def test_promotion(self):
         em = EvolutionManager(min_sample_size=10, promotion_threshold=0.10)
 
-        champion = StrategyVersion(
-            strategy_id="TREND_HOLD", version=1, name="v1", params={}
-        )
+        champion = StrategyVersion(strategy_id="TREND_HOLD", version=1, name="v1", params={})
         champion.performance = StrategyPerformance(
             total_return=0.10, sharpe_ratio=1.0, sample_size=50
         )
         em.register_champion(champion)
 
-        challenger = StrategyVersion(
-            strategy_id="TREND_HOLD", version=2, name="v2", params={}
-        )
+        challenger = StrategyVersion(strategy_id="TREND_HOLD", version=2, name="v2", params={})
         challenger.performance = StrategyPerformance(
             total_return=0.25, sharpe_ratio=1.5, sample_size=50
         )
@@ -209,21 +203,18 @@ class TestEvolutionManager:
         assert champion.status == StrategyStatus.RETIRED
 
     def test_config_hash(self):
-        v1 = StrategyVersion(
-            strategy_id="TEST", version=1, name="Test",
-            params={"a": 1, "b": 2}
-        )
+        v1 = StrategyVersion(strategy_id="TEST", version=1, name="Test", params={"a": 1, "b": 2})
         v2 = StrategyVersion(
-            strategy_id="TEST", version=2, name="Test",
-            params={"b": 2, "a": 1}  # Same params, different order
+            strategy_id="TEST",
+            version=2,
+            name="Test",
+            params={"b": 2, "a": 1},  # Same params, different order
         )
         assert v1.config_hash == v2.config_hash
 
     def test_status_report(self):
         em = EvolutionManager()
-        champion = StrategyVersion(
-            strategy_id="TEST", version=1, name="Test", params={}
-        )
+        champion = StrategyVersion(strategy_id="TEST", version=1, name="Test", params={})
         em.register_champion(champion)
 
         report = em.get_status_report()

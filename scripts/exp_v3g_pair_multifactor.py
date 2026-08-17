@@ -220,13 +220,8 @@ def enrich_pair_rotation_events(
 ) -> list[dict[str, Any]]:
     """Separate intended pair performance from any server-risk redirection."""
     actual = rr.enrich_rotation_events(events, data, trading_dates, index_maps)
-    intended_inputs = [
-        {**event, "to": event.get("intended_to", event["to"])}
-        for event in events
-    ]
-    intended = rr.enrich_rotation_events(
-        intended_inputs, data, trading_dates, index_maps
-    )
+    intended_inputs = [{**event, "to": event.get("intended_to", event["to"])} for event in events]
+    intended = rr.enrich_rotation_events(intended_inputs, data, trading_dates, index_maps)
     date_position = {td: i for i, td in enumerate(trading_dates)}
     enriched: list[dict[str, Any]] = []
     for event, actual_row, intended_row in zip(events, actual, intended, strict=True):
@@ -254,15 +249,9 @@ def enrich_pair_rotation_events(
             actual_now = rr.price_at(data, event["to"], start_map)
             actual_future = rr.price_at(data, event["to"], future_map)
             old_return = old_future / old_now - 1.0 if old_now > 0 else 0.0
-            intended_return = (
-                intended_future / intended_now - 1.0 if intended_now > 0 else 0.0
-            )
-            actual_return = (
-                actual_future / actual_now - 1.0 if actual_now > 0 else 0.0
-            )
-            row[f"ex_post_intended_relative_{horizon}d"] = (
-                intended_return - old_return
-            )
+            intended_return = intended_future / intended_now - 1.0 if intended_now > 0 else 0.0
+            actual_return = actual_future / actual_now - 1.0 if actual_now > 0 else 0.0
+            row[f"ex_post_intended_relative_{horizon}d"] = intended_return - old_return
             row[f"ex_post_actual_relative_{horizon}d"] = actual_return - old_return
         enriched.append(row)
     return enriched
@@ -333,9 +322,7 @@ def run_pair_strategy(
         candidate_history.append(raw_target)
         window = max(params.confirmation_window, params.confirmation_hits, 1)
         signal_hits = sum(item == raw_target for item in candidate_history[-window:])
-        globally_confirmed = bool(
-            raw_target and candidates and candidates[0][0] == raw_target
-        )
+        globally_confirmed = bool(raw_target and candidates and candidates[0][0] == raw_target)
         decision_hits = effective_signal_hits(
             observed_hits=signal_hits,
             required_hits=params.confirmation_hits,
@@ -406,14 +393,21 @@ def run_pair_strategy(
             if holding:
                 sell_price = rr.price_at(data, holding, idx_map)
                 if sell_price > 0:
-                    amount = float(state["shares"]) * sell_price * (
-                        1.0 - (rq.FEE + rq.SLIPPAGE) * cost_multiplier
+                    amount = (
+                        float(state["shares"])
+                        * sell_price
+                        * (1.0 - (rq.FEE + rq.SLIPPAGE) * cost_multiplier)
                     )
                     cash += amount
-                    trades.append({
-                        "date": str(td), "action": "sell", "code": holding,
-                        "price": sell_price, "amount": amount,
-                    })
+                    trades.append(
+                        {
+                            "date": str(td),
+                            "action": "sell",
+                            "code": holding,
+                            "price": sell_price,
+                            "amount": amount,
+                        }
+                    )
                     state["holding"] = None
                     state["shares"] = 0.0
                     state["entry_price"] = 0.0
@@ -421,17 +415,20 @@ def run_pair_strategy(
             if buy_price > 0:
                 shares = int(cash * risk.exposure * 0.99 / buy_price / 100) * 100
                 if shares > 0:
-                    amount = shares * buy_price * (
-                        1.0 + (rq.FEE + rq.SLIPPAGE) * cost_multiplier
-                    )
+                    amount = shares * buy_price * (1.0 + (rq.FEE + rq.SLIPPAGE) * cost_multiplier)
                     cash -= amount
                     state["holding"] = target
                     state["shares"] = float(shares)
                     state["entry_price"] = buy_price
-                    trades.append({
-                        "date": str(td), "action": "buy", "code": target,
-                        "price": buy_price, "amount": amount,
-                    })
+                    trades.append(
+                        {
+                            "date": str(td),
+                            "action": "buy",
+                            "code": target,
+                            "price": buy_price,
+                            "amount": amount,
+                        }
+                    )
                     trade_executed = target != old_holding
             state["cash"] = cash
             state["risk_exposure"] = 1.0
@@ -444,43 +441,43 @@ def run_pair_strategy(
             last_early_rotation = position
             held = factors.get(old_holding) if old_holding else None
             peer = factors.get(decision.target) if decision.target else None
-            rotation_events.append({
-                "trade_date_raw": td,
-                "date": str(td),
-                "from": old_holding,
-                "to": state["holding"],
-                "intended_to": decision.target,
-                "risk_redirected": state["holding"] != decision.target,
-                "reasons": list(decision.reasons),
-                "signal_hits": signal_hits,
-                "globally_confirmed": globally_confirmed,
-                "slow_gap": (
-                    peer.slow_momentum - held.slow_momentum if held and peer else 0.0
-                ),
-                "fast_gap": peer.return_5d - held.return_5d if held and peer else 0.0,
-                "acceleration_gap": (
-                    peer.acceleration_5d - held.acceleration_5d if held and peer else 0.0
-                ),
-                "vol_adjusted_gap": (
-                    peer.vol_adjusted_5d - held.vol_adjusted_5d if held and peer else 0.0
-                ),
-                "holding_drawdown_5d": held.drawdown_5d if held else 0.0,
-            })
+            rotation_events.append(
+                {
+                    "trade_date_raw": td,
+                    "date": str(td),
+                    "from": old_holding,
+                    "to": state["holding"],
+                    "intended_to": decision.target,
+                    "risk_redirected": state["holding"] != decision.target,
+                    "reasons": list(decision.reasons),
+                    "signal_hits": signal_hits,
+                    "globally_confirmed": globally_confirmed,
+                    "slow_gap": (peer.slow_momentum - held.slow_momentum if held and peer else 0.0),
+                    "fast_gap": peer.return_5d - held.return_5d if held and peer else 0.0,
+                    "acceleration_gap": (
+                        peer.acceleration_5d - held.acceleration_5d if held and peer else 0.0
+                    ),
+                    "vol_adjusted_gap": (
+                        peer.vol_adjusted_5d - held.vol_adjusted_5d if held and peer else 0.0
+                    ),
+                    "holding_drawdown_5d": held.drawdown_5d if held else 0.0,
+                }
+            )
 
         holding = state["holding"]
         equity = float(state["cash"])
         if holding:
             equity += float(state["shares"]) * rr.price_at(data, holding, idx_map)
-        equity_rows.append({
-            "trade_date": pd.Timestamp(td),
-            "equity": equity,
-            "holding": holding or rq.DEFENSE,
-        })
+        equity_rows.append(
+            {
+                "trade_date": pd.Timestamp(td),
+                "equity": equity,
+                "holding": holding or rq.DEFENSE,
+            }
+        )
 
     curve = pd.DataFrame(equity_rows)
-    enriched = enrich_pair_rotation_events(
-        rotation_events, data, trading_dates, index_maps
-    )
+    enriched = enrich_pair_rotation_events(rotation_events, data, trading_dates, index_maps)
     intended_relatives = {
         horizon: [
             float(event[f"ex_post_intended_relative_{horizon}d"])
@@ -491,33 +488,29 @@ def run_pair_strategy(
         for horizon in (5, 10, 20)
     }
     rel5 = intended_relatives[5]
-    reason_counts = Counter(
-        reason for event in enriched for reason in event.get("reasons", [])
-    )
+    reason_counts = Counter(reason for event in enriched for reason in event.get("reasons", []))
     metrics = rr.curve_metrics(curve, initial_capital=INITIAL_CAPITAL)
-    metrics.update({
-        "cost_multiplier": cost_multiplier,
-        "trade_legs": len(trades),
-        "early_rotations": len(enriched),
-        "global_confirmed_rotations": sum(
-            bool(event.get("globally_confirmed")) for event in enriched
-        ),
-        "factor_signal_days": factor_signal_days,
-        "scheduled_lock_blocks": scheduled_lock_blocks,
-        "realtime_filter_events": len(realtime_events),
-        "risk_events": len(risk_events),
-        "reason_counts": dict(reason_counts),
-        "ex_post_relative_5d_avg": float(np.mean(rel5)) if rel5 else 0.0,
-        "ex_post_relative_5d_median": float(np.median(rel5)) if rel5 else 0.0,
-        "ex_post_relative_5d_win_rate": (
-            float(np.mean(np.asarray(rel5) > 0)) if rel5 else 0.0
-        ),
-    })
+    metrics.update(
+        {
+            "cost_multiplier": cost_multiplier,
+            "trade_legs": len(trades),
+            "early_rotations": len(enriched),
+            "global_confirmed_rotations": sum(
+                bool(event.get("globally_confirmed")) for event in enriched
+            ),
+            "factor_signal_days": factor_signal_days,
+            "scheduled_lock_blocks": scheduled_lock_blocks,
+            "realtime_filter_events": len(realtime_events),
+            "risk_events": len(risk_events),
+            "reason_counts": dict(reason_counts),
+            "ex_post_relative_5d_avg": float(np.mean(rel5)) if rel5 else 0.0,
+            "ex_post_relative_5d_median": float(np.median(rel5)) if rel5 else 0.0,
+            "ex_post_relative_5d_win_rate": (float(np.mean(np.asarray(rel5) > 0)) if rel5 else 0.0),
+        }
+    )
     for horizon in (10, 20):
         values = intended_relatives[horizon]
-        metrics[f"ex_post_relative_{horizon}d_avg"] = (
-            float(np.mean(values)) if values else 0.0
-        )
+        metrics[f"ex_post_relative_{horizon}d_avg"] = float(np.mean(values)) if values else 0.0
         metrics[f"ex_post_relative_{horizon}d_win_rate"] = (
             float(np.mean(np.asarray(values) > 0)) if values else 0.0
         )
@@ -542,14 +535,11 @@ def yearly_report(result: dict[str, Any]) -> dict[str, Any]:
         anchored = np.concatenate(([previous], rows["equity"].astype(float).values))
         max_dd = float((anchored / np.maximum.accumulate(anchored) - 1.0).min())
         year_trades = [t for t in result["trades"] if pd.Timestamp(t["date"]).year == year]
-        year_events = [
-            e for e in result["rotation_events"] if pd.Timestamp(e["date"]).year == year
-        ]
+        year_events = [e for e in result["rotation_events"] if pd.Timestamp(e["date"]).year == year]
         rel5 = [
             float(e["ex_post_relative_5d"])
             for e in year_events
-            if "ex_post_relative_5d" in e
-            and not e.get("risk_redirected", False)
+            if "ex_post_relative_5d" in e and not e.get("risk_redirected", False)
         ]
         report[str(year)] = {
             "start": str(pd.Timestamp(rows["trade_date"].iloc[0]).date()),
@@ -560,9 +550,7 @@ def yearly_report(result: dict[str, Any]) -> dict[str, Any]:
             "trade_legs": len(year_trades),
             "early_rotations": len(year_events),
             "relative_5d_avg": float(np.mean(rel5)) if rel5 else 0.0,
-            "relative_5d_win_rate": (
-                float(np.mean(np.asarray(rel5) > 0)) if rel5 else 0.0
-            ),
+            "relative_5d_win_rate": (float(np.mean(np.asarray(rel5) > 0)) if rel5 else 0.0),
         }
         previous = end_value
     return report
@@ -591,17 +579,11 @@ def main() -> None:
         "baseline": PairFactorParams.disabled(),
         "pair_slow": PairFactorParams.slow_only(),
         "pair_fast_only": PairFactorParams(use_slow=False, use_fast=True),
-        "pair_acceleration_only": PairFactorParams(
-            use_slow=False, use_acceleration=True
-        ),
+        "pair_acceleration_only": PairFactorParams(use_slow=False, use_acceleration=True),
         "pair_drawdown_only": PairFactorParams(use_slow=False, use_drawdown=True),
-        "pair_vol_adjusted_only": PairFactorParams(
-            use_slow=False, use_vol_adjusted=True
-        ),
+        "pair_vol_adjusted_only": PairFactorParams(use_slow=False, use_vol_adjusted=True),
         "pair_slow_fast": PairFactorParams.slow_fast(),
-        "pair_slow_fast_acceleration": PairFactorParams(
-            use_fast=True, use_acceleration=True
-        ),
+        "pair_slow_fast_acceleration": PairFactorParams(use_fast=True, use_acceleration=True),
         "pair_multifactor": base,
         "pair_multifactor_confirm2": replace(base, confirmation_hits=2),
         "pair_multifactor_loose": replace(
@@ -660,7 +642,9 @@ def main() -> None:
         costs[f"{multiplier:.0f}x"] = {
             name: compact(evaluate(named_params[name], multiplier))
             for name in (
-                "baseline", "pair_slow", "pair_multifactor",
+                "baseline",
+                "pair_slow",
+                "pair_multifactor",
                 "pair_multifactor_confirm2",
             )
         }
@@ -696,17 +680,22 @@ def main() -> None:
 
     print("\ncost pressure")
     for label, rows in costs.items():
-        print(label, " ".join(
-            f"{name}={row['metrics']['final_value']:,.0f}/{row['metrics']['max_drawdown']:.1%}"
-            for name, row in rows.items()
-        ))
+        print(
+            label,
+            " ".join(
+                f"{name}={row['metrics']['final_value']:,.0f}/{row['metrics']['max_drawdown']:.1%}"
+                for name, row in rows.items()
+            ),
+        )
 
     print("\nsegments")
     for label, rows in segments.items():
-        print(label, " ".join(
-            f"{name}={row['cagr']:.1%}/{row['max_drawdown']:.1%}"
-            for name, row in rows.items()
-        ))
+        print(
+            label,
+            " ".join(
+                f"{name}={row['cagr']:.1%}/{row['max_drawdown']:.1%}" for name, row in rows.items()
+            ),
+        )
 
     payload = {
         "meta": {
@@ -725,9 +714,7 @@ def main() -> None:
         "segments": segments,
     }
     if args.save:
-        OUTPUT.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n"
-        )
+        OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n")
         print(f"\nsaved: {OUTPUT}")
 
 

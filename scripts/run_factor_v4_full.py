@@ -33,12 +33,24 @@ CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
 
 ALL_FACTORS = [
     # Original 5
-    "momentum", "reversal", "low_vol", "trend", "volume_trend",
+    "momentum",
+    "reversal",
+    "low_vol",
+    "trend",
+    "volume_trend",
     # C-batch 9 (zero-cost, from OHLCV)
-    "bias", "rsi", "macd", "atr_ratio", "obv",
-    "skewness", "vol_change", "amplitude", "bollinger",
+    "bias",
+    "rsi",
+    "macd",
+    "atr_ratio",
+    "obv",
+    "skewness",
+    "vol_change",
+    "amplitude",
+    "bollinger",
     # External 2
-    "northbound", "pe_percentile",
+    "northbound",
+    "pe_percentile",
 ]
 
 N_FACTORS = len(ALL_FACTORS)  # 16
@@ -47,6 +59,7 @@ N_FACTORS = len(ALL_FACTORS)  # 16
 # =============================================================================
 # Factor Calculator (all 16 factors)
 # =============================================================================
+
 
 class FactorCalculatorV4:
     """Calculate all 16 factors from OHLCV + external data."""
@@ -84,8 +97,14 @@ class FactorCalculatorV4:
             close = hist["close"].values.astype(float)
             high = hist["high"].values.astype(float)
             low = hist["low"].values.astype(float)
-            volume = hist["volume"].values.astype(float) if "volume" in hist.columns else np.ones(len(close))
-            amount = hist["amount"].values.astype(float) if "amount" in hist.columns else volume * close
+            volume = (
+                hist["volume"].values.astype(float)
+                if "volume" in hist.columns
+                else np.ones(len(close))
+            )
+            amount = (
+                hist["amount"].values.astype(float) if "amount" in hist.columns else volume * close
+            )
 
             factors = self._calc_single(close, high, low, volume, amount)
             factors["symbol"] = symbol
@@ -197,10 +216,7 @@ class FactorCalculatorV4:
         if n > 15:
             tr = np.maximum(
                 high[-14:] - low[-14:],
-                np.maximum(
-                    np.abs(high[-14:] - close[-15:-1]),
-                    np.abs(low[-14:] - close[-15:-1])
-                )
+                np.maximum(np.abs(high[-14:] - close[-15:-1]), np.abs(low[-14:] - close[-15:-1])),
             )
             atr = tr.mean()
             f["atr_ratio"] = -(atr / close[-1])  # Negate: lower ATR = better
@@ -296,9 +312,15 @@ class FactorCalculatorV4:
         """Get PE percentile for the symbol's tracking index."""
         # Map ETF to its tracking index
         etf_to_index = {
-            "510300": "000300", "510500": "000905", "159915": "399006",
-            "510050": "000016", "512100": "000852", "159901": "399330",
-            "510880": "000015", "512800": "399986", "512880": "399975",
+            "510300": "000300",
+            "510500": "000905",
+            "159915": "399006",
+            "510050": "000016",
+            "512100": "000852",
+            "159901": "399330",
+            "510880": "000015",
+            "512800": "399986",
+            "512880": "399975",
         }
         index_code = etf_to_index.get(symbol)
         if index_code is None or index_code not in self.pe_data:
@@ -319,6 +341,7 @@ class FactorCalculatorV4:
 # =============================================================================
 # AdamW Optimizer for Factor Weights
 # =============================================================================
+
 
 class AdamWOptimizer:
     """AdamW optimizer for factor weight optimization.
@@ -371,11 +394,11 @@ class AdamWOptimizer:
         # Update biased first moment
         self.m = self.beta1 * self.m + (1 - self.beta1) * gradient
         # Update biased second moment
-        self.v = self.beta2 * self.v + (1 - self.beta2) * (gradient ** 2)
+        self.v = self.beta2 * self.v + (1 - self.beta2) * (gradient**2)
 
         # Bias correction
-        m_hat = self.m / (1 - self.beta1 ** self.t)
-        v_hat = self.v / (1 - self.beta2 ** self.t)
+        m_hat = self.m / (1 - self.beta1**self.t)
+        v_hat = self.v / (1 - self.beta2**self.t)
 
         # Update logits (minimize loss = follow negative gradient)
         self.logits = self.logits - self.lr * m_hat / (np.sqrt(v_hat) + self.eps)
@@ -401,6 +424,7 @@ class AdamWOptimizer:
 # =============================================================================
 # IC-based Gradient Computation
 # =============================================================================
+
 
 def compute_ic_gradient(
     factor_df: pd.DataFrame,
@@ -467,6 +491,7 @@ def compute_ic_gradient(
 # Backtest Engine
 # =============================================================================
 
+
 def run_backtest_with_weights(
     data: dict[str, pd.DataFrame],
     index_df: pd.DataFrame,
@@ -487,8 +512,7 @@ def run_backtest_with_weights(
     # Tradable universe (exclude indices and defensive)
     defensive = {"511010", "511880"}
     index_symbols = {"idx_000300", "idx_000905", "000300", "000905"}
-    tradable = {k: v for k, v in data.items()
-                if k not in defensive and k not in index_symbols}
+    tradable = {k: v for k, v in data.items() if k not in defensive and k not in index_symbols}
 
     all_dates = sorted(index_df["trade_date"].tolist())
     warmup = 70
@@ -631,6 +655,7 @@ def run_backtest_with_weights(
 # 20-Round Flywheel Evolution
 # =============================================================================
 
+
 def run_flywheel_evolution(
     data: dict[str, pd.DataFrame],
     index_df: pd.DataFrame,
@@ -663,10 +688,10 @@ def run_flywheel_evolution(
     best_round = 0
     history = []
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"  飞轮进化: {n_rounds} 轮 | AdamW lr={lr} | {N_FACTORS} 因子")
     print(f"  数据: {all_dates[0]} ~ {all_dates[-1]} ({n_total} 天)")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     for round_i in range(n_rounds):
         # Walk-forward window
@@ -684,15 +709,18 @@ def run_flywheel_evolution(
         # Sample rebalance points in training period
         train_rebalance_points = train_dates[70::20]  # Every 20 days after warmup
         # Use last 10 rebalance points for gradient
-        sample_points = train_rebalance_points[-10:] if len(train_rebalance_points) > 10 else train_rebalance_points
+        sample_points = (
+            train_rebalance_points[-10:]
+            if len(train_rebalance_points) > 10
+            else train_rebalance_points
+        )
 
         accumulated_gradient = np.zeros(N_FACTORS)
         n_samples = 0
 
         defensive = {"511010", "511880"}
         index_symbols = {"idx_000300", "idx_000905", "000300", "000905"}
-        tradable = {k: v for k, v in data.items()
-                    if k not in defensive and k not in index_symbols}
+        tradable = {k: v for k, v in data.items() if k not in defensive and k not in index_symbols}
 
         for td in sample_points:
             factor_df = calculator.calculate_all(tradable, td)
@@ -732,8 +760,11 @@ def run_flywheel_evolution(
         test_end = test_dates[-1]
 
         result = run_backtest_with_weights(
-            data, index_df, weights,
-            start_date=test_start, end_date=test_end,
+            data,
+            index_df,
+            weights,
+            start_date=test_start,
+            end_date=test_end,
         )
 
         test_return = result["total_return"]
@@ -756,31 +787,35 @@ def run_flywheel_evolution(
             with open(ckpt_path, "w") as f:
                 json.dump(checkpoint, f, indent=2, default=str)
 
-        history.append({
-            "round": round_i,
-            "test_return": test_return,
-            "test_period": f"{test_start} ~ {test_end}",
-            "weights": weights.tolist(),
-        })
+        history.append(
+            {
+                "round": round_i,
+                "test_return": test_return,
+                "test_period": f"{test_start} ~ {test_end}",
+                "weights": weights.tolist(),
+            }
+        )
 
         # Print progress
         top3_idx = np.argsort(weights)[-3:][::-1]
         top3_str = ", ".join(f"{ALL_FACTORS[i]}={weights[i]:.3f}" for i in top3_idx)
         marker = " ★" if round_i == best_round else ""
-        print(f"  Round {round_i+1:2d}/{n_rounds} | "
-              f"Test: {test_return:+.2%} | "
-              f"Best: {best_return:+.2%} (R{best_round+1}) | "
-              f"Top3: {top3_str}{marker}")
+        print(
+            f"  Round {round_i + 1:2d}/{n_rounds} | "
+            f"Test: {test_return:+.2%} | "
+            f"Best: {best_return:+.2%} (R{best_round + 1}) | "
+            f"Top3: {top3_str}{marker}"
+        )
 
     # Final summary
-    print(f"\n{'='*70}")
-    print(f"  进化完成! 最优: Round {best_round+1}, 收益: {best_return:+.2%}")
+    print(f"\n{'=' * 70}")
+    print(f"  进化完成! 最优: Round {best_round + 1}, 收益: {best_return:+.2%}")
     print(f"  最优权重:")
     for i, (name, w) in enumerate(zip(ALL_FACTORS, best_weights)):
         bar = "█" * int(w * 50)
-        print(f"    {name:15s}: {w:.4f} ({w*100:.1f}%) {bar}")
+        print(f"    {name:15s}: {w:.4f} ({w * 100:.1f}%) {bar}")
     print(f"  Checkpoint: {CHECKPOINT_DIR / 'best_weights_v4.json'}")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     return {
         "best_weights": best_weights,
@@ -794,6 +829,7 @@ def run_flywheel_evolution(
 # =============================================================================
 # Main
 # =============================================================================
+
 
 def load_long_data() -> tuple[dict[str, pd.DataFrame], pd.DataFrame]:
     """Load long history data."""
@@ -841,7 +877,8 @@ def main():
     # Run flywheel evolution
     print("\n[2/4] 飞轮进化 (20轮 AdamW)...")
     evo_result = run_flywheel_evolution(
-        data, index_df,
+        data,
+        index_df,
         n_rounds=20,
         lr=0.03,
     )

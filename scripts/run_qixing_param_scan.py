@@ -3,6 +3,7 @@
 测试不同动量周期/组合, 找最接近原版逐年收益的配置.
 原版: 2020:+27% 2021:+33% 2022:+76% 2023:+8% 2024:+55% 2025:+238%
 """
+
 from __future__ import annotations
 import json
 import warnings
@@ -19,16 +20,19 @@ OUTPUT_DIR = PROJECT_ROOT / "data" / "qixing_results"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 ETF_POOL = {
-    "518880": "黄金ETF", "159985": "豆粕ETF", "501018": "南方原油",
-    "161226": "白银LOF", "513100": "纳指ETF", "159915": "创业板ETF",
+    "518880": "黄金ETF",
+    "159985": "豆粕ETF",
+    "501018": "南方原油",
+    "161226": "白银LOF",
+    "513100": "纳指ETF",
+    "159915": "创业板ETF",
     "511220": "城投债ETF",
 }
 DEFENSE = "511880"
 FEE = 0.0005
 SLIPPAGE = 0.001
 
-ORIGINAL = {2020: 0.2716, 2021: 0.3278, 2022: 0.7605,
-            2023: 0.0810, 2024: 0.5473, 2025: 2.3803}
+ORIGINAL = {2020: 0.2716, 2021: 0.3278, 2022: 0.7605, 2023: 0.0810, 2024: 0.5473, 2025: 2.3803}
 
 
 def load_data():
@@ -55,9 +59,17 @@ def momentum_score(close, periods, weights, risk_adj=False):
     return score
 
 
-def run_backtest(data, periods, weights, rebalance=5, risk_adj=False,
-                 drop_filter=False, a_share_filter=True, switch_threshold=0.02,
-                 initial_capital=100_000.0):
+def run_backtest(
+    data,
+    periods,
+    weights,
+    rebalance=5,
+    risk_adj=False,
+    drop_filter=False,
+    a_share_filter=True,
+    switch_threshold=0.02,
+    initial_capital=100_000.0,
+):
     """通用回测."""
     common_dates = None
     for code in ETF_POOL:
@@ -87,7 +99,7 @@ def run_backtest(data, periods, weights, rebalance=5, risk_adj=False,
         # A股走弱判断
         a_weak = False
         if a_share_filter and "159915" in etf_idx:
-            c = data["159915"]["close"].values[:etf_idx["159915"] + 1].astype(float)
+            c = data["159915"]["close"].values[: etf_idx["159915"] + 1].astype(float)
             if len(c) >= 20:
                 a_weak = c[-1] < np.mean(c[-20:])
 
@@ -98,14 +110,14 @@ def run_backtest(data, periods, weights, rebalance=5, risk_adj=False,
             if code == "159915" and a_weak:
                 continue
             idx = etf_idx[code]
-            close = data[code]["close"].values[:idx + 1].astype(float)
+            close = data[code]["close"].values[: idx + 1].astype(float)
             if len(close) < max(periods) + 1:
                 continue
             # 单日跌幅过滤
             if drop_filter and len(close) >= 4:
                 skip = False
                 for i in range(-3, 0):
-                    if (close[i] - close[i-1]) / close[i-1] < -0.03:
+                    if (close[i] - close[i - 1]) / close[i - 1] < -0.03:
                         skip = True
                         break
                 if skip:
@@ -212,38 +224,64 @@ def main():
     for periods, weights, risk_adj, name in configs:
         for rebalance in [5, 10]:
             for drop_filter in [False, True]:
-                res = run_backtest(data, periods, weights, rebalance=rebalance,
-                                   risk_adj=risk_adj, drop_filter=drop_filter)
+                res = run_backtest(
+                    data,
+                    periods,
+                    weights,
+                    rebalance=rebalance,
+                    risk_adj=risk_adj,
+                    drop_filter=drop_filter,
+                )
                 if res is None:
                     continue
                 err = score_vs_original(res["yearly"])
-                results.append({
-                    "name": name, "rebalance": rebalance,
-                    "drop_filter": drop_filter, "risk_adj": risk_adj,
-                    "error": err, "total": res["total"], "yearly": res["yearly"],
-                })
+                results.append(
+                    {
+                        "name": name,
+                        "rebalance": rebalance,
+                        "drop_filter": drop_filter,
+                        "risk_adj": risk_adj,
+                        "error": err,
+                        "total": res["total"],
+                        "yearly": res["yearly"],
+                    }
+                )
 
     # 按匹配度排序
     results.sort(key=lambda x: x["error"])
 
-    print(f"\n  {'排名':<4} {'动量':<14} {'调仓':<5} {'跌幅过滤':<8} {'误差':>6} {'总收益':>9} | 2020 2021 2022 2023 2024 2025")
+    print(
+        f"\n  {'排名':<4} {'动量':<14} {'调仓':<5} {'跌幅过滤':<8} {'误差':>6} {'总收益':>9} | 2020 2021 2022 2023 2024 2025"
+    )
     print(f"  {'-' * 100}")
     for i, r in enumerate(results[:15]):
         y = r["yearly"]
         yr_str = " ".join(f"{y.get(yr, 0):+.0%}" for yr in [2020, 2021, 2022, 2023, 2024, 2025])
-        print(f"  {i+1:<4} {r['name']:<14} {r['rebalance']:<5} "
-              f"{'是' if r['drop_filter'] else '否':<8} {r['error']:>6.2f} {r['total']:>+9.0%} | {yr_str}")
+        print(
+            f"  {i + 1:<4} {r['name']:<14} {r['rebalance']:<5} "
+            f"{'是' if r['drop_filter'] else '否':<8} {r['error']:>6.2f} {r['total']:>+9.0%} | {yr_str}"
+        )
 
     print(f"\n  原版参考:                                        | +27% +33% +76% +8% +55% +238%")
 
     # 保存最佳结果
     best = results[0]
     with open(OUTPUT_DIR / "param_scan_results.json", "w") as f:
-        json.dump({"best": {k: v for k, v in best.items() if k != "yearly"},
-                   "best_yearly": {str(k): v for k, v in best["yearly"].items()},
-                   "all_results": [{k: v for k, v in r.items() if k != "yearly"} for r in results[:20]]},
-                  f, indent=2, default=str)
-    print(f"\n  最佳配置: {best['name']} rebalance={best['rebalance']} drop_filter={best['drop_filter']}")
+        json.dump(
+            {
+                "best": {k: v for k, v in best.items() if k != "yearly"},
+                "best_yearly": {str(k): v for k, v in best["yearly"].items()},
+                "all_results": [
+                    {k: v for k, v in r.items() if k != "yearly"} for r in results[:20]
+                ],
+            },
+            f,
+            indent=2,
+            default=str,
+        )
+    print(
+        f"\n  最佳配置: {best['name']} rebalance={best['rebalance']} drop_filter={best['drop_filter']}"
+    )
     print(f"  结果已保存: {OUTPUT_DIR / 'param_scan_results.json'}")
 
 

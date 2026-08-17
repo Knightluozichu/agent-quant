@@ -30,10 +30,22 @@ CHECKPOINT_DIR = PROJECT_ROOT / "data" / "checkpoints"
 CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
 
 ALL_FACTORS = [
-    "momentum", "reversal", "low_vol", "trend", "volume_trend",
-    "bias", "rsi", "macd", "atr_ratio", "obv",
-    "skewness", "vol_change", "amplitude", "bollinger",
-    "northbound", "pe_percentile",
+    "momentum",
+    "reversal",
+    "low_vol",
+    "trend",
+    "volume_trend",
+    "bias",
+    "rsi",
+    "macd",
+    "atr_ratio",
+    "obv",
+    "skewness",
+    "vol_change",
+    "amplitude",
+    "bollinger",
+    "northbound",
+    "pe_percentile",
 ]
 N_FACTORS = len(ALL_FACTORS)  # 16
 N_RISK_PARAMS = 3
@@ -49,6 +61,7 @@ DEFENSIVE_ASSETS = {"511010": "国债ETF", "511880": "货币ETF"}
 # =============================================================================
 # Factor Calculator (same as v4)
 # =============================================================================
+
 
 class FactorCalculatorV4:
     """Calculate all 16 factors."""
@@ -77,7 +90,11 @@ class FactorCalculatorV4:
             close = hist["close"].values.astype(float)
             high = hist["high"].values.astype(float)
             low = hist["low"].values.astype(float)
-            volume = hist["volume"].values.astype(float) if "volume" in hist.columns else np.ones(len(close))
+            volume = (
+                hist["volume"].values.astype(float)
+                if "volume" in hist.columns
+                else np.ones(len(close))
+            )
 
             factors = self._calc_single(close, high, low, volume)
             factors["symbol"] = symbol
@@ -152,9 +169,10 @@ class FactorCalculatorV4:
             f["macd"] = 0.0
         # ATR ratio
         if n > 15:
-            tr = np.maximum(high[-14:] - low[-14:],
-                           np.maximum(np.abs(high[-14:] - close[-15:-1]),
-                                      np.abs(low[-14:] - close[-15:-1])))
+            tr = np.maximum(
+                high[-14:] - low[-14:],
+                np.maximum(np.abs(high[-14:] - close[-15:-1]), np.abs(low[-14:] - close[-15:-1])),
+            )
             f["atr_ratio"] = -(tr.mean() / close[-1])
         else:
             f["atr_ratio"] = 0.0
@@ -163,12 +181,12 @@ class FactorCalculatorV4:
             obv = np.zeros(20)
             for i in range(1, 20):
                 idx = n - 20 + i
-                if close[idx] > close[idx-1]:
-                    obv[i] = obv[i-1] + volume[idx]
-                elif close[idx] < close[idx-1]:
-                    obv[i] = obv[i-1] - volume[idx]
+                if close[idx] > close[idx - 1]:
+                    obv[i] = obv[i - 1] + volume[idx]
+                elif close[idx] < close[idx - 1]:
+                    obv[i] = obv[i - 1] - volume[idx]
                 else:
-                    obv[i] = obv[i-1]
+                    obv[i] = obv[i - 1]
             avg_vol = volume[-20:].mean()
             f["obv"] = (obv[-1] - obv[0]) / (avg_vol * 20) if avg_vol > 0 else 0.0
         else:
@@ -204,7 +222,7 @@ class FactorCalculatorV4:
         ema = np.zeros(len(data))
         ema[0] = data[0]
         for i in range(1, len(data)):
-            ema[i] = alpha * data[i] + (1 - alpha) * ema[i-1]
+            ema[i] = alpha * data[i] + (1 - alpha) * ema[i - 1]
         return ema
 
     def _get_northbound(self, as_of_date):
@@ -219,9 +237,15 @@ class FactorCalculatorV4:
 
     def _get_pe_percentile(self, symbol, as_of_date):
         etf_to_index = {
-            "510300": "000300", "510500": "000905", "159915": "399006",
-            "510050": "000016", "512100": "000852", "159901": "399330",
-            "510880": "000015", "512800": "399986", "512880": "399975",
+            "510300": "000300",
+            "510500": "000905",
+            "159915": "399006",
+            "510050": "000016",
+            "512100": "000852",
+            "159901": "399330",
+            "510880": "000015",
+            "512800": "399986",
+            "512880": "399975",
         }
         index_code = etf_to_index.get(symbol)
         if index_code is None or index_code not in self.pe_data:
@@ -238,6 +262,7 @@ class FactorCalculatorV4:
 # =============================================================================
 # Regime Detector (lightweight)
 # =============================================================================
+
 
 def detect_regime(index_df: pd.DataFrame, as_of_date: date) -> str:
     """Simple regime: UP / FLAT / DOWN."""
@@ -258,6 +283,7 @@ def detect_regime(index_df: pd.DataFrame, as_of_date: date) -> str:
 # =============================================================================
 # AdamW Optimizer (extended: 16 factor weights + 3 risk params)
 # =============================================================================
+
 
 class AdamWExtended:
     """AdamW for factor weights + learnable risk parameters.
@@ -291,8 +317,8 @@ class AdamWExtended:
         rl = self.logits[N_FACTORS:]
         sig = 1.0 / (1.0 + np.exp(-rl))
         return {
-            "stress_reduce": sig[0] * 0.8,       # [0, 0.8] 回撤降仓比例
-            "defensive_ratio": sig[1] * 0.5,     # [0, 0.5] 防御资产配比
+            "stress_reduce": sig[0] * 0.8,  # [0, 0.8] 回撤降仓比例
+            "defensive_ratio": sig[1] * 0.5,  # [0, 0.5] 防御资产配比
             "health_threshold": 0.2 + sig[2] * 0.6,  # [0.2, 0.8] 因子健康阈值
         }
 
@@ -326,6 +352,7 @@ class AdamWExtended:
 # Regime-Conditional Factor Weighting
 # =============================================================================
 
+
 def apply_regime_mask(weights: np.ndarray, regime: str) -> np.ndarray:
     """Downweight trend-following factors in FLAT/DOWN regime.
 
@@ -343,6 +370,7 @@ def apply_regime_mask(weights: np.ndarray, regime: str) -> np.ndarray:
 # =============================================================================
 # Backtest with Learnable Risk
 # =============================================================================
+
 
 def run_backtest_v41(
     data: dict[str, pd.DataFrame],
@@ -366,8 +394,9 @@ def run_backtest_v41(
     calculator.load_external_data()
 
     index_symbols = {"idx_000300", "idx_000905", "000300", "000905"}
-    tradable = {k: v for k, v in data.items()
-                if k not in DEFENSIVE_ASSETS and k not in index_symbols}
+    tradable = {
+        k: v for k, v in data.items() if k not in DEFENSIVE_ASSETS and k not in index_symbols
+    }
 
     all_dates = sorted(index_df["trade_date"].tolist())
     warmup = 70
@@ -408,7 +437,7 @@ def run_backtest_v41(
         if current_dd < -0.10:
             # Scale reduction by drawdown severity × learned ratio
             dd_severity = min(abs(current_dd) / 0.25, 1.0)  # Normalize: 25% DD = max
-            position_scale *= (1.0 - stress_reduce * dd_severity)
+            position_scale *= 1.0 - stress_reduce * dd_severity
 
         # 2. Factor health check (learnable threshold)
         regime = detect_regime(index_df, td)
@@ -423,7 +452,7 @@ def run_backtest_v41(
                 if factor_health < health_threshold:
                     # Reduce position proportionally to how unhealthy
                     unhealthy_gap = (health_threshold - factor_health) / health_threshold
-                    position_scale *= (1.0 - stress_reduce * unhealthy_gap * 0.5)
+                    position_scale *= 1.0 - stress_reduce * unhealthy_gap * 0.5
 
                 # Regime-conditional weights
                 adjusted_weights = apply_regime_mask(factor_weights, regime)
@@ -441,11 +470,13 @@ def run_backtest_v41(
                         vols[sym] = np.std(rets) * np.sqrt(252)
                     else:
                         vols[sym] = 0.2
-                total_inv = sum(1.0/(v+1e-8) for v in vols.values())
-                target_weights = {s: min((1.0/(vols[s]+1e-8))/total_inv, 0.4) for s in selected}
+                total_inv = sum(1.0 / (v + 1e-8) for v in vols.values())
+                target_weights = {
+                    s: min((1.0 / (vols[s] + 1e-8)) / total_inv, 0.4) for s in selected
+                }
                 tw_sum = sum(target_weights.values())
                 if tw_sum > 0:
-                    target_weights = {s: w/tw_sum for s, w in target_weights.items()}
+                    target_weights = {s: w / tw_sum for s, w in target_weights.items()}
 
                 # Apply position_scale
                 target_weights = {s: w * position_scale for s, w in target_weights.items()}
@@ -466,7 +497,7 @@ def run_backtest_v41(
                     if sym not in selected and sym not in DEFENSIVE_ASSETS:
                         row = data[sym][data[sym]["trade_date"] == td]
                         if not row.empty:
-                            cash += holdings[sym] * row.iloc[0]["close"] * (1 - fee_rate/2)
+                            cash += holdings[sym] * row.iloc[0]["close"] * (1 - fee_rate / 2)
                             n_trades += 1
                             del holdings[sym]
 
@@ -483,12 +514,12 @@ def run_backtest_v41(
                             if abs(diff) > price * 10:
                                 delta = int(diff / price / 10) * 10
                                 if delta > 0 and delta * price <= cash:
-                                    cash -= delta * price * (1 + fee_rate/2)
+                                    cash -= delta * price * (1 + fee_rate / 2)
                                     holdings[def_sym] = cur + delta
                                     n_trades += 1
                                 elif delta < 0:
                                     sell = min(-delta, cur)
-                                    cash += sell * price * (1 - fee_rate/2)
+                                    cash += sell * price * (1 - fee_rate / 2)
                                     holdings[def_sym] = cur - sell
                                     if holdings[def_sym] <= 0:
                                         del holdings[def_sym]
@@ -499,7 +530,9 @@ def run_backtest_v41(
                         if def_sym in holdings:
                             row = data[def_sym][data[def_sym]["trade_date"] == td]
                             if not row.empty:
-                                cash += holdings[def_sym] * row.iloc[0]["close"] * (1 - fee_rate/2)
+                                cash += (
+                                    holdings[def_sym] * row.iloc[0]["close"] * (1 - fee_rate / 2)
+                                )
                                 del holdings[def_sym]
                                 n_trades += 1
 
@@ -515,14 +548,14 @@ def run_backtest_v41(
                     if abs(diff) > price * 100:
                         delta = int(diff / price / 100) * 100
                         if delta > 0:
-                            cost = delta * price * (1 + fee_rate/2)
+                            cost = delta * price * (1 + fee_rate / 2)
                             if cost <= cash:
                                 cash -= cost
                                 holdings[sym] = cur + delta
                                 n_trades += 1
                         elif delta < 0:
                             sell = min(-delta, cur)
-                            cash += sell * price * (1 - fee_rate/2)
+                            cash += sell * price * (1 - fee_rate / 2)
                             holdings[sym] = cur - sell
                             if holdings[sym] <= 0:
                                 del holdings[sym]
@@ -598,6 +631,7 @@ def _estimate_factor_health(factor_df: pd.DataFrame, data: dict, as_of_date: dat
 # Gradient: factor IC + risk param sensitivity
 # =============================================================================
 
+
 def compute_full_gradient(
     data: dict[str, pd.DataFrame],
     index_df: pd.DataFrame,
@@ -613,8 +647,9 @@ def compute_full_gradient(
     calculator.load_external_data()
 
     index_symbols = {"idx_000300", "idx_000905", "000300", "000905"}
-    tradable = {k: v for k, v in data.items()
-                if k not in DEFENSIVE_ASSETS and k not in index_symbols}
+    tradable = {
+        k: v for k, v in data.items() if k not in DEFENSIVE_ASSETS and k not in index_symbols
+    }
 
     factor_weights = optimizer.get_factor_weights()
     risk_params = optimizer.get_risk_params()
@@ -680,8 +715,12 @@ def compute_full_gradient(
 
         # Baseline: current risk params
         base_result = run_backtest_v41(
-            data, index_df, factor_weights, risk_params,
-            start_date=risk_sample_start, end_date=risk_sample_end,
+            data,
+            index_df,
+            factor_weights,
+            risk_params,
+            start_date=risk_sample_start,
+            end_date=risk_sample_end,
             initial_capital=100_000,
         )
         base_ret = base_result["total_return"]
@@ -693,8 +732,12 @@ def compute_full_gradient(
             perturbed = risk_params.copy()
             perturbed[key] = min(max(perturbed[key] + eps_risk, 0.0), 1.0)
             p_result = run_backtest_v41(
-                data, index_df, factor_weights, perturbed,
-                start_date=risk_sample_start, end_date=risk_sample_end,
+                data,
+                index_df,
+                factor_weights,
+                perturbed,
+                start_date=risk_sample_start,
+                end_date=risk_sample_end,
                 initial_capital=100_000,
             )
             # Gradient: how does increasing this param affect return?
@@ -709,6 +752,7 @@ def compute_full_gradient(
 # =============================================================================
 # 20-Round Flywheel Evolution
 # =============================================================================
+
 
 def run_flywheel_v41(
     data: dict[str, pd.DataFrame],
@@ -729,11 +773,11 @@ def run_flywheel_v41(
     best_round = 0
     history = []
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"  v4.1 飞轮进化: {n_rounds} 轮 | AdamW lr={lr} | 19 可学习参数")
     print(f"  (16因子权重 + 3风控参数: 降仓比例/防御配比/健康阈值)")
     print(f"  数据: {all_dates[0]} ~ {all_dates[-1]} ({n_total} 天)")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     for round_i in range(n_rounds):
         train_end_idx = min(train_size + round_i * step_size, n_total - test_size)
@@ -754,8 +798,12 @@ def run_flywheel_v41(
         weights = optimizer.get_factor_weights()
         risk = optimizer.get_risk_params()
         result = run_backtest_v41(
-            data, index_df, weights, risk,
-            start_date=test_dates[0], end_date=test_dates[-1],
+            data,
+            index_df,
+            weights,
+            risk,
+            start_date=test_dates[0],
+            end_date=test_dates[-1],
         )
         test_return = result["total_return"]
 
@@ -780,24 +828,32 @@ def run_flywheel_v41(
         history.append({"round": round_i, "test_return": test_return, "risk_params": risk})
 
         marker = " ★" if round_i == best_round else ""
-        print(f"  R{round_i+1:2d}/{n_rounds} | "
-              f"Test: {test_return:+.2%} | "
-              f"Best: {best_return:+.2%} (R{best_round+1}) | "
-              f"降仓={risk['stress_reduce']:.2f} 防御={risk['defensive_ratio']:.2f} "
-              f"阈值={risk['health_threshold']:.2f}{marker}")
+        print(
+            f"  R{round_i + 1:2d}/{n_rounds} | "
+            f"Test: {test_return:+.2%} | "
+            f"Best: {best_return:+.2%} (R{best_round + 1}) | "
+            f"降仓={risk['stress_reduce']:.2f} 防御={risk['defensive_ratio']:.2f} "
+            f"阈值={risk['health_threshold']:.2f}{marker}"
+        )
 
-    print(f"\n{'='*70}")
-    print(f"  进化完成! 最优 Round {best_round+1}, 收益: {best_return:+.2%}")
+    print(f"\n{'=' * 70}")
+    print(f"  进化完成! 最优 Round {best_round + 1}, 收益: {best_return:+.2%}")
     fw = optimizer.get_factor_weights()
     rp = optimizer.get_risk_params()
     print(f"\n  因子权重 Top5:")
     for i in np.argsort(fw)[-5:][::-1]:
-        print(f"    {ALL_FACTORS[i]:15s}: {fw[i]*100:.1f}%")
+        print(f"    {ALL_FACTORS[i]:15s}: {fw[i] * 100:.1f}%")
     print(f"\n  学习到的风控参数:")
-    print(f"    降仓比例 (stress_reduce):    {rp['stress_reduce']:.3f}  (回撤时最多降{rp['stress_reduce']*100:.0f}%)")
-    print(f"    防御配比 (defensive_ratio):  {rp['defensive_ratio']:.3f}  (DOWN时{rp['defensive_ratio']*100:.0f}%配债券)")
-    print(f"    健康阈值 (health_threshold): {rp['health_threshold']:.3f}  (因子健康<{rp['health_threshold']:.0%}时降仓)")
-    print(f"{'='*70}")
+    print(
+        f"    降仓比例 (stress_reduce):    {rp['stress_reduce']:.3f}  (回撤时最多降{rp['stress_reduce'] * 100:.0f}%)"
+    )
+    print(
+        f"    防御配比 (defensive_ratio):  {rp['defensive_ratio']:.3f}  (DOWN时{rp['defensive_ratio'] * 100:.0f}%配债券)"
+    )
+    print(
+        f"    健康阈值 (health_threshold): {rp['health_threshold']:.3f}  (因子健康<{rp['health_threshold']:.0%}时降仓)"
+    )
+    print(f"{'=' * 70}")
 
     return {
         "best_state": best_state,
@@ -811,6 +867,7 @@ def run_flywheel_v41(
 # =============================================================================
 # Main
 # =============================================================================
+
 
 def load_long_data():
     data = {}
@@ -846,7 +903,9 @@ def main():
         print("ERROR: 无指数数据")
         return
     n_sym = len([k for k in data if not k.startswith("idx_")])
-    print(f"  {n_sym} 标的, {len(index_df)} 天 ({index_df['trade_date'].min()} ~ {index_df['trade_date'].max()})")
+    print(
+        f"  {n_sym} 标的, {len(index_df)} 天 ({index_df['trade_date'].min()} ~ {index_df['trade_date'].max()})"
+    )
 
     print("\n[2/3] 飞轮进化 (20轮)...")
     evo = run_flywheel_v41(data, index_df, n_rounds=20, lr=0.03)
@@ -870,7 +929,7 @@ def main():
 
     print(f"\n  年度收益 (本金10万):")
     print(f"  {'年份':<6} {'年初':>10} {'年末':>10} {'收益':>8} {'回撤':>8}")
-    print(f"  {'-'*46}")
+    print(f"  {'-' * 46}")
     prev = 100_000.0
     for year in sorted(eq["year"].unique()):
         ydf = eq[eq["year"] == year]
@@ -886,11 +945,13 @@ def main():
     final = eq["equity"].iloc[-1]
     total_ret = (final / 100_000) - 1
     n_years = len(index_df) / 252
-    ann_ret = (1 + total_ret) ** (1/n_years) - 1
+    ann_ret = (1 + total_ret) ** (1 / n_years) - 1
 
-    print(f"  {'-'*46}")
-    print(f"\n  最终: 10万 → {final:,.0f} ({total_ret:+.1%}, {final/100_000:.2f}x)")
-    print(f"  年化: {ann_ret:+.1%} | 夏普: {result['sharpe']:.2f} | 最大回撤: {result['max_drawdown']:.1%}")
+    print(f"  {'-' * 46}")
+    print(f"\n  最终: 10万 → {final:,.0f} ({total_ret:+.1%}, {final / 100_000:.2f}x)")
+    print(
+        f"  年化: {ann_ret:+.1%} | 夏普: {result['sharpe']:.2f} | 最大回撤: {result['max_drawdown']:.1%}"
+    )
 
     # Benchmark
     idx_c = index_df["close"].values

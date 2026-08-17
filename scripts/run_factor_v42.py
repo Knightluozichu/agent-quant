@@ -33,14 +33,27 @@ CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
 
 ALL_FACTORS = [
     # Original 5
-    "momentum", "reversal", "low_vol", "trend", "volume_trend",
+    "momentum",
+    "reversal",
+    "low_vol",
+    "trend",
+    "volume_trend",
     # C-batch 9
-    "bias", "rsi", "macd", "atr_ratio", "obv",
-    "skewness", "vol_change", "amplitude", "bollinger",
+    "bias",
+    "rsi",
+    "macd",
+    "atr_ratio",
+    "obv",
+    "skewness",
+    "vol_change",
+    "amplitude",
+    "bollinger",
     # External 2
-    "northbound", "pe_percentile",
+    "northbound",
+    "pe_percentile",
     # NEW: Fix defect 1 (rear-view mirror)
-    "momentum_accel", "breakout",
+    "momentum_accel",
+    "breakout",
     # NEW: Market sentiment
     "margin_sentiment",
 ]
@@ -53,6 +66,7 @@ DEFENSIVE_ASSETS = {"511010": "国债ETF", "511880": "货币ETF"}
 # =============================================================================
 # Factor Calculator v4.2
 # =============================================================================
+
 
 class FactorCalculatorV42:
     """19 factors with rank normalization + conviction mechanism."""
@@ -85,7 +99,11 @@ class FactorCalculatorV42:
             close = hist["close"].values.astype(float)
             high = hist["high"].values.astype(float)
             low = hist["low"].values.astype(float)
-            volume = hist["volume"].values.astype(float) if "volume" in hist.columns else np.ones(len(close))
+            volume = (
+                hist["volume"].values.astype(float)
+                if "volume" in hist.columns
+                else np.ones(len(close))
+            )
 
             factors = self._calc_single(close, high, low, volume)
             factors["symbol"] = symbol
@@ -160,9 +178,10 @@ class FactorCalculatorV42:
         else:
             f["macd"] = 0.0
         if n > 15:
-            tr = np.maximum(high[-14:] - low[-14:],
-                           np.maximum(np.abs(high[-14:] - close[-15:-1]),
-                                      np.abs(low[-14:] - close[-15:-1])))
+            tr = np.maximum(
+                high[-14:] - low[-14:],
+                np.maximum(np.abs(high[-14:] - close[-15:-1]), np.abs(low[-14:] - close[-15:-1])),
+            )
             f["atr_ratio"] = -(tr.mean() / close[-1])
         else:
             f["atr_ratio"] = 0.0
@@ -170,12 +189,12 @@ class FactorCalculatorV42:
             obv = np.zeros(20)
             for i in range(1, 20):
                 idx = n - 20 + i
-                if close[idx] > close[idx-1]:
-                    obv[i] = obv[i-1] + volume[idx]
-                elif close[idx] < close[idx-1]:
-                    obv[i] = obv[i-1] - volume[idx]
+                if close[idx] > close[idx - 1]:
+                    obv[i] = obv[i - 1] + volume[idx]
+                elif close[idx] < close[idx - 1]:
+                    obv[i] = obv[i - 1] - volume[idx]
                 else:
-                    obv[i] = obv[i-1]
+                    obv[i] = obv[i - 1]
             avg_vol = volume[-20:].mean()
             f["obv"] = (obv[-1] - obv[0]) / (avg_vol * 20) if avg_vol > 0 else 0.0
         else:
@@ -235,7 +254,7 @@ class FactorCalculatorV42:
         ema = np.zeros(len(data))
         ema[0] = data[0]
         for i in range(1, len(data)):
-            ema[i] = alpha * data[i] + (1 - alpha) * ema[i-1]
+            ema[i] = alpha * data[i] + (1 - alpha) * ema[i - 1]
         return ema
 
     def _get_northbound(self, as_of_date):
@@ -250,9 +269,15 @@ class FactorCalculatorV42:
 
     def _get_pe_percentile(self, symbol, as_of_date):
         etf_to_index = {
-            "510300": "000300", "510500": "000905", "159915": "399006",
-            "510050": "000016", "512100": "000852", "159901": "399330",
-            "510880": "000015", "512800": "399986", "512880": "399975",
+            "510300": "000300",
+            "510500": "000905",
+            "159915": "399006",
+            "510050": "000016",
+            "512100": "000852",
+            "159901": "399330",
+            "510880": "000015",
+            "512800": "399986",
+            "512880": "399975",
         }
         index_code = etf_to_index.get(symbol)
         if index_code is None or index_code not in self.pe_data:
@@ -287,6 +312,7 @@ class FactorCalculatorV42:
 # AdamW (19 factor weights + 1 bond gate)
 # =============================================================================
 
+
 class AdamW42:
     """AdamW for 19 factor weights + 1 bond gate threshold."""
 
@@ -318,8 +344,10 @@ class AdamW42:
 
     def state_dict(self):
         return {
-            "logits": self.logits.tolist(), "m": self.m.tolist(),
-            "v": self.v.tolist(), "t": self.t,
+            "logits": self.logits.tolist(),
+            "m": self.m.tolist(),
+            "v": self.v.tolist(),
+            "t": self.t,
             "factor_weights": self.get_factor_weights().tolist(),
             "bond_gate": self.get_bond_gate(),
         }
@@ -334,6 +362,7 @@ class AdamW42:
 # =============================================================================
 # Backtest v4.2
 # =============================================================================
+
 
 def run_backtest_v42(
     data: dict[str, pd.DataFrame],
@@ -351,8 +380,9 @@ def run_backtest_v42(
     calculator.load_external_data()
 
     index_symbols = {"idx_000300", "idx_000905", "000300", "000905"}
-    tradable = {k: v for k, v in data.items()
-                if k not in DEFENSIVE_ASSETS and k not in index_symbols}
+    tradable = {
+        k: v for k, v in data.items() if k not in DEFENSIVE_ASSETS and k not in index_symbols
+    }
 
     all_dates = sorted(index_df["trade_date"].tolist())
     warmup = 70
@@ -400,7 +430,9 @@ def run_backtest_v42(
                             if sym != bond_sym:
                                 row = data[sym][data[sym]["trade_date"] == td]
                                 if not row.empty:
-                                    cash += holdings[sym] * row.iloc[0]["close"] * (1 - fee_rate/2)
+                                    cash += (
+                                        holdings[sym] * row.iloc[0]["close"] * (1 - fee_rate / 2)
+                                    )
                                     n_trades += 1
                                     del holdings[sym]
                         # Buy bond
@@ -435,7 +467,9 @@ def run_backtest_v42(
                     for sym in selected:
                         hist = tradable[sym][tradable[sym]["trade_date"] <= td]
                         if len(hist) > 40:
-                            rets = np.diff(hist["close"].values[-40:]) / hist["close"].values[-40:-1]
+                            rets = (
+                                np.diff(hist["close"].values[-40:]) / hist["close"].values[-40:-1]
+                            )
                             vols[sym] = np.std(rets) * np.sqrt(252)
                         else:
                             vols[sym] = 0.2
@@ -445,16 +479,18 @@ def run_backtest_v42(
                         inv_vol = 1.0 / (vols[sym] + 1e-8)
                         raw_weights[sym] = inv_vol * conviction_bonus[sym]
                     total_w = sum(raw_weights.values())
-                    target_weights = {s: min(w/total_w, 0.45) for s, w in raw_weights.items()}
+                    target_weights = {s: min(w / total_w, 0.45) for s, w in raw_weights.items()}
                     tw_sum = sum(target_weights.values())
-                    target_weights = {s: w/tw_sum for s, w in target_weights.items()}
+                    target_weights = {s: w / tw_sum for s, w in target_weights.items()}
 
                     # Sell bond if holding
                     for bond_sym in DEFENSIVE_ASSETS:
                         if bond_sym in holdings:
                             row = data[bond_sym][data[bond_sym]["trade_date"] == td]
                             if not row.empty:
-                                cash += holdings[bond_sym] * row.iloc[0]["close"] * (1 - fee_rate/2)
+                                cash += (
+                                    holdings[bond_sym] * row.iloc[0]["close"] * (1 - fee_rate / 2)
+                                )
                                 del holdings[bond_sym]
                                 n_trades += 1
 
@@ -463,7 +499,7 @@ def run_backtest_v42(
                         if sym not in selected:
                             row = data[sym][data[sym]["trade_date"] == td]
                             if not row.empty:
-                                cash += holdings[sym] * row.iloc[0]["close"] * (1 - fee_rate/2)
+                                cash += holdings[sym] * row.iloc[0]["close"] * (1 - fee_rate / 2)
                                 n_trades += 1
                                 del holdings[sym]
 
@@ -479,14 +515,14 @@ def run_backtest_v42(
                         if abs(diff) > price * 100:
                             delta = int(diff / price / 100) * 100
                             if delta > 0:
-                                cost = delta * price * (1 + fee_rate/2)
+                                cost = delta * price * (1 + fee_rate / 2)
                                 if cost <= cash:
                                     cash -= cost
                                     holdings[sym] = cur + delta
                                     n_trades += 1
                             elif delta < 0:
                                 sell = min(-delta, cur)
-                                cash += sell * price * (1 - fee_rate/2)
+                                cash += sell * price * (1 - fee_rate / 2)
                                 holdings[sym] = cur - sell
                                 if holdings[sym] <= 0:
                                     del holdings[sym]
@@ -517,10 +553,15 @@ def run_backtest_v42(
     max_dd = ((eq_df["equity"] - cummax) / cummax).min()
 
     return {
-        "total_return": total_return, "ann_return": ann_return,
-        "ann_vol": ann_vol, "sharpe": sharpe, "max_drawdown": max_dd,
-        "n_trades": n_trades, "n_days": n_days,
-        "n_bond_switches": n_bond_switches, "equity_curve": eq_df,
+        "total_return": total_return,
+        "ann_return": ann_return,
+        "ann_vol": ann_vol,
+        "sharpe": sharpe,
+        "max_drawdown": max_dd,
+        "n_trades": n_trades,
+        "n_days": n_days,
+        "n_bond_switches": n_bond_switches,
+        "equity_curve": eq_df,
     }
 
 
@@ -528,13 +569,15 @@ def run_backtest_v42(
 # Gradient + Flywheel
 # =============================================================================
 
+
 def compute_gradient(data, index_df, optimizer, sample_dates):
     """IC-based gradient for factor weights + perturbation for bond gate."""
     calculator = FactorCalculatorV42()
     calculator.load_external_data()
     index_symbols = {"idx_000300", "idx_000905", "000300", "000905"}
-    tradable = {k: v for k, v in data.items()
-                if k not in DEFENSIVE_ASSETS and k not in index_symbols}
+    tradable = {
+        k: v for k, v in data.items() if k not in DEFENSIVE_ASSETS and k not in index_symbols
+    }
 
     weights = optimizer.get_factor_weights()
     factor_grad = np.zeros(N_FACTORS)
@@ -589,10 +632,12 @@ def compute_gradient(data, index_df, optimizer, sample_dates):
         bg = optimizer.get_bond_gate()
         r_start = sample_dates[-2]
         r_end = sample_dates[-1]
-        base_r = run_backtest_v42(data, index_df, weights, bg,
-                                   start_date=r_start, end_date=r_end)["total_return"]
-        pert_r = run_backtest_v42(data, index_df, weights, bg + 0.05,
-                                   start_date=r_start, end_date=r_end)["total_return"]
+        base_r = run_backtest_v42(data, index_df, weights, bg, start_date=r_start, end_date=r_end)[
+            "total_return"
+        ]
+        pert_r = run_backtest_v42(
+            data, index_df, weights, bg + 0.05, start_date=r_start, end_date=r_end
+        )["total_return"]
         bond_grad = -(pert_r - base_r) / 0.05
 
     return np.concatenate([factor_grad, [bond_grad]])
@@ -610,10 +655,10 @@ def run_flywheel_v42(data, index_df, n_rounds=20, lr=0.03):
     best_state = None
     best_round = 0
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"  v4.2 飞轮: {n_rounds}轮 | AdamW lr={lr} | {N_FACTORS}因子 + bond_gate")
     print(f"  修复: 动量加速度 + Rank标准化 + Conviction + 债券切换")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     for ri in range(n_rounds):
         train_end = min(train_size + ri * step_size, n_total - test_size)
@@ -630,8 +675,9 @@ def run_flywheel_v42(data, index_df, n_rounds=20, lr=0.03):
 
         weights = optimizer.get_factor_weights()
         bg = optimizer.get_bond_gate()
-        result = run_backtest_v42(data, index_df, weights, bg,
-                                   start_date=test_dates[0], end_date=test_dates[-1])
+        result = run_backtest_v42(
+            data, index_df, weights, bg, start_date=test_dates[0], end_date=test_dates[-1]
+        )
         test_ret = result["total_return"]
 
         if test_ret > best_return:
@@ -639,9 +685,12 @@ def run_flywheel_v42(data, index_df, n_rounds=20, lr=0.03):
             best_round = ri
             best_state = optimizer.state_dict()
             ckpt = {
-                "version": "v4.2", "round": ri,
-                "factor_weights": weights.tolist(), "factor_names": ALL_FACTORS,
-                "bond_gate": bg, "test_return": test_ret,
+                "version": "v4.2",
+                "round": ri,
+                "factor_weights": weights.tolist(),
+                "factor_names": ALL_FACTORS,
+                "bond_gate": bg,
+                "test_return": test_ret,
                 "test_period": f"{test_dates[0]} ~ {test_dates[-1]}",
                 "optimizer_state": optimizer.state_dict(),
             }
@@ -649,11 +698,15 @@ def run_flywheel_v42(data, index_df, n_rounds=20, lr=0.03):
                 json.dump(ckpt, f, indent=2, default=str)
 
         marker = " ★" if ri == best_round else ""
-        print(f"  R{ri+1:2d}/{n_rounds} | Test: {test_ret:+.2%} | "
-              f"Best: {best_return:+.2%} (R{best_round+1}) | "
-              f"gate={bg:.3f} bonds={result.get('n_bond_switches',0)}{marker}")
+        print(
+            f"  R{ri + 1:2d}/{n_rounds} | Test: {test_ret:+.2%} | "
+            f"Best: {best_return:+.2%} (R{best_round + 1}) | "
+            f"gate={bg:.3f} bonds={result.get('n_bond_switches', 0)}{marker}"
+        )
 
-    print(f"\n  最优: R{best_round+1}, {best_return:+.2%}, bond_gate={optimizer.get_bond_gate():.3f}")
+    print(
+        f"\n  最优: R{best_round + 1}, {best_return:+.2%}, bond_gate={optimizer.get_bond_gate():.3f}"
+    )
     return {"best_state": best_state, "best_return": best_return, "optimizer": optimizer}
 
 
@@ -661,11 +714,16 @@ def run_flywheel_v42(data, index_df, n_rounds=20, lr=0.03):
 # Main
 # =============================================================================
 
+
 def load_long_data():
     data = {}
     for f in DATA_DIR.glob("*.parquet"):
-        if f.name in ("combined_long.parquet", "northbound.parquet",
-                      "pe_percentile.parquet", "margin_sentiment.parquet"):
+        if f.name in (
+            "combined_long.parquet",
+            "northbound.parquet",
+            "pe_percentile.parquet",
+            "margin_sentiment.parquet",
+        ):
             continue
         df = pd.read_parquet(f)
         if "symbol" not in df.columns or "trade_date" not in df.columns:
@@ -694,8 +752,10 @@ def main():
     if index_df is None:
         print("ERROR: 无指数数据")
         return
-    print(f"  {len([k for k in data if not k.startswith('idx_')])} 标的, "
-          f"{len(index_df)} 天 ({index_df['trade_date'].min()} ~ {index_df['trade_date'].max()})")
+    print(
+        f"  {len([k for k in data if not k.startswith('idx_')])} 标的, "
+        f"{len(index_df)} 天 ({index_df['trade_date'].min()} ~ {index_df['trade_date'].max()})"
+    )
 
     print("\n[2/3] 飞轮进化...")
     evo = run_flywheel_v42(data, index_df, n_rounds=20, lr=0.03)
@@ -714,7 +774,7 @@ def main():
 
     print(f"\n  年度收益:")
     print(f"  {'年份':<6} {'年初':>10} {'年末':>10} {'收益':>8} {'回撤':>8}")
-    print(f"  {'-'*46}")
+    print(f"  {'-' * 46}")
     prev = 100_000.0
     for year in sorted(eq["year"].unique()):
         ydf = eq[eq["year"] == year]
@@ -730,17 +790,19 @@ def main():
     final = eq["equity"].iloc[-1]
     total_ret = (final / 100_000) - 1
     n_years = len(index_df) / 252
-    ann_ret = (1 + total_ret) ** (1/n_years) - 1
-    print(f"  {'-'*46}")
-    print(f"\n  10万 → {final:,.0f} ({total_ret:+.1%}, {final/100_000:.2f}x)")
-    print(f"  年化: {ann_ret:+.1%} | 夏普: {result['sharpe']:.2f} | 回撤: {result['max_drawdown']:.1%}")
+    ann_ret = (1 + total_ret) ** (1 / n_years) - 1
+    print(f"  {'-' * 46}")
+    print(f"\n  10万 → {final:,.0f} ({total_ret:+.1%}, {final / 100_000:.2f}x)")
+    print(
+        f"  年化: {ann_ret:+.1%} | 夏普: {result['sharpe']:.2f} | 回撤: {result['max_drawdown']:.1%}"
+    )
     print(f"  债券切换次数: {result['n_bond_switches']}")
 
     # Factor weights
     print(f"\n  因子权重:")
     for i in np.argsort(weights)[::-1]:
         bar = "█" * int(weights[i] * 60)
-        print(f"    {ALL_FACTORS[i]:<16}: {weights[i]*100:.1f}% {bar}")
+        print(f"    {ALL_FACTORS[i]:<16}: {weights[i] * 100:.1f}% {bar}")
     print(f"    bond_gate阈值: {bg:.3f}")
 
     idx_c = index_df["close"].values

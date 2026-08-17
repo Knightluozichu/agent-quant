@@ -101,7 +101,9 @@ class StateCard:
                         color=color,
                         striped=True,
                         label=f"置信度 {confidence:.0%}",
-                    ) if confidence > 0 else None,
+                    )
+                    if confidence > 0
+                    else None,
                 ]
             ),
             className="mb-3 shadow-sm border-2",

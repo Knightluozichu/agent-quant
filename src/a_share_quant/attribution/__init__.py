@@ -26,6 +26,7 @@ if TYPE_CHECKING:
 # Attribution Breakdown
 # =============================================================================
 
+
 @dataclass
 class AttributionBreakdown:
     """Breakdown of P&L into components."""
@@ -80,6 +81,7 @@ class AttributionBreakdown:
 # Trade-Level Attribution
 # =============================================================================
 
+
 @dataclass
 class ResearchTradeAttribution:
     """Attribution for a single trade (legacy research-grade model).
@@ -118,6 +120,7 @@ class ResearchTradeAttribution:
 # Attribution Engine
 # =============================================================================
 
+
 class ResearchAttributionEngine:
     """Calculate P&L attribution (legacy research-grade engine).
 
@@ -149,8 +152,10 @@ class ResearchAttributionEngine:
         market_return = 0.0
         if benchmark_during_hold is not None and len(benchmark_during_hold) > 1:
             market_return = (
-                benchmark_during_hold.iloc[-1] / benchmark_during_hold.iloc[0] - 1
-            ) * entry_price * quantity
+                (benchmark_during_hold.iloc[-1] / benchmark_during_hold.iloc[0] - 1)
+                * entry_price
+                * quantity
+            )
 
         # Alpha (excess return)
         alpha = gross_pnl - market_return

@@ -59,9 +59,14 @@ R4_MOM_CONFIRM = (True, False)
 # 回测引擎: V3 周频调仓 + 可选 R4 事件加速器 (日频动态入场)
 # --------------------------------------------------------------------------- #
 def run_v3_r4(
-    data: dict, dates: list, mat: dict,
-    start_idx: int, end_idx: int,
-    use_r4: bool = False, thr: float = 0.03, mom_confirm: bool = True,
+    data: dict,
+    dates: list,
+    mat: dict,
+    start_idx: int,
+    end_idx: int,
+    use_r4: bool = False,
+    thr: float = 0.03,
+    mom_confirm: bool = True,
 ) -> dict:
     """日频净值回测: 调仓日 V3 引擎; 非调仓日 R4 事件加速入场."""
     trading_dates = dates[WARMUP:]
@@ -141,10 +146,17 @@ def run_v3_r4(
                         cash -= shares * price * (1 + FEE + SLIPPAGE)
                         holding, holding_shares = best_code, shares
                         n_trades += 1
-                        events.append({"date": td_s, "type": "r4_boost", "asset": best_code,
-                                       "prev_ret": round(float(ev_ret), 4),
-                                       "mom10": round(float(best_mom), 4),
-                                       "idx": i, "on_reb": False})
+                        events.append(
+                            {
+                                "date": td_s,
+                                "type": "r4_boost",
+                                "asset": best_code,
+                                "prev_ret": round(float(ev_ret), 4),
+                                "mom10": round(float(best_mom), 4),
+                                "idx": i,
+                                "on_reb": False,
+                            }
+                        )
 
         # 每日净值
         value = cash
@@ -158,8 +170,7 @@ def run_v3_r4(
     return calc_metrics(eq, INITIAL_CAPITAL, n_trades, events, mat)
 
 
-def calc_metrics(eq: np.ndarray, init: float, n_trades: int,
-                 events: list[dict], mat: dict) -> dict:
+def calc_metrics(eq: np.ndarray, init: float, n_trades: int, events: list[dict], mat: dict) -> dict:
     """日频净值指标 (全周期复权优先) + 事件后续收益."""
     if len(eq) < 2:
         return {"error": "insufficient"}
@@ -212,16 +223,20 @@ def main() -> None:
     print("  全量回测 (10万本金, 全周期复权)")
     print("=" * 74)
     full = {}
-    for name, use_r4, thr, mc in [("V3基线", False, 0.03, True),
-                                  ("V3+R4(3%,动量确认)", True, 0.03, True)]:
+    for name, use_r4, thr, mc in [
+        ("V3基线", False, 0.03, True),
+        ("V3+R4(3%,动量确认)", True, 0.03, True),
+    ]:
         r = run_v3_r4(data, dates, mat, WARMUP, n, use_r4, thr, mc)
         full[name] = r
-        print(f"  {name:<20} 期末 {r['final_value']:>12,.0f}  ({r['total_return']:+.1%})  "
-              f"年化{r['ann_return']:+.1%} 夏普{r['sharpe']:.2f} 回撤{r['max_drawdown']:.1%} "
-              f"Calmar{r['calmar']:.2f} 交易{r['n_trades']} 触发{r['n_events']}")
+        print(
+            f"  {name:<20} 期末 {r['final_value']:>12,.0f}  ({r['total_return']:+.1%})  "
+            f"年化{r['ann_return']:+.1%} 夏普{r['sharpe']:.2f} 回撤{r['max_drawdown']:.1%} "
+            f"Calmar{r['calmar']:.2f} 交易{r['n_trades']} 触发{r['n_events']}"
+        )
     if "error" not in full["V3+R4(3%,动量确认)"]:
         diff = full["V3+R4(3%,动量确认)"]["final_value"] - full["V3基线"]["final_value"]
-        print(f"  → R4加速器 期末差: {diff:+,.0f} 元 ({diff/full['V3基线']['final_value']:+.1%})")
+        print(f"  → R4加速器 期末差: {diff:+,.0f} 元 ({diff / full['V3基线']['final_value']:+.1%})")
 
     # ---------- 2. 参数敏感性 (全量) ----------
     print("\n" + "=" * 74)
@@ -233,8 +248,10 @@ def main() -> None:
             name = f"thr{thr:.0%}_mom{'on' if mc else 'off'}"
             r = run_v3_r4(data, dates, mat, WARMUP, n, True, thr, mc)
             sens[name] = r
-            print(f"  {name:<14} 期末 {r['final_value']:>12,.0f} ({r['total_return']:+.1%})  "
-                  f"夏普{r['sharpe']:.2f} 回撤{r['max_drawdown']:.1%} 触发{r['n_events']}")
+            print(
+                f"  {name:<14} 期末 {r['final_value']:>12,.0f} ({r['total_return']:+.1%})  "
+                f"夏普{r['sharpe']:.2f} 回撤{r['max_drawdown']:.1%} 触发{r['n_events']}"
+            )
     best_sens = max(sens.items(), key=lambda kv: kv[1]["final_value"])
     print(f"  → 全量最优: {best_sens[0]} (期末 {best_sens[1]['final_value']:,.0f})")
 
@@ -252,12 +269,20 @@ def main() -> None:
         rr = run_v3_r4(data, dates, mat, test_start, test_end, True, 0.03, True)
         beat = rr["final_value"] > rb["final_value"]
         wins += int(beat)
-        print(f"  W{wi} {dates[test_start]}~{dates[test_end-1]}: "
-              f"基线 {rb['final_value']:>8,.0f} vs R4 {rr['final_value']:>8,.0f} "
-              f"({'跑赢' if beat else '跑输'}, 触发{rr['n_events']})")
-        oos.append({"window": f"W{wi}", "base_final": rb["final_value"],
-                    "r4_final": rr["final_value"], "beat": beat,
-                    "r4_events": rr["n_events"]})
+        print(
+            f"  W{wi} {dates[test_start]}~{dates[test_end - 1]}: "
+            f"基线 {rb['final_value']:>8,.0f} vs R4 {rr['final_value']:>8,.0f} "
+            f"({'跑赢' if beat else '跑输'}, 触发{rr['n_events']})"
+        )
+        oos.append(
+            {
+                "window": f"W{wi}",
+                "base_final": rb["final_value"],
+                "r4_final": rr["final_value"],
+                "beat": beat,
+                "r4_events": rr["n_events"],
+            }
+        )
     n_win = wins
     n_valid = len(starts)
     print(f"\n  OOS 判定: R4 跑赢 {n_win}/{n_valid} 段 (标准: ≥3/4)")
@@ -269,25 +294,31 @@ def main() -> None:
     print("=" * 74)
     evs = full["V3+R4(3%,动量确认)"]["events"]
     win_ev = sum(1 for e in evs if (e.get("fwd5") or 0) > 0)
-    print(f"  共 {len(evs)} 次加速入场 | 后续5日胜率 {win_ev/len(evs):.1%}" if evs else "  无事件")
+    print(
+        f"  共 {len(evs)} 次加速入场 | 后续5日胜率 {win_ev / len(evs):.1%}" if evs else "  无事件"
+    )
     for e in evs[:12]:
         f5 = e.get("fwd5")
         f20 = e.get("fwd20")
-        print(f"  {e['date']} {ETF_POOL.get(e['asset'],'?')} 事件涨幅{e['prev_ret']:+.1%} "
-              f"动量{e['mom10']:+.1%} → 5日 {f5 if f5 is None else f'{f5:+.1%}'} "
-              f"20日 {f20 if f20 is None else f'{f20:+.1%}'}")
+        print(
+            f"  {e['date']} {ETF_POOL.get(e['asset'], '?')} 事件涨幅{e['prev_ret']:+.1%} "
+            f"动量{e['mom10']:+.1%} → 5日 {f5 if f5 is None else f'{f5:+.1%}'} "
+            f"20日 {f20 if f20 is None else f'{f20:+.1%}'}"
+        )
 
     # ---------- 保存 ----------
     out = {
         "meta": {
             "note": "R4事件加速器: 非调仓日 昨日涨幅>thr且10日动量>0 → 收盘入场, "
-                    "V3调仓日接管; 无未来函数 (事件检测用昨日数据)",
+            "V3调仓日接管; 无未来函数 (事件检测用昨日数据)",
             "golden_standard": "全量10万→最终金额优先; 滚动OOS ≥3/4段跑赢; Calmar/换手率",
         },
         "full": full,
         "sensitivity": sens,
         "oos": oos,
-        "oos_wins": n_win, "oos_valid": n_valid, "oos_passed": passed,
+        "oos_wins": n_win,
+        "oos_valid": n_valid,
+        "oos_passed": passed,
         "events_full": evs,
     }
     out_path = OUTPUT_DIR / "v3_r4_boost_ab.json"

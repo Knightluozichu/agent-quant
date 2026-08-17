@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 # Symbol Conversion
 # =============================================================================
 
+
 def to_jq_symbol(symbol: str) -> str:
     """Convert our symbol format to JQ format.
 
@@ -67,6 +68,7 @@ def from_jq_symbol(jq_symbol: str) -> str:
 # Quota Tracker
 # =============================================================================
 
+
 class QuotaTracker:
     """Track daily API quota usage."""
 
@@ -85,9 +87,7 @@ class QuotaTracker:
         """Record API usage. Returns False if quota exceeded."""
         self._maybe_reset()
         if self._used_today + count > self.daily_limit:
-            logger.warning(
-                f"Quota limit approaching: {self._used_today}/{self.daily_limit}"
-            )
+            logger.warning(f"Quota limit approaching: {self._used_today}/{self.daily_limit}")
             return False
         self._used_today += count
         return True
@@ -106,6 +106,7 @@ class QuotaTracker:
 # =============================================================================
 # JoinQuant Provider
 # =============================================================================
+
 
 class JoinQuantProvider(BaseDataProvider):
     """JoinQuant JQData provider.
@@ -144,6 +145,7 @@ class JoinQuantProvider(BaseDataProvider):
 
         try:
             import jqdatasdk
+
             self._jq = jqdatasdk
 
             # Get credentials
@@ -173,9 +175,7 @@ class JoinQuantProvider(BaseDataProvider):
                 pass
 
         except ImportError as e:
-            raise ImportError(
-                "jqdatasdk not installed. Run: pip install jqdatasdk"
-            ) from e
+            raise ImportError("jqdatasdk not installed. Run: pip install jqdatasdk") from e
 
     def _get_cache_path(self, category: str, key: str) -> Path:
         """Get cache file path."""
@@ -231,11 +231,13 @@ class JoinQuantProvider(BaseDataProvider):
                 raise RuntimeError("Daily quota exceeded")
 
             trade_days = self._jq.get_trade_days(start_date=start, end_date=end)
-            df = pd.DataFrame({
-                "trade_date": trade_days,
-                "exchange": exchange,
-                "is_open": True,
-            })
+            df = pd.DataFrame(
+                {
+                    "trade_date": trade_days,
+                    "exchange": exchange,
+                    "is_open": True,
+                }
+            )
             self._write_cache("calendar", cache_key, df)
 
         # Filter

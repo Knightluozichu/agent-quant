@@ -51,6 +51,7 @@ def _today_sh() -> date:
     """返回 Asia/Shanghai 时区的当前日期 (用于全部实盘日期判断)."""
     return datetime.now(_SH_TZ).date()
 
+
 # === 保证与回测100%一致: 直接复用回测的核心逻辑 ===
 sys.path.insert(0, str(Path(__file__).parent))
 import qixing_v4 as v4  # noqa: E402
@@ -132,8 +133,10 @@ def update_data(data: dict) -> dict:
             first_new_close = float(new.iloc[0]["close"])
             jump = (first_new_close - last_close) / last_close
             if abs(jump) > 0.40:
-                print(f"  ⚠️  {code} {name_of(code)} 检测到异常跳变 {jump:+.0%}, "
-                      f"疑似份额拆分! 请人工复权后再用 (切勿直接交易)")
+                print(
+                    f"  ⚠️  {code} {name_of(code)} 检测到异常跳变 {jump:+.0%}, "
+                    f"疑似份额拆分! 请人工复权后再用 (切勿直接交易)"
+                )
                 continue
 
             new["symbol"] = code
@@ -168,6 +171,7 @@ def check_data_freshness(data: dict) -> None:
     """
     try:
         import akshare as ak
+
         cal = ak.tool_trade_date_hist_sina()
         cal_dates = sorted(pd.to_datetime(cal["trade_date"]).dt.date)
         today = _today_sh()
@@ -188,7 +192,7 @@ def check_data_freshness(data: dict) -> None:
 
 # 已知份额拆分 (前复权: 拆分前 OHLC 除以比例, 与回测缓存一致)
 KNOWN_SPLITS = {
-    "513100": [("2022-01-14", 5.1153)],   # 纳指ETF 1:5.1153
+    "513100": [("2022-01-14", 5.1153)],  # 纳指ETF 1:5.1153
     "511220": [("2023-01-16", 10.0663)],  # 城投债ETF 1:10.0663
 }
 
@@ -236,7 +240,6 @@ def bootstrap_data() -> None:
         except Exception as e:
             print(f"失败: {e}")
     print("  ✓ 数据初始化完成")
-
 
 
 def _append_risk_log(state: dict, events: list) -> None:
@@ -426,8 +429,6 @@ def save_state_atomic(state: dict) -> None:
         os.close(lock_fd)
 
 
-
-
 @contextlib.contextmanager
 def state_transaction():
     """完整事务: 加锁 → 读取 → 校验版本 → (调用方修改) → 原子写入 → 解锁.
@@ -454,9 +455,7 @@ def state_transaction():
 
         # 校验版本未被其他进程修改
         if state["_version"] != old_version:
-            raise RuntimeError(
-                f"状态版本冲突: 期望 {old_version}, 实际 {state['_version']}"
-            )
+            raise RuntimeError(f"状态版本冲突: 期望 {old_version}, 实际 {state['_version']}")
         # 原子写入
         state["_version"] = old_version + 1
         _rotate_backups()
@@ -521,14 +520,13 @@ def _fetch_tencent_spot() -> dict[str, dict]:
     腾讯源无此限制。返回 {code: {"price": float, "prev_close": float}}。
     """
     import requests
+
     now = time.time()
     cached_spot: dict[str, dict] = _REALTIME_CACHE["spot"]  # type: ignore[assignment]
     if cached_spot and (now - _REALTIME_CACHE["time"]) <= 60:  # type: ignore[operator]
         return cached_spot
 
-    tencent_codes = [
-        f"{'sh' if c.startswith(('5', '6')) else 'sz'}{c}" for c in ALL_CODES
-    ]
+    tencent_codes = [f"{'sh' if c.startswith(('5', '6')) else 'sz'}{c}" for c in ALL_CODES]
     url = f"https://qt.gtimg.cn/q={','.join(tencent_codes)}"
     try:
         resp = requests.get(url, timeout=10)
@@ -637,14 +635,15 @@ def print_account(state: dict, data: dict, td) -> None:
             mv = state["shares"] * p
     total = cash + mv
     init = state["initial_capital"]
-    print(f"\n  【账户】 总值 {fmt_money(total)} 元 "
-          f"(累计 {(total / init - 1) * 100:+.1f}%)")
+    print(f"\n  【账户】 总值 {fmt_money(total)} 元 (累计 {(total / init - 1) * 100:+.1f}%)")
     if holding:
         p = price_on(data, holding, td)
         cost = state["entry_price"]
         pnl = (p / cost - 1) * 100 if cost else 0
-        print(f"    持仓: {name_of(holding)} ({holding}) "
-              f"{state['shares']}股 @ {cost:.3f} → 现价 {p:.3f} ({pnl:+.1f}%)")
+        print(
+            f"    持仓: {name_of(holding)} ({holding}) "
+            f"{state['shares']}股 @ {cost:.3f} → 现价 {p:.3f} ({pnl:+.1f}%)"
+        )
         print(f"    现金: {fmt_money(cash)} 元")
     else:
         print(f"    持仓: 空仓 (全部现金 {fmt_money(cash)} 元)")
@@ -737,14 +736,12 @@ def notify_trade(td, sell_order, buy_order, reason: str, state: dict, data: dict
     if sell_order:
         code, shares, price, amount = sell_order
         lines.append(
-            f"① 卖出 【{code}】{name_of(code)}  {shares}股 "
-            f"@{price:.3f} ≈ {fmt_money(amount)}元"
+            f"① 卖出 【{code}】{name_of(code)}  {shares}股 @{price:.3f} ≈ {fmt_money(amount)}元"
         )
     if buy_order:
         code, shares, price, amount = buy_order
         lines.append(
-            f"② 买入 【{code}】{name_of(code)}  {shares}股 "
-            f"@{price:.3f} ≈ {fmt_money(amount)}元"
+            f"② 买入 【{code}】{name_of(code)}  {shares}股 @{price:.3f} ≈ {fmt_money(amount)}元"
         )
     lines += ["", f"💡 {reason}", f"💰 账户 {fmt_money(total)} 元 ({ret:+.1f}%)", ""]
     lines.append("👉 易淘金App按代码下单:")
@@ -791,6 +788,7 @@ def is_trading_day(td) -> bool:
     """
     try:
         import akshare as ak
+
         cal = ak.tool_trade_date_hist_sina()
         cal_dates = set(pd.to_datetime(cal["trade_date"]).dt.date)
         return td in cal_dates
@@ -826,6 +824,7 @@ def validate_realtime_data(spot_map: dict) -> tuple[bool, str]:
     任何一项不满足 → fail-closed (不生成信号)。
     """
     import math
+
     if not spot_map:
         return (False, "实时行情为空")
     now = time.time()
@@ -851,11 +850,11 @@ def validate_realtime_data(spot_map: dict) -> tuple[bool, str]:
 # --------------------------------------------------------------------------- #
 # 不同类型 ETF 的允许偏差阈值 (QDII/LOF 因汇率和时区差异, 阈值更大)
 _CROSS_VALIDATE_THRESHOLDS: dict[str, float] = {
-    "513100": 0.02,   # 纳指ETF (QDII, 海外市场, 汇率影响)
+    "513100": 0.02,  # 纳指ETF (QDII, 海外市场, 汇率影响)
     "501018": 0.015,  # 南方原油 (LOF, 估值差异)
     "161226": 0.015,  # 白银LOF (LOF, 估值差异)
-    "518880": 0.01,   # 黄金ETF (商品, T+0)
-    "159985": 0.01,   # 豆粕ETF (商品, T+0)
+    "518880": 0.01,  # 黄金ETF (商品, T+0)
+    "159985": 0.01,  # 豆粕ETF (商品, T+0)
     "159915": 0.005,  # 创业板ETF (A股, T+1)
     "511220": 0.005,  # 城投债ETF (债券, 波动小)
     "511880": 0.005,  # 货币基金 (极低波动)
@@ -954,15 +953,14 @@ def inject_realtime(data: dict, spot_map: dict | None = None) -> dict:
             new_row = {
                 "trade_date": today,
                 "open": s["prev_close"],  # 用昨收近似开盘
-                "close": s["price"],       # 实时价作为当天收盘
+                "close": s["price"],  # 实时价作为当天收盘
                 "high": max(s["price"], s["prev_close"]),
                 "low": min(s["price"], s["prev_close"]),
                 "volume": 0.0,
             }
         elif code in ETF_POOL:
             # R8 策略通道: ETF 缺实时数据 → fail-closed, 不用昨收填充
-            print(f"  ⚠️  {code} {name_of(code)} 实时数据缺失, "
-                  f"未注入实时数据 (fail-closed)")
+            print(f"  ⚠️  {code} {name_of(code)} 实时数据缺失, 未注入实时数据 (fail-closed)")
             return data
         else:
             # DEFENSE (货币基金) 无盘中实时价, 用昨收填充 (非策略信号通道)
@@ -1219,8 +1217,7 @@ def run(dry_run: bool = False) -> int:
     # R7: 数据缺失 fail-closed - 检查所有 ETF_POOL 当日数据完整性
     ok, missing = check_data_availability(data, td)
     if not ok:
-        msg = (f"{td} 数据缺失: {', '.join(missing)}\n"
-               f"不生成新信号, 保持原持仓 (DATA_UNAVAILABLE)")
+        msg = f"{td} 数据缺失: {', '.join(missing)}\n不生成新信号, 保持原持仓 (DATA_UNAVAILABLE)"
         print(f"\n  ⚠️  {msg}")
         push_bark("⚠️ 数据不完整·暂停信号", msg, level="timeSensitive", sound="alarm")
         return 1
@@ -1319,9 +1316,14 @@ def run(dry_run: bool = False) -> int:
     if cur_val > state.get("peak_equity", 0.0):
         state["peak_equity"] = cur_val
     risk = risk_assess(
-        target=target, holding=holding, state=state,
-        data=data, td=td, idx_map=idx_map,
-        is_rebalance=is_rebalance, common_dates=trading_dates,
+        target=target,
+        holding=holding,
+        state=state,
+        data=data,
+        td=td,
+        idx_map=idx_map,
+        is_rebalance=is_rebalance,
+        common_dates=trading_dates,
         spot_map=spot_map,
     )
     if risk.events:
@@ -1416,18 +1418,17 @@ def run(dry_run: bool = False) -> int:
     why = dict(candidates).get(target, 0)
     cur = dict(candidates).get(holding, None) if holding else None
     if risk.action == ACTION_EMERGENCY:
-        reason = (f"组合回撤熔断, 强制切防御 {name_of(target)}"
-                  f" (若来不及, 次日开盘执行亦可)")
+        reason = f"组合回撤熔断, 强制切防御 {name_of(target)} (若来不及, 次日开盘执行亦可)"
     elif decision.triggered and decision.target and mode == "V4":
         reason = (
-            f"V4全池严格快慢共振连续{overlay['signal_hits']}日确认, "
-            f"提前换仓至 {name_of(target)}"
+            f"V4全池严格快慢共振连续{overlay['signal_hits']}日确认, 提前换仓至 {name_of(target)}"
         )
     elif target == DEFENSE:
         reason = "所有ETF动量转弱, 切入货币基金防御"
     else:
-        reason = (f"{name_of(target)} 动量 {why * 100:+.1f}% 为最强"
-                  + (f" (当前持仓 {cur * 100:+.1f}%)" if cur is not None else ""))
+        reason = f"{name_of(target)} 动量 {why * 100:+.1f}% 为最强" + (
+            f" (当前持仓 {cur * 100:+.1f}%)" if cur is not None else ""
+        )
     if 0 < risk.exposure < 1.0 and risk.action != "emergency_defense":
         print(f"  ⚠️ 风控暴露 {risk.exposure:.0%} (本次买入按此比例折算)")
         reason += f" | 风控暴露 {risk.exposure:.0%}"
@@ -1442,11 +1443,17 @@ def run(dry_run: bool = False) -> int:
         with state_transaction() as st:
             if sell_order:
                 st["cash"] += sell_order[3]
-                st["trade_log"].append({
-                    "date": str(td), "action": "sell", "code": holding,
-                    "name": name_of(holding), "shares": st["shares"],
-                    "price": sell_order[2], "amount": sell_order[3],
-                })
+                st["trade_log"].append(
+                    {
+                        "date": str(td),
+                        "action": "sell",
+                        "code": holding,
+                        "name": name_of(holding),
+                        "shares": st["shares"],
+                        "price": sell_order[2],
+                        "amount": sell_order[3],
+                    }
+                )
                 st["holding"] = None
                 st["shares"] = 0
                 st["entry_price"] = 0.0
@@ -1456,11 +1463,17 @@ def run(dry_run: bool = False) -> int:
                 st["shares"] = buy_order[1]
                 st["entry_price"] = buy_order[2]
                 st["entry_date"] = str(td)
-                st["trade_log"].append({
-                    "date": str(td), "action": "buy", "code": target,
-                    "name": name_of(target), "shares": buy_order[1],
-                    "price": buy_order[2], "amount": buy_order[3],
-                })
+                st["trade_log"].append(
+                    {
+                        "date": str(td),
+                        "action": "buy",
+                        "code": target,
+                        "name": name_of(target),
+                        "shares": buy_order[1],
+                        "price": buy_order[2],
+                        "amount": buy_order[3],
+                    }
+                )
             st["pending_order"] = None
             st["last_rebalance_date"] = str(td)
             st["last_run_date"] = str(td)
@@ -1481,9 +1494,9 @@ def run(dry_run: bool = False) -> int:
     # === 保存为【待确认】订单 (不自动成交, 以用户在网页填入的真实成交为准) ===
     if not dry_run:
         with state_transaction() as st:
-            order_id = hashlib.sha256(
-                f"{snapshot['decision_id']}:{target}".encode()
-            ).hexdigest()[:24]
+            order_id = hashlib.sha256(f"{snapshot['decision_id']}:{target}".encode()).hexdigest()[
+                :24
+            ]
             st["pending_order"] = {
                 "order_id": order_id,
                 "decision_id": snapshot["decision_id"],
@@ -1497,13 +1510,23 @@ def run(dry_run: bool = False) -> int:
                 ),
                 "date": str(td),
                 "sell": {
-                    "code": sell_order[0], "name": name_of(sell_order[0]),
-                    "shares": sell_order[1], "price": sell_order[2], "amount": sell_order[3],
-                } if sell_order else None,
+                    "code": sell_order[0],
+                    "name": name_of(sell_order[0]),
+                    "shares": sell_order[1],
+                    "price": sell_order[2],
+                    "amount": sell_order[3],
+                }
+                if sell_order
+                else None,
                 "buy": {
-                    "code": buy_order[0], "name": name_of(buy_order[0]),
-                    "shares": buy_order[1], "price": buy_order[2], "amount": buy_order[3],
-                } if buy_order else None,
+                    "code": buy_order[0],
+                    "name": name_of(buy_order[0]),
+                    "shares": buy_order[1],
+                    "price": buy_order[2],
+                    "amount": buy_order[3],
+                }
+                if buy_order
+                else None,
                 "reason": reason,
                 "status": "pending",
                 "created_at": datetime.now(_SH_TZ).strftime("%Y-%m-%d %H:%M:%S"),
@@ -1542,8 +1565,10 @@ def show_status() -> None:
         print(f"\n  【最近交易】(共{len(log)}笔)")
         for t in log[-6:]:
             arrow = "卖出" if t["action"] == "sell" else "买入"
-            print(f"    {t['date']}  {arrow} {t['name']} "
-                  f"{t['shares']}股 @ {t['price']:.3f} ≈ {fmt_money(t['amount'])}元")
+            print(
+                f"    {t['date']}  {arrow} {t['name']} "
+                f"{t['shares']}股 @ {t['price']:.3f} ≈ {fmt_money(t['amount'])}元"
+            )
 
 
 def sync_only() -> int:
@@ -1595,13 +1620,9 @@ def confirm_order(
             raise ValueError(f"订单状态非 pending: {pending.get('status')}")
         if order_id and pending.get("order_id") != order_id:
             raise ValueError("待确认订单已变化, 请刷新页面后重试")
-        if (
-            expected_state_version is not None
-            and state.get("_version") != expected_state_version
-        ):
+        if expected_state_version is not None and state.get("_version") != expected_state_version:
             raise ValueError(
-                f"状态版本已变化: 页面 {expected_state_version}, "
-                f"当前 {state.get('_version')}"
+                f"状态版本已变化: 页面 {expected_state_version}, 当前 {state.get('_version')}"
             )
         receipts = state.setdefault("confirm_receipts", {})
         if idempotency_key and idempotency_key in receipts:
@@ -1624,19 +1645,24 @@ def confirm_order(
             if shares <= 0:
                 raise ValueError(f"卖出数量必须 > 0, 实际: {shares}")
             if shares > state["shares"]:
-                raise ValueError(
-                    f"卖出数量 {shares} 超过持仓 {state['shares']}"
-                )
+                raise ValueError(f"卖出数量 {shares} 超过持仓 {state['shares']}")
             # 注: A股卖出允许零股一次性清仓, 不做整百校验;
             # 下一行的完整成交校验 (shares == 待确认数量) 已兜底
             if shares != int(expected_sell.get("shares", state["shares"])):
                 raise ValueError("换仓卖出必须按待确认订单数量完整成交")
             amount = shares * price * (1 - FEE - SLIPPAGE)
             state["cash"] += amount
-            state["trade_log"].append({
-                "date": td, "action": "sell", "code": code, "name": name_of(code),
-                "shares": shares, "price": price, "amount": amount,
-            })
+            state["trade_log"].append(
+                {
+                    "date": td,
+                    "action": "sell",
+                    "code": code,
+                    "name": name_of(code),
+                    "shares": shares,
+                    "price": price,
+                    "amount": amount,
+                }
+            )
             # 部分卖出: 保留剩余持仓
             remaining = state["shares"] - shares
             if remaining > 0:
@@ -1660,23 +1686,26 @@ def confirm_order(
             # 校验买入代码匹配 pending_order
             expected_code = expected_buy.get("code")
             if expected_code and code != expected_code:
-                raise ValueError(
-                    f"买入代码 {code} 与待确认订单 {expected_code} 不匹配"
-                )
+                raise ValueError(f"买入代码 {code} 与待确认订单 {expected_code} 不匹配")
             amount = shares * price * (1 + FEE + SLIPPAGE)
             if state["cash"] - amount < 0:
-                raise ValueError(
-                    f"现金不足: 需要 {amount:.2f}, 可用 {state['cash']:.2f}"
-                )
+                raise ValueError(f"现金不足: 需要 {amount:.2f}, 可用 {state['cash']:.2f}")
             state["cash"] -= amount
             state["holding"] = code
             state["shares"] = shares
             state["entry_price"] = price
             state["entry_date"] = td
-            state["trade_log"].append({
-                "date": td, "action": "buy", "code": code, "name": name_of(code),
-                "shares": shares, "price": price, "amount": amount,
-            })
+            state["trade_log"].append(
+                {
+                    "date": td,
+                    "action": "buy",
+                    "code": code,
+                    "name": name_of(code),
+                    "shares": shares,
+                    "price": price,
+                    "amount": amount,
+                }
+            )
 
         pending["status"] = "confirmed"
         pending["confirmed_at"] = datetime.now(_SH_TZ).strftime("%Y-%m-%d %H:%M:%S")
@@ -1706,8 +1735,9 @@ def skip_pending() -> dict:
     return state
 
 
-def record_manual_trade(action: str, code: str, shares: int, price: float,
-                        td: str | None = None) -> dict:
+def record_manual_trade(
+    action: str, code: str, shares: int, price: float, td: str | None = None
+) -> dict:
     """手动记录一笔成交 (用于修正或非信号交易).
 
     校验:
@@ -1725,19 +1755,22 @@ def record_manual_trade(action: str, code: str, shares: int, price: float,
 
         if action == "sell":
             if state["holding"] != code:
-                raise ValueError(
-                    f"卖出代码 {code} 与持仓 {state['holding']} 不匹配"
-                )
+                raise ValueError(f"卖出代码 {code} 与持仓 {state['holding']} 不匹配")
             if shares > state["shares"]:
-                raise ValueError(
-                    f"卖出数量 {shares} 超过持仓 {state['shares']}"
-                )
+                raise ValueError(f"卖出数量 {shares} 超过持仓 {state['shares']}")
             amount = shares * price * (1 - FEE - SLIPPAGE)
             state["cash"] += amount
-            state["trade_log"].append({
-                "date": td, "action": "sell", "code": code, "name": name_of(code),
-                "shares": shares, "price": price, "amount": amount,
-            })
+            state["trade_log"].append(
+                {
+                    "date": td,
+                    "action": "sell",
+                    "code": code,
+                    "name": name_of(code),
+                    "shares": shares,
+                    "price": price,
+                    "amount": amount,
+                }
+            )
             remaining = state["shares"] - shares
             if remaining > 0:
                 state["shares"] = remaining
@@ -1750,18 +1783,23 @@ def record_manual_trade(action: str, code: str, shares: int, price: float,
                 raise ValueError(f"买入股数必须是100的整数倍: {shares}")
             amount = shares * price * (1 + FEE + SLIPPAGE)
             if state["cash"] - amount < 0:
-                raise ValueError(
-                    f"现金不足: 需要 {amount:.2f}, 可用 {state['cash']:.2f}"
-                )
+                raise ValueError(f"现金不足: 需要 {amount:.2f}, 可用 {state['cash']:.2f}")
             state["cash"] -= amount
             state["holding"] = code
             state["shares"] = shares
             state["entry_price"] = price
             state["entry_date"] = td
-            state["trade_log"].append({
-                "date": td, "action": "buy", "code": code, "name": name_of(code),
-                "shares": shares, "price": price, "amount": amount,
-            })
+            state["trade_log"].append(
+                {
+                    "date": td,
+                    "action": "buy",
+                    "code": code,
+                    "name": name_of(code),
+                    "shares": shares,
+                    "price": price,
+                    "amount": amount,
+                }
+            )
         else:
             raise ValueError(f"未知操作: {action}")
     return state
@@ -1785,11 +1823,17 @@ def momentum_board_data(data: dict, td, holding: str | None, target: str) -> lis
             if r < DROP_THRESHOLD:
                 dropped = True
                 break
-        rows.append({
-            "code": code, "name": name_of(code), "score": round(float(score) * 100, 2),
-            "dropped": dropped, "is_holding": code == holding, "is_target": code == target,
-            "eligible": bool(score > 0) and not dropped,
-        })
+        rows.append(
+            {
+                "code": code,
+                "name": name_of(code),
+                "score": round(float(score) * 100, 2),
+                "dropped": dropped,
+                "is_holding": code == holding,
+                "is_target": code == target,
+                "eligible": bool(score > 0) and not dropped,
+            }
+        )
     rows.sort(key=lambda x: -x["score"])  # type: ignore[operator]
     return rows
 
@@ -1847,15 +1891,23 @@ def main() -> None:
     parser.add_argument("--init", type=float, metavar="CAPITAL", help="初始化账户本金")
     parser.add_argument("--status", action="store_true", help="查看当前持仓状态")
     parser.add_argument("--dry-run", action="store_true", help="预演信号(不改动状态)")
-    parser.add_argument("--set-bark", action="store_true",
-                        help="设置 Bark 设备 Key (从 stdin 或 BARK_KEY 环境变量读取)")
+    parser.add_argument(
+        "--set-bark",
+        action="store_true",
+        help="设置 Bark 设备 Key (从 stdin 或 BARK_KEY 环境变量读取)",
+    )
     parser.add_argument("--notify-test", action="store_true", help="发送一条测试推送")
-    parser.add_argument("--bootstrap", action="store_true",
-                        help="全量拉取历史数据 (服务器首次部署)")
-    parser.add_argument("--sync-only", action="store_true",
-                        help="仅更新行情数据 (夜间补齐当日K线, 不生成信号)")
-    parser.add_argument("--paper-mode", metavar="on/off",
-                        help="模拟记账: on=信号按理论价自动记账, off=网页确认真实成交")
+    parser.add_argument(
+        "--bootstrap", action="store_true", help="全量拉取历史数据 (服务器首次部署)"
+    )
+    parser.add_argument(
+        "--sync-only", action="store_true", help="仅更新行情数据 (夜间补齐当日K线, 不生成信号)"
+    )
+    parser.add_argument(
+        "--paper-mode",
+        metavar="on/off",
+        help="模拟记账: on=信号按理论价自动记账, off=网页确认真实成交",
+    )
     parser.add_argument(
         "--strategy-mode",
         choices=("V3-G", "V4_SHADOW", "V4"),
@@ -1872,9 +1924,11 @@ def main() -> None:
         bootstrap_data()
     elif args.set_bark:
         import os
+
         key = os.environ.get("BARK_KEY", "").strip()
         if not key:
             import getpass
+
             key = getpass.getpass("请输入 Bark 设备 Key: ").strip()
         if not key:
             print("  ❌ Key 不能为空")

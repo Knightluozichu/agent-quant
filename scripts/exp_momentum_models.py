@@ -10,6 +10,7 @@
   M3 EMA衰减:  sum(lambda^(60-i) * r_i), lambda=0.95
   M4 多尺度:   0.3*R(5) + 0.3*R(10) + 0.2*R(20) + 0.2*R(60)
 """
+
 from __future__ import annotations
 
 import json
@@ -31,10 +32,10 @@ OUTPUT_DIR = PROJECT_ROOT / "data" / "v8_results"
 OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # === 交易参数 (与V3一致) ===
-FEE = 0.0005       # 万五单边
-SLIPPAGE = 0.001   # 千一滑点
-REBALANCE_DAYS = 5 # 周频调仓
-WARMUP = 130       # 预热期(交易日)
+FEE = 0.0005  # 万五单边
+SLIPPAGE = 0.001  # 千一滑点
+REBALANCE_DAYS = 5  # 周频调仓
+WARMUP = 130  # 预热期(交易日)
 INITIAL_CAPITAL = 100_000.0
 
 # === ETF池定义 ===
@@ -61,6 +62,7 @@ A_SHARE_ETF = "159915"
 # ============================================================================ #
 # Part 1: 动量评分函数
 # ============================================================================ #
+
 
 def _ret(close: np.ndarray, n: int) -> float:
     """n日收益率 R(n) = (P_t - P_{t-n}) / P_{t-n}."""
@@ -113,7 +115,7 @@ def score_m3(close: np.ndarray) -> float:
     if lookback < 5:
         return 0.0
     lam = 0.95
-    prices = close[-(lookback + 1):]
+    prices = close[-(lookback + 1) :]
     daily_rets = np.diff(prices) / prices[:-1]
     weights = np.array([lam ** (lookback - 1 - i) for i in range(lookback)])
     weights /= weights.sum()  # 归一化
@@ -125,7 +127,9 @@ def score_m4(close: np.ndarray) -> float:
 
     经济逻辑: 短中长期多尺度确认, 60日项过滤大趋势相反时的短期反弹.
     """
-    return 0.3 * _ret(close, 5) + 0.3 * _ret(close, 10) + 0.2 * _ret(close, 20) + 0.2 * _ret(close, 60)
+    return (
+        0.3 * _ret(close, 5) + 0.3 * _ret(close, 10) + 0.2 * _ret(close, 20) + 0.2 * _ret(close, 60)
+    )
 
 
 MOMENTUM_MODELS: dict[str, Callable[[np.ndarray], float]] = {
@@ -140,6 +144,7 @@ MOMENTUM_MODELS: dict[str, Callable[[np.ndarray], float]] = {
 # ============================================================================ #
 # Part 2: 回测引擎 (参数化, 可插拔score_fn)
 # ============================================================================ #
+
 
 def load_pool_data(pool: dict[str, str], data_dir: Path) -> dict[str, pd.DataFrame]:
     """加载指定池的ETF数据."""
@@ -170,7 +175,7 @@ def check_a_share_weak(data: dict, as_of_idx: int, ma_period: int = 20) -> bool:
     df = data[A_SHARE_ETF]
     if as_of_idx < ma_period:
         return False
-    close = df["close"].values[:as_of_idx + 1].astype(float)
+    close = df["close"].values[: as_of_idx + 1].astype(float)
     if len(close) < ma_period:
         return False
     ma = np.mean(close[-ma_period:])
@@ -265,7 +270,7 @@ def run_backtest(
             if code == A_SHARE_ETF and a_share_weak:
                 continue
             idx = etf_data_at_date[code]
-            close = data[code]["close"].values[:idx + 1].astype(float)
+            close = data[code]["close"].values[: idx + 1].astype(float)
             if len(close) < WARMUP:
                 continue
             # 暴跌过滤
@@ -393,8 +398,11 @@ def calc_metrics(eq_df: pd.DataFrame, initial_capital: float, n_trades: int) -> 
 # Part 3: 验证框架
 # ============================================================================ #
 
+
 def run_is_oos(
-    data: dict, pool: dict, score_fn: Callable,
+    data: dict,
+    pool: dict,
+    score_fn: Callable,
     is_end: str = "2021-12-31",
 ) -> dict:
     """样本内/样本外分段回测."""
@@ -407,20 +415,23 @@ def run_is_oos(
     passed = False
     if is_valid and oos_valid:
         # 通过标准: OOS年化>0 且 OOS夏普 > IS夏普*0.5
-        passed = (
-            oos_result["ann_return"] > 0
-            and oos_result["sharpe"] > is_result["sharpe"] * 0.5
-        )
+        passed = oos_result["ann_return"] > 0 and oos_result["sharpe"] > is_result["sharpe"] * 0.5
 
     return {
-        "IS": {k: v for k, v in is_result.items() if k != "equity_curve"} if is_valid else is_result,
-        "OOS": {k: v for k, v in oos_result.items() if k != "equity_curve"} if oos_valid else oos_result,
+        "IS": {k: v for k, v in is_result.items() if k != "equity_curve"}
+        if is_valid
+        else is_result,
+        "OOS": {k: v for k, v in oos_result.items() if k != "equity_curve"}
+        if oos_valid
+        else oos_result,
         "passed": passed,
     }
 
 
 def run_rolling(
-    data: dict, pool: dict, score_fn: Callable,
+    data: dict,
+    pool: dict,
+    score_fn: Callable,
     baseline_fn: Callable | None = None,
 ) -> dict:
     """3滚动窗口回测 (3年Train + 3年Test).
@@ -449,11 +460,17 @@ def run_rolling(
         # 基线对比
         baseline_test = None
         if baseline_fn and score_fn != baseline_fn:
-            baseline_test = run_backtest(data, pool, baseline_fn, start_date=test_start, end_date=test_end)
+            baseline_test = run_backtest(
+                data, pool, baseline_fn, start_date=test_start, end_date=test_end
+            )
 
         win_entry = {
-            "train": {k: v for k, v in train_r.items() if k != "equity_curve"} if "error" not in train_r else train_r,
-            "test": {k: v for k, v in test_r.items() if k != "equity_curve"} if "error" not in test_r else test_r,
+            "train": {k: v for k, v in train_r.items() if k != "equity_curve"}
+            if "error" not in train_r
+            else train_r,
+            "test": {k: v for k, v in test_r.items() if k != "equity_curve"}
+            if "error" not in test_r
+            else test_r,
         }
 
         if baseline_test and "error" not in baseline_test and "error" not in test_r:
@@ -489,6 +506,7 @@ def run_full(data: dict, pool: dict, score_fn: Callable) -> dict:
 # Part 4: 主实验流程
 # ============================================================================ #
 
+
 def run_all_experiments():
     """跑全部实验: 5公式 × 2池 × 3验证."""
     print("=" * 70)
@@ -503,12 +521,16 @@ def run_all_experiments():
     print(f"\n  Core-Full 数据: {len(core_full_data)} 只ETF")
     for code, df in core_full_data.items():
         name = CORE_FULL.get(code, "货币基金")
-        print(f"    {code} {name}: {df['trade_date'].min()} ~ {df['trade_date'].max()} ({len(df)}天)")
+        print(
+            f"    {code} {name}: {df['trade_date'].min()} ~ {df['trade_date'].max()} ({len(df)}天)"
+        )
 
     print(f"\n  Core-Reduced 数据: {len(core_reduced_data)} 只ETF")
     for code, df in core_reduced_data.items():
         name = CORE_REDUCED.get(code, "货币基金")
-        print(f"    {code} {name}: {df['trade_date'].min()} ~ {df['trade_date'].max()} ({len(df)}天)")
+        print(
+            f"    {code} {name}: {df['trade_date'].min()} ~ {df['trade_date'].max()} ({len(df)}天)"
+        )
 
     all_results = {}
 
@@ -532,23 +554,29 @@ def run_all_experiments():
             is_oos = run_is_oos(data, pool, score_fn)
             oos_info = is_oos["OOS"]
             if "error" not in oos_info:
-                print(f"OOS年化={oos_info['ann_return']:+.1%} 夏普={oos_info['sharpe']:.2f} "
-                      f"{'PASS' if is_oos['passed'] else 'FAIL'}")
+                print(
+                    f"OOS年化={oos_info['ann_return']:+.1%} 夏普={oos_info['sharpe']:.2f} "
+                    f"{'PASS' if is_oos['passed'] else 'FAIL'}"
+                )
             else:
                 print(f"ERROR: {oos_info}")
 
             # 2. 滚动窗口
             print(f"    [2/3] Rolling...", end=" ", flush=True)
             rolling = run_rolling(data, pool, score_fn, baseline_fn=score_m0)
-            print(f"Wins={rolling['wins_vs_baseline']}/{rolling['valid_windows']} "
-                  f"{'PASS' if rolling['passed'] else 'FAIL'}")
+            print(
+                f"Wins={rolling['wins_vs_baseline']}/{rolling['valid_windows']} "
+                f"{'PASS' if rolling['passed'] else 'FAIL'}"
+            )
 
             # 3. 全回测
             print(f"    [3/3] Full...", end=" ", flush=True)
             full = run_full(data, pool, score_fn)
             if "error" not in full:
-                print(f"年化={full['ann_return']:+.1%} 夏普={full['sharpe']:.2f} "
-                      f"回撤={full['max_drawdown']:.1%} Calmar={full['calmar']:.2f}")
+                print(
+                    f"年化={full['ann_return']:+.1%} 夏普={full['sharpe']:.2f} "
+                    f"回撤={full['max_drawdown']:.1%} Calmar={full['calmar']:.2f}"
+                )
             else:
                 print(f"ERROR: {full}")
 
@@ -567,8 +595,10 @@ def run_all_experiments():
 
     for pool_name in all_results:
         print(f"\n  [{pool_name}]")
-        print(f"  {'模型':<16} {'OOS年化':>8} {'OOS夏普':>8} {'Full年化':>8} {'Full夏普':>8} "
-              f"{'Full回撤':>8} {'IS/OOS':>7} {'Rolling':>8}")
+        print(
+            f"  {'模型':<16} {'OOS年化':>8} {'OOS夏普':>8} {'Full年化':>8} {'Full夏普':>8} "
+            f"{'Full回撤':>8} {'IS/OOS':>7} {'Rolling':>8}"
+        )
         print(f"  {'-' * 80}")
 
         rows = []
@@ -578,7 +608,9 @@ def run_all_experiments():
             oos_sharpe = oos.get("sharpe", -99) if "error" not in oos else -99
             rows.append((model_name, oos, full, res["is_oos"]["passed"], res["rolling"]["passed"]))
 
-        rows.sort(key=lambda x: x[1].get("sharpe", -99) if "error" not in x[1] else -99, reverse=True)
+        rows.sort(
+            key=lambda x: x[1].get("sharpe", -99) if "error" not in x[1] else -99, reverse=True
+        )
 
         for model_name, oos, full, is_oos_pass, rolling_pass in rows:
             oos_ann = f"{oos['ann_return']:+.1%}" if "error" not in oos else "ERR"
@@ -588,8 +620,10 @@ def run_all_experiments():
             full_dd = f"{full['max_drawdown']:.1%}" if "error" not in full else "ERR"
             is_oos_str = "PASS" if is_oos_pass else "FAIL"
             roll_str = "PASS" if rolling_pass else "FAIL"
-            print(f"  {model_name:<16} {oos_ann:>8} {oos_shp:>8} {full_ann:>8} {full_shp:>8} "
-                  f"{full_dd:>8} {is_oos_str:>7} {roll_str:>8}")
+            print(
+                f"  {model_name:<16} {oos_ann:>8} {oos_shp:>8} {full_ann:>8} {full_shp:>8} "
+                f"{full_dd:>8} {is_oos_str:>7} {roll_str:>8}"
+            )
 
     # === 保存JSON ===
     # 清理不可序列化对象

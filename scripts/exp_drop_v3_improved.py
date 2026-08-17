@@ -14,6 +14,7 @@
 用法: uv run python scripts/exp_drop_v3_improved.py
 输出: data/v9_results/drop_v3_improved.json
 """
+
 from __future__ import annotations
 
 import json
@@ -39,6 +40,7 @@ def make_mom_exempt_check():
     """动量豁免: 触发暴跌时, 若动量≤0 则放行 (不排除).
     基于被甩分析: 动量≤0 的被甩持仓 73% 是误杀 (后5日反弹).
     """
+
     def check(close: np.ndarray) -> bool:
         if len(close) < rq.DROP_LOOKBACK + 1:
             return True
@@ -55,11 +57,13 @@ def make_mom_exempt_check():
         r10 = (close[-1] - close[-11]) / close[-11]
         r20 = (close[-1] - close[-21]) / close[-21]
         return 0.5 * r10 + 0.5 * r20 <= 0  # 动量≤0 → 放行
+
     return check
 
 
-def make_combined_check(ret60_gate: bool, mom_exempt: bool,
-                        ret60_thr: float = 0.00, mom_thr: float = 0.00):
+def make_combined_check(
+    ret60_gate: bool, mom_exempt: bool, ret60_thr: float = 0.00, mom_thr: float = 0.00
+):
     """组合 check: 门控放行 + 动量豁免 (两者正交)."""
     gated_fn = h3.make_gated(ret60_thr, True) if ret60_gate else None
 
@@ -86,11 +90,13 @@ def make_combined_check(ret60_gate: bool, mom_exempt: bool,
         if gated_fn is not None:
             return gated_fn(close)
         return False  # 排除
+
     return check
 
 
-def run_variant(data, check_fn, exempt: bool, h3on: bool,
-               start_idx: int = 0, end_idx: int | None = None) -> dict:
+def run_variant(
+    data, check_fn, exempt: bool, h3on: bool, start_idx: int = 0, end_idx: int | None = None
+) -> dict:
     rq.check_single_day_drop = check_fn
     h3.select_target = select_target_exempt if exempt else rq.select_target
     h3.H3_ENABLED = h3on
@@ -111,8 +117,7 @@ def main() -> None:
     print("=" * 80)
 
     data = rq.load_data()
-    dates = sorted(set.intersection(
-        *[set(data[c]["trade_date"]) for c in list(data.keys())]))
+    dates = sorted(set.intersection(*[set(data[c]["trade_date"]) for c in list(data.keys())]))
     n = len(dates)
 
     def seg(s0: str, s1: str) -> tuple[int, int]:
@@ -120,8 +125,7 @@ def main() -> None:
         b = next(i for i, d in enumerate(dates) if str(d) >= s1)
         return max(a - WARMUP, 0), min(b, n)
 
-    segs = [("全周期", 0, n), ("IS", *seg(IS_START, IS_END)),
-            ("OOS", *seg(OOS_START, OOS_END))]
+    segs = [("全周期", 0, n), ("IS", *seg(IS_START, IS_END)), ("OOS", *seg(OOS_START, OOS_END))]
 
     variants = [
         ("基线 (原版)", h3.ORIG_CHECK, False, False),
@@ -134,20 +138,23 @@ def main() -> None:
     for vname, check_fn, exempt, h3on in variants:
         results[vname] = {}
         for name, s0, s1 in segs:
-            r = run_variant(data, check_fn, exempt, h3on,
-                           start_idx=s0, end_idx=max(s1 - WARMUP, 0))
+            r = run_variant(data, check_fn, exempt, h3on, start_idx=s0, end_idx=max(s1 - WARMUP, 0))
             results[vname][name] = {k: r[k] for k in KEYS}
         r = results[vname]["全周期"]
         is_r = results[vname]["IS"]
         oos_r = results[vname]["OOS"]
         print(f"\n  [{vname}]")
-        print(f"    全周期 期末{r['final_value']:>12,.0f} 年化{r['ann_return']*100:>+6.1f}% "
-              f"夏普{r['sharpe']:>5.2f} 回撤{r['max_drawdown']*100:>6.1f}% "
-              f"交易{r['n_trades']:>4}")
-        print(f"    IS     {is_r['final_value']:>12,.0f} 年化{is_r['ann_return']*100:>+6.1f}% "
-              f"回撤{is_r['max_drawdown']*100:>6.1f}% | "
-              f"OOS    {oos_r['final_value']:>12,.0f} 年化{oos_r['ann_return']*100:>+6.1f}% "
-              f"回撤{oos_r['max_drawdown']*100:>6.1f}%")
+        print(
+            f"    全周期 期末{r['final_value']:>12,.0f} 年化{r['ann_return'] * 100:>+6.1f}% "
+            f"夏普{r['sharpe']:>5.2f} 回撤{r['max_drawdown'] * 100:>6.1f}% "
+            f"交易{r['n_trades']:>4}"
+        )
+        print(
+            f"    IS     {is_r['final_value']:>12,.0f} 年化{is_r['ann_return'] * 100:>+6.1f}% "
+            f"回撤{is_r['max_drawdown'] * 100:>6.1f}% | "
+            f"OOS    {oos_r['final_value']:>12,.0f} 年化{oos_r['ann_return'] * 100:>+6.1f}% "
+            f"回撤{oos_r['max_drawdown'] * 100:>6.1f}%"
+        )
 
     # 判定
     base = results["基线 (原版)"]
@@ -164,8 +171,10 @@ def main() -> None:
             "回撤不劣化": v["全周期"]["max_drawdown"] >= base["全周期"]["max_drawdown"],
         }
         passed = all(checks.values())
-        print(f"  {vname:<22} {'✅全部通过' if passed else '❌'} "
-              f"({'/'.join('✓' if c else '✗' for c in checks.values())})")
+        print(
+            f"  {vname:<22} {'✅全部通过' if passed else '❌'} "
+            f"({'/'.join('✓' if c else '✗' for c in checks.values())})"
+        )
 
     out = OUTPUT_DIR / "drop_v3_improved.json"
     out.write_text(json.dumps(results, indent=2, ensure_ascii=False, default=str))

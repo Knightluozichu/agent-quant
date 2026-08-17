@@ -54,33 +54,48 @@ from run_qixing_v3 import (  # noqa: E402
 
 WARMUP = 130
 INITIAL_CAPITAL = 100_000.0
-SEQ = 10          # 序列窗口
-FWD = 5           # 预测未来5日
+SEQ = 10  # 序列窗口
+FWD = 5  # 预测未来5日
 DEVICE = "cpu"
 
 # === 区间划分 ===
-TRAIN_END = "2023-06-30"    # 训练截止
-TEST_START = "2023-07-03"   # 全量测试起点
+TRAIN_END = "2023-06-30"  # 训练截止
+TEST_START = "2023-07-03"  # 全量测试起点
 ROLL_TRAIN_END = "2024-12-31"  # 滚动验证训练截止
 ROLL_TEST_START = "2025-01-06"
 
 # === 手工特征列 (与 exp_ml_up_down 一致) ===
 FEAT_COLS = [
-    "mom3", "mom5", "mom10", "mom20", "mom60",
-    "vol5", "vol20", "vol60", "mom_short_dev",
-    "up_streak", "dn_streak",
-    "dist_high20", "dist_low20", "dist_high60",
-    "vol_ratio", "ret_vol5",
-    "cyb_ma_state", "pool_mom5", "a_share_ret5",
-    "cat_rel_mom5", "pool_rel_mom5",
+    "mom3",
+    "mom5",
+    "mom10",
+    "mom20",
+    "mom60",
+    "vol5",
+    "vol20",
+    "vol60",
+    "mom_short_dev",
+    "up_streak",
+    "dn_streak",
+    "dist_high20",
+    "dist_low20",
+    "dist_high60",
+    "vol_ratio",
+    "ret_vol5",
+    "cyb_ma_state",
+    "pool_mom5",
+    "a_share_ret5",
+    "cat_rel_mom5",
+    "pool_rel_mom5",
 ]
 
 
 # --------------------------------------------------------------------------- #
 # 数据构建: 每样本 = (t, asset) → 序列 + 手工特征 + R4特征 → y(未来5日)
 # --------------------------------------------------------------------------- #
-def build_dl_dataset(mat: dict, dates: list, x_feats: np.ndarray, meta: list,
-                     feat_names: list) -> dict:
+def build_dl_dataset(
+    mat: dict, dates: list, x_feats: np.ndarray, meta: list, feat_names: list
+) -> dict:
     """构建 DL 样本集 (全部资产×交易日)."""
     n = len(dates)
     codes = [c for c in ETF_POOL if c in mat]
@@ -96,7 +111,7 @@ def build_dl_dataset(mat: dict, dates: list, x_feats: np.ndarray, meta: list,
         close = mat[code].astype(float)
         for t in range(SEQ + 1, n - FWD):
             # 序列: 最近SEQ日收益率
-            s = close[t - SEQ + 1:t + 1] / close[t - SEQ:t] - 1.0
+            s = close[t - SEQ + 1 : t + 1] / close[t - SEQ : t] - 1.0
             if not np.all(np.isfinite(s)):
                 continue
             # 手工特征
@@ -107,18 +122,18 @@ def build_dl_dataset(mat: dict, dates: list, x_feats: np.ndarray, meta: list,
             # R4 规则特征: 昨日涨幅 / 10日动量 / V3动量评分
             prev_ret = close[t] / close[t - 1] - 1.0 if close[t - 1] > 0 else 0.0
             mom10 = close[t] / close[t - 10] - 1.0 if close[t - 10] > 0 else 0.0
-            score = float(calc_momentum_score(close[:t + 1])) if len(close) >= 121 else 0.0
+            score = float(calc_momentum_score(close[: t + 1])) if len(close) >= 121 else 0.0
             r4f = np.array([prev_ret, mom10, score], float)
             seqs.append(s)
             feats.append(np.concatenate((f, r4f)))
             y.append(close[t + FWD] / close[t] - 1.0)
             rows.append((t, code))
     return {
-        "seq": np.array(seqs, float),       # [N, SEQ]
-        "feat": np.array(feats, float),     # [N, 25] (22手工+3规则)
-        "y": np.array(y, float),            # [N]
+        "seq": np.array(seqs, float),  # [N, SEQ]
+        "feat": np.array(feats, float),  # [N, 25] (22手工+3规则)
+        "y": np.array(y, float),  # [N]
         "feat_names": [*FEAT_COLS, "r4_prev_ret", "r4_mom10", "r4_score"],
-        "rows": rows,                       # [(t, code)] 与样本一一对应
+        "rows": rows,  # [(t, code)] 与样本一一对应
     }
 
 
@@ -140,14 +155,23 @@ class SeqFeatNet(nn.Module):
 
     def forward(self, seq, feat):
         # seq: [B, SEQ, 1], feat: [B, n_feat]
-        _, h = self.gru(seq)              # h: [1, B, hidden]
-        h = h[-1]                          # [B, hidden]
-        x = torch.cat([h, feat], dim=1)   # [B, hidden+n_feat]
+        _, h = self.gru(seq)  # h: [1, B, hidden]
+        h = h[-1]  # [B, hidden]
+        x = torch.cat([h, feat], dim=1)  # [B, hidden+n_feat]
         return self.head(x).squeeze(-1)
 
 
-def train_model(seq_tr, feat_tr, y_tr, seq_va, feat_va, y_va,
-                epochs: int = 40, lr: float = 1e-3, patience: int = 8) -> tuple[SeqFeatNet, dict]:
+def train_model(
+    seq_tr,
+    feat_tr,
+    y_tr,
+    seq_va,
+    feat_va,
+    y_va,
+    epochs: int = 40,
+    lr: float = 1e-3,
+    patience: int = 8,
+) -> tuple[SeqFeatNet, dict]:
     """训练 + 早停 (验证集 MSE). 特征用训练集统计量标准化."""
     feat_mean = feat_tr.mean(0)
     feat_std = feat_tr.std(0) + 1e-8
@@ -176,7 +200,7 @@ def train_model(seq_tr, feat_tr, y_tr, seq_va, feat_va, y_va,
         model.train()
         perm = torch.randperm(n)
         for i in range(0, n, 256):
-            idx = perm[i:i + 256]
+            idx = perm[i : i + 256]
             opt.zero_grad()
             loss = loss_fn(model(xs[idx], xf[idx]), yt[idx])
             loss.backward()
@@ -193,17 +217,24 @@ def train_model(seq_tr, feat_tr, y_tr, seq_va, feat_va, y_va,
             if bad >= patience:
                 break
     model.load_state_dict(best_state)
-    return model, {"feat_mean": feat_mean, "feat_std": feat_std,
-                   "seq_mean": seq_mean, "seq_std": seq_std, "best_va": best_va}
+    return model, {
+        "feat_mean": feat_mean,
+        "feat_std": feat_std,
+        "seq_mean": seq_mean,
+        "seq_std": seq_std,
+        "best_va": best_va,
+    }
 
 
 def predict_all(model: SeqFeatNet, ds: dict, scaler: dict) -> np.ndarray:
     """对全部样本预测未来5日收益."""
     model.eval()
-    seq = torch.tensor(((ds["seq"] - scaler["seq_mean"]) / scaler["seq_std"])[:, :, None],
-                       dtype=torch.float32)
-    feat = torch.tensor((ds["feat"] - scaler["feat_mean"]) / scaler["feat_std"],
-                        dtype=torch.float32)
+    seq = torch.tensor(
+        ((ds["seq"] - scaler["seq_mean"]) / scaler["seq_std"])[:, :, None], dtype=torch.float32
+    )
+    feat = torch.tensor(
+        (ds["feat"] - scaler["feat_mean"]) / scaler["feat_std"], dtype=torch.float32
+    )
     with torch.no_grad():
         return model(seq, feat).numpy()
 
@@ -212,19 +243,24 @@ def predict_all(model: SeqFeatNet, ds: dict, scaler: dict) -> np.ndarray:
 # 回测: 14:50 同日口径 + DL 动态调仓 (最快 T+1)
 # --------------------------------------------------------------------------- #
 def run_dl_backtest(
-    data: dict, mat: dict,
-    start_idx: int, end_idx: int,
-    pred_map: dict,                 # {(date_str, code): 预测收益}
+    data: dict,
+    mat: dict,
+    start_idx: int,
+    end_idx: int,
+    pred_map: dict,  # {(date_str, code): 预测收益}
     buffer: float = 0.005,
-    r4_boost: bool = False,         # R4 事件时 buffer 减半
+    r4_boost: bool = False,  # R4 事件时 buffer 减半
 ) -> dict:
     """每日预测选最优 → 换仓 (T日收盘成交, 涨跌停检查/卖出失败卡仓)."""
     common: set = set()
     for code in ETF_POOL:
         if code not in data:
             continue
-        common = set(data[code]["trade_date"].tolist()) if not common \
+        common = (
+            set(data[code]["trade_date"].tolist())
+            if not common
             else common & set(data[code]["trade_date"].tolist())
+        )
     common &= set(data[DEFENSE]["trade_date"].tolist())
     all_dates = sorted(common)
     trading_dates = all_dates[WARMUP:]
@@ -293,16 +329,33 @@ def run_dl_backtest(
             if holding is None or holding == DEFENSE:
                 if _buy(best_code, td):
                     n_trades += 1
-                    events.append({"date": td_s, "type": "enter", "asset": best_code,
-                                   "pred": round(float(best_p), 4)})
+                    events.append(
+                        {
+                            "date": td_s,
+                            "type": "enter",
+                            "asset": best_code,
+                            "pred": round(float(best_p), 4),
+                        }
+                    )
             elif holding in ETF_POOL:
                 cur_p = pred_map.get((td_s, holding))
-                if (cur_p is not None and best_p > cur_p + eff_buffer
-                        and _sell(holding, td) and _buy(best_code, td)):
+                if (
+                    cur_p is not None
+                    and best_p > cur_p + eff_buffer
+                    and _sell(holding, td)
+                    and _buy(best_code, td)
+                ):
                     n_trades += 1
-                    events.append({"date": td_s, "type": "switch", "asset": best_code,
-                                   "from": holding, "pred": round(float(best_p), 4),
-                                   "cur": round(float(cur_p), 4)})
+                    events.append(
+                        {
+                            "date": td_s,
+                            "type": "switch",
+                            "asset": best_code,
+                            "from": holding,
+                            "pred": round(float(best_p), 4),
+                            "cur": round(float(cur_p), 4),
+                        }
+                    )
         # 每日净值
         equity = cash
         if holding and holding in data:
@@ -346,8 +399,7 @@ def main() -> None:
     data = load_data()
     dates = sorted(set.intersection(*[set(data[c]["trade_date"]) for c in list(data.keys())]))
     mat = close_matrix(data, dates)
-    vol_mat = {c: data[c].set_index("trade_date")["volume"].reindex(dates).values
-               for c in ETF_POOL}
+    vol_mat = {c: data[c].set_index("trade_date")["volume"].reindex(dates).values for c in ETF_POOL}
     n = len(dates)
     print(f"\n  数据: {n} 交易日 ({dates[0]} ~ {dates[-1]})")
 
@@ -369,11 +421,16 @@ def main() -> None:
         te_start = next(i for i, d in enumerate(dates) if str(d) >= test_start_str)
         train_mask_local = ts_arr < te_start
         tr_idx = np.where(train_mask_local)[0]
-        va_idx = tr_idx[int(len(tr_idx) * 0.85):]
-        tr_idx = tr_idx[:int(len(tr_idx) * 0.85)]
+        va_idx = tr_idx[int(len(tr_idx) * 0.85) :]
+        tr_idx = tr_idx[: int(len(tr_idx) * 0.85)]
         model, scaler = train_model(
-            ds["seq"][tr_idx], ds["feat"][tr_idx], ds["y"][tr_idx],
-            ds["seq"][va_idx], ds["feat"][va_idx], ds["y"][va_idx])
+            ds["seq"][tr_idx],
+            ds["feat"][tr_idx],
+            ds["y"][tr_idx],
+            ds["seq"][va_idx],
+            ds["feat"][va_idx],
+            ds["y"][va_idx],
+        )
         preds = predict_all(model, ds, scaler)
         pmap = {}
         for j, (t, code) in enumerate(sample_rows):
@@ -385,7 +442,7 @@ def main() -> None:
     te_start = next(i for i, d in enumerate(dates) if str(d) >= TEST_START)
     te_end = n
     tb_start = max(te_start - WARMUP, 0)  # trading_dates (warmup后) 相对索引
-    print(f"\n  全量测试区间: {dates[te_start]} ~ {dates[te_end-1]} ({te_end-te_start}天)")
+    print(f"\n  全量测试区间: {dates[te_start]} ~ {dates[te_end - 1]} ({te_end - te_start}天)")
     print("  训练: 2019-12-05 ~ 2023-06-30 | 所有配置同一测试区间对比")
 
     print("\n  训练 DL 模型 (早停)...")
@@ -415,22 +472,38 @@ def main() -> None:
         else:
             buf = 0.005 if "0.5" in kind else 0.01
             r4b = "r4" in kind
-            r = run_dl_backtest(data, mat, tb_start, None, pmap,
-                                buffer=buf, r4_boost=r4b)
-        r = {k: r[k] for k in ("final_value", "total_return", "ann_return",
-                               "sharpe", "max_drawdown", "n_trades", "n_events")}
+            r = run_dl_backtest(data, mat, tb_start, None, pmap, buffer=buf, r4_boost=r4b)
+        r = {
+            k: r[k]
+            for k in (
+                "final_value",
+                "total_return",
+                "ann_return",
+                "sharpe",
+                "max_drawdown",
+                "n_trades",
+                "n_events",
+            )
+        }
         results[name] = r
-        print(f"  {name:<18} {r['final_value']:>10,.0f} {r['total_return']:>+9.1%} "
-              f"{r['ann_return']:>+8.1%} {r['sharpe']:>6.2f} {r['max_drawdown']:>8.1%} "
-              f"{r['n_trades']:>4} {r['n_events']:>4}")
+        print(
+            f"  {name:<18} {r['final_value']:>10,.0f} {r['total_return']:>+9.1%} "
+            f"{r['ann_return']:>+8.1%} {r['sharpe']:>6.2f} {r['max_drawdown']:>8.1%} "
+            f"{r['n_trades']:>4} {r['n_events']:>4}"
+        )
 
-    out = {"meta": {
-        "model": "GRU(24) + 22手工特征 + 3规则特征 → 未来5日收益回归",
-        "train": "2019-12-05~2023-06-30", "test": "2023-07-03~2026-08-03",
-        "decision": "每日预测选优, 差>buffer 换仓, T日收盘成交(14:50口径), 最快T+1",
-        "configs": ["V3基线", "V3+R4(2.0%_b2%)", "V3+R4(1.5%_b0%)", "DL", "DL+R4"],
-    }, "results": {k: {kk: vv for kk, vv in v.items() if kk != "events"}
-                   for k, v in results.items()}}
+    out = {
+        "meta": {
+            "model": "GRU(24) + 22手工特征 + 3规则特征 → 未来5日收益回归",
+            "train": "2019-12-05~2023-06-30",
+            "test": "2023-07-03~2026-08-03",
+            "decision": "每日预测选优, 差>buffer 换仓, T日收盘成交(14:50口径), 最快T+1",
+            "configs": ["V3基线", "V3+R4(2.0%_b2%)", "V3+R4(1.5%_b0%)", "DL", "DL+R4"],
+        },
+        "results": {
+            k: {kk: vv for kk, vv in v.items() if kk != "events"} for k, v in results.items()
+        },
+    }
     out_path = OUTPUT_DIR / "v3_dl_ab.json"
     with open(out_path, "w") as f:
         json.dump(out, f, indent=2, ensure_ascii=False, default=str)

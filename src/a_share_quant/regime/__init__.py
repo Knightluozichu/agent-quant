@@ -20,6 +20,7 @@ import pandas as pd
 
 class Direction(str, Enum):
     """Market direction."""
+
     UP = "UP"
     FLAT = "FLAT"
     DOWN = "DOWN"
@@ -27,6 +28,7 @@ class Direction(str, Enum):
 
 class Oscillation(str, Enum):
     """Market oscillation/volatility level."""
+
     LOW = "LOW"
     MEDIUM = "MEDIUM"
     HIGH = "HIGH"
@@ -35,6 +37,7 @@ class Oscillation(str, Enum):
 @dataclass
 class RegimeState:
     """Current market regime state."""
+
     direction: Direction
     oscillation: Oscillation
     confidence: float  # 0-1
@@ -154,10 +157,7 @@ class RegimeDetector:
         # Calculate ATR
         tr = np.maximum(
             high[1:] - low[1:],
-            np.maximum(
-                np.abs(high[1:] - close[:-1]),
-                np.abs(low[1:] - close[:-1])
-            )
+            np.maximum(np.abs(high[1:] - close[:-1]), np.abs(low[1:] - close[:-1])),
         )
         atr = pd.Series(tr).rolling(self._vol_window).mean().iloc[-1]
         atr_pct = atr / close[-1]  # ATR as percentage of price

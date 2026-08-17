@@ -39,18 +39,19 @@ FEE = 0.001
 SLIPPAGE = 0.0005
 
 # === 3个参数 (学术标准, 不可调) ===
-MOM_SKIP = 20       # 跳过近20日 (避免短期反转)
-MOM_LOOKBACK = 80   # 动量回看80日
-GATE_MA = 60        # 市场Gate: 沪深300的60日均线 (Faber 2007)
-TARGET_VOL = 0.20   # 波动率目标20%
-VOL_LOOKBACK = 20   # 波动率计算窗口
-SCALE_MIN = 0.20    # 最低仓位20%
-SCALE_MAX = 1.00    # 不加杠杆
+MOM_SKIP = 20  # 跳过近20日 (避免短期反转)
+MOM_LOOKBACK = 80  # 动量回看80日
+GATE_MA = 60  # 市场Gate: 沪深300的60日均线 (Faber 2007)
+TARGET_VOL = 0.20  # 波动率目标20%
+VOL_LOOKBACK = 20  # 波动率计算窗口
+SCALE_MIN = 0.20  # 最低仓位20%
+SCALE_MAX = 1.00  # 不加杠杆
 
 
 # =============================================================================
 # Core Logic
 # =============================================================================
+
 
 def calc_momentum(data: dict[str, pd.DataFrame], as_of: date) -> pd.DataFrame:
     """20-80日动量排序."""
@@ -95,7 +96,7 @@ def calc_vol_scale(
         if len(hist) < VOL_LOOKBACK + 1:
             continue
         close = hist["close"].values.astype(float)
-        rets = np.diff(close[-VOL_LOOKBACK - 1:]) / close[-VOL_LOOKBACK - 1:-1]
+        rets = np.diff(close[-VOL_LOOKBACK - 1 :]) / close[-VOL_LOOKBACK - 1 : -1]
         vols.append(np.std(rets) * np.sqrt(252))
 
     if not vols:
@@ -105,13 +106,14 @@ def calc_vol_scale(
     if portfolio_vol < 1e-8:
         return SCALE_MAX
 
-    scale = (TARGET_VOL ** 2) / (portfolio_vol ** 2)
+    scale = (TARGET_VOL**2) / (portfolio_vol**2)
     return float(np.clip(scale, SCALE_MIN, SCALE_MAX))
 
 
 # =============================================================================
 # Backtest
 # =============================================================================
+
 
 def run_v52_backtest(
     data: dict[str, pd.DataFrame],
@@ -124,8 +126,7 @@ def run_v52_backtest(
 ) -> dict:
     """V5.2: 动量 + 趋势过滤 + 波动率缩放 + 国债."""
     index_symbols = {"idx_000300", "idx_000905", "000300", "000905"}
-    tradable = {k: v for k, v in data.items()
-                if k not in DEFENSIVE and k not in index_symbols}
+    tradable = {k: v for k, v in data.items() if k not in DEFENSIVE and k not in index_symbols}
 
     all_dates = sorted(index_df["trade_date"].tolist())
     if start_date:
@@ -187,14 +188,16 @@ def run_v52_backtest(
             bond_budget = equity * (1 - stock_fraction)
             per_stock = stock_budget / max(n_stocks, 1)
 
-            decision_log.append({
-                "date": str(td),
-                "gate_open": gate_open,
-                "n_passed": n_stocks,
-                "vol_scale": vol_scale,
-                "stock_fraction": stock_fraction,
-                "selected": selected[:4],
-            })
+            decision_log.append(
+                {
+                    "date": str(td),
+                    "gate_open": gate_open,
+                    "n_passed": n_stocks,
+                    "vol_scale": vol_scale,
+                    "stock_fraction": stock_fraction,
+                    "selected": selected[:4],
+                }
+            )
 
             # Sell non-target stocks
             for sym in list(holdings.keys()):
@@ -284,10 +287,16 @@ def run_v52_backtest(
     calmar = ann_return / abs(max_dd) if max_dd != 0 else 0.0
 
     return {
-        "total_return": total_return, "ann_return": ann_return,
-        "ann_vol": ann_vol, "sharpe": sharpe, "max_drawdown": max_dd,
-        "calmar": calmar, "n_trades": n_trades, "n_days": n_days,
-        "equity_curve": eq_df, "decision_log": decision_log,
+        "total_return": total_return,
+        "ann_return": ann_return,
+        "ann_vol": ann_vol,
+        "sharpe": sharpe,
+        "max_drawdown": max_dd,
+        "calmar": calmar,
+        "n_trades": n_trades,
+        "n_days": n_days,
+        "equity_curve": eq_df,
+        "decision_log": decision_log,
     }
 
 
@@ -295,11 +304,16 @@ def run_v52_backtest(
 # Main
 # =============================================================================
 
+
 def load_data():
     data = {}
     for f in DATA_DIR.glob("*.parquet"):
-        if f.name in ("combined_long.parquet", "northbound.parquet",
-                      "pe_percentile.parquet", "margin_sentiment.parquet"):
+        if f.name in (
+            "combined_long.parquet",
+            "northbound.parquet",
+            "pe_percentile.parquet",
+            "margin_sentiment.parquet",
+        ):
             continue
         df = pd.read_parquet(f)
         if "symbol" not in df.columns or "trade_date" not in df.columns:
@@ -321,7 +335,9 @@ def load_data():
 def main():
     print("=" * 70)
     print("  V5.2: 动量 + 市场级Gate(沪深300 MA60) + 波动率缩放(20%)")
-    print(f"  参数: mom={MOM_SKIP}-{MOM_LOOKBACK}日 | gate_MA={GATE_MA}日 | target_vol={TARGET_VOL:.0%}")
+    print(
+        f"  参数: mom={MOM_SKIP}-{MOM_LOOKBACK}日 | gate_MA={GATE_MA}日 | target_vol={TARGET_VOL:.0%}"
+    )
     print(f"  规则: 沪深300<MA{GATE_MA}→全切国债 | vol高降仓 | 3个参数全学术标准")
     print("=" * 70)
 
@@ -360,7 +376,9 @@ def main():
             yd = decisions[decisions["year"] == year]
             if not yd.empty:
                 avg_frac = yd["stock_fraction"].mean()
-        print(f"  {year:<6} {prev:>10,.0f} {end_val:>10,.0f} {yr:>+8.2%} {dd:>8.2%} {avg_frac:>9.0%}")
+        print(
+            f"  {year:<6} {prev:>10,.0f} {end_val:>10,.0f} {yr:>+8.2%} {dd:>8.2%} {avg_frac:>9.0%}"
+        )
         prev = end_val
 
     final = eq["equity"].iloc[-1]
@@ -370,17 +388,23 @@ def main():
 
     print(f"  {'-' * 58}")
     print(f"\n  10万 → {final:,.0f} ({total_ret:+.1%}, {final / 100_000:.2f}x)")
-    print(f"  年化: {ann_ret:+.1%} | 夏普: {result['sharpe']:.2f} | "
-          f"回撤: {result['max_drawdown']:.1%} | Calmar: {result['calmar']:.2f}")
+    print(
+        f"  年化: {ann_ret:+.1%} | 夏普: {result['sharpe']:.2f} | "
+        f"回撤: {result['max_drawdown']:.1%} | Calmar: {result['calmar']:.2f}"
+    )
     print(f"  交易次数: {result['n_trades']}")
 
     # === 2023 stress test ===
     print(f"\n[2/3] 2023压力测试...")
     from datetime import date as dt_date
-    r2023 = run_v52_backtest(data, index_df,
-                             start_date=dt_date(2023, 1, 1),
-                             end_date=dt_date(2023, 12, 31),
-                             initial_capital=100_000)
+
+    r2023 = run_v52_backtest(
+        data,
+        index_df,
+        start_date=dt_date(2023, 1, 1),
+        end_date=dt_date(2023, 12, 31),
+        initial_capital=100_000,
+    )
     if r2023.get("equity_curve") is not None and len(r2023["equity_curve"]) > 0:
         eq23 = r2023["equity_curve"]
         ret_2023 = (eq23["equity"].iloc[-1] / 100_000) - 1
@@ -390,15 +414,14 @@ def main():
         d23 = pd.DataFrame(r2023["decision_log"])
         if not d23.empty:
             print(f"  平均股票仓位: {d23['stock_fraction'].mean():.0%}")
-            gate_open_pct = d23['gate_open'].mean()
+            gate_open_pct = d23["gate_open"].mean()
             print(f"  Gate开启率: {gate_open_pct:.0%} ({d23['gate_open'].sum()}/{len(d23)}期)")
             # Show months
             d23["month"] = pd.to_datetime(d23["date"]).dt.month
             for m in sorted(d23["month"].unique()):
                 md = d23[d23["month"] == m]
-                gate_str = "开" if md['gate_open'].iloc[0] else "关→国债"
-                print(f"    {m}月: Gate={gate_str}, "
-                      f"仓位{md['stock_fraction'].mean():.0%}")
+                gate_str = "开" if md["gate_open"].iloc[0] else "关→国债"
+                print(f"    {m}月: Gate={gate_str}, 仓位{md['stock_fraction'].mean():.0%}")
 
     # === Comparison ===
     print(f"\n[3/3] 策略对比...")
@@ -411,20 +434,32 @@ def main():
 
     print(f"\n  {'策略':<28} {'全周期':>8} {'年化':>7} {'夏普':>6} {'回撤':>7} {'2023':>7}")
     print(f"  {'-' * 66}")
-    print(f"  {'V5.2(动量+市场Gate+波动率)':<28} {total_ret:>+8.1%} {ann_ret:>+7.1%} "
-          f"{result['sharpe']:>6.2f} {result['max_drawdown']:>7.1%} {ret_2023:>+7.2%}")
-    print(f"  {'纯动量Top4(v4.3审计)':<28} {'+48.3%':>8} {'+10.9%':>7} "
-          f"{'0.20':>6} {'-39.6%':>7} {'-16.9%':>7}")
+    print(
+        f"  {'V5.2(动量+市场Gate+波动率)':<28} {total_ret:>+8.1%} {ann_ret:>+7.1%} "
+        f"{result['sharpe']:>6.2f} {result['max_drawdown']:>7.1%} {ret_2023:>+7.2%}"
+    )
+    print(
+        f"  {'纯动量Top4(v4.3审计)':<28} {'+48.3%':>8} {'+10.9%':>7} "
+        f"{'0.20':>6} {'-39.6%':>7} {'-16.9%':>7}"
+    )
     print(f"  {'沪深300':<28} {bench_300:>+8.1%} {'':>7} {'':>6} {'':>7} {'-11.4%':>7}")
 
     # Save
     summary = {
         "version": "v5.2",
-        "params": {"mom_skip": MOM_SKIP, "mom_lookback": MOM_LOOKBACK,
-                   "gate_ma": GATE_MA, "target_vol": TARGET_VOL},
-        "full_period": {"return": total_ret, "ann_return": ann_ret,
-                        "sharpe": result["sharpe"], "max_dd": result["max_drawdown"],
-                        "calmar": result["calmar"]},
+        "params": {
+            "mom_skip": MOM_SKIP,
+            "mom_lookback": MOM_LOOKBACK,
+            "gate_ma": GATE_MA,
+            "target_vol": TARGET_VOL,
+        },
+        "full_period": {
+            "return": total_ret,
+            "ann_return": ann_ret,
+            "sharpe": result["sharpe"],
+            "max_dd": result["max_drawdown"],
+            "calmar": result["calmar"],
+        },
         "2023": {"return": ret_2023, "max_dd": dd23},
     }
     with open(OUTPUT_DIR / "v52_summary.json", "w") as f:

@@ -156,13 +156,11 @@ class StockState(BaseModel):
 
     def update_tradeability(self) -> StockState:
         """Return a new StockState with updated tradeability flags based on price limits."""
-        can_buy = (
-            self.trading_status == TradingStatus.NORMAL
-            and self.current_price < (self.limit_up_price or float("inf"))
+        can_buy = self.trading_status == TradingStatus.NORMAL and self.current_price < (
+            self.limit_up_price or float("inf")
         )
-        can_sell = (
-            self.trading_status == TradingStatus.NORMAL
-            and self.current_price > (self.limit_down_price or 0)
+        can_sell = self.trading_status == TradingStatus.NORMAL and self.current_price > (
+            self.limit_down_price or 0
         )
 
         return self.model_copy(

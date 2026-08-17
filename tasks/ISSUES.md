@@ -140,10 +140,11 @@
 - [ ] I-FIX-01 require_token 的 config.json 读-改-写竞态 (预存在): 每个鉴权请求
       load→cleanup→save, 与并发 login 的 token 追加存在丢 token 窗口。建议 token
       存储迁出 config.json 或加锁。本次未修 (超出 3a20ac2 范围)。
-- [ ] I-FIX-02 scripts/ 下 exp_* 研究脚本存在大量预存在 lint/format 违规
+- [x] I-FIX-02 scripts/ 下 exp_* 研究脚本存在大量预存在 lint/format 违规
       (ruff format --check 对 live_signal/trade_server/notify 等也会重排,
       属仓库历史存量; CI format 门禁实际未生效)。未在本次修复中整体重排,
-      避免淹没真实 diff; 如需启用 format 门禁应单独做一次性格式化提交。
+      避免淹没真实 diff。已于 2026-08-17 做全仓一次性格式化提交 (157 文件, 纯 format);
+      ruff check 的存量违规仍未处理, 保留本条目跟踪 check 部分。
 - [ ] I-FIX-03 /api/refresh 后 /api/equity 权益曲线末端改用实时注入价 (行为变化,
       方向符合修复意图, 前端口径知悉即可)。
 - [ ] I-FIX-04 trade_server 无请求体大小限制/全局超时; 绑定 127.0.0.1 前提下风险低,

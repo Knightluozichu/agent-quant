@@ -22,9 +22,11 @@ import pandas as pd
 # Time Splitting
 # =============================================================================
 
+
 @dataclass
 class TimeSplit:
     """A time period split for research."""
+
     name: str
     start_date: date
     end_date: date
@@ -92,9 +94,11 @@ class ResearchProtocol:
 # Walk-Forward Validation
 # =============================================================================
 
+
 @dataclass
 class WalkForwardWindow:
     """A single walk-forward window."""
+
     fold: int
     train_start: date
     train_end: date
@@ -140,13 +144,15 @@ class WalkForwardValidator:
             if test_end > end_date:
                 break
 
-            windows.append(WalkForwardWindow(
-                fold=fold,
-                train_start=current_train_start,
-                train_end=train_end,
-                test_start=test_start,
-                test_end=test_end,
-            ))
+            windows.append(
+                WalkForwardWindow(
+                    fold=fold,
+                    train_start=current_train_start,
+                    train_end=train_end,
+                    test_start=test_start,
+                    test_end=test_end,
+                )
+            )
 
             fold += 1
             current_train_start += timedelta(days=self.step_days)
@@ -164,6 +170,7 @@ class WalkForwardValidator:
 # =============================================================================
 # Baseline Strategies
 # =============================================================================
+
 
 class BaselineStrategy:
     """Base class for baseline strategies."""
@@ -265,9 +272,11 @@ class RandomBaseline(BaselineStrategy):
 # Cost Stress Testing
 # =============================================================================
 
+
 @dataclass
 class CostStressResult:
     """Result of cost stress test."""
+
     base_sharpe: float
     stressed_sharpe: float
     sharpe_decay: float
@@ -301,14 +310,18 @@ class CostStressTester:
             stressed_sharpe = self._calculate_sharpe(stressed_returns)
             stressed_total = (1 + stressed_returns).prod() - 1
 
-            results.append(CostStressResult(
-                base_sharpe=base_sharpe,
-                stressed_sharpe=stressed_sharpe,
-                sharpe_decay=(base_sharpe - stressed_sharpe) / base_sharpe if base_sharpe != 0 else 0,
-                base_return=base_total,
-                stressed_return=stressed_total,
-                cost_multiplier=mult,
-            ))
+            results.append(
+                CostStressResult(
+                    base_sharpe=base_sharpe,
+                    stressed_sharpe=stressed_sharpe,
+                    sharpe_decay=(base_sharpe - stressed_sharpe) / base_sharpe
+                    if base_sharpe != 0
+                    else 0,
+                    base_return=base_total,
+                    stressed_return=stressed_total,
+                    cost_multiplier=mult,
+                )
+            )
 
         return results
 
@@ -323,9 +336,11 @@ class CostStressTester:
 # Parameter Perturbation
 # =============================================================================
 
+
 @dataclass
 class PerturbationResult:
     """Result of parameter perturbation test."""
+
     param_name: str
     base_value: float
     perturbed_values: list[float]

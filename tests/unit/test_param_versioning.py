@@ -22,6 +22,7 @@ from a_share_quant.evolution.param_versioning import (
 # Fixtures
 # ----------------------------------------------------------------------
 
+
 @pytest.fixture
 def registry_path(tmp_path):
     """临时注册表路径，测试间互不干扰。"""
@@ -58,6 +59,7 @@ def _valid_metrics(
 # ParamVersion
 # ----------------------------------------------------------------------
 
+
 class TestParamVersion:
     def test_params_hash_stable_regardless_of_key_order(self):
         v1 = ParamVersion(
@@ -81,6 +83,7 @@ class TestParamVersion:
 # ----------------------------------------------------------------------
 # ParamRegistry: register
 # ----------------------------------------------------------------------
+
 
 class TestRegister:
     def test_register_new_challenger(self, registry):
@@ -112,6 +115,7 @@ class TestRegister:
 # ----------------------------------------------------------------------
 # ParamRegistry: promote
 # ----------------------------------------------------------------------
+
 
 class TestPromote:
     def test_promote_challenger_to_champion(self, registry):
@@ -174,7 +178,9 @@ class TestPromote:
         v2 = registry.register(params={"a": 2}, changelog="c2")
         # Sharpe CI 满足，但回撤更差 (-0.20 < -0.10)
         bad_metrics = _valid_metrics(
-            oos_sharpe=2.0, oos_sharpe_ci_lower=1.6, max_drawdown=-0.20,
+            oos_sharpe=2.0,
+            oos_sharpe_ci_lower=1.6,
+            max_drawdown=-0.20,
         )
 
         with pytest.raises(PromotionError) as exc_info:
@@ -220,6 +226,7 @@ class TestPromote:
 # ParamRegistry: rollback
 # ----------------------------------------------------------------------
 
+
 class TestRollback:
     def test_rollback_to_previous_version(self, registry):
         # v1 -> champion, v2 -> champion (v1 archived), rollback to v1
@@ -258,6 +265,7 @@ class TestRollback:
 # ----------------------------------------------------------------------
 # ParamRegistry: persistence
 # ----------------------------------------------------------------------
+
 
 class TestPersistence:
     def test_persistence_to_json_file(self, registry, registry_path):
@@ -300,6 +308,7 @@ class TestPersistence:
 # ShadowTracker
 # ----------------------------------------------------------------------
 
+
 class TestShadowTracker:
     def test_can_promote_false_below_min_samples(self):
         tracker = ShadowTracker(min_trades=30)
@@ -307,31 +316,44 @@ class TestShadowTracker:
         assert not tracker.can_promote()
 
         for i in range(29):
-            tracker.record_trade(ShadowTrade(
-                trade_id=f"t{i}", symbol="510300",
-                entry_date=date(2024, 1, 1), exit_date=date(2024, 1, 5),
-                return_pct=0.01,
-            ))
+            tracker.record_trade(
+                ShadowTrade(
+                    trade_id=f"t{i}",
+                    symbol="510300",
+                    entry_date=date(2024, 1, 1),
+                    exit_date=date(2024, 1, 5),
+                    return_pct=0.01,
+                )
+            )
         assert tracker.n_trades == 29
         assert not tracker.can_promote()
 
     def test_can_promote_true_at_min_samples(self):
         tracker = ShadowTracker(min_trades=30)
         for i in range(30):
-            tracker.record_trade(ShadowTrade(
-                trade_id=f"t{i}", symbol="510300",
-                entry_date=date(2024, 1, 1), exit_date=date(2024, 1, 5),
-                return_pct=0.01,
-            ))
+            tracker.record_trade(
+                ShadowTrade(
+                    trade_id=f"t{i}",
+                    symbol="510300",
+                    entry_date=date(2024, 1, 1),
+                    exit_date=date(2024, 1, 5),
+                    return_pct=0.01,
+                )
+            )
         assert tracker.can_promote()
 
     def test_record_trade_accepts_dict(self):
         tracker = ShadowTracker(min_trades=2)
-        tracker.record_trade({
-            "trade_id": "t1", "symbol": "510300",
-            "entry_date": "2024-01-01", "exit_date": "2024-01-05",
-            "return_pct": 0.02, "pnl": 100.0,
-        })
+        tracker.record_trade(
+            {
+                "trade_id": "t1",
+                "symbol": "510300",
+                "entry_date": "2024-01-01",
+                "exit_date": "2024-01-05",
+                "return_pct": 0.02,
+                "pnl": 100.0,
+            }
+        )
         assert tracker.n_trades == 1
 
     def test_summary_empty(self):
@@ -345,21 +367,33 @@ class TestShadowTracker:
     def test_summary_computes_metrics(self):
         tracker = ShadowTracker(min_trades=3)
         # 2 wins, 1 loss
-        tracker.record_trade(ShadowTrade(
-            trade_id="t1", symbol="510300",
-            entry_date=date(2024, 1, 1), exit_date=date(2024, 1, 5),
-            return_pct=0.05,
-        ))
-        tracker.record_trade(ShadowTrade(
-            trade_id="t2", symbol="510300",
-            entry_date=date(2024, 1, 6), exit_date=date(2024, 1, 10),
-            return_pct=0.03,
-        ))
-        tracker.record_trade(ShadowTrade(
-            trade_id="t3", symbol="510300",
-            entry_date=date(2024, 1, 11), exit_date=date(2024, 1, 15),
-            return_pct=-0.04,
-        ))
+        tracker.record_trade(
+            ShadowTrade(
+                trade_id="t1",
+                symbol="510300",
+                entry_date=date(2024, 1, 1),
+                exit_date=date(2024, 1, 5),
+                return_pct=0.05,
+            )
+        )
+        tracker.record_trade(
+            ShadowTrade(
+                trade_id="t2",
+                symbol="510300",
+                entry_date=date(2024, 1, 6),
+                exit_date=date(2024, 1, 10),
+                return_pct=0.03,
+            )
+        )
+        tracker.record_trade(
+            ShadowTrade(
+                trade_id="t3",
+                symbol="510300",
+                entry_date=date(2024, 1, 11),
+                exit_date=date(2024, 1, 15),
+                return_pct=-0.04,
+            )
+        )
 
         s = tracker.summary()
         assert s["n_trades"] == 3
@@ -376,11 +410,15 @@ class TestShadowTracker:
         tracker = ShadowTracker(min_trades=5)
         registry = ParamRegistry(registry_path=registry_path, min_trades=5)
         for i in range(5):
-            tracker.record_trade(ShadowTrade(
-                trade_id=f"t{i}", symbol="510300",
-                entry_date=date(2024, 1, 1), exit_date=date(2024, 1, 5),
-                return_pct=0.02,
-            ))
+            tracker.record_trade(
+                ShadowTrade(
+                    trade_id=f"t{i}",
+                    symbol="510300",
+                    entry_date=date(2024, 1, 1),
+                    exit_date=date(2024, 1, 5),
+                    return_pct=0.02,
+                )
+            )
         assert tracker.can_promote()
 
         v1 = registry.register(params={"DROP_LOOKBACK": 5}, changelog="init")

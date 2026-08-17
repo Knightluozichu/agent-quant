@@ -61,7 +61,9 @@ def fetch_etf_data():
 
         if cache_file.exists():
             df = pd.read_parquet(cache_file)
-            print(f"  {code} {name}: 缓存 {len(df)}天 ({df['trade_date'].min()} ~ {df['trade_date'].max()})")
+            print(
+                f"  {code} {name}: 缓存 {len(df)}天 ({df['trade_date'].min()} ~ {df['trade_date'].max()})"
+            )
             all_data[code] = df
             continue
 
@@ -116,8 +118,9 @@ def calc_momentum_score(close: np.ndarray) -> float:
     return m20 * 0.4 + m60 * 0.3 + m120 * 0.3
 
 
-def run_qixing_backtest(data: dict, rebalance: int = 20, top_n: int = 1,
-                        initial_capital: float = 100_000.0) -> dict:
+def run_qixing_backtest(
+    data: dict, rebalance: int = 20, top_n: int = 1, initial_capital: float = 100_000.0
+) -> dict:
     """七星动量轮动回测."""
     # 找公共日期范围
     common_dates = None
@@ -174,12 +177,14 @@ def run_qixing_backtest(data: dict, rebalance: int = 20, top_n: int = 1,
         else:
             selected = [DEFENSE_ETF]  # 全部动量<0, 切货币基金
 
-        decision_log.append({
-            "date": str(td),
-            "selected": selected,
-            "scores": {c: round(s, 4) for c, s in sorted_scores[:3]},
-            "all_negative": len(positive) == 0,
-        })
+        decision_log.append(
+            {
+                "date": str(td),
+                "selected": selected,
+                "scores": {c: round(s, 4) for c, s in sorted_scores[:3]},
+                "all_negative": len(positive) == 0,
+            }
+        )
 
         # 交易执行
         equity = cash
@@ -266,10 +271,14 @@ def run_qixing_backtest(data: dict, rebalance: int = 20, top_n: int = 1,
         prev_val = end_val
 
     return {
-        "total_return": total_return, "ann_return": ann_ret,
-        "sharpe": sharpe, "max_drawdown": max_dd,
-        "yearly": yearly, "n_trades": n_trades,
-        "equity_curve": eq_df, "decision_log": decision_log,
+        "total_return": total_return,
+        "ann_return": ann_ret,
+        "sharpe": sharpe,
+        "max_drawdown": max_dd,
+        "yearly": yearly,
+        "n_trades": n_trades,
+        "equity_curve": eq_df,
+        "decision_log": decision_log,
     }
 
 
@@ -284,7 +293,7 @@ def main():
     # 拉取数据
     print(f"\n[1/3] 拉取ETF数据...")
     data = fetch_etf_data()
-    print(f"  成功: {len(data)}/{len(ETF_POOL)+1} 只")
+    print(f"  成功: {len(data)}/{len(ETF_POOL) + 1} 只")
 
     if len(data) < 4:
         print("ERROR: 数据不足")
@@ -319,17 +328,22 @@ def main():
     n_years = len(eq) / (252 / 20)  # 调仓次数→年数
     print(f"  {'-' * 46}")
     print(f"\n  10万 → {final:,.0f} ({total_ret:+.1%})")
-    print(f"  年化: {result['ann_return']:+.1%} | 夏普: {result['sharpe']:.2f} | "
-          f"回撤: {result['max_drawdown']:.1%}")
+    print(
+        f"  年化: {result['ann_return']:+.1%} | 夏普: {result['sharpe']:.2f} | "
+        f"回撤: {result['max_drawdown']:.1%}"
+    )
     print(f"  交易次数: {result['n_trades']}")
 
     # 持仓统计
     decisions = result["decision_log"]
     defense_days = sum(1 for d in decisions if d["all_negative"])
-    print(f"  防御(货币基金)期数: {defense_days}/{len(decisions)} ({defense_days/len(decisions):.0%})")
+    print(
+        f"  防御(货币基金)期数: {defense_days}/{len(decisions)} ({defense_days / len(decisions):.0%})"
+    )
 
     # 各ETF被选中次数
     from collections import Counter
+
     selected_counts = Counter()
     for d in decisions:
         for s in d["selected"]:
@@ -337,7 +351,7 @@ def main():
             selected_counts[name] += 1
     print(f"\n  持仓分布:")
     for name, count in selected_counts.most_common():
-        print(f"    {name:<10} {count}期 ({count/len(decisions):.0%})")
+        print(f"    {name:<10} {count}期 ({count / len(decisions):.0%})")
 
     # 对比基准
     print(f"\n[3/3] 基准对比...")
@@ -348,7 +362,9 @@ def main():
         for year in sorted(eq["year"].unique()):
             ydf = cyb[cyb["trade_date"].apply(lambda x: x.year == year)]
             if len(ydf) >= 2:
-                cyb_years[year] = (ydf["close"].iloc[-1] - ydf["close"].iloc[0]) / ydf["close"].iloc[0]
+                cyb_years[year] = (ydf["close"].iloc[-1] - ydf["close"].iloc[0]) / ydf[
+                    "close"
+                ].iloc[0]
 
     print(f"\n  {'年份':<6} {'七星策略':>8} {'创业板ETF':>9} {'超额':>8}")
     print(f"  {'-' * 34}")

@@ -12,6 +12,7 @@
 用法: uv run python scripts/exp_overfit_permutation.py [seeds=8]
 输出: data/v9_results/overfit_permutation.json
 """
+
 from __future__ import annotations
 
 import json
@@ -53,6 +54,7 @@ def make_random_gated(seed: int, p_pass: float = P_PASS):
         if len(close) <= 61:
             return True
         return rng.random() < p_pass
+
     return gated
 
 
@@ -90,15 +92,19 @@ def main() -> None:
     for seed in range(N_SEEDS):
         rep_r = run_variant(data, make_random_gated(seed), exempt=True, h3on=True)
         rand_finals.append(rep_r["final_value"])
-        print(f"  随机种子 {seed:>2}: 期末 {rep_r['final_value']:>12,.0f} "
-              f"({rep_r['final_value'] / base_final - 1:+.1%} vs 基线)")
+        print(
+            f"  随机种子 {seed:>2}: 期末 {rep_r['final_value']:>12,.0f} "
+            f"({rep_r['final_value'] / base_final - 1:+.1%} vs 基线)"
+        )
 
     arr = np.array(rand_finals)
     pct_rank = (arr < real_final).mean() * 100
     print("\n" + "=" * 76)
     print("  判定:")
-    print(f"    随机分布: 中位数 {np.median(arr):,.0f} | "
-          f"P10 {np.percentile(arr, 10):,.0f} | P90 {np.percentile(arr, 90):,.0f}")
+    print(
+        f"    随机分布: 中位数 {np.median(arr):,.0f} | "
+        f"P10 {np.percentile(arr, 10):,.0f} | P90 {np.percentile(arr, 90):,.0f}"
+    )
     print(f"    真实机制期末 {real_final:,.0f} 位于随机分布 {pct_rank:.0f}% 分位")
     if pct_rank >= 95:
         verdict = "✅ ret60门控有统计显著信息 (真实 > 95%随机)"
@@ -109,12 +115,14 @@ def main() -> None:
     print(f"    {verdict}")
 
     result = {
-        "real_final": real_final, "base_final": base_final,
+        "real_final": real_final,
+        "base_final": base_final,
         "random_finals": [round(v, 0) for v in rand_finals],
         "random_median": round(float(np.median(arr)), 0),
         "real_percentile": round(float(pct_rank), 1),
         "verdict": verdict,
-        "n_seeds": N_SEEDS, "p_pass": P_PASS,
+        "n_seeds": N_SEEDS,
+        "p_pass": P_PASS,
     }
     out = OUTPUT_DIR / "overfit_permutation.json"
     out.write_text(json.dumps(result, indent=2, ensure_ascii=False))

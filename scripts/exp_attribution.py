@@ -3,6 +3,7 @@
 用法: uv run python scripts/exp_attribution.py [年份]   (默认2023)
 输出: 该年调仓轨迹 + 持仓切换 + 月度收益 + 最痛的几笔, 定位亏损根源。
 """
+
 from __future__ import annotations
 
 import sys
@@ -32,7 +33,7 @@ def analyze(year: int) -> None:
     y["ret"] = y["equity"].pct_change() * 100
 
     print("=" * 64)
-    print(f"  V3 归因分析 · {year}年 (全年收益 {res['yearly'][year]['return']*100:+.1f}%)")
+    print(f"  V3 归因分析 · {year}年 (全年收益 {res['yearly'][year]['return'] * 100:+.1f}%)")
     print("=" * 64)
 
     # 1. 持仓切换轨迹
@@ -62,8 +63,10 @@ def analyze(year: int) -> None:
     worst = y.dropna(subset=["ret"]).nsmallest(3, "ret")
     print(f"\n  【{year}年 最痛的3个调仓段】")
     for _, r in worst.iterrows():
-        print(f"    {r['trade_date'].date()} 持{NAMES.get(r['holding'], r['holding'])} "
-              f"单期 {r['ret']:+.1f}%")
+        print(
+            f"    {r['trade_date'].date()} 持{NAMES.get(r['holding'], r['holding'])} "
+            f"单期 {r['ret']:+.1f}%"
+        )
 
     # 4. 各资产持有贡献
     print(f"\n  【{year}年 各资产持有期贡献】")

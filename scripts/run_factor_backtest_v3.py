@@ -61,8 +61,9 @@ def run_v3_backtest(
 
     # Tradable universe (exclude index and defensive assets from factor scoring)
     defensive_set = set(cfg.defensive_symbols)
-    tradable = {k: v for k, v in data.items()
-                if not k.startswith("idx_") and k not in defensive_set}
+    tradable = {
+        k: v for k, v in data.items() if not k.startswith("idx_") and k not in defensive_set
+    }
 
     all_dates = sorted(index_df["trade_date"].tolist())
     warmup = cfg.trend_slow + 10
@@ -103,14 +104,16 @@ def run_v3_backtest(
         signal = portfolio.generate_signal(tradable, td, regime.state_id, equity, index_symbol)
 
         if signal:
-            rebalance_log.append({
-                "date": td,
-                "holdings": signal.target_holdings,
-                "regime": signal.regime_state,
-                "position_scale": signal.position_scale,
-                "crashed": signal.crashed_symbols,
-                "weights": signal.weights,
-            })
+            rebalance_log.append(
+                {
+                    "date": td,
+                    "holdings": signal.target_holdings,
+                    "regime": signal.regime_state,
+                    "position_scale": signal.position_scale,
+                    "crashed": signal.crashed_symbols,
+                    "weights": signal.weights,
+                }
+            )
 
             # Sell positions not in target
             for sym in list(holdings.keys()):
@@ -126,7 +129,8 @@ def run_v3_backtest(
             # Buy target positions with risk parity weights
             total_equity = cash + sum(
                 holdings.get(s, 0) * data[s][data[s]["trade_date"] == td].iloc[0]["close"]
-                for s in holdings if s in data and not data[s][data[s]["trade_date"] == td].empty
+                for s in holdings
+                if s in data and not data[s][data[s]["trade_date"] == td].empty
             )
 
             for sym, weight in signal.weights.items():
@@ -202,8 +206,9 @@ def run_walk_forward_v3(data: dict[str, pd.DataFrame], index_symbol: str) -> lis
         equity_history = []
 
         defensive_set = set(cfg.defensive_symbols)
-        tradable = {k: v for k, v in data.items()
-                    if not k.startswith("idx_") and k not in defensive_set}
+        tradable = {
+            k: v for k, v in data.items() if not k.startswith("idx_") and k not in defensive_set
+        }
 
         index_df = data[index_symbol]
         test_dates = [d for d in all_dates if test_start <= d <= test_end]
@@ -239,7 +244,8 @@ def run_walk_forward_v3(data: dict[str, pd.DataFrame], index_symbol: str) -> lis
 
                 total_eq = cash + sum(
                     holdings.get(s, 0) * data[s][data[s]["trade_date"] == td].iloc[0]["close"]
-                    for s in holdings if s in data and not data[s][data[s]["trade_date"] == td].empty
+                    for s in holdings
+                    if s in data and not data[s][data[s]["trade_date"] == td].empty
                 )
                 for sym, weight in signal.weights.items():
                     if sym not in holdings and sym in data:
@@ -285,16 +291,18 @@ def run_walk_forward_v3(data: dict[str, pd.DataFrame], index_symbol: str) -> lis
 
         bench_return = (bench_end_row.iloc[0]["close"] / bench_start_row.iloc[0]["close"]) - 1
 
-        results.append({
-            "window_id": window_id,
-            "test_start": test_dates[0],
-            "test_end": test_dates[-1],
-            "test_return": test_return,
-            "benchmark_return": bench_return,
-            "excess_return": test_return - bench_return,
-            "max_drawdown": max_dd,
-            "n_trades": 0,
-        })
+        results.append(
+            {
+                "window_id": window_id,
+                "test_start": test_dates[0],
+                "test_end": test_dates[-1],
+                "test_return": test_return,
+                "benchmark_return": bench_return,
+                "excess_return": test_return - bench_return,
+                "max_drawdown": max_dd,
+                "n_trades": 0,
+            }
+        )
 
         start += step_days
         window_id += 1
@@ -400,8 +408,14 @@ def print_report(result: dict, wf_results: list, flywheel_status: dict, data: di
     warmup = 70
     bench_start = bench_df[bench_df["trade_date"] == all_dates[warmup]]
     bench_end = bench_df[bench_df["trade_date"] == all_dates[-1]]
-    bench_return = (bench_end.iloc[0]["close"] / bench_start.iloc[0]["close"]) - 1 if not bench_start.empty else 0
-    bench_annual = (1 + bench_return) ** (252 / (len(all_dates) - warmup)) - 1 if bench_return > -1 else 0
+    bench_return = (
+        (bench_end.iloc[0]["close"] / bench_start.iloc[0]["close"]) - 1
+        if not bench_start.empty
+        else 0
+    )
+    bench_annual = (
+        (1 + bench_return) ** (252 / (len(all_dates) - warmup)) - 1 if bench_return > -1 else 0
+    )
 
     crash_sells = [t for t in trades if t["action"] == "CRASH_SELL"]
 
@@ -438,9 +452,11 @@ def print_report(result: dict, wf_results: list, flywheel_status: dict, data: di
         wins = 0
         for r in wf_results:
             test_period = f"{r['test_start']} ~ {r['test_end']}"
-            print(f"  {r['window_id']:<3} {test_period:<27} "
-                  f"{r['test_return']:>7.2%} {r['benchmark_return']:>7.2%} "
-                  f"{r['excess_return']:>+7.2%} {r['max_drawdown']:>7.2%}")
+            print(
+                f"  {r['window_id']:<3} {test_period:<27} "
+                f"{r['test_return']:>7.2%} {r['benchmark_return']:>7.2%} "
+                f"{r['excess_return']:>+7.2%} {r['max_drawdown']:>7.2%}"
+            )
             total_excess += r["excess_return"]
             if r["excess_return"] > 0:
                 wins += 1
@@ -477,7 +493,9 @@ def print_report(result: dict, wf_results: list, flywheel_status: dict, data: di
     for rb in rebalances[-5:]:
         holdings_str = ", ".join(rb["holdings"][:4]) if rb["holdings"] else "现金"
         crashed_str = f" | 崩溃换出: {rb['crashed']}" if rb["crashed"] else ""
-        print(f"  {rb['date']} [{rb['regime']}] 仓位{rb['position_scale']:.0%} → {holdings_str}{crashed_str}")
+        print(
+            f"  {rb['date']} [{rb['regime']}] 仓位{rb['position_scale']:.0%} → {holdings_str}{crashed_str}"
+        )
 
     print(f"\n{'=' * 70}\n")
 

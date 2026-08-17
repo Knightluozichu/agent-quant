@@ -4,6 +4,7 @@
 测试'精准逃离'(只逃真跌)能否转化为真实收益优势。
 用法: uv run python scripts/exp_trend_escape.py
 """
+
 from __future__ import annotations
 
 import sys
@@ -22,8 +23,9 @@ FEE = 0.0005
 SLIPPAGE = 0.001
 
 
-def escape_trigger(data: dict, code: str, td, drop_thr: float,
-                   ret60_thr: float, vol_filter: str | None) -> bool:
+def escape_trigger(
+    data: dict, code: str, td, drop_thr: float, ret60_thr: float, vol_filter: str | None
+) -> bool:
     df = data[code]
     idx = int((df["trade_date"] <= td).sum())
     if idx < 61:
@@ -44,9 +46,15 @@ def escape_trigger(data: dict, code: str, td, drop_thr: float,
     return True
 
 
-def backtest_trend_escape(data: dict, drop_thr: float, ret60_thr: float,
-                          vol_filter: str | None = None, initial: float = 100000,
-                          rebalance_days: int = 5, horizon: int = 5) -> dict:
+def backtest_trend_escape(
+    data: dict,
+    drop_thr: float,
+    ret60_thr: float,
+    vol_filter: str | None = None,
+    initial: float = 100000,
+    rebalance_days: int = 5,
+    horizon: int = 5,
+) -> dict:
     dates = get_common_dates(data)[WARMUP:]
     rebalance_set = set(dates[::rebalance_days])
     date_idx = {d: i for i, d in enumerate(dates)}
@@ -78,9 +86,13 @@ def backtest_trend_escape(data: dict, drop_thr: float, ret60_thr: float,
                             holding = target
                             shares = sh
                             ntr += 1
-        if (holding and holding in data and holding != rq.DEFENSE
-                and td not in rebalance_set
-                and escape_trigger(data, holding, td, drop_thr, ret60_thr, vol_filter)):
+        if (
+            holding
+            and holding in data
+            and holding != rq.DEFENSE
+            and td not in rebalance_set
+            and escape_trigger(data, holding, td, drop_thr, ret60_thr, vol_filter)
+        ):
             p = price_on(data, holding, td)
             if p:
                 i = date_idx[td]
@@ -111,8 +123,14 @@ def backtest_trend_escape(data: dict, drop_thr: float, ret60_thr: float,
     mdd = float(((eqdf["equity"] - cm) / cm).min())
     fwd = np.array(fwd_after) if fwd_after else np.array([])
     acc = float((fwd < 0).mean() * 100) if len(fwd) else 0.0
-    return {"final": (1 + tr) * 10, "ann": ann * 100, "sharpe": sharpe,
-            "mdd": mdd * 100, "n_esc": n_esc, "acc": acc}
+    return {
+        "final": (1 + tr) * 10,
+        "ann": ann * 100,
+        "sharpe": sharpe,
+        "mdd": mdd * 100,
+        "n_esc": n_esc,
+        "acc": acc,
+    }
 
 
 def main() -> None:
@@ -137,9 +155,11 @@ def main() -> None:
         else:
             r = backtest_trend_escape(data, dt, rt, vf)
         final_s = f"{r['final']:.1f}万"
-        acc_s = f"{r['acc']:.0f}%" if r['n_esc'] else "-"
-        print(f"  {name:<22}{final_s:>10}{r['ann']:>+8.1f}%"
-              f"{r['sharpe']:>8.2f}{r['mdd']:>8.1f}%{r['n_esc']:>8}{acc_s:>9}")
+        acc_s = f"{r['acc']:.0f}%" if r["n_esc"] else "-"
+        print(
+            f"  {name:<22}{final_s:>10}{r['ann']:>+8.1f}%"
+            f"{r['sharpe']:>8.2f}{r['mdd']:>8.1f}%{r['n_esc']:>8}{acc_s:>9}"
+        )
     print("=" * 80)
     print("  判读: 若'趋势逃离'既提高逃对率(>55%)又提升全周期收益/夏普 → 真有价值;")
     print("        若逃对率高但收益没提升 → 理论有用但实战不赚钱(手续费/踏空抵消)。")

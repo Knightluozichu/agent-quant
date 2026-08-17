@@ -241,6 +241,7 @@ def backtest_run(
             pos_info = None
             if symbol in positions:
                 from a_share_quant.strategies import PositionInfo
+
                 pos = positions[symbol]
                 pos_info = PositionInfo(
                     symbol=symbol,
@@ -260,34 +261,40 @@ def backtest_run(
                 quantity = int(capital * 0.1 / signal.entry_price)
                 quantity = (quantity // 100) * 100
                 if quantity > 0:
-                    orders.append(OrderEvent(
-                        trade_date=trade_date,
-                        symbol=symbol,
-                        side="BUY",
-                        quantity=quantity,
-                        strategy_name=strategy,
-                    ))
+                    orders.append(
+                        OrderEvent(
+                            trade_date=trade_date,
+                            symbol=symbol,
+                            side="BUY",
+                            quantity=quantity,
+                            strategy_name=strategy,
+                        )
+                    )
 
             elif signal and signal.action == "SELL" and pos_info:
-                orders.append(OrderEvent(
-                    trade_date=trade_date,
-                    symbol=symbol,
-                    side="SELL",
-                    quantity=pos_info.sellable,
-                    strategy_name=strategy,
-                ))
-
-            # Check exit conditions
-            if pos_info:
-                should_exit, reason = strat.should_exit(pos_info, df, regime, trade_date)
-                if should_exit and pos_info.sellable > 0:
-                    orders.append(OrderEvent(
+                orders.append(
+                    OrderEvent(
                         trade_date=trade_date,
                         symbol=symbol,
                         side="SELL",
                         quantity=pos_info.sellable,
                         strategy_name=strategy,
-                    ))
+                    )
+                )
+
+            # Check exit conditions
+            if pos_info:
+                should_exit, reason = strat.should_exit(pos_info, df, regime, trade_date)
+                if should_exit and pos_info.sellable > 0:
+                    orders.append(
+                        OrderEvent(
+                            trade_date=trade_date,
+                            symbol=symbol,
+                            side="SELL",
+                            quantity=pos_info.sellable,
+                            strategy_name=strategy,
+                        )
+                    )
 
         return orders
 
@@ -317,7 +324,9 @@ def backtest_run(
 
     # Final equity
     final_equity = result.equity_curve.iloc[-1] if len(result.equity_curve) > 0 else capital
-    console.print(f"\n[bold]期末资金:[/bold] {final_equity:,.0f} ({(final_equity/capital - 1):.2%})")
+    console.print(
+        f"\n[bold]期末资金:[/bold] {final_equity:,.0f} ({(final_equity / capital - 1):.2%})"
+    )
 
 
 @strategy_app.command("list")
@@ -374,6 +383,7 @@ def data_test(
 
     if provider == "mock":
         from a_share_quant.data.providers.mock import MockProvider
+
         p = MockProvider()
         console.print("  [green]✓[/green] MockProvider 初始化成功")
 
@@ -388,6 +398,7 @@ def data_test(
     elif provider == "joinquant":
         try:
             from a_share_quant.data.providers.joinquant import JoinQuantProvider
+
             p = JoinQuantProvider()
             console.print("  认证中...")
             p._ensure_auth()

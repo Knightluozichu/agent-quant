@@ -34,15 +34,19 @@ class BacktestReport:
 
     def to_json(self) -> str:
         """Export report as JSON."""
-        return json.dumps({
-            "run_id": self.run_id,
-            "timestamp": self.timestamp.isoformat(),
-            "config": self.config,
-            "metrics": self.metrics,
-            "trades": self.trades,
-            "equity_curve": self.equity_curve,
-            "metadata": self.metadata,
-        }, indent=2, ensure_ascii=False)
+        return json.dumps(
+            {
+                "run_id": self.run_id,
+                "timestamp": self.timestamp.isoformat(),
+                "config": self.config,
+                "metrics": self.metrics,
+                "trades": self.trades,
+                "equity_curve": self.equity_curve,
+                "metadata": self.metadata,
+            },
+            indent=2,
+            ensure_ascii=False,
+        )
 
     def to_dict(self) -> dict:
         """Export report as dictionary."""
@@ -76,10 +80,12 @@ class ReportGenerator:
         # Convert equity curve to list of dicts
         equity_data = []
         for dt, value in result.equity_curve.items():
-            equity_data.append({
-                "date": dt.isoformat() if hasattr(dt, "isoformat") else str(dt),
-                "equity": float(value),
-            })
+            equity_data.append(
+                {
+                    "date": dt.isoformat() if hasattr(dt, "isoformat") else str(dt),
+                    "equity": float(value),
+                }
+            )
 
         report = BacktestReport(
             run_id=run_id,
@@ -96,7 +102,9 @@ class ReportGenerator:
             equity_curve=equity_data,
             metadata={
                 "total_trading_days": len(result.equity_curve),
-                "final_equity": float(result.equity_curve.iloc[-1]) if len(result.equity_curve) > 0 else 0,
+                "final_equity": float(result.equity_curve.iloc[-1])
+                if len(result.equity_curve) > 0
+                else 0,
             },
         )
 

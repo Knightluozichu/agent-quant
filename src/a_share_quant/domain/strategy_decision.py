@@ -125,8 +125,7 @@ class StrategyDecision(BaseModel):
     def should_trade(self) -> bool:
         """Check if a trade should be made."""
         return (
-            self.winning_strategy is not None
-            and self.winning_strategy != StrategyId.CASH_DEFENSE
+            self.winning_strategy is not None and self.winning_strategy != StrategyId.CASH_DEFENSE
         )
 
     @property

@@ -169,8 +169,12 @@ def streak_analysis_v2(dr: np.ndarray) -> dict:
 # --------------------------------------------------------------------------- #
 def big_move_analysis(close: np.ndarray, dr: np.ndarray) -> dict:
     out = {}
-    for label, thr in (("up3", BIG_MOVE), ("down3", -BIG_MOVE),
-                       ("up5", EXTREME_MOVE), ("down5", -EXTREME_MOVE)):
+    for label, thr in (
+        ("up3", BIG_MOVE),
+        ("down3", -BIG_MOVE),
+        ("up5", EXTREME_MOVE),
+        ("down5", -EXTREME_MOVE),
+    ):
         ev = {}
         for h in (1, 3, 5):
             fwd = []
@@ -207,8 +211,8 @@ def quintile_analysis(close: np.ndarray) -> dict:
         entry = {}
         for h in (3, 5, 10):
             # 未来 h 日收益 (动量结束后才开始): fwd[t] = close[t+mom_w+h]/close[t+mom_w]-1
-            fwd = close[mom_w + h:] / close[mom_w:-h] - 1.0
-            m = mom[:len(fwd)]
+            fwd = close[mom_w + h :] / close[mom_w:-h] - 1.0
+            m = mom[: len(fwd)]
             qs = pd.qcut(m, 5, labels=False, duplicates="drop")
             groups = {}
             for g in range(5):
@@ -252,10 +256,14 @@ def category_rotation(close_mat: dict, dates: list) -> dict:
         ranks = sorted(cat_r5, key=lambda k: -cat_r5[k][t])
         best_cat = ranks[0]
         worst_cat = ranks[-1]
-        persist.append({
-            "best_cat": best_cat, "best_next": float(cat_r5[best_cat][t2]),
-            "worst_cat": worst_cat, "worst_next": float(cat_r5[worst_cat][t2]),
-        })
+        persist.append(
+            {
+                "best_cat": best_cat,
+                "best_next": float(cat_r5[best_cat][t2]),
+                "worst_cat": worst_cat,
+                "worst_next": float(cat_r5[worst_cat][t2]),
+            }
+        )
     dfp = pd.DataFrame(persist)
     best_next = dfp["best_next"].values
     worst_next = dfp["worst_next"].values
@@ -296,9 +304,7 @@ def category_rotation(close_mat: dict, dates: list) -> dict:
             "mean_fwd_spread": round(float(low_fwd.mean()), 6),
             "mean_fwd_diff_from_all": round(float(low_fwd.mean() - spread.mean()), 6),
         },
-        "per_cat_best_freq": {
-            k: round(float((dfp["best_cat"] == k).mean()), 4) for k in cat_names
-        },
+        "per_cat_best_freq": {k: round(float((dfp["best_cat"] == k).mean()), 4) for k in cat_names},
     }
 
 
@@ -308,19 +314,19 @@ def category_rotation(close_mat: dict, dates: list) -> dict:
 def precursor_analysis(close_mat: dict) -> dict:
     """事件前5日特征 vs 全样本: 前期涨跌/连涨天数/20日波动/距20日高点."""
     feats = {
-        "prev5_ret": [],      # 前5日累计
-        "up_streak": [],      # 事件前连涨天数
-        "vol20": [],          # 20日年化波动
-        "dist_high20": [],    # 距20日高点 (0=最高)
-        "dist_low20": [],     # 距20日低点
-        "label": [],          # 1=暴涨>3%, -1=暴跌<-3%, 0=普通日
+        "prev5_ret": [],  # 前5日累计
+        "up_streak": [],  # 事件前连涨天数
+        "vol20": [],  # 20日年化波动
+        "dist_high20": [],  # 距20日高点 (0=最高)
+        "dist_low20": [],  # 距20日低点
+        "label": [],  # 1=暴涨>3%, -1=暴跌<-3%, 0=普通日
     }
     for close in close_mat.values():
         dr = daily_rets(close)
         for t in range(21, len(dr)):
             r5 = close[t] / close[t - 5] - 1.0
-            vol = np.std(dr[t - 20:t]) * np.sqrt(252)
-            win20 = close[t - 20:t + 1]
+            vol = np.std(dr[t - 20 : t]) * np.sqrt(252)
+            win20 = close[t - 20 : t + 1]
             dist_high = close[t] / win20.max() - 1.0
             dist_low = close[t] / win20.min() - 1.0
             up_streak = 0
@@ -379,11 +385,11 @@ def vol_analysis(close_mat: dict) -> dict:
         dr = daily_rets(close)
         vols = []
         for t in range(20, len(dr)):
-            vols.append(np.std(dr[t - 20:t]) * np.sqrt(252))
+            vols.append(np.std(dr[t - 20 : t]) * np.sqrt(252))
         vols = np.array(vols)
         out["per_asset"][code] = stats_of(vols)
         for t in range(20, len(dr) - 5):
-            v = np.std(dr[t - 20:t]) * np.sqrt(252)
+            v = np.std(dr[t - 20 : t]) * np.sqrt(252)
             fwd = close[t + 5] / close[t] - 1.0
             all_vol.append(v)
             all_fwd.append(fwd)
@@ -418,7 +424,7 @@ def rule_validation(close_mat: dict) -> dict:
     for close in close_mat.values():
         dr = daily_rets(close)
         for t in range(5, len(dr) - 5):
-            recent = dr[t - 5:t]
+            recent = dr[t - 5 : t]
             fwd = close[t + 5] / close[t] - 1.0
             if (recent < -BIG_MOVE).any():
                 f_drop.append(fwd)
@@ -434,9 +440,9 @@ def rule_validation(close_mat: dict) -> dict:
     #     高估了 mom_sign 判别力; 现改为动量形成期结束后才开始持有.
     f_pos, f_neg = [], []
     for close in close_mat.values():
-        m10 = window_ret(close, 10)          # m10[t] = close[t+10]/close[t]-1
-        fwd = close[10 + 5:] / close[10:-5] - 1.0  # 持有 [t+10, t+15], 与动量期无重叠
-        m = m10[:len(fwd)]
+        m10 = window_ret(close, 10)  # m10[t] = close[t+10]/close[t]-1
+        fwd = close[10 + 5 :] / close[10:-5] - 1.0  # 持有 [t+10, t+15], 与动量期无重叠
+        m = m10[: len(fwd)]
         f_pos.append(fwd[m > 0])
         f_neg.append(fwd[m <= 0])
     f_pos = np.concatenate(f_pos) if f_pos else np.array([])
@@ -445,7 +451,7 @@ def rule_validation(close_mat: dict) -> dict:
         "mom_pos_fwd5": stats_of(f_pos) if len(f_pos) else {},
         "mom_neg_fwd5": stats_of(f_neg) if len(f_neg) else {},
         "diff_mean": round(float(f_pos.mean() - f_neg.mean()), 6),
-        "note": "严格无重叠口径 (动量期结束后持有5日), 原重叠口径差+3.09pp为终点偏差"
+        "note": "严格无重叠口径 (动量期结束后持有5日), 原重叠口径差+3.09pp为终点偏差",
     }
     return out
 
@@ -467,12 +473,14 @@ def main() -> None:
     # 移除防御资产(不参与动量统计), 但保留在矩阵中供对比
     risk = {c: mat[c] for c in ETF_POOL}
 
-    result: dict = {"meta": {
-        "period": f"{dates[0]} ~ {dates[-1]}",
-        "n_days": len(dates),
-        "pool": ETF_POOL,
-        "categories": CATEGORIES,
-    }}
+    result: dict = {
+        "meta": {
+            "period": f"{dates[0]} ~ {dates[-1]}",
+            "n_days": len(dates),
+            "pool": ETF_POOL,
+            "categories": CATEGORIES,
+        }
+    }
 
     # 1. 窗口收益分布
     print("\n[1/8] 窗口收益分布...")
@@ -480,9 +488,7 @@ def main() -> None:
 
     # 2. 涨跌持续性
     print("[2/8] 涨跌持续性 (连涨/连跌)...")
-    result["streak"] = {
-        c: streak_analysis_v2(daily_rets(close)) for c, close in risk.items()
-    }
+    result["streak"] = {c: streak_analysis_v2(daily_rets(close)) for c, close in risk.items()}
 
     # 3. 大涨/大跌事件
     print("[3/8] 大涨/大跌事件后表现...")
@@ -522,15 +528,19 @@ def main() -> None:
     print("\n  [窗口收益 5日正收益概率]")
     for c, st in result["window_stats"].items():
         r5 = st.get("r5", {})
-        print(f"    {ETF_POOL[c]:<8} pct_pos={r5.get('pct_pos', 0):.1%}  "
-              f"mean={r5.get('mean', 0):+.2%}  median={r5.get('median', 0):+.2%}")
+        print(
+            f"    {ETF_POOL[c]:<8} pct_pos={r5.get('pct_pos', 0):.1%}  "
+            f"mean={r5.get('mean', 0):+.2%}  median={r5.get('median', 0):+.2%}"
+        )
 
     print("\n  [涨跌持续性] 连涨3天后次日续涨概率 vs 连跌3天后次日续跌概率")
     for c, st in result["streak"].items():
         up3 = st["up"].get("len3", {}).get("continue_pct")
         dn3 = st["down"].get("len3", {}).get("continue_pct")
-        print(f"    {ETF_POOL[c]:<8} 连涨3续 {up3 if up3 is None else f'{up3:.1%}':>6}  "
-              f"连跌3续 {dn3 if dn3 is None else f'{dn3:.1%}':>6}")
+        print(
+            f"    {ETF_POOL[c]:<8} 连涨3续 {up3 if up3 is None else f'{up3:.1%}':>6}  "
+            f"连跌3续 {dn3 if dn3 is None else f'{dn3:.1%}':>6}"
+        )
 
     print("\n  [动量分位] R3最强组(Q5) vs 最弱组(Q1) 未来5日收益 (持续性检验)")
     for c, qt in result["quintile"].items():
@@ -538,36 +548,48 @@ def main() -> None:
         q1, q5 = g.get("q1", {}), g.get("q5", {})
         if q1 and q5:
             diff = q5.get("fwd_mean", 0) - q1.get("fwd_mean", 0)
-            print(f"    {ETF_POOL[c]:<8} Q5={q5.get('fwd_mean', 0):+.2%}  "
-                  f"Q1={q1.get('fwd_mean', 0):+.2%}  差值={diff:+.2%}")
+            print(
+                f"    {ETF_POOL[c]:<8} Q5={q5.get('fwd_mean', 0):+.2%}  "
+                f"Q1={q1.get('fwd_mean', 0):+.2%}  差值={diff:+.2%}"
+            )
 
     print("\n  [类别轮动] 最强类别下周收益 vs 最弱类别")
     cat = result["category"]
-    print(f"    最强类别下周: mean={cat['best_cat_next_5d'].get('mean', 0):+.2%} "
-          f"win={cat['best_cat_next_5d'].get('win_rate', 0):.1%}")
+    print(
+        f"    最强类别下周: mean={cat['best_cat_next_5d'].get('mean', 0):+.2%} "
+        f"win={cat['best_cat_next_5d'].get('win_rate', 0):.1%}"
+    )
     print(f"    最弱类别下周: mean={cat['worst_cat_next_5d'].get('mean', 0):+.2%}")
-    print(f"    强弱差: mean={cat['best_minus_worst_next_5d'].get('mean', 0):+.2%} "
-          f"win={cat['best_minus_worst_next_5d'].get('win_rate', 0):.1%}")
+    print(
+        f"    强弱差: mean={cat['best_minus_worst_next_5d'].get('mean', 0):+.2%} "
+        f"win={cat['best_minus_worst_next_5d'].get('win_rate', 0):.1%}"
+    )
 
     print("\n  [暴涨/暴跌前兆] (池级合并)")
     pre = result["precursor"]
     for k, name in (("up3", "暴涨>3%"), ("down3", "暴跌<-3%"), ("normal", "普通日")):
         p = pre[k]
         if "after5d_mean" in p:
-            print(f"    {name}: n={p['n']:>6}  前5日={p['prev5_ret_mean']:+.2%}  "
-                  f"连涨={p['up_streak_mean']:.2f}天  vol20={p['vol20_mean']:.0%}  "
-                  f"距高={p['dist_high20_mean']:+.1%}  后5日={p['after5d_mean']:+.2%}")
+            print(
+                f"    {name}: n={p['n']:>6}  前5日={p['prev5_ret_mean']:+.2%}  "
+                f"连涨={p['up_streak_mean']:.2f}天  vol20={p['vol20_mean']:.0%}  "
+                f"距高={p['dist_high20_mean']:+.1%}  后5日={p['after5d_mean']:+.2%}"
+            )
         else:
             print(f"    {name}: n={p['n']:>6}  前5日={p['prev5_ret_mean']:+.2%}")
 
     print("\n  [规则验证]")
     rv = result["rule_validation"]
     df_ = rv["drop_filter"]
-    print(f"    暴跌过滤: 干净池后5日 {df_['clean_fwd5'].get('mean', 0):+.2%} vs "
-          f"暴跌池 {df_['dropped_fwd5'].get('mean', 0):+.2%} (差 {df_['diff_mean']:+.2%})")
+    print(
+        f"    暴跌过滤: 干净池后5日 {df_['clean_fwd5'].get('mean', 0):+.2%} vs "
+        f"暴跌池 {df_['dropped_fwd5'].get('mean', 0):+.2%} (差 {df_['diff_mean']:+.2%})"
+    )
     ms = rv["mom_sign"]
-    print(f"    动量符号: 动量>0后5日 {ms['mom_pos_fwd5'].get('mean', 0):+.2%} vs "
-          f"动量<0 {ms['mom_neg_fwd5'].get('mean', 0):+.2%} (差 {ms['diff_mean']:+.2%})")
+    print(
+        f"    动量符号: 动量>0后5日 {ms['mom_pos_fwd5'].get('mean', 0):+.2%} vs "
+        f"动量<0 {ms['mom_neg_fwd5'].get('mean', 0):+.2%} (差 {ms['diff_mean']:+.2%})"
+    )
 
     print("\n  完成.")
 

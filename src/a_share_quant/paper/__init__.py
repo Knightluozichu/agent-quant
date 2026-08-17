@@ -25,6 +25,7 @@ from a_share_quant.rules import CashAccount, PositionLedger, FeeCalculator
 # Paper Orders
 # =============================================================================
 
+
 @dataclass
 class PaperOrder:
     """A paper trading order."""
@@ -66,6 +67,7 @@ class PaperOrder:
 # =============================================================================
 # Paper Broker
 # =============================================================================
+
 
 class PaperBroker:
     """Simulated broker for paper trading.
@@ -209,9 +211,7 @@ class PaperBroker:
                     continue
 
                 self._account.apply_trade(amount, costs["total"], "BUY", trade_date)
-                self._positions.add_position(
-                    order.symbol, order.quantity, fill_price, trade_date
-                )
+                self._positions.add_position(order.symbol, order.quantity, fill_price, trade_date)
             else:  # SELL
                 costs = self._fee_calc.calculate_sell_cost(amount, trade_date)
                 self._positions.reduce_position(order.symbol, order.quantity, trade_date)
@@ -295,6 +295,7 @@ class PaperBroker:
 
             # Restore positions
             from a_share_quant.rules import PositionLot
+
             for symbol, lots_data in state.get("positions", {}).items():
                 self._positions.positions[symbol] = [
                     PositionLot(
@@ -313,6 +314,7 @@ class PaperBroker:
 # =============================================================================
 # Daily Scheduler
 # =============================================================================
+
 
 @dataclass
 class DailySignal:
@@ -370,12 +372,14 @@ class DailyScheduler:
         filled = self._broker.execute_pending_orders(market_data, trade_date)
 
         # Log execution
-        self._execution_log.append({
-            "date": trade_date.isoformat(),
-            "signals": len(self._pending_signals),
-            "orders": len(orders),
-            "filled": len(filled),
-        })
+        self._execution_log.append(
+            {
+                "date": trade_date.isoformat(),
+                "signals": len(self._pending_signals),
+                "orders": len(orders),
+                "filled": len(filled),
+            }
+        )
 
         self._pending_signals = []
         return filled

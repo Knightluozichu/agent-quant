@@ -63,10 +63,15 @@ RF_LEAVES = (25, 50, 100)
 # 日频动态层回测引擎
 # --------------------------------------------------------------------------- #
 def run_v3_daily(
-    data: dict, dates: list, mat: dict,
-    start_idx: int, end_idx: int,
-    dn_map: dict, up_map: dict,
-    guard_thr: float | None, boost_thr: float | None,
+    data: dict,
+    dates: list,
+    mat: dict,
+    start_idx: int,
+    end_idx: int,
+    dn_map: dict,
+    up_map: dict,
+    guard_thr: float | None,
+    boost_thr: float | None,
 ) -> dict:
     """日频 guard/boost 动态层 + 周频 V3 引擎.
 
@@ -109,8 +114,16 @@ def run_v3_daily(
                 p = dn_map.get((td_s, holding))
                 if p is not None and p > guard_thr:
                     target = DEFENSE
-                    events.append({"date": td_s, "type": "guard", "asset": holding,
-                                   "prob": round(float(p), 3), "idx": i, "on_reb": True})
+                    events.append(
+                        {
+                            "date": td_s,
+                            "type": "guard",
+                            "asset": holding,
+                            "prob": round(float(p), 3),
+                            "idx": i,
+                            "on_reb": True,
+                        }
+                    )
 
             # 执行交易
             if target != holding:
@@ -132,8 +145,7 @@ def run_v3_daily(
                             n_trades += 1
         else:
             # ---------- 非调仓日: guard 日频出场 ----------
-            if (guard_thr is not None and holding and holding != DEFENSE
-                    and i >= blocked_until):
+            if guard_thr is not None and holding and holding != DEFENSE and i >= blocked_until:
                 p = dn_map.get((td_s, holding))
                 if p is not None and p > guard_thr:
                     asset = holding
@@ -142,14 +154,24 @@ def run_v3_daily(
                         cash += holding_shares * price * (1 - FEE - SLIPPAGE)
                         n_trades += 1
                         holding, holding_shares = None, 0
-                        events.append({"date": td_s, "type": "guard", "asset": asset,
-                                       "prob": round(float(p), 3), "idx": i,
-                                       "on_reb": False})
+                        events.append(
+                            {
+                                "date": td_s,
+                                "type": "guard",
+                                "asset": asset,
+                                "prob": round(float(p), 3),
+                                "idx": i,
+                                "on_reb": False,
+                            }
+                        )
                         blocked_until = i + 1  # 次日才允许重新入场
 
             # ---------- 非调仓日: boost 日频入场 ----------
-            if (boost_thr is not None and (holding is None or holding == DEFENSE)
-                    and i >= blocked_until):
+            if (
+                boost_thr is not None
+                and (holding is None or holding == DEFENSE)
+                and i >= blocked_until
+            ):
                 best_code, best_p = None, 0.0
                 for code in ETF_POOL:
                     p = up_map.get((td_s, code))
@@ -163,9 +185,16 @@ def run_v3_daily(
                             cash -= shares * price * (1 + FEE + SLIPPAGE)
                             holding, holding_shares = best_code, shares
                             n_trades += 1
-                            events.append({"date": td_s, "type": "boost", "asset": best_code,
-                                           "prob": round(float(best_p), 3), "idx": i,
-                                           "on_reb": False})
+                            events.append(
+                                {
+                                    "date": td_s,
+                                    "type": "boost",
+                                    "asset": best_code,
+                                    "prob": round(float(best_p), 3),
+                                    "idx": i,
+                                    "on_reb": False,
+                                }
+                            )
 
         # 每日净值
         value = cash
@@ -179,8 +208,7 @@ def run_v3_daily(
     return calc_metrics(eq, INITIAL_CAPITAL, n_trades, events, mat)
 
 
-def calc_metrics(eq: np.ndarray, init: float, n_trades: int,
-                 events: list[dict], mat: dict) -> dict:
+def calc_metrics(eq: np.ndarray, init: float, n_trades: int, events: list[dict], mat: dict) -> dict:
     """日频净值指标 + 事件后续收益 (fwd5/fwd20)."""
     if len(eq) < 2:
         return {"error": "insufficient"}
@@ -223,8 +251,7 @@ def main() -> None:
     data = load_data()
     dates = common_dates(data)
     mat = close_matrix(data, dates)
-    vol_mat = {c: data[c].set_index("trade_date")["volume"].reindex(dates).values
-               for c in ETF_POOL}
+    vol_mat = {c: data[c].set_index("trade_date")["volume"].reindex(dates).values for c in ETF_POOL}
     print("\n  构建特征面板...")
     x, meta, _feat_names = build_features(mat, vol_mat, dates)
     order = sorted(range(len(meta)), key=lambda i: meta[i]["date"])
@@ -248,10 +275,12 @@ def main() -> None:
         tr_mask = np.array([d < test_start_date for d in dates_s])
         te_dates_set = {str(dates[i]) for i in range(test_start, test_end)}
         te_mask = np.array([d in te_dates_set for d in dates_s])
-        rf_up = RandomForestClassifier(n_estimators=200, max_depth=6, min_samples_leaf=50,
-                                       random_state=42, n_jobs=-1)
-        rf_dn = RandomForestClassifier(n_estimators=200, max_depth=6, min_samples_leaf=50,
-                                       random_state=42, n_jobs=-1)
+        rf_up = RandomForestClassifier(
+            n_estimators=200, max_depth=6, min_samples_leaf=50, random_state=42, n_jobs=-1
+        )
+        rf_dn = RandomForestClassifier(
+            n_estimators=200, max_depth=6, min_samples_leaf=50, random_state=42, n_jobs=-1
+        )
         rf_up.fit(x[tr_mask], y_up[tr_mask])
         rf_dn.fit(x[tr_mask], y_dn[tr_mask])
         pu = rf_up.predict_proba(x)[:, 1]
@@ -259,15 +288,24 @@ def main() -> None:
         up_map = {(meta[i]["date"], meta[i]["code"]): float(pu[i]) for i in np.where(te_mask)[0]}
         dn_map = {(meta[i]["date"], meta[i]["code"]): float(pd_[i]) for i in np.where(te_mask)[0]}
         # 动态分位数阈值 (基于训练集概率分布)
-        q = {"up": {q_: float(np.quantile(pu[tr_mask], q_)) for q_ in QUANTILES},
-             "dn": {q_: float(np.quantile(pd_[tr_mask], q_)) for q_ in QUANTILES}}
-        seg_models.append({"start": s0, "up_map": up_map, "dn_map": dn_map,
-                           "quantiles": q,
-                           "spans": [str(dates[test_start]), str(dates[test_end - 1])]})
+        q = {
+            "up": {q_: float(np.quantile(pu[tr_mask], q_)) for q_ in QUANTILES},
+            "dn": {q_: float(np.quantile(pd_[tr_mask], q_)) for q_ in QUANTILES},
+        }
+        seg_models.append(
+            {
+                "start": s0,
+                "up_map": up_map,
+                "dn_map": dn_map,
+                "quantiles": q,
+                "spans": [str(dates[test_start]), str(dates[test_end - 1])],
+            }
+        )
 
     # 定义一个评估助手: 对给定 guard/boost 配置跑全部段
-    def evaluate_config(name: str, guard: float | None, boost: float | None,
-                        segs: list, use_quantile: bool = False) -> dict:
+    def evaluate_config(
+        name: str, guard: float | None, boost: float | None, segs: list, use_quantile: bool = False
+    ) -> dict:
         agg = {"total": [], "final": [], "sharpe": [], "dd": [], "trades": []}
         events_all = []
         for seg in segs:
@@ -279,8 +317,9 @@ def main() -> None:
                 b_thr = seg["quantiles"]["up"][boost] if boost is not None else None
             else:
                 g_thr, b_thr = guard, boost
-            res = run_v3_daily(data, dates, mat, test_start, test_end,
-                               seg["dn_map"], seg["up_map"], g_thr, b_thr)
+            res = run_v3_daily(
+                data, dates, mat, test_start, test_end, seg["dn_map"], seg["up_map"], g_thr, b_thr
+            )
             if "error" in res:
                 continue
             agg["total"].append(res["total_return"])
@@ -321,9 +360,11 @@ def main() -> None:
         r = evaluate_config(name, g, b, seg_models, q)
         main_results[name] = r
         if "error" not in r:
-            print(f"  {name:<18} 期末均值 {r['final_avg']:>9,.0f} "
-                  f"夏普{r['sharpe_avg']:.2f} 回撤{r['dd_avg']:.1%} "
-                  f"交易{r['trades_avg']:.0f} 触发{r['events_total']}次")
+            print(
+                f"  {name:<18} 期末均值 {r['final_avg']:>9,.0f} "
+                f"夏普{r['sharpe_avg']:.2f} 回撤{r['dd_avg']:.1%} "
+                f"交易{r['trades_avg']:.0f} 触发{r['events_total']}次"
+            )
 
     # 2) 阈值全网格 (GB 组合)
     print("\n" + "=" * 74)
@@ -334,8 +375,10 @@ def main() -> None:
         for b in BOOST_THRS:
             r = evaluate_config(f"GB({g:.2f},{b:.2f})", g, b, seg_models, False)
             grid[f"{g:.2f}x{b:.2f}"] = r
-            print(f"  Guard{g:.2f}×Boost{b:.2f}  期末合计 {r['final_sum']:>10,.0f} "
-                  f"夏普{r['sharpe_avg']:.2f} 回撤{r['dd_avg']:.1%}")
+            print(
+                f"  Guard{g:.2f}×Boost{b:.2f}  期末合计 {r['final_sum']:>10,.0f} "
+                f"夏普{r['sharpe_avg']:.2f} 回撤{r['dd_avg']:.1%}"
+            )
     best_grid = max(grid.items(), key=lambda kv: kv[1]["final_sum"])
     print(f"  → 网格最优: {best_grid[0]} (期末合计 {best_grid[1]['final_sum']:,.0f})")
 
@@ -355,26 +398,44 @@ def main() -> None:
                 tr_mask = np.array([d < test_start_date for d in dates_s])
                 te_dates_set = {str(dates[i]) for i in range(test_start, test_start + TEST_DAYS)}
                 te_mask = np.array([d in te_dates_set for d in dates_s])
-                rf_u = RandomForestClassifier(n_estimators=200, max_depth=depth,
-                                              min_samples_leaf=leaf, random_state=42, n_jobs=-1)
-                rf_d = RandomForestClassifier(n_estimators=200, max_depth=depth,
-                                              min_samples_leaf=leaf, random_state=42, n_jobs=-1)
+                rf_u = RandomForestClassifier(
+                    n_estimators=200,
+                    max_depth=depth,
+                    min_samples_leaf=leaf,
+                    random_state=42,
+                    n_jobs=-1,
+                )
+                rf_d = RandomForestClassifier(
+                    n_estimators=200,
+                    max_depth=depth,
+                    min_samples_leaf=leaf,
+                    random_state=42,
+                    n_jobs=-1,
+                )
                 rf_u.fit(x[tr_mask], y_up[tr_mask])
                 rf_d.fit(x[tr_mask], y_dn[tr_mask])
                 pu = rf_u.predict_proba(x)[:, 1]
                 pd_ = rf_d.predict_proba(x)[:, 1]
-                segs2.append({
-                    "start": s0,
-                    "up_map": {(meta[i]["date"], meta[i]["code"]): float(pu[i])
-                               for i in np.where(te_mask)[0]},
-                    "dn_map": {(meta[i]["date"], meta[i]["code"]): float(pd_[i])
-                               for i in np.where(te_mask)[0]},
-                })
+                segs2.append(
+                    {
+                        "start": s0,
+                        "up_map": {
+                            (meta[i]["date"], meta[i]["code"]): float(pu[i])
+                            for i in np.where(te_mask)[0]
+                        },
+                        "dn_map": {
+                            (meta[i]["date"], meta[i]["code"]): float(pd_[i])
+                            for i in np.where(te_mask)[0]
+                        },
+                    }
+                )
             # 用 segs2 跑 (超参组合)
             r = evaluate_config(f"d{depth}l{leaf}", g_best, b_best, segs2, False)
             hp_results[f"d{depth}l{leaf}"] = r
-            print(f"  depth={depth} leaf={leaf:<3} 期末合计 {r['final_sum']:>10,.0f} "
-                  f"夏普{r['sharpe_avg']:.2f}")
+            print(
+                f"  depth={depth} leaf={leaf:<3} 期末合计 {r['final_sum']:>10,.0f} "
+                f"夏普{r['sharpe_avg']:.2f}"
+            )
     best_hp = max(hp_results.items(), key=lambda kv: kv[1]["final_sum"])
     print(f"  → 超参最优: {best_hp[0]} (期末合计 {best_hp[1]['final_sum']:,.0f})")
 
@@ -383,33 +444,48 @@ def main() -> None:
     print("  段4 (2024-12~2026-01 白银大牛市) Guard 触发事件归因")
     print("=" * 74)
     best_cfg = best_grid[1]
-    w4_events = [e for e in best_cfg["events"] if e["type"] == "guard"
-                 and e["date"] >= seg_models[3]["spans"][0]]
+    w4_events = [
+        e
+        for e in best_cfg["events"]
+        if e["type"] == "guard" and e["date"] >= seg_models[3]["spans"][0]
+    ]
     if not w4_events:
         print("  (该配置在段4无 guard 触发)")
     for e in w4_events[:10]:
         f5 = e.get("fwd5")
         f20 = e.get("fwd20")
-        print(f"  {e['date']} guard {ETF_POOL.get(e['asset'], '?')} 概率{e['prob']:.2f} "
-              f"后续5日 {f5 if f5 is None else f'{f5:+.2%}'} 后续20日 "
-              f"{f20 if f20 is None else f'{f20:+.2%}'}")
+        print(
+            f"  {e['date']} guard {ETF_POOL.get(e['asset'], '?')} 概率{e['prob']:.2f} "
+            f"后续5日 {f5 if f5 is None else f'{f5:+.2%}'} 后续20日 "
+            f"{f20 if f20 is None else f'{f20:+.2%}'}"
+        )
 
     # 保存
-    out = {"meta": {
-        "note": "日频guard/boost动态层 + 周频V3引擎; 4段OOS段前训练RF(无未来函数)",
-        "grid": {"guard": list(GUARD_THRS), "boost": list(BOOST_THRS),
-                 "quantiles": list(QUANTILES), "rf_depth": list(RF_DEPTHS),
-                 "rf_leaf": list(RF_LEAVES)},
-        "evaluation": "全周期复权优先: 4段期末金额合计, 参考夏普/回撤",
-    }, "main_configs": {k: {kk: vv for kk, vv in v.items() if kk != "events"}
-                        for k, v in main_results.items()},
-      "threshold_grid": {k: {kk: vv for kk, vv in v.items() if kk != "events"}
-                         for k, v in grid.items()},
-      "rf_hyperparam": {k: {kk: vv for kk, vv in v.items() if kk != "events"}
-                        for k, v in hp_results.items()},
-      "best_grid": best_grid[0], "best_hyperparam": best_hp[0],
-      "w4_guard_events": w4_events,
-      "all_events": {k: v["events"] for k, v in {**main_results, **grid}.items()},
+    out = {
+        "meta": {
+            "note": "日频guard/boost动态层 + 周频V3引擎; 4段OOS段前训练RF(无未来函数)",
+            "grid": {
+                "guard": list(GUARD_THRS),
+                "boost": list(BOOST_THRS),
+                "quantiles": list(QUANTILES),
+                "rf_depth": list(RF_DEPTHS),
+                "rf_leaf": list(RF_LEAVES),
+            },
+            "evaluation": "全周期复权优先: 4段期末金额合计, 参考夏普/回撤",
+        },
+        "main_configs": {
+            k: {kk: vv for kk, vv in v.items() if kk != "events"} for k, v in main_results.items()
+        },
+        "threshold_grid": {
+            k: {kk: vv for kk, vv in v.items() if kk != "events"} for k, v in grid.items()
+        },
+        "rf_hyperparam": {
+            k: {kk: vv for kk, vv in v.items() if kk != "events"} for k, v in hp_results.items()
+        },
+        "best_grid": best_grid[0],
+        "best_hyperparam": best_hp[0],
+        "w4_guard_events": w4_events,
+        "all_events": {k: v["events"] for k, v in {**main_results, **grid}.items()},
     }
     out_path = OUTPUT_DIR / "v3_ml_layers.json"
     with open(out_path, "w") as f:

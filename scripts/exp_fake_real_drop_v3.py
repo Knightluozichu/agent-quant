@@ -11,6 +11,7 @@
 输出: 控制台摘要 + data/v9_results/fake_real_drop_v3.json (供阈值扫描/归档)
 用法: uv run python scripts/exp_fake_real_drop_v3.py
 """
+
 from __future__ import annotations
 
 import json
@@ -24,8 +25,8 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 import run_qixing_v3 as rq  # noqa: E402
 
-DROP_THR = -0.03   # 对齐生产 DROP_THRESHOLD
-HORIZON = 5        # 观察后续5日
+DROP_THR = -0.03  # 对齐生产 DROP_THRESHOLD
+HORIZON = 5  # 观察后续5日
 OUT = Path(rq.PROJECT_ROOT) / "data" / "v9_results" / "fake_real_drop_v3.json"
 
 
@@ -47,26 +48,31 @@ def collect_drop_events(data: dict) -> pd.DataFrame:
                 ret60 = (close[i] - close[i - 61]) / close[i - 61]
                 ret20 = (close[i] - close[i - 21]) / close[i - 21]
                 ret10 = (close[i] - close[i - 11]) / close[i - 11]
-                ma20 = float(np.mean(close[i - 20:i]))
+                ma20 = float(np.mean(close[i - 20 : i]))
                 mom_score = 0.5 * ret10 + 0.5 * ret20  # 生产动量口径
                 # 箱体确认因子: 60日区间位置 + MA60斜率 (区分箱体震荡 vs 下跌趋势)
-                w60 = close[i - 60:i]
+                w60 = close[i - 60 : i]
                 hi60, lo60 = float(w60.max()), float(w60.min())
                 pos60 = (close[i] - lo60) / (hi60 - lo60) if hi60 > lo60 else 0.5
-                ma60_now = float(np.mean(close[i - 60:i]))
-                ma60_prev = float(np.mean(close[i - 65:i - 5])) if i >= 65 else ma60_now
+                ma60_now = float(np.mean(close[i - 60 : i]))
+                ma60_prev = float(np.mean(close[i - 65 : i - 5])) if i >= 65 else ma60_now
                 ma60_slope = ma60_now - ma60_prev
                 box_ok = bool(0.40 <= pos60 <= 0.80 and ma60_slope >= 0)
                 fwd5 = (close[i + HORIZON] - close[i]) / close[i]
-                events.append({
-                    "code": code, "date": str(dates[i]),
-                    "ret60": float(ret60), "ret20": float(ret20),
-                    "mom_score": float(mom_score),
-                    "above_ma20": bool(close[i] > ma20),
-                    "pos60": float(pos60), "ma60_slope": float(ma60_slope),
-                    "box_ok": box_ok,
-                    "fwd5": float(fwd5),
-                })
+                events.append(
+                    {
+                        "code": code,
+                        "date": str(dates[i]),
+                        "ret60": float(ret60),
+                        "ret20": float(ret20),
+                        "mom_score": float(mom_score),
+                        "above_ma20": bool(close[i] > ma20),
+                        "pos60": float(pos60),
+                        "ma60_slope": float(ma60_slope),
+                        "box_ok": box_ok,
+                        "fwd5": float(fwd5),
+                    }
+                )
     return pd.DataFrame(events)
 
 
@@ -95,15 +101,21 @@ def threshold_scan(df: pd.DataFrame) -> list[dict]:
             continue
         lo_cont = (lo["fwd5"] < 0).mean() * 100
         hi_cont = (hi["fwd5"] < 0).mean() * 100
-        rows.append({
-            "ret60_thr": round(float(thr), 2),
-            "lo_n": int(len(lo)), "lo_cont_pct": round(float(lo_cont), 1),
-            "hi_n": int(len(hi)), "hi_cont_pct": round(float(hi_cont), 1),
-            "spread_pp": round(float(hi_cont - lo_cont), 1),
-        })
-        print(f"    ret60<{thr:+.2f}: {len(lo):>3}次 继续跌{lo_cont:>3.0f}% | "
-              f"ret60>={thr:+.2f}: {len(hi):>3}次 继续跌{hi_cont:>3.0f}% "
-              f"| 区分度 {hi_cont - lo_cont:>+.0f}pp")
+        rows.append(
+            {
+                "ret60_thr": round(float(thr), 2),
+                "lo_n": int(len(lo)),
+                "lo_cont_pct": round(float(lo_cont), 1),
+                "hi_n": int(len(hi)),
+                "hi_cont_pct": round(float(hi_cont), 1),
+                "spread_pp": round(float(hi_cont - lo_cont), 1),
+            }
+        )
+        print(
+            f"    ret60<{thr:+.2f}: {len(lo):>3}次 继续跌{lo_cont:>3.0f}% | "
+            f"ret60>={thr:+.2f}: {len(hi):>3}次 继续跌{hi_cont:>3.0f}% "
+            f"| 区分度 {hi_cont - lo_cont:>+.0f}pp"
+        )
     return rows
 
 
@@ -115,11 +127,15 @@ def main() -> None:
     base_avg = df["fwd5"].mean() * 100
 
     print("=" * 70)
-    print(f"  真假跌识别 v3 | 单日大跌>{abs(DROP_THR) * 100:.0f}%事件 共{total}次 "
-          f"({len(df['code'].unique())}只ETF)")
+    print(
+        f"  真假跌识别 v3 | 单日大跌>{abs(DROP_THR) * 100:.0f}%事件 共{total}次 "
+        f"({len(df['code'].unique())}只ETF)"
+    )
     print("=" * 70)
-    print(f"\n  【基准】 大跌后5日: 继续跌(真跌) {base_cont:.0f}% | "
-          f"反弹(假摔) {100 - base_cont:.0f}% | 平均 {base_avg:+.2f}%")
+    print(
+        f"\n  【基准】 大跌后5日: 继续跌(真跌) {base_cont:.0f}% | "
+        f"反弹(假摔) {100 - base_cont:.0f}% | 平均 {base_avg:+.2f}%"
+    )
     print(f"          注: 生产过滤-3%口径, 阈值比原实验(-5%)低, 事件更噪")
 
     print(f"\n  【因子: 趋势位置 ret60 中位数分组】")
@@ -135,42 +151,41 @@ def main() -> None:
     print(f"\n  【门控组合 (方案A核心统计)】")
     r = {}
     r["gate_low_ma20"] = stats(
-        df[(df["ret60"] <= med) & df["above_ma20"]],
-        "平淡 + 未破MA20 (放行)")
+        df[(df["ret60"] <= med) & df["above_ma20"]], "平淡 + 未破MA20 (放行)"
+    )
     r["gate_low_mom"] = stats(
-        df[(df["ret60"] <= med) & (df["mom_score"] > 0)],
-        "平淡 + 动量>0 (放行)")
+        df[(df["ret60"] <= med) & (df["mom_score"] > 0)], "平淡 + 动量>0 (放行)"
+    )
     r["gate_low_ma20_mom"] = stats(
         df[(df["ret60"] <= med) & df["above_ma20"] & (df["mom_score"] > 0)],
-        "平淡 + 未破MA20 + 动量>0 (放行)")
-    r["gate_hi"] = stats(
-        df[df["ret60"] > med],
-        "前期大涨 (照旧排除)")
+        "平淡 + 未破MA20 + 动量>0 (放行)",
+    )
+    r["gate_hi"] = stats(df[df["ret60"] > med], "前期大涨 (照旧排除)")
 
     print(f"\n  【箱体确认因子 (区分箱体震荡 vs 下跌趋势)】")
     r["box_ok_all"] = stats(df[df["box_ok"]], "箱体确认 (pos60中段+MA60走平/上)")
     r["box_ng_all"] = stats(df[~df["box_ok"]], "非箱体 (贴近低点/MA60向下)")
     print(f"  → 仅看 ret60<0 组:")
     lo_ret60 = df[df["ret60"] < 0]
-    r["box_ok_low"] = stats(lo_ret60[lo_ret60["box_ok"]],
-                             "ret60<0 + 箱体确认 (精化放行)")
-    r["box_ng_low"] = stats(lo_ret60[~lo_ret60["box_ok"]],
-                             "ret60<0 + 非箱体 (下跌趋势, 不放行)")
+    r["box_ok_low"] = stats(lo_ret60[lo_ret60["box_ok"]], "ret60<0 + 箱体确认 (精化放行)")
+    r["box_ng_low"] = stats(lo_ret60[~lo_ret60["box_ok"]], "ret60<0 + 非箱体 (下跌趋势, 不放行)")
     r["box_ok_low_mom"] = stats(
         lo_ret60[lo_ret60["box_ok"] & (lo_ret60["mom_score"] > 0)],
-        "ret60<0 + 箱体 + 动量>0 (最终放行)")
+        "ret60<0 + 箱体 + 动量>0 (最终放行)",
+    )
     r["box_ng_low_mom"] = stats(
         lo_ret60[~lo_ret60["box_ok"] & (lo_ret60["mom_score"] > 0)],
-        "ret60<0 + 非箱体 + 动量>0 (下跌趋势误放行风险)")
+        "ret60<0 + 非箱体 + 动量>0 (下跌趋势误放行风险)",
+    )
 
     print(f"\n  【ret60 阈值扫描 (找区分度最大分割点)】")
     scan = threshold_scan(df)
 
     result = {
-        "drop_thr": DROP_THR, "horizon": HORIZON,
+        "drop_thr": DROP_THR,
+        "horizon": HORIZON,
         "n_events": total,
-        "base": {"cont_pct": round(float(base_cont), 1),
-                 "avg_fwd": round(float(base_avg), 2)},
+        "base": {"cont_pct": round(float(base_cont), 1), "avg_fwd": round(float(base_avg), 2)},
         "ret60_median": round(float(med), 4),
         "gates": {k: v for k, v in r.items() if v is not None},
         "threshold_scan": scan,

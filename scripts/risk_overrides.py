@@ -26,31 +26,32 @@ from typing import Any
 import numpy as np
 
 # === 风控参数 (与 exp_v32_tail_risk.py 一致) ===
-VOL_HV_THR = 0.45        # 高波动阈值
-EXPO_REDUCE = 1.0        # H1/H2/高波动衰减比例; V3-G 已关闭 (1.0=不降)
-DECAY_THRESH = -0.02     # 动量5日变化阈值 (三重确认1)
-ABS_WEAK = 0.08          # 绝对动量弱化阈值 (三重确认3)
-H1_DD = -0.15            # 自买入回撤硬触发
-H2_DAY = -0.05           # 当日跌幅硬触发
+VOL_HV_THR = 0.45  # 高波动阈值
+EXPO_REDUCE = 1.0  # H1/H2/高波动衰减比例; V3-G 已关闭 (1.0=不降)
+DECAY_THRESH = -0.02  # 动量5日变化阈值 (三重确认1)
+ABS_WEAK = 0.08  # 绝对动量弱化阈值 (三重确认3)
+H1_DD = -0.15  # 自买入回撤硬触发
+H2_DAY = -0.05  # 当日跌幅硬触发
 DD_WARN, DD_HALF, DD_FLUSH = -0.12, -0.25, -0.30  # 组合熔断分级
-DEFENSE_SEQ = ("511260", "511220", "511880")       # 十年国债→城投债→货币 (缺数据跳过)
+DEFENSE_SEQ = ("511260", "511220", "511880")  # 十年国债→城投债→货币 (缺数据跳过)
 
 # V3-G H3 放行止损参数 (关闭: 1.0=不降仓)
-H3_DELTA = 0.02          # 放行后自暴跌日起回撤 >2% 触发
-H3_EXPO_REDUCE = 1.0     # 触发后降仓比例 (关闭降仓层)
-H3_DROP_THR = -0.03      # 单日跌幅阈值 (与 V3 一致)
-H3_DROP_LB = 5           # 检查天数
-H3_RET60_THR = 0.01      # 放行类型阈值 (与 V3-G 一致)
+H3_DELTA = 0.02  # 放行后自暴跌日起回撤 >2% 触发
+H3_EXPO_REDUCE = 1.0  # 触发后降仓比例 (关闭降仓层)
+H3_DROP_THR = -0.03  # 单日跌幅阈值 (与 V3 一致)
+H3_DROP_LB = 5  # 检查天数
+H3_RET60_THR = 0.01  # 放行类型阈值 (与 V3-G 一致)
 
 # 动作枚举
-ACTION_HOLD = "hold"                # 无交易 (仅状态更新)
-ACTION_TRADE = "trade"              # 调仓日正常交易 (exposure 参与买入折算)
+ACTION_HOLD = "hold"  # 无交易 (仅状态更新)
+ACTION_TRADE = "trade"  # 调仓日正常交易 (exposure 参与买入折算)
 ACTION_EMERGENCY = "emergency_defense"  # 组合熔断, 非调仓日也强制切防御
 
 
 @dataclass(frozen=True)
 class RiskDecision:
     """风控评估结果 (纯数据, 可 JSON 序列化)."""
+
     final_target: str | None
     exposure: float
     action: str
@@ -172,13 +173,17 @@ def assess(
         if holding in spot_map:
             prev = float(spot_map[holding]["prev_close"])
         else:
-            prev = (_price_at_pos(holding, td_pos - 1, data, common_dates)
-                    if td_pos > 0 else cur)
+            prev = _price_at_pos(holding, td_pos - 1, data, common_dates) if td_pos > 0 else cur
         day_ret = (cur / prev - 1.0) if prev > 0 else 0.0
         if entry_dd < H1_DD or day_ret < H2_DAY:
             exposure = min(exposure, EXPO_REDUCE)
-            events.append({"date": str(td), "type": "改进-H1/H2降仓",
-                           "reason": f"entry_dd={entry_dd:.1%} day={day_ret:.1%}"})
+            events.append(
+                {
+                    "date": str(td),
+                    "type": "改进-H1/H2降仓",
+                    "reason": f"entry_dd={entry_dd:.1%} day={day_ret:.1%}",
+                }
+            )
 
     # === H3 放行止损 (V3-G): 放行类型持仓的缓跌兜底 ===
     if holding and holding != "511880" and cooldown is None:
@@ -201,8 +206,13 @@ def assess(
                 dd_peak = cur / state["h3_peak"] - 1.0 if state["h3_peak"] > 0 else 0.0
                 if dd_peak < -H3_DELTA:
                     exposure = min(exposure, H3_EXPO_REDUCE)
-                    events.append({"date": str(td), "type": "H3放行止损-降仓",
-                                   "reason": f"ret60={ret60:.3f} dd_from_peak={dd_peak:.1%}"})
+                    events.append(
+                        {
+                            "date": str(td),
+                            "type": "H3放行止损-降仓",
+                            "reason": f"ret60={ret60:.3f} dd_from_peak={dd_peak:.1%}",
+                        }
+                    )
             else:
                 state["h3_holding"] = None
                 state["h3_peak"] = 0.0
@@ -214,19 +224,28 @@ def assess(
     if cooldown is None:
         if dd < DD_FLUSH:
             target_d = _pick_defense()
-            events.append({"date": str(td), "type": "熔断-30%清仓",
-                           "reason": f"dd={dd:.1%}, 切防御 {target_d}"})
+            events.append(
+                {
+                    "date": str(td),
+                    "type": "熔断-30%清仓",
+                    "reason": f"dd={dd:.1%}, 切防御 {target_d}",
+                }
+            )
             return RiskDecision(
-                final_target=target_d, exposure=1.0, action=ACTION_EMERGENCY,
+                final_target=target_d,
+                exposure=1.0,
+                action=ACTION_EMERGENCY,
                 reason=f"组合回撤{dd:.1%}触发熔断, 切防御{target_d}",
-                events=events, cooldown_until=td)
+                events=events,
+                cooldown_until=td,
+            )
         if dd < DD_HALF:
-            events.append({"date": str(td), "type": "熔断-25%告警",
-                           "reason": f"dd={dd:.1%}"})
+            events.append({"date": str(td), "type": "熔断-25%告警", "reason": f"dd={dd:.1%}"})
         elif dd < DD_WARN:
             exposure = min(exposure, 1.0)  # V3-G 关闭降仓层: -12% 仅告警不降仓
-            events.append({"date": str(td), "type": "熔断-12%告警(不降仓)",
-                           "reason": f"dd={dd:.1%}"})
+            events.append(
+                {"date": str(td), "type": "熔断-12%告警(不降仓)", "reason": f"dd={dd:.1%}"}
+            )
 
     # === 冷却解除: 熔断后下一调仓日解除 (回测怪癖: 熔断日=调仓日则立即解除) ===
     if cooldown is not None and is_rebalance:
@@ -240,28 +259,40 @@ def assess(
         delta_s = _mom_score(target) - mom5_prev
         vol_t = _vol20(target)
         s_score = _mom_score(target)
-        decay_triple = (delta_s < DECAY_THRESH and close[-1] < ma10
-                        and s_score < ABS_WEAK)
+        decay_triple = delta_s < DECAY_THRESH and close[-1] < ma10 and s_score < ABS_WEAK
         # 改进核心: 仅"高波动 + 动量衰减三重确认"触发适度降仓
         if vol_t > VOL_HV_THR and decay_triple:
             exposure = min(exposure, EXPO_REDUCE)
-            events.append({"date": str(td), "type": "改进-高波动衰减降仓",
-                           "asset": target,
-                           "reason": f"vol={vol_t:.2f} delta_s={delta_s:.4f} s={s_score:.3f}"})
+            events.append(
+                {
+                    "date": str(td),
+                    "type": "改进-高波动衰减降仓",
+                    "asset": target,
+                    "reason": f"vol={vol_t:.2f} delta_s={delta_s:.4f} s={s_score:.3f}",
+                }
+            )
         # 目标不可交易 → 切防御
         if not _tradable(target):
-            events.append({"date": str(td), "type": "目标不可交易",
-                           "reason": f"{target} 停牌/涨跌停/无价, 切防御"})
+            events.append(
+                {
+                    "date": str(td),
+                    "type": "目标不可交易",
+                    "reason": f"{target} 停牌/涨跌停/无价, 切防御",
+                }
+            )
             target = _pick_defense()
 
     return RiskDecision(
-        final_target=target, exposure=exposure,
+        final_target=target,
+        exposure=exposure,
         action=(ACTION_TRADE if is_rebalance else ACTION_HOLD),
-        reason="", events=events, cooldown_until=cooldown)
+        reason="",
+        events=events,
+        cooldown_until=cooldown,
+    )
 
 
-def _price_at_pos(code: str, at_pos: int, data: dict[str, Any],
-                  common_dates: list[Any]) -> float:
+def _price_at_pos(code: str, at_pos: int, data: dict[str, Any], common_dates: list[Any]) -> float:
     """任意公共日历位置的价格 (用于 H2 昨收)."""
     if at_pos < 0:
         return 0.0

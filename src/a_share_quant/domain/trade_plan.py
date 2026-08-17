@@ -250,8 +250,7 @@ class TradePlan(BaseModel):
         entry_max = self.entry_price_range[1]
         if self.take_profit_1 <= entry_max:
             msg = (
-                f"Take profit 1 {self.take_profit_1} must be above "
-                f"entry range maximum {entry_max}"
+                f"Take profit 1 {self.take_profit_1} must be above entry range maximum {entry_max}"
             )
             raise ValueError(msg)
 

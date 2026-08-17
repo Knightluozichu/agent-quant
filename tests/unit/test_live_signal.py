@@ -83,9 +83,7 @@ def test_v4_confirmation_history_requires_two_contiguous_trading_days():
 @pytest.mark.unit
 def test_load_state_migrates_v4_runtime(monkeypatch, tmp_path):
     state_file = tmp_path / "state.json"
-    state_file.write_text(
-        '{"initial_capital": 100000, "cash": 100000}', encoding="utf-8"
-    )
+    state_file.write_text('{"initial_capital": 100000, "cash": 100000}', encoding="utf-8")
     monkeypatch.setattr(live_signal, "STATE_FILE", state_file)
 
     state = live_signal.load_state()
@@ -96,9 +94,7 @@ def test_load_state_migrates_v4_runtime(monkeypatch, tmp_path):
 
 
 @pytest.mark.unit
-def test_confirm_v4_order_validates_nested_target_and_records_rotation(
-    monkeypatch, tmp_path
-):
+def test_confirm_v4_order_validates_nested_target_and_records_rotation(monkeypatch, tmp_path):
     state_file = tmp_path / "state.json"
     monkeypatch.setattr(live_signal, "STATE_FILE", state_file)
     monkeypatch.setattr(live_signal, "STATE_TMP_FILE", tmp_path / "state.json.tmp")
@@ -185,9 +181,7 @@ def test_confirm_order_rejects_non_round_lot_buy(monkeypatch, tmp_path):
     _patch_state_files(monkeypatch, tmp_path, state)
 
     with pytest.raises(ValueError, match="整数倍"):
-        live_signal.confirm_order(
-            None, {"code": "518880", "shares": 150, "price": 10.0}
-        )
+        live_signal.confirm_order(None, {"code": "518880", "shares": 150, "price": 10.0})
 
 
 @pytest.mark.unit
@@ -197,8 +191,8 @@ def test_account_value_suspension_fallback_uses_no_future_data():
         {
             "trade_date": [
                 date(2026, 8, 7),
-                date(2026, 8, 10),   # td 前最后已知
-                date(2026, 8, 12),   # td 之后的未来行 (停牌期间不应可见)
+                date(2026, 8, 10),  # td 前最后已知
+                date(2026, 8, 12),  # td 之后的未来行 (停牌期间不应可见)
             ],
             "close": [9.0, 10.0, 99.0],
         }

@@ -2,6 +2,7 @@
 
 用法: uv run python scripts/exp_4y_windows.py
 """
+
 from __future__ import annotations
 
 import sys
@@ -37,18 +38,22 @@ def main() -> None:
         res = backtest(data, v3_select, PARAMS, 5, initial=CAPITAL, start_date=s, end_date=e)
         final = res["final_equity"]
         finals.append(final)
-        print(f"  {label:<10}{str(s)+'~'+str(e):<26}{f'{final/10000:.1f}万':<14}"
-              f"{res['total_return']*100:>+8.0f}%{res['ann_return']*100:>+8.1f}%"
-              f"{res['max_drawdown']*100:>8.1f}%")
+        print(
+            f"  {label:<10}{str(s) + '~' + str(e):<26}{f'{final / 10000:.1f}万':<14}"
+            f"{res['total_return'] * 100:>+8.0f}%{res['ann_return'] * 100:>+8.1f}%"
+            f"{res['max_drawdown'] * 100:>8.1f}%"
+        )
     # 全段参考
     res = backtest(data, v3_select, PARAMS, 5, initial=CAPITAL)
     full_w = res["final_equity"] / 10000
     print("  " + "-" * 68)
-    print(f"  {'全段6.1年':<10}{'2020-07~2026-07':<26}{f'{full_w:.1f}万':<14}"
-          f"{res['total_return']*100:>+8.0f}%{res['ann_return']*100:>+8.1f}%"
-          f"{res['max_drawdown']*100:>8.1f}%")
+    print(
+        f"  {'全段6.1年':<10}{'2020-07~2026-07':<26}{f'{full_w:.1f}万':<14}"
+        f"{res['total_return'] * 100:>+8.0f}%{res['ann_return'] * 100:>+8.1f}%"
+        f"{res['max_drawdown'] * 100:>8.1f}%"
+    )
     print("=" * 72)
-    print(f"  4年窗口区间: 最低 {min(finals)/10000:.1f}万 ~ 最高 {max(finals)/10000:.1f}万")
+    print(f"  4年窗口区间: 最低 {min(finals) / 10000:.1f}万 ~ 最高 {max(finals) / 10000:.1f}万")
     print("=" * 72)
 
 

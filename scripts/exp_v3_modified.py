@@ -13,6 +13,7 @@
 
 用法: uv run python scripts/exp_v3_modified.py
 """
+
 from __future__ import annotations
 
 import json
@@ -32,6 +33,7 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 # ============================================================
 # 工具函数
 # ============================================================
+
 
 def calc_momentum(close: np.ndarray, periods=(10, 20), weights=(0.5, 0.5)) -> float:
     """加权动量评分 (与V3一致)."""
@@ -58,10 +60,14 @@ def calc_momentum_d1(close: np.ndarray, step=5) -> float:
 # select 函数 — 可插拔
 # ============================================================
 
+
 def select_v3_vanilla(data, idx_map, holding, params) -> str:
     """纯V3选股 (基准)."""
-    a_share_weak = (rq.check_a_share_weak(data, idx_map.get(rq.A_SHARE_ETF, 0))
-                    if rq.USE_A_SHARE_FILTER else False)
+    a_share_weak = (
+        rq.check_a_share_weak(data, idx_map.get(rq.A_SHARE_ETF, 0))
+        if rq.USE_A_SHARE_FILTER
+        else False
+    )
     candidates = []
     for code in rq.ETF_POOL:
         if code not in idx_map:
@@ -96,8 +102,11 @@ def select_v3_vanilla(data, idx_map, holding, params) -> str:
 def select_v3_d1_weight(data, idx_map, holding, params) -> str:
     """V3 + D1评分因子: 综合分 = 动量 + w × D1."""
     w = params.get("d1_weight", 0.3)
-    a_share_weak = (rq.check_a_share_weak(data, idx_map.get(rq.A_SHARE_ETF, 0))
-                    if rq.USE_A_SHARE_FILTER else False)
+    a_share_weak = (
+        rq.check_a_share_weak(data, idx_map.get(rq.A_SHARE_ETF, 0))
+        if rq.USE_A_SHARE_FILTER
+        else False
+    )
     candidates = []
     for code in rq.ETF_POOL:
         if code not in idx_map:
@@ -138,8 +147,11 @@ def select_v3_mdc(data, idx_map, holding, params) -> str:
     使策略更容易切换到新目标.
     """
     mom_history = params.get("_mom_history", {})
-    a_share_weak = (rq.check_a_share_weak(data, idx_map.get(rq.A_SHARE_ETF, 0))
-                    if rq.USE_A_SHARE_FILTER else False)
+    a_share_weak = (
+        rq.check_a_share_weak(data, idx_map.get(rq.A_SHARE_ETF, 0))
+        if rq.USE_A_SHARE_FILTER
+        else False
+    )
     candidates = []
     for code in rq.ETF_POOL:
         if code not in idx_map:
@@ -195,8 +207,11 @@ def select_v3_combo(data, idx_map, holding, params) -> str:
     """V3-D1 + V3-MDC 组合."""
     w = params.get("d1_weight", 0.3)
     mom_history = params.get("_mom_history", {})
-    a_share_weak = (rq.check_a_share_weak(data, idx_map.get(rq.A_SHARE_ETF, 0))
-                    if rq.USE_A_SHARE_FILTER else False)
+    a_share_weak = (
+        rq.check_a_share_weak(data, idx_map.get(rq.A_SHARE_ETF, 0))
+        if rq.USE_A_SHARE_FILTER
+        else False
+    )
     candidates = []
     for code in rq.ETF_POOL:
         if code not in idx_map:
@@ -250,6 +265,7 @@ def select_v3_combo(data, idx_map, holding, params) -> str:
 # 回测引擎 (无未来函数: T日信号 → T+1开盘成交)
 # ============================================================
 
+
 def backtest_no_lookahead(
     data: dict,
     select_fn,
@@ -275,7 +291,7 @@ def backtest_no_lookahead(
     all_dates = sorted(common_dates)
     warmup = 130
     trading_dates = all_dates[warmup:]
-    rebalance_dates = trading_dates[::rq.REBALANCE_DAYS]
+    rebalance_dates = trading_dates[:: rq.REBALANCE_DAYS]
     rebalance_set = set(rebalance_dates)
 
     # 状态
@@ -304,32 +320,47 @@ def backtest_no_lookahead(
                     can_sell, reason = rq._check_tradable(data, holding, td)
                     if not can_sell:
                         sell_ok = False
-                        trade_log.append({
-                            "signal_id": sig_id, "date": str(td),
-                            "action": "sell", "code": holding,
-                            "status": "cancelled", "reason": reason,
-                        })
+                        trade_log.append(
+                            {
+                                "signal_id": sig_id,
+                                "date": str(td),
+                                "action": "sell",
+                                "code": holding,
+                                "status": "cancelled",
+                                "reason": reason,
+                            }
+                        )
                     else:
                         row = data[holding][data[holding]["trade_date"] == td]
                         price = float(row.iloc[0]["open"])
                         cash += holding_shares * price * (1 - rq.FEE - rq.SLIPPAGE)
-                        trade_log.append({
-                            "signal_id": sig_id, "date": str(td),
-                            "action": "sell", "code": holding,
-                            "shares": holding_shares, "price": price,
-                            "status": "executed",
-                        })
+                        trade_log.append(
+                            {
+                                "signal_id": sig_id,
+                                "date": str(td),
+                                "action": "sell",
+                                "code": holding,
+                                "shares": holding_shares,
+                                "price": price,
+                                "status": "executed",
+                            }
+                        )
                         holding = None
                         holding_shares = 0
 
                 if sell_ok and target and target in data:
                     can_buy, reason = rq._check_tradable(data, target, td)
                     if not can_buy:
-                        trade_log.append({
-                            "signal_id": sig_id, "date": str(td),
-                            "action": "buy", "code": target,
-                            "status": "cancelled", "reason": reason,
-                        })
+                        trade_log.append(
+                            {
+                                "signal_id": sig_id,
+                                "date": str(td),
+                                "action": "buy",
+                                "code": target,
+                                "status": "cancelled",
+                                "reason": reason,
+                            }
+                        )
                     else:
                         row = data[target][data[target]["trade_date"] == td]
                         price = float(row.iloc[0]["open"])
@@ -339,13 +370,18 @@ def backtest_no_lookahead(
                             cash -= cost
                             holding = target
                             holding_shares = shares
-                            trade_log.append({
-                                "signal_id": sig_id, "date": str(td),
-                                "action": "buy", "code": target,
-                                "shares": shares, "price": price,
-                                "amount": round(cost, 2),
-                                "status": "executed",
-                            })
+                            trade_log.append(
+                                {
+                                    "signal_id": sig_id,
+                                    "date": str(td),
+                                    "action": "buy",
+                                    "code": target,
+                                    "shares": shares,
+                                    "price": price,
+                                    "amount": round(cost, 2),
+                                    "status": "executed",
+                                }
+                            )
 
             pending_signal = None
 
@@ -355,7 +391,9 @@ def backtest_no_lookahead(
             row = data[holding][data[holding]["trade_date"] == td]
             if not row.empty:
                 equity += holding_shares * float(row.iloc[0]["close"])
-        equity_history.append({"trade_date": td, "equity": equity, "holding": holding or rq.DEFENSE})
+        equity_history.append(
+            {"trade_date": td, "equity": equity, "holding": holding or rq.DEFENSE}
+        )
 
         # 调仓日: 生成信号
         if td in rebalance_set:
@@ -382,20 +420,28 @@ def backtest_no_lookahead(
                 "target": target,
                 "holding": holding,
             }
-            decision_log.append({
-                "date": str(td), "signal_id": sig_id,
-                "target": target, "holding": holding or rq.DEFENSE,
-                "execution_date": str(next_td) if next_td else None,
-            })
+            decision_log.append(
+                {
+                    "date": str(td),
+                    "signal_id": sig_id,
+                    "target": target,
+                    "holding": holding or rq.DEFENSE,
+                    "execution_date": str(next_td) if next_td else None,
+                }
+            )
 
     # 最后一个信号未执行
     if pending_signal:
-        trade_log.append({
-            "signal_id": pending_signal["signal_id"],
-            "date": str(pending_signal["signal_date"]),
-            "action": "none", "code": pending_signal["target"],
-            "status": "unexecuted", "reason": "最后交易日无T+1可执行",
-        })
+        trade_log.append(
+            {
+                "signal_id": pending_signal["signal_id"],
+                "date": str(pending_signal["signal_date"]),
+                "action": "none",
+                "code": pending_signal["target"],
+                "status": "unexecuted",
+                "reason": "最后交易日无T+1可执行",
+            }
+        )
 
     if not equity_history:
         return {"error": "no data", "equity_curve": pd.DataFrame()}
@@ -433,14 +479,19 @@ def backtest_no_lookahead(
 
     # 持仓分布
     from collections import Counter
+
     holding_counts = Counter(eq_df["holding"].tolist())
 
     return {
-        "total_return": total_return, "ann_return": ann_ret,
-        "sharpe": sharpe, "max_drawdown": max_dd,
-        "yearly": yearly, "n_trades": n_executed,
+        "total_return": total_return,
+        "ann_return": ann_ret,
+        "sharpe": sharpe,
+        "max_drawdown": max_dd,
+        "yearly": yearly,
+        "n_trades": n_executed,
         "n_cancelled": n_cancelled,
-        "equity_curve": eq_df, "trade_log": trade_log,
+        "equity_curve": eq_df,
+        "trade_log": trade_log,
         "decision_log": decision_log,
         "holding_distribution": dict(holding_counts.most_common()),
         "final_equity": float(eq_df["equity"].iloc[-1]),
@@ -450,6 +501,7 @@ def backtest_no_lookahead(
 # ============================================================
 # 全口径对比 (同日收盘 + T+1开盘)
 # ============================================================
+
 
 def backtest_same_day(
     data: dict,
@@ -473,7 +525,7 @@ def backtest_same_day(
     all_dates = sorted(common_dates)
     warmup = 130
     trading_dates = all_dates[warmup:]
-    rebalance_dates = trading_dates[::rq.REBALANCE_DAYS]
+    rebalance_dates = trading_dates[:: rq.REBALANCE_DAYS]
     rebalance_set = set(rebalance_dates)
 
     cash = initial_capital
@@ -527,7 +579,9 @@ def backtest_same_day(
             row = data[holding][data[holding]["trade_date"] == td]
             if not row.empty:
                 equity += holding_shares * float(row.iloc[0]["close"])
-        equity_history.append({"trade_date": td, "equity": equity, "holding": holding or rq.DEFENSE})
+        equity_history.append(
+            {"trade_date": td, "equity": equity, "holding": holding or rq.DEFENSE}
+        )
 
     if not equity_history:
         return {"error": "no data", "equity_curve": pd.DataFrame()}
@@ -560,13 +614,18 @@ def backtest_same_day(
         prev_val = end_val
 
     from collections import Counter
+
     holding_counts = Counter(eq_df["holding"].tolist())
 
     return {
-        "total_return": total_return, "ann_return": ann_ret,
-        "sharpe": sharpe, "max_drawdown": max_dd,
-        "yearly": yearly, "n_trades": n_trades,
-        "equity_curve": eq_df, "trade_log": trade_log,
+        "total_return": total_return,
+        "ann_return": ann_ret,
+        "sharpe": sharpe,
+        "max_drawdown": max_dd,
+        "yearly": yearly,
+        "n_trades": n_trades,
+        "equity_curve": eq_df,
+        "trade_log": trade_log,
         "holding_distribution": dict(holding_counts.most_common()),
         "final_equity": float(eq_df["equity"].iloc[-1]),
     }
@@ -575,6 +634,7 @@ def backtest_same_day(
 # ============================================================
 # 报告打印
 # ============================================================
+
 
 def print_comparison(name: str, res: dict, initial: float):
     """打印单策略详细报告."""
@@ -618,7 +678,7 @@ def print_comparison(name: str, res: dict, initial: float):
     total_days = len(eq)
     for code, count in sorted(dist.items(), key=lambda x: -x[1]):
         name_etf = rq.ETF_POOL.get(code, "货币基金")
-        print(f"    {name_etf:<10} {count:>6}天 ({count/total_days:>5.1%})")
+        print(f"    {name_etf:<10} {count:>6}天 ({count / total_days:>5.1%})")
 
 
 def print_all_results(results: dict, initial: float):
@@ -634,8 +694,10 @@ def print_all_results(results: dict, initial: float):
     for name, res in results.items():
         if "error" in res:
             continue
-        print(f"  {name:<14} {res['final_equity']:>12,.0f} {res['ann_return']:>+8.1%} "
-              f"{res['sharpe']:>8.2f} {res['max_drawdown']:>8.1%} {res['n_trades']:>6}")
+        print(
+            f"  {name:<14} {res['final_equity']:>12,.0f} {res['ann_return']:>+8.1%} "
+            f"{res['sharpe']:>8.2f} {res['max_drawdown']:>8.1%} {res['n_trades']:>6}"
+        )
 
     # 详细报告
     for name, res in results.items():
@@ -645,6 +707,7 @@ def print_all_results(results: dict, initial: float):
 # ============================================================
 # 主入口
 # ============================================================
+
 
 def main():
     data = rq.load_data()

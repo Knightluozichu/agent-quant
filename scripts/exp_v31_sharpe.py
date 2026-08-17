@@ -14,6 +14,7 @@
 
 用法: uv run python scripts/exp_v31_sharpe.py
 """
+
 from __future__ import annotations
 
 import sys
@@ -47,8 +48,9 @@ def ann_vol(close: np.ndarray, idx: int, window: int = 20) -> float | None:
 
 def build_dmap(data: dict) -> dict:
     """{code: {date: row_idx}} 预索引, 加速日级回测."""
-    return {code: {d: i for i, d in enumerate(df["trade_date"].tolist())}
-            for code, df in data.items()}
+    return {
+        code: {d: i for i, d in enumerate(df["trade_date"].tolist())} for code, df in data.items()
+    }
 
 
 def tradable(data: dict, dmap: dict, code: str, td) -> bool:
@@ -154,8 +156,9 @@ def run_v31(data: dict, P: dict, dmap: dict, cost_multiplier: float = 1.0) -> di
             if i >= 1:
                 daily_ret = close[i] / close[i - 1] - 1
                 dd_entry = (close[i] / entry_price - 1) if entry_price > 0 else 0.0
-                hit = ((P.get("exit_intraday") and daily_ret < P["exit_intraday"])
-                       or (P.get("exit_dd") and dd_entry < P["exit_dd"]))
+                hit = (P.get("exit_intraday") and daily_ret < P["exit_intraday"]) or (
+                    P.get("exit_dd") and dd_entry < P["exit_dd"]
+                )
                 if hit:
                     if tradable(data, dmap, holding, td):
                         cash += shares * close[i] * (1 - fee - slip)
@@ -168,13 +171,19 @@ def run_v31(data: dict, P: dict, dmap: dict, cost_multiplier: float = 1.0) -> di
         # === 调仓日: 选股与换仓 (C3 快速再入场 / D1 强趋势日频切换) ===
         is_decision = td in grid
         # D1 强趋势日频切换: 持仓动量>阈值时, 不等网格, 每日检查更优目标
-        if (not is_decision and P.get("daily_strong") and holding
-                and not cooling and not exited_today):
+        if (
+            not is_decision
+            and P.get("daily_strong")
+            and holding
+            and not cooling
+            and not exited_today
+        ):
             i_h = dmap.get(holding, {}).get(td)
             if i_h is not None and i_h >= 120:
                 h_close = data[holding]["close"].values[: i_h + 1].astype(float)
-                if (rq.check_single_day_drop(h_close)
-                        and rq.calc_momentum_score(h_close) > P.get("strong_th", 0.10)):
+                if rq.check_single_day_drop(h_close) and rq.calc_momentum_score(h_close) > P.get(
+                    "strong_th", 0.10
+                ):
                     is_decision = True
         if (is_decision or (P.get("fast_reenter") and not cooling)) and not exited_today:
             cooling = False
@@ -209,24 +218,33 @@ def run_v31(data: dict, P: dict, dmap: dict, cost_multiplier: float = 1.0) -> di
                                 raw_close = data[target]["close"].values[: i + 1].astype(float)
                                 raw_score = rq.calc_momentum_score(raw_close)
                                 if raw_score <= P["trend_gate"]:
-                                    exposure = float(np.clip(
-                                        P["vol_target"] / sigma,
-                                        P.get("vol_floor", 0.3),
-                                        P.get("leverage_cap", 1.0)))
+                                    exposure = float(
+                                        np.clip(
+                                            P["vol_target"] / sigma,
+                                            P.get("vol_floor", 0.3),
+                                            P.get("leverage_cap", 1.0),
+                                        )
+                                    )
                             elif P.get("vol_mode") == "crisis" and P.get("sigma_high"):
                                 # A1 危机模式: 仅当波动超过 sigma_high 才降仓
                                 sh = P["sigma_high"]
                                 if sigma > sh:
-                                    exposure = float(np.clip(
-                                        sh / sigma,
-                                        P.get("vol_floor", 0.3),
-                                        P.get("leverage_cap", 1.0)))
+                                    exposure = float(
+                                        np.clip(
+                                            sh / sigma,
+                                            P.get("vol_floor", 0.3),
+                                            P.get("leverage_cap", 1.0),
+                                        )
+                                    )
                             elif P.get("vol_target"):
                                 # 标准波动率目标 (leverage_cap 硬上限, 1.0=不加杠杆)
-                                exposure = float(np.clip(
-                                    P["vol_target"] / sigma,
-                                    P.get("vol_floor", 0.3),
-                                    P.get("leverage_cap", 1.0)))
+                                exposure = float(
+                                    np.clip(
+                                        P["vol_target"] / sigma,
+                                        P.get("vol_floor", 0.3),
+                                        P.get("leverage_cap", 1.0),
+                                    )
+                                )
                         buy_shares = int(cash * exposure * 0.99 / price / 100) * 100
                         if buy_shares > 0:
                             cash -= buy_shares * price * (1 + fee + slip)
@@ -249,8 +267,12 @@ def metrics(eq: pd.DataFrame, start: str, end: str) -> dict:
     """窗口化指标 (从单次全周期运行的净值切片, 保持网格与状态连续)."""
     w = eq[(eq["trade_date"] >= start) & (eq["trade_date"] <= end)]
     if len(w) < 30:
-        return {"ret": float("nan"), "sharpe": float("nan"),
-                "vol": float("nan"), "dd": float("nan")}
+        return {
+            "ret": float("nan"),
+            "sharpe": float("nan"),
+            "vol": float("nan"),
+            "dd": float("nan"),
+        }
     rets = w["equity"].pct_change().dropna()
     total = w["equity"].iloc[-1] / w["equity"].iloc[0] - 1
     span = max((w["trade_date"].iloc[-1] - w["trade_date"].iloc[0]).days / 365.25, 1e-9)
@@ -272,8 +294,7 @@ def scan_is(data, dmap) -> list:
     for vt in [0.22, 0.25, 0.28, 0.32, 0.40]:
         for ei in [-0.04, -0.05, -0.06]:
             for ed in [-0.08, -0.10, -0.12]:
-                P = {"vol_target": vt, "vol_floor": 0.3,
-                     "exit_intraday": ei, "exit_dd": ed}
+                P = {"vol_target": vt, "vol_floor": 0.3, "exit_intraday": ei, "exit_dd": ed}
                 r = run_v31(data, P, dmap)
                 m = metrics(r["equity"], *IS_RANGE)
                 results.append({"P": P, "is": m, "n_exits": r["n_exits"]})
@@ -289,9 +310,11 @@ def select_params(scan: list) -> dict:
 
     def dist(x):
         p = x["P"]
-        return (abs(p["vol_target"] - center["vol_target"]) / 0.28
-                + abs(p["exit_intraday"] - center["exit_intraday"]) / 0.05
-                + abs(p["exit_dd"] - center["exit_dd"]) / 0.10)
+        return (
+            abs(p["vol_target"] - center["vol_target"]) / 0.28
+            + abs(p["exit_intraday"] - center["exit_intraday"]) / 0.05
+            + abs(p["exit_dd"] - center["exit_dd"]) / 0.10
+        )
 
     return min(top, key=dist)["P"]
 
@@ -313,15 +336,21 @@ def main() -> None:
     # === 1. IS 扫描 ===
     print("\n  [1] IS 2020-2023 参数扫描 (Top8 by IS夏普)")
     scan = scan_is(data, dmap)
-    print(f"  {'σ_tgt':>5} {'急跌':>6} {'回撤':>6} | {'IS夏普':>7} {'IS波动':>7} {'IS回撤':>7} {'退出次':>5}")
+    print(
+        f"  {'σ_tgt':>5} {'急跌':>6} {'回撤':>6} | {'IS夏普':>7} {'IS波动':>7} {'IS回撤':>7} {'退出次':>5}"
+    )
     for x in scan[:8]:
         p, m = x["P"], x["is"]
-        print(f"  {p['vol_target']:>5.2f} {p['exit_intraday']:>6.2f} {p['exit_dd']:>6.2f} | "
-              f"{m['sharpe']:>7.2f} {m['vol']:>7.1%} {m['dd']:>7.1%} {x['n_exits']:>5}")
+        print(
+            f"  {p['vol_target']:>5.2f} {p['exit_intraday']:>6.2f} {p['exit_dd']:>6.2f} | "
+            f"{m['sharpe']:>7.2f} {m['vol']:>7.1%} {m['dd']:>7.1%} {x['n_exits']:>5}"
+        )
 
     chosen = select_params(scan)
-    print(f"\n  [2] 选定参数 (中心先验): σ_target={chosen['vol_target']}, "
-          f"急跌={chosen['exit_intraday']}, 回撤={chosen['exit_dd']}")
+    print(
+        f"\n  [2] 选定参数 (中心先验): σ_target={chosen['vol_target']}, "
+        f"急跌={chosen['exit_intraday']}, 回撤={chosen['exit_dd']}"
+    )
 
     # === 2. 机制叠加消融 (OOS 只用于验证展示, 不参与选参) ===
     configs = {
@@ -334,26 +363,34 @@ def main() -> None:
     print(f"\n  [3] 机制消融对比 (夏普)")
     print(f"  {'配置':<22} {'IS':>6} {'OOS':>6} {'全周期':>6} {'全周期回撤':>9} {'退出次':>5}")
     # 真实镜像基线 (含涨跌停检查的 run_qixing_v3_same_day)
-    print(f"  {'基线(实盘镜像)':<22} {mb_is['sharpe']:>6.2f} {mb_oos['sharpe']:>6.2f} "
-          f"{mb_full['sharpe']:>6.2f} {mb_full['dd']:>9.1%} {'-':>5}")
+    print(
+        f"  {'基线(实盘镜像)':<22} {mb_is['sharpe']:>6.2f} {mb_oos['sharpe']:>6.2f} "
+        f"{mb_full['sharpe']:>6.2f} {mb_full['dd']:>9.1%} {'-':>5}"
+    )
     best_full = None
     for name, P in configs.items():
         r = run_v31(data, P, dmap)
         mis = metrics(r["equity"], *IS_RANGE)
         moos = metrics(r["equity"], *OOS_RANGE)
         mfull = metrics(r["equity"], "2020-01-01", "2026-12-31")
-        print(f"  {name:<22} {mis['sharpe']:>6.2f} {moos['sharpe']:>6.2f} "
-              f"{mfull['sharpe']:>6.2f} {mfull['dd']:>9.1%} {r['n_exits']:>5}")
+        print(
+            f"  {name:<22} {mis['sharpe']:>6.2f} {moos['sharpe']:>6.2f} "
+            f"{mfull['sharpe']:>6.2f} {mfull['dd']:>9.1%} {r['n_exits']:>5}"
+        )
         if best_full is None or mfull["sharpe"] > best_full[1]["sharpe"]:
             best_full = (name, mfull, P, r)
 
     # === 3. 最优配置详表 ===
     name, mfull, P_best, r_best = best_full
     print(f"\n  [4] 推荐配置: {name}")
-    print(f"      全周期: 收益{mfull['ret']:+.0%} 年化{mfull['ann']:+.1%} "
-          f"夏普{mfull['sharpe']:.2f} 波动{mfull['vol']:.1%} 回撤{mfull['dd']:.1%}")
-    print(f"      基线对照: 夏普{mb_full['sharpe']:.2f} 回撤{mb_full['dd']:.1%} "
-          f"(IS {mb_is['sharpe']:.2f} / OOS {mb_oos['sharpe']:.2f})")
+    print(
+        f"      全周期: 收益{mfull['ret']:+.0%} 年化{mfull['ann']:+.1%} "
+        f"夏普{mfull['sharpe']:.2f} 波动{mfull['vol']:.1%} 回撤{mfull['dd']:.1%}"
+    )
+    print(
+        f"      基线对照: 夏普{mb_full['sharpe']:.2f} 回撤{mb_full['dd']:.1%} "
+        f"(IS {mb_is['sharpe']:.2f} / OOS {mb_oos['sharpe']:.2f})"
+    )
     eq = r_best["equity"]
     eq["year"] = eq["trade_date"].dt.year
     print(f"\n      年度明细:")
@@ -363,10 +400,12 @@ def main() -> None:
         y = eq[eq["year"] == year]
         yr_ret = y["equity"].iloc[-1] / (prev or INITIAL) - 1
         m = metrics(eq, f"{year}-01-01", f"{year}-12-31")
-        print(f"      {year:<6} {yr_ret:>+8.1%} {m['vol']:>8.1%} {m['sharpe']:>6.2f} {m['dd']:>8.1%}")
+        print(
+            f"      {year:<6} {yr_ret:>+8.1%} {m['vol']:>8.1%} {m['sharpe']:>6.2f} {m['dd']:>8.1%}"
+        )
         prev = y["equity"].iloc[-1]
     final = eq["equity"].iloc[-1]
-    print(f"\n      10万 → {final:,.0f} ({final/INITIAL-1:+.0%})")
+    print(f"\n      10万 → {final:,.0f} ({final / INITIAL - 1:+.0%})")
 
     # === 4. 参数扰动 ±20% 稳健性 ===
     print(f"\n  [5] 参数扰动稳健性 (全周期夏普)")
@@ -390,7 +429,9 @@ def main() -> None:
     for mult in [2.0, 3.0]:
         rc = run_v31(data, P_best, dmap, cost_multiplier=mult)
         mc = metrics(rc["equity"], "2020-01-01", "2026-12-31")
-        print(f"      {mult:.0f}x成本: 夏普 {mc['sharpe']:.2f} 收益 {mc['ret']:+.0%} 回撤 {mc['dd']:.1%}")
+        print(
+            f"      {mult:.0f}x成本: 夏普 {mc['sharpe']:.2f} 收益 {mc['ret']:+.0%} 回撤 {mc['dd']:.1%}"
+        )
 
 
 def aggressive_scan() -> None:
@@ -403,24 +444,21 @@ def aggressive_scan() -> None:
         "V3镜像(满仓基线)": None,  # 特殊处理
         "V3.1保守(σ0.28)": {"vol_target": 0.28, "vol_floor": 0.3, **P2},
         "A0 仅日频退出": dict(P2),
-        "A1a 危机模式σh=0.40": {"vol_mode": "crisis", "sigma_high": 0.40,
-                            "vol_floor": 0.3, **P2},
-        "A1b 危机模式σh=0.45": {"vol_mode": "crisis", "sigma_high": 0.45,
-                            "vol_floor": 0.3, **P2},
-        "A1c 危机模式σh=0.50": {"vol_mode": "crisis", "sigma_high": 0.50,
-                            "vol_floor": 0.3, **P2},
-        "A2 趋势门控+σ0.28": {"vol_target": 0.28, "vol_floor": 0.3,
-                          "trend_gate": 0.10, **P2},
-        "A2b 趋势门控+σ0.35": {"vol_target": 0.35, "vol_floor": 0.3,
-                           "trend_gate": 0.10, **P2},
+        "A1a 危机模式σh=0.40": {"vol_mode": "crisis", "sigma_high": 0.40, "vol_floor": 0.3, **P2},
+        "A1b 危机模式σh=0.45": {"vol_mode": "crisis", "sigma_high": 0.45, "vol_floor": 0.3, **P2},
+        "A1c 危机模式σh=0.50": {"vol_mode": "crisis", "sigma_high": 0.50, "vol_floor": 0.3, **P2},
+        "A2 趋势门控+σ0.28": {"vol_target": 0.28, "vol_floor": 0.3, "trend_gate": 0.10, **P2},
+        "A2b 趋势门控+σ0.35": {"vol_target": 0.35, "vol_floor": 0.3, "trend_gate": 0.10, **P2},
         "A3 高σ目标0.40": {"vol_target": 0.40, "vol_floor": 0.3, **P2},
     }
 
     print("=" * 88)
     print("  激进突变方案对比 (全周期 2020-2026.7, 10万本金)")
     print("=" * 88)
-    print(f"  {'方案':<18} {'终值':>10} {'总收益':>8} {'年化':>7} {'夏普':>6} "
-          f"{'波动':>7} {'回撤':>8} {'IS夏普':>7} {'OOS夏普':>8}")
+    print(
+        f"  {'方案':<18} {'终值':>10} {'总收益':>8} {'年化':>7} {'夏普':>6} "
+        f"{'波动':>7} {'回撤':>8} {'IS夏普':>7} {'OOS夏普':>8}"
+    )
     print(f"  {'-' * 86}")
     finals: dict[str, float] = {}
     for name, P in configs.items():
@@ -434,9 +472,11 @@ def aggressive_scan() -> None:
         moos = metrics(eq, *OOS_RANGE)
         final = eq["equity"].iloc[-1]
         finals[name] = final
-        print(f"  {name:<18} {final:>10,.0f} {mf['ret']:>+8.0%} {mf['ann']:>+7.1%} "
-              f"{mf['sharpe']:>6.2f} {mf['vol']:>7.1%} {mf['dd']:>8.1%} "
-              f"{mis['sharpe']:>7.2f} {moos['sharpe']:>8.2f}")
+        print(
+            f"  {name:<18} {final:>10,.0f} {mf['ret']:>+8.0%} {mf['ann']:>+7.1%} "
+            f"{mf['sharpe']:>6.2f} {mf['vol']:>7.1%} {mf['dd']:>8.1%} "
+            f"{mis['sharpe']:>7.2f} {moos['sharpe']:>8.2f}"
+        )
 
     # 最优激进方案年度明细 (A* 中终值最高者, 数据选出而非预设)
     best_name = max((n for n in finals if n.startswith("A")), key=lambda n: finals[n])
@@ -448,8 +488,9 @@ def aggressive_scan() -> None:
         s, e = f"{year}-01-01", f"{year}-12-31"
         mo = metrics(mir, s, e)
         mn = metrics(eq, s, e)
-        print(f"  {year:<6} {mo['ret']:>+8.1%} {mn['ret']:>+9.1%} "
-              f"{mo['dd']:>7.1%} {mn['dd']:>8.1%}")
+        print(
+            f"  {year:<6} {mo['ret']:>+8.1%} {mn['ret']:>+9.1%} {mo['dd']:>7.1%} {mn['dd']:>8.1%}"
+        )
 
 
 def gain_scan() -> None:
@@ -465,12 +506,16 @@ def gain_scan() -> None:
         mf = metrics(eq, "2020-01-01", "2026-12-31")
         mis = metrics(eq, *IS_RANGE)
         moos = metrics(eq, *OOS_RANGE)
-        print(f"  {name:<24} {eq['equity'].iloc[-1]:>10,.0f} {mf['ret']:>+8.0%} "
-              f"{mf['ann']:>+7.1%} {mf['sharpe']:>6.2f} {mf['dd']:>8.1%} "
-              f"{mis['sharpe']:>7.2f} {moos['sharpe']:>7.2f} {extra}")
+        print(
+            f"  {name:<24} {eq['equity'].iloc[-1]:>10,.0f} {mf['ret']:>+8.0%} "
+            f"{mf['ann']:>+7.1%} {mf['sharpe']:>6.2f} {mf['dd']:>8.1%} "
+            f"{mis['sharpe']:>7.2f} {moos['sharpe']:>7.2f} {extra}"
+        )
 
-    print(f"  {'方案':<24} {'终值':>10} {'总收益':>8} {'年化':>7} {'夏普':>6} "
-          f"{'回撤':>8} {'IS夏普':>7} {'OOS夏普':>7}")
+    print(
+        f"  {'方案':<24} {'终值':>10} {'总收益':>8} {'年化':>7} {'夏普':>6} "
+        f"{'回撤':>8} {'IS夏普':>7} {'OOS夏普':>7}"
+    )
     print(f"  {'-' * 90}")
 
     base = rq.run_qixing_v3_same_day(data, INITIAL, live_mirror=True)["equity_curve"]
@@ -483,8 +528,12 @@ def gain_scan() -> None:
 
     # D2: 动量公式变体 (临时覆写模块参数, 用后还原)
     orig_p, orig_w = rq.MOM_PERIODS, rq.MOM_WEIGHTS
-    for periods, weights in [((5, 10), (0.5, 0.5)), ((10, 30), (0.5, 0.5)),
-                             ((20, 60), (0.5, 0.5)), ((5, 10, 20), (0.4, 0.35, 0.25))]:
+    for periods, weights in [
+        ((5, 10), (0.5, 0.5)),
+        ((10, 30), (0.5, 0.5)),
+        ((20, 60), (0.5, 0.5)),
+        ((5, 10, 20), (0.4, 0.35, 0.25)),
+    ]:
         rq.MOM_PERIODS, rq.MOM_WEIGHTS = periods, weights
         try:
             eq = run_v31(data, {}, dmap)["equity"]
@@ -499,8 +548,10 @@ def gain_scan() -> None:
         f = eq["equity"].iloc[-1]
         finals.append(f)
         show(f"D3 网格相位 offset={off}", eq)
-    print(f"    → 相位极差: {max(finals)-min(finals):,.0f} "
-          f"({(max(finals)/min(finals)-1):+.0%}), 说明相位对结果影响显著")
+    print(
+        f"    → 相位极差: {max(finals) - min(finals):,.0f} "
+        f"({(max(finals) / min(finals) - 1):+.0%}), 说明相位对结果影响显著"
+    )
 
     # 组合: D1(最优th) + D2(最优公式) 叠加测试
     rq.MOM_PERIODS, rq.MOM_WEIGHTS = (5, 10), (0.5, 0.5)
@@ -513,11 +564,14 @@ def gain_scan() -> None:
     # 最优放大方案的成本压力测试
     print(f"\n  [D1 th=0.10 成本压力测试]")
     for mult in [2.0, 3.0]:
-        eq = run_v31(data, {"daily_strong": True, "strong_th": 0.10},
-                     dmap, cost_multiplier=mult)["equity"]
+        eq = run_v31(data, {"daily_strong": True, "strong_th": 0.10}, dmap, cost_multiplier=mult)[
+            "equity"
+        ]
         mf = metrics(eq, "2020-01-01", "2026-12-31")
-        print(f"    {mult:.0f}x成本: 终值 {eq['equity'].iloc[-1]:,.0f} "
-              f"夏普 {mf['sharpe']:.2f} 回撤 {mf['dd']:.1%}")
+        print(
+            f"    {mult:.0f}x成本: 终值 {eq['equity'].iloc[-1]:,.0f} "
+            f"夏普 {mf['sharpe']:.2f} 回撤 {mf['dd']:.1%}"
+        )
 
 
 def alpha_scan() -> None:
@@ -540,8 +594,10 @@ def alpha_scan() -> None:
     print("=" * 92)
     print("  双目标探索: 夏普↑ 且 收益不降 (不动仓位的 alpha 改进, 10万本金)")
     print("=" * 92)
-    print(f"  {'方案':<20} {'终值':>10} {'总收益':>8} {'年化':>7} {'夏普':>6} "
-          f"{'回撤':>8} {'IS夏普':>7} {'OOS夏普':>8}")
+    print(
+        f"  {'方案':<20} {'终值':>10} {'总收益':>8} {'年化':>7} {'夏普':>6} "
+        f"{'回撤':>8} {'IS夏普':>7} {'OOS夏普':>8}"
+    )
     print(f"  {'-' * 88}")
     base_final = None
     results = {}
@@ -558,17 +614,24 @@ def alpha_scan() -> None:
             base_final = final
         results[name] = (mf, mis, moos, final)
         win = "✓收益达标" if final >= base_final * 0.95 else ""
-        print(f"  {name:<20} {final:>10,.0f} {mf['ret']:>+8.0%} {mf['ann']:>+7.1%} "
-              f"{mf['sharpe']:>6.2f} {mf['dd']:>8.1%} {mis['sharpe']:>7.2f} "
-              f"{moos['sharpe']:>8.2f} {win}")
+        print(
+            f"  {name:<20} {final:>10,.0f} {mf['ret']:>+8.0%} {mf['ann']:>+7.1%} "
+            f"{mf['sharpe']:>6.2f} {mf['dd']:>8.1%} {mis['sharpe']:>7.2f} "
+            f"{moos['sharpe']:>8.2f} {win}"
+        )
 
 
 def compare() -> None:
     """V3.1 确定版 (σ_target=0.28) vs V3 实盘镜像 详细对比."""
     data = rq.load_data()
     dmap = build_dmap(data)
-    P = {"vol_target": 0.28, "vol_floor": 0.3, "exit_intraday": -0.05,
-         "exit_dd": -0.10, "leverage_cap": 1.0}
+    P = {
+        "vol_target": 0.28,
+        "vol_floor": 0.3,
+        "exit_intraday": -0.05,
+        "exit_dd": -0.10,
+        "leverage_cap": 1.0,
+    }
 
     print("=" * 66)
     print("  V3.1 确定版 vs V3 实盘镜像 — 回测验证对比")
@@ -587,13 +650,18 @@ def compare() -> None:
 
     print(f"\n  {'指标':<10} {'V3镜像':>10} {'V3.1':>10}")
     print(f"  {'-' * 34}")
-    for label, s, e in [("全周期", "2020-01-01", "2026-12-31"),
-                        ("IS 20-23", *IS_RANGE), ("OOS 24-26", *OOS_RANGE)]:
+    for label, s, e in [
+        ("全周期", "2020-01-01", "2026-12-31"),
+        ("IS 20-23", *IS_RANGE),
+        ("OOS 24-26", *OOS_RANGE),
+    ]:
         mo = metrics(eq_old, s, e)
         mn = metrics(eq_new, s, e)
-        print(f"  [{label}] 夏普 {mo['sharpe']:.2f} → {mn['sharpe']:.2f} | "
-              f"年化 {mo['ann']:+.1%} → {mn['ann']:+.1%} | "
-              f"回撤 {mo['dd']:.1%} → {mn['dd']:.1%}")
+        print(
+            f"  [{label}] 夏普 {mo['sharpe']:.2f} → {mn['sharpe']:.2f} | "
+            f"年化 {mo['ann']:+.1%} → {mn['ann']:+.1%} | "
+            f"回撤 {mo['dd']:.1%} → {mn['dd']:.1%}"
+        )
 
     mo = metrics(eq_old, "2020-01-01", "2026-12-31")
     mn = metrics(eq_new, "2020-01-01", "2026-12-31")
@@ -609,13 +677,17 @@ def compare() -> None:
 
     # 年度对比
     print(f"\n  年度对比:")
-    print(f"  {'年份':<6} {'V3收益':>8} {'V3.1收益':>9} {'V3夏普':>6} {'V3.1夏普':>7} {'V3回撤':>7} {'V3.1回撤':>8}")
+    print(
+        f"  {'年份':<6} {'V3收益':>8} {'V3.1收益':>9} {'V3夏普':>6} {'V3.1夏普':>7} {'V3回撤':>7} {'V3.1回撤':>8}"
+    )
     for year in sorted(eq_new["trade_date"].dt.year.unique()):
         s, e = f"{year}-01-01", f"{year}-12-31"
         mo = metrics(eq_old, s, e)
         mn = metrics(eq_new, s, e)
-        print(f"  {year:<6} {mo['ret']:>+8.1%} {mn['ret']:>+9.1%} {mo['sharpe']:>6.2f} "
-              f"{mn['sharpe']:>7.2f} {mo['dd']:>7.1%} {mn['dd']:>8.1%}")
+        print(
+            f"  {year:<6} {mo['ret']:>+8.1%} {mn['ret']:>+9.1%} {mo['sharpe']:>6.2f} "
+            f"{mn['sharpe']:>7.2f} {mo['dd']:>7.1%} {mn['dd']:>8.1%}"
+        )
 
 
 if __name__ == "__main__":

@@ -34,15 +34,18 @@ from a_share_quant.rules import (
 # Events
 # =============================================================================
 
+
 @dataclass
 class MarketEvent:
     """New market data available."""
+
     trade_date: date
 
 
 @dataclass
 class SignalEvent:
     """Strategy generated a signal."""
+
     trade_date: date
     symbol: str
     action: str  # BUY, SELL, HOLD
@@ -54,6 +57,7 @@ class SignalEvent:
 @dataclass
 class OrderEvent:
     """Order to be executed."""
+
     trade_date: date
     symbol: str
     side: str  # BUY, SELL
@@ -66,6 +70,7 @@ class OrderEvent:
 @dataclass
 class FillEvent:
     """Order was filled."""
+
     trade_date: date
     symbol: str
     side: str
@@ -79,6 +84,7 @@ class FillEvent:
 # =============================================================================
 # Execution Simulator
 # =============================================================================
+
 
 class ExecutionSimulator:
     """Simulate order execution with A-share rules.
@@ -164,6 +170,7 @@ class ExecutionSimulator:
 # Performance Metrics
 # =============================================================================
 
+
 @dataclass
 class PerformanceMetrics:
     """Performance metrics for a backtest."""
@@ -215,7 +222,7 @@ class MetricsCalculator:
         annual_return = (1 + total_return) ** (252 / n_days) - 1 if n_days > 0 else 0
 
         # Volatility (annualized)
-        volatility = returns.std() * (252 ** 0.5) if len(returns) > 1 else 0
+        volatility = returns.std() * (252**0.5) if len(returns) > 1 else 0
 
         # Sharpe ratio
         excess_return = annual_return - risk_free_rate
@@ -254,6 +261,7 @@ class MetricsCalculator:
 # =============================================================================
 # Backtest Engine
 # =============================================================================
+
 
 @dataclass
 class BacktestConfig:
@@ -455,14 +463,16 @@ class BacktestEngine:
             self._account.apply_trade(amount, total_fee, "SELL", order.trade_date)
 
         # Record trade
-        self._trades.append({
-            "date": order.trade_date,
-            "symbol": order.symbol,
-            "side": order.side,
-            "quantity": fill.quantity,
-            "price": fill.fill_price,
-            "commission": fill.commission,
-            "stamp_tax": fill.stamp_tax,
-            "transfer_fee": fill.transfer_fee,
-            "strategy": order.strategy_name,
-        })
+        self._trades.append(
+            {
+                "date": order.trade_date,
+                "symbol": order.symbol,
+                "side": order.side,
+                "quantity": fill.quantity,
+                "price": fill.fill_price,
+                "commission": fill.commission,
+                "stamp_tax": fill.stamp_tax,
+                "transfer_fee": fill.transfer_fee,
+                "strategy": order.strategy_name,
+            }
+        )

@@ -42,10 +42,22 @@ TEST_START = date(2024, 1, 1)
 REBALANCE = 20  # 月频(20天)
 
 ALL_FACTORS = [
-    "momentum", "reversal", "low_vol", "trend", "volume_trend",
-    "bias", "rsi", "macd", "atr_ratio", "obv",
-    "skewness", "vol_change", "amplitude", "bollinger",
-    "momentum_accel", "breakout",
+    "momentum",
+    "reversal",
+    "low_vol",
+    "trend",
+    "volume_trend",
+    "bias",
+    "rsi",
+    "macd",
+    "atr_ratio",
+    "obv",
+    "skewness",
+    "vol_change",
+    "amplitude",
+    "bollinger",
+    "momentum_accel",
+    "breakout",
 ]
 CLUSTER_REPS = ["momentum", "reversal", "low_vol", "trend", "volume_trend", "skewness"]
 
@@ -54,6 +66,7 @@ CLUSTER_REPS = ["momentum", "reversal", "low_vol", "trend", "volume_trend", "ske
 # Factor Engine
 # =============================================================================
 
+
 def calc_all_factors(df: pd.DataFrame, as_of: date) -> dict[str, float] | None:
     hist = df[df["trade_date"] <= as_of].sort_values("trade_date")
     if len(hist) < 120:
@@ -61,13 +74,23 @@ def calc_all_factors(df: pd.DataFrame, as_of: date) -> dict[str, float] | None:
     close = hist["close"].values.astype(float)
     high = hist["high"].values.astype(float) if "high" in hist.columns else close
     low = hist["low"].values.astype(float) if "low" in hist.columns else close
-    volume = hist["volume"].values.astype(float) if "volume" in hist.columns else np.ones(len(close))
+    volume = (
+        hist["volume"].values.astype(float) if "volume" in hist.columns else np.ones(len(close))
+    )
     c = close[-1]
     f = {}
 
     f["momentum"] = (close[-20] - close[-80]) / close[-80] if len(close) >= 80 else 0.0
-    f["momentum_accel"] = ((close[-10] - close[-20]) / close[-20] - (close[-20] - close[-30]) / close[-30]) if len(close) >= 30 else 0.0
-    f["breakout"] = (c - close[-60:].min()) / (close[-60:].max() - close[-60:].min() + 1e-8) if len(close) >= 60 else 0.5
+    f["momentum_accel"] = (
+        ((close[-10] - close[-20]) / close[-20] - (close[-20] - close[-30]) / close[-30])
+        if len(close) >= 30
+        else 0.0
+    )
+    f["breakout"] = (
+        (c - close[-60:].min()) / (close[-60:].max() - close[-60:].min() + 1e-8)
+        if len(close) >= 60
+        else 0.5
+    )
     f["reversal"] = -(close[-1] - close[-5]) / close[-5] if len(close) >= 5 else 0.0
     if len(close) >= 14:
         deltas = np.diff(close[-15:])
@@ -82,11 +105,16 @@ def calc_all_factors(df: pd.DataFrame, as_of: date) -> dict[str, float] | None:
     else:
         f["low_vol"] = 0.0
     if len(high) >= 20:
-        tr = np.maximum(high[-20:] - low[-20:], np.maximum(np.abs(high[-20:] - close[-21:-1]), np.abs(low[-20:] - close[-21:-1])))
+        tr = np.maximum(
+            high[-20:] - low[-20:],
+            np.maximum(np.abs(high[-20:] - close[-21:-1]), np.abs(low[-20:] - close[-21:-1])),
+        )
         f["atr_ratio"] = -np.mean(tr) / (c + 1e-8)
     else:
         f["atr_ratio"] = 0.0
-    f["amplitude"] = -np.mean((high[-20:] - low[-20:]) / (close[-20:] + 1e-8)) if len(close) >= 20 else 0.0
+    f["amplitude"] = (
+        -np.mean((high[-20:] - low[-20:]) / (close[-20:] + 1e-8)) if len(close) >= 20 else 0.0
+    )
     if len(close) >= 40:
         v1 = np.std(np.diff(close[-20:]) / close[-20:-1])
         v2 = np.std(np.diff(close[-40:-20]) / close[-40:-21])
@@ -106,10 +134,14 @@ def calc_all_factors(df: pd.DataFrame, as_of: date) -> dict[str, float] | None:
         f["bollinger"] = -(c - ma20) / (2 * np.std(close[-20:]) + 1e-8)
     else:
         f["bollinger"] = 0.0
-    f["volume_trend"] = (np.mean(volume[-20:]) / (np.mean(volume[-60:]) + 1e-8) - 1) if len(volume) >= 60 else 0.0
+    f["volume_trend"] = (
+        (np.mean(volume[-20:]) / (np.mean(volume[-60:]) + 1e-8) - 1) if len(volume) >= 60 else 0.0
+    )
     if len(volume) >= 20:
         pc = np.diff(close[-20:])
-        f["obv"] = np.sum(np.where(pc > 0, volume[-19:], -volume[-19:])) / (np.sum(volume[-20:]) + 1e-8)
+        f["obv"] = np.sum(np.where(pc > 0, volume[-19:], -volume[-19:])) / (
+            np.sum(volume[-20:]) + 1e-8
+        )
     else:
         f["obv"] = 0.0
     if len(close) >= 21:
@@ -165,6 +197,7 @@ def get_forward_returns(data, panel, as_of, horizon=20):
 # NN
 # =============================================================================
 
+
 class FactorNN:
     def __init__(self, n_in, n_hidden=8, lr=0.005, wd=0.001, seed=42):
         rng = np.random.default_rng(seed)
@@ -189,7 +222,7 @@ class FactorNN:
     def train(self, X, y, epochs=100):
         n = len(X)
         for _ in range(epochs):
-            idx = np.random.permutation(n)[:min(256, n)]
+            idx = np.random.permutation(n)[: min(256, n)]
             Xb, yb = X[idx], y[idx]
             pred = self.forward(Xb)
             p, t = pred - pred.mean(), yb - yb.mean()
@@ -211,7 +244,12 @@ class FactorNN:
                 m_hat = self._m[key] / (1 - 0.9**self._t)
                 v_hat = self._v[key] / (1 - 0.999**self._t)
                 params[key] -= self.lr * (m_hat / (np.sqrt(v_hat) + 1e-8) + self.wd * params[key])
-            self.W1, self.b1, self.W2, self.b2 = params["W1"], params["b1"], params["W2"], params["b2"]
+            self.W1, self.b1, self.W2, self.b2 = (
+                params["W1"],
+                params["b1"],
+                params["W2"],
+                params["b2"],
+            )
 
     def predict(self, X):
         return self.forward(X)
@@ -220,6 +258,7 @@ class FactorNN:
 # =============================================================================
 # AdamW Factor Weight Optimizer (for v4.2-C)
 # =============================================================================
+
 
 def optimize_factor_weights(panels, data, train_dates, factors, lr=0.01, epochs=200):
     """在训练集上用AdamW优化因子权重, 最大化RankIC."""
@@ -267,7 +306,7 @@ def optimize_factor_weights(panels, data, train_dates, factors, lr=0.01, epochs=
             all_ic.append(ic)
 
             # d(IC)/d(scores)
-            d_scores = (y_norm / (ss * sy) - s_norm * np.sum(s_norm * y_norm) / (ss**3 * sy))
+            d_scores = y_norm / (ss * sy) - s_norm * np.sum(s_norm * y_norm) / (ss**3 * sy)
             # d(scores)/d(sw) = X.T @ d_scores
             d_sw = X.T @ d_scores  # (F,)
             # d(sw)/d(w) = softmax jacobian (approx: diag(sw) - sw*sw.T)
@@ -282,8 +321,8 @@ def optimize_factor_weights(panels, data, train_dates, factors, lr=0.01, epochs=
         # AdamW update
         m = 0.9 * m + 0.1 * grad
         v = 0.999 * v + 0.001 * grad**2
-        m_hat = m / (1 - 0.9**(epoch + 1))
-        v_hat = v / (1 - 0.999**(epoch + 1))
+        m_hat = m / (1 - 0.9 ** (epoch + 1))
+        v_hat = v / (1 - 0.999 ** (epoch + 1))
         w -= lr * (m_hat / (np.sqrt(v_hat) + 1e-8) + wd * w)
 
     # 返回softmax权重
@@ -294,6 +333,7 @@ def optimize_factor_weights(panels, data, train_dates, factors, lr=0.01, epochs=
 # =============================================================================
 # Gate & Vol
 # =============================================================================
+
 
 def check_gate(index_df, as_of, ma_period=60):
     idx = index_df[index_df["trade_date"] <= as_of].sort_values("trade_date")
@@ -323,9 +363,20 @@ def calc_vol_scale(data, selected, as_of, target_vol=0.20):
 # Backtest Engine
 # =============================================================================
 
-def run_backtest(data, index_df, panels, strategy, rebalance=20,
-                 start_date=None, end_date=None, nn=None, factor_weights=None,
-                 initial_capital=100_000.0, top_n=4):
+
+def run_backtest(
+    data,
+    index_df,
+    panels,
+    strategy,
+    rebalance=20,
+    start_date=None,
+    end_date=None,
+    nn=None,
+    factor_weights=None,
+    initial_capital=100_000.0,
+    top_n=4,
+):
     """统一回测. start_date/end_date控制测试区间."""
     all_dates = sorted(panels.keys())
     if start_date:
@@ -492,9 +543,13 @@ def run_backtest(data, index_df, panels, strategy, rebalance=20,
         prev_val = end_val
 
     return {
-        "total_return": total_return, "ann_return": ann_ret,
-        "sharpe": sharpe, "max_drawdown": max_dd,
-        "yearly": yearly, "n_trades": n_trades, "equity_curve": eq_df,
+        "total_return": total_return,
+        "ann_return": ann_ret,
+        "sharpe": sharpe,
+        "max_drawdown": max_dd,
+        "yearly": yearly,
+        "n_trades": n_trades,
+        "equity_curve": eq_df,
     }
 
 
@@ -502,11 +557,16 @@ def run_backtest(data, index_df, panels, strategy, rebalance=20,
 # Main
 # =============================================================================
 
+
 def load_data():
     data = {}
     for f in DATA_DIR.glob("*.parquet"):
-        if f.name in ("combined_long.parquet", "northbound.parquet",
-                      "pe_percentile.parquet", "margin_sentiment.parquet"):
+        if f.name in (
+            "combined_long.parquet",
+            "northbound.parquet",
+            "pe_percentile.parquet",
+            "margin_sentiment.parquet",
+        ):
             continue
         df = pd.read_parquet(f)
         if "symbol" not in df.columns or "trade_date" not in df.columns:
@@ -582,8 +642,9 @@ def main():
 
     # C: AdamW因子权重优化
     print(f"  优化v4.2因子权重 (AdamW, 16因子)...")
-    factor_weights = optimize_factor_weights(panels, data, train_dates, ALL_FACTORS,
-                                             lr=0.01, epochs=200)
+    factor_weights = optimize_factor_weights(
+        panels, data, train_dates, ALL_FACTORS, lr=0.01, epochs=200
+    )
     print(f"    优化后权重:")
     for fname, w in sorted(zip(ALL_FACTORS, factor_weights), key=lambda x: -x[1]):
         if w > 0.03:
@@ -602,23 +663,39 @@ def main():
     results = {}
     for name, strat, nn_model, fw in strategies:
         print(f"\n  {name}...", end=" ", flush=True)
-        r = run_backtest(data, index_df, panels, strategy=strat,
-                         rebalance=REBALANCE, start_date=TEST_START,
-                         nn=nn_model, factor_weights=fw)
+        r = run_backtest(
+            data,
+            index_df,
+            panels,
+            strategy=strat,
+            rebalance=REBALANCE,
+            start_date=TEST_START,
+            nn=nn_model,
+            factor_weights=fw,
+        )
         results[name] = r
         if "error" in r:
             print(f"ERROR")
         else:
-            print(f"收益{r['total_return']:+.1%} | 夏普{r['sharpe']:.2f} | "
-                  f"回撤{r['max_drawdown']:.1%} | 交易{r['n_trades']}次")
+            print(
+                f"收益{r['total_return']:+.1%} | 夏普{r['sharpe']:.2f} | "
+                f"回撤{r['max_drawdown']:.1%} | 交易{r['n_trades']}次"
+            )
 
     # 也跑训练期(对比用)
     print(f"\n[对比] 训练期(2022-2023)表现...")
     train_results = {}
     for name, strat, nn_model, fw in strategies:
-        r = run_backtest(data, index_df, panels, strategy=strat,
-                         rebalance=REBALANCE, end_date=TRAIN_END,
-                         nn=nn_model, factor_weights=fw)
+        r = run_backtest(
+            data,
+            index_df,
+            panels,
+            strategy=strat,
+            rebalance=REBALANCE,
+            end_date=TRAIN_END,
+            nn=nn_model,
+            factor_weights=fw,
+        )
         train_results[name] = r
 
     # === 基准 ===
@@ -630,7 +707,9 @@ def main():
         # 沪深300
         idx_y = index_df[index_df["trade_date"].apply(lambda x: x.year) == year]
         if len(idx_y) >= 2:
-            benchmarks["沪深300"][year] = (idx_y["close"].iloc[-1] - idx_y["close"].iloc[0]) / idx_y["close"].iloc[0]
+            benchmarks["沪深300"][year] = (
+                idx_y["close"].iloc[-1] - idx_y["close"].iloc[0]
+            ) / idx_y["close"].iloc[0]
         # 21ETF等权
         rets = []
         for sym, df in tradable.items():
@@ -647,7 +726,11 @@ def main():
     print(f"\n{'=' * 75}")
     print(f"  完整年度矩阵 (训练期 + 测试期)")
     print(f"{'=' * 75}")
-    header = f"  {'策略':<20}" + "".join(f"{y:>8}" for y in years) + f"{'OOS合计':>9}{'夏普':>6}{'回撤':>7}"
+    header = (
+        f"  {'策略':<20}"
+        + "".join(f"{y:>8}" for y in years)
+        + f"{'OOS合计':>9}{'夏普':>6}{'回撤':>7}"
+    )
     print(header)
     print(f"  {'-' * 75}")
 
@@ -681,7 +764,7 @@ def main():
             if y in byears:
                 row += f"{byears[y]:>+8.1%}"
                 if y >= 2024:
-                    total_oos *= (1 + byears[y])
+                    total_oos *= 1 + byears[y]
             else:
                 row += f"{'—':>8}"
         row += f"{total_oos - 1:>+9.1%}"
@@ -707,13 +790,19 @@ def main():
         print(row)
 
     # 保存
-    summary = {"train_period": "2022-2023", "test_period": "2024-2026",
-               "strategies": {}, "benchmarks": {k: {str(yr): v for yr, v in vs.items()} for k, vs in benchmarks.items()}}
+    summary = {
+        "train_period": "2022-2023",
+        "test_period": "2024-2026",
+        "strategies": {},
+        "benchmarks": {k: {str(yr): v for yr, v in vs.items()} for k, vs in benchmarks.items()},
+    }
     for name, r in results.items():
         if "error" not in r:
             summary["strategies"][name] = {
-                "oos_return": r["total_return"], "sharpe": r["sharpe"],
-                "max_dd": r["max_drawdown"], "n_trades": r["n_trades"],
+                "oos_return": r["total_return"],
+                "sharpe": r["sharpe"],
+                "max_dd": r["max_drawdown"],
+                "n_trades": r["n_trades"],
                 "yearly": {str(k): v for k, v in r.get("yearly", {}).items()},
             }
     with open(OUTPUT_DIR / "v71_results.json", "w") as f:

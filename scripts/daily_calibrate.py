@@ -4,6 +4,7 @@
 与14:50的信号推送区分: 14:50=调仓日实际信号(timeSensitive); 本脚本=每日校准预告(active)。
 用法: uv run python scripts/daily_calibrate.py
 """
+
 from __future__ import annotations
 
 import sys
@@ -64,7 +65,7 @@ def main() -> None:
     # 组装每日校准消息
     hold_disp = f"【{holding}】{ls.name_of(holding)}" if holding else "空仓"
     lines = [f"策略: {ls.get_strategy_mode()} ({ls.v4.STRATEGY_ID})", f"持仓: {hold_disp}"]
-    lines.append(f"💰 盈亏: {total/10000:.2f}万 ({ret:+.1f}%)")
+    lines.append(f"💰 盈亏: {total / 10000:.2f}万 ({ret:+.1f}%)")
     if days_left is not None and days_left <= 0:
         lines.append(f"🎯 调仓日: {next_rb} (就是今天/即将)")
     elif days_left is not None:
@@ -77,8 +78,7 @@ def main() -> None:
     else:
         label = "14:50官方调仓" if has_official else "V3-G基础预览"
         lines.append(
-            f"👉 {label}: → 【{target}】{ls.name_of(target)} "
-            f"(动量{best_score * 100:+.1f}%)"
+            f"👉 {label}: → 【{target}】{ls.name_of(target)} (动量{best_score * 100:+.1f}%)"
         )
         lines.append(f"   易淘金搜索代码 {target} 买入")
     if a_share_weak:

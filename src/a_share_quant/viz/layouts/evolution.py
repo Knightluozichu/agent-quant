@@ -25,7 +25,6 @@ def create_evolution_layout(loader: DashboardDataLoader) -> html.Div:
         [
             # Page header
             html.H4("策略进化监控", className="mb-4"),
-
             # Strategy names
             dbc.Row(
                 [
@@ -48,7 +47,9 @@ def create_evolution_layout(loader: DashboardDataLoader) -> html.Div:
                                     html.H6("Challenger (挑战者)", className="text-muted"),
                                     html.H4(
                                         evo.challenger_name or "暂无挑战者",
-                                        className="text-warning" if evo.challenger_name else "text-muted",
+                                        className="text-warning"
+                                        if evo.challenger_name
+                                        else "text-muted",
                                     ),
                                 ]
                             ),
@@ -59,7 +60,6 @@ def create_evolution_layout(loader: DashboardDataLoader) -> html.Div:
                 ],
                 className="mb-4",
             ),
-
             # Promotion progress
             dbc.Row(
                 [
@@ -78,7 +78,6 @@ def create_evolution_layout(loader: DashboardDataLoader) -> html.Div:
                 ],
                 className="mb-4",
             ),
-
             # Metrics comparison
             dbc.Row(
                 [
@@ -97,7 +96,6 @@ def create_evolution_layout(loader: DashboardDataLoader) -> html.Div:
                 ],
                 className="mb-4",
             ),
-
             # Equity curve comparison
             dbc.Row(
                 [
@@ -134,7 +132,9 @@ def _create_promotion_progress(evo: EvolutionData) -> html.Div:
         Dash component
     """
     # Sample size progress
-    sample_progress = evo.current_trades / evo.min_trades_required if evo.min_trades_required > 0 else 0
+    sample_progress = (
+        evo.current_trades / evo.min_trades_required if evo.min_trades_required > 0 else 0
+    )
     sample_progress = min(1.0, sample_progress)
 
     # Overall promotion progress
@@ -165,7 +165,6 @@ def _create_promotion_progress(evo: EvolutionData) -> html.Div:
                 ],
                 className="mb-3",
             ),
-
             # Performance threshold
             html.Div(
                 [
@@ -181,14 +180,15 @@ def _create_promotion_progress(evo: EvolutionData) -> html.Div:
                     ),
                     dbc.Progress(
                         value=100 if evo.challenger_metrics.get("sharpe", 0) > 1.0 else 50,
-                        color="success" if evo.challenger_metrics.get("sharpe", 0) > 1.0 else "warning",
+                        color="success"
+                        if evo.challenger_metrics.get("sharpe", 0) > 1.0
+                        else "warning",
                         striped=True,
                         style={"height": "25px"},
                     ),
                 ],
                 className="mb-3",
             ),
-
             # Overall promotion readiness
             html.Div(
                 [
@@ -210,7 +210,6 @@ def _create_promotion_progress(evo: EvolutionData) -> html.Div:
                     ),
                 ],
             ),
-
             # Status message
             html.Div(
                 _get_promotion_status_message(evo),
@@ -301,12 +300,16 @@ def _create_metrics_comparison(evo: EvolutionData) -> dbc.Table:
             else:
                 challenger_wins = chall_val < champ_val
 
-        winner_badge = dbc.Badge(
-            "Challenger",
-            color="warning",
-        ) if challenger_wins else dbc.Badge(
-            "Champion",
-            color="success",
+        winner_badge = (
+            dbc.Badge(
+                "Challenger",
+                color="warning",
+            )
+            if challenger_wins
+            else dbc.Badge(
+                "Champion",
+                color="success",
+            )
         )
 
         diff_color = "success" if challenger_wins else "danger"

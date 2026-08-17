@@ -44,13 +44,14 @@ SLIPPAGE = 0.0005
 # === 唯一参数 ===
 TARGET_VOL = 0.12  # 12% annualized target (conservative for momentum)
 VOL_LOOKBACK = 20  # 20 trading days for realized vol
-SCALE_MIN = 0.20   # Minimum 20% in stocks
-SCALE_MAX = 1.00   # No leverage
+SCALE_MIN = 0.20  # Minimum 20% in stocks
+SCALE_MAX = 1.00  # No leverage
 
 
 # =============================================================================
 # Momentum Factor (simple, proven)
 # =============================================================================
+
 
 def calc_momentum(data: dict[str, pd.DataFrame], as_of: date) -> pd.DataFrame:
     """Calculate 20-80 day momentum for all ETFs. The proven +64% factor."""
@@ -72,6 +73,7 @@ def calc_momentum(data: dict[str, pd.DataFrame], as_of: date) -> pd.DataFrame:
 # =============================================================================
 # Volatility Scaling (Moreira & Muir 2017)
 # =============================================================================
+
 
 def calc_vol_scale(
     data: dict[str, pd.DataFrame],
@@ -97,7 +99,7 @@ def calc_vol_scale(
         if len(hist) < VOL_LOOKBACK + 1:
             continue
         close = hist["close"].values.astype(float)
-        rets = np.diff(close[-VOL_LOOKBACK - 1:]) / close[-VOL_LOOKBACK - 1:-1]
+        rets = np.diff(close[-VOL_LOOKBACK - 1 :]) / close[-VOL_LOOKBACK - 1 : -1]
         vols.append(np.std(rets) * np.sqrt(252))
 
     if not vols:
@@ -106,7 +108,7 @@ def calc_vol_scale(
         if len(idx) < VOL_LOOKBACK + 1:
             return 1.0
         close = idx["close"].values.astype(float)
-        rets = np.diff(close[-VOL_LOOKBACK - 1:]) / close[-VOL_LOOKBACK - 1:-1]
+        rets = np.diff(close[-VOL_LOOKBACK - 1 :]) / close[-VOL_LOOKBACK - 1 : -1]
         vols = [np.std(rets) * np.sqrt(252)]
 
     # Portfolio vol = average of individual vols (simplified, ignores correlation)
@@ -115,13 +117,14 @@ def calc_vol_scale(
     if portfolio_vol < 1e-8:
         return SCALE_MAX
 
-    scale = (target_vol ** 2) / (portfolio_vol ** 2)
+    scale = (target_vol**2) / (portfolio_vol**2)
     return float(np.clip(scale, SCALE_MIN, SCALE_MAX))
 
 
 # =============================================================================
 # Backtest
 # =============================================================================
+
 
 def run_v51_backtest(
     data: dict[str, pd.DataFrame],
@@ -135,8 +138,7 @@ def run_v51_backtest(
 ) -> dict:
     """V5.1 backtest: momentum Top4 + vol scaling + bonds for remainder."""
     index_symbols = {"idx_000300", "idx_000905", "000300", "000905"}
-    tradable = {k: v for k, v in data.items()
-                if k not in DEFENSIVE and k not in index_symbols}
+    tradable = {k: v for k, v in data.items() if k not in DEFENSIVE and k not in index_symbols}
 
     all_dates = sorted(index_df["trade_date"].tolist())
     if start_date:
@@ -274,10 +276,16 @@ def run_v51_backtest(
     calmar = ann_return / abs(max_dd) if max_dd != 0 else 0.0
 
     return {
-        "total_return": total_return, "ann_return": ann_return,
-        "ann_vol": ann_vol, "sharpe": sharpe, "max_drawdown": max_dd,
-        "calmar": calmar, "n_trades": n_trades, "n_days": n_days,
-        "equity_curve": eq_df, "scale_history": scale_history,
+        "total_return": total_return,
+        "ann_return": ann_return,
+        "ann_vol": ann_vol,
+        "sharpe": sharpe,
+        "max_drawdown": max_dd,
+        "calmar": calmar,
+        "n_trades": n_trades,
+        "n_days": n_days,
+        "equity_curve": eq_df,
+        "scale_history": scale_history,
     }
 
 
@@ -285,11 +293,16 @@ def run_v51_backtest(
 # Main
 # =============================================================================
 
+
 def load_data():
     data = {}
     for f in DATA_DIR.glob("*.parquet"):
-        if f.name in ("combined_long.parquet", "northbound.parquet",
-                      "pe_percentile.parquet", "margin_sentiment.parquet"):
+        if f.name in (
+            "combined_long.parquet",
+            "northbound.parquet",
+            "pe_percentile.parquet",
+            "margin_sentiment.parquet",
+        ):
             continue
         df = pd.read_parquet(f)
         if "symbol" not in df.columns or "trade_date" not in df.columns:
@@ -351,7 +364,9 @@ def main():
             ys = scale_df[scale_df["year"] == year]
             if not ys.empty:
                 avg_scale = ys["scale"].mean()
-        print(f"  {year:<6} {prev:>10,.0f} {end_val:>10,.0f} {yr:>+8.2%} {dd:>8.2%} {avg_scale:>7.0%}")
+        print(
+            f"  {year:<6} {prev:>10,.0f} {end_val:>10,.0f} {yr:>+8.2%} {dd:>8.2%} {avg_scale:>7.0%}"
+        )
         prev = end_val
 
     final = eq["equity"].iloc[-1]
@@ -361,17 +376,23 @@ def main():
 
     print(f"  {'-' * 56}")
     print(f"\n  10万 → {final:,.0f} ({total_ret:+.1%}, {final / 100_000:.2f}x)")
-    print(f"  年化: {ann_ret:+.1%} | 夏普: {result['sharpe']:.2f} | "
-          f"回撤: {result['max_drawdown']:.1%} | Calmar: {result['calmar']:.2f}")
+    print(
+        f"  年化: {ann_ret:+.1%} | 夏普: {result['sharpe']:.2f} | "
+        f"回撤: {result['max_drawdown']:.1%} | Calmar: {result['calmar']:.2f}"
+    )
     print(f"  交易次数: {result['n_trades']}")
 
     # === 2023 stress test ===
     print(f"\n[2/3] 2023压力测试...")
     from datetime import date as dt_date
-    r2023 = run_v51_backtest(data, index_df,
-                             start_date=dt_date(2023, 1, 1),
-                             end_date=dt_date(2023, 12, 31),
-                             initial_capital=100_000)
+
+    r2023 = run_v51_backtest(
+        data,
+        index_df,
+        start_date=dt_date(2023, 1, 1),
+        end_date=dt_date(2023, 12, 31),
+        initial_capital=100_000,
+    )
     if r2023.get("equity_curve") is not None:
         eq23 = r2023["equity_curve"]
         ret_2023 = (eq23["equity"].iloc[-1] / 100_000) - 1
@@ -381,8 +402,10 @@ def main():
         # Show vol scale in 2023
         s23 = pd.DataFrame(r2023["scale_history"])
         if not s23.empty:
-            print(f"  2023平均仓位: {s23['scale'].mean():.0%} | "
-                  f"最低: {s23['scale'].min():.0%} | 最高: {s23['scale'].max():.0%}")
+            print(
+                f"  2023平均仓位: {s23['scale'].mean():.0%} | "
+                f"最低: {s23['scale'].min():.0%} | 最高: {s23['scale'].max():.0%}"
+            )
 
     # === Benchmark comparison ===
     print(f"\n[3/3] 基准对比...")
@@ -397,28 +420,42 @@ def main():
     r_nomgmt = run_v51_backtest(data, index_df, initial_capital=100_000, target_vol=999.0)
 
     # 2023 for pure momentum
-    r_nomgmt_2023 = run_v51_backtest(data, index_df,
-                                      start_date=dt_date(2023, 1, 1),
-                                      end_date=dt_date(2023, 12, 31),
-                                      initial_capital=100_000, target_vol=999.0)
+    r_nomgmt_2023 = run_v51_backtest(
+        data,
+        index_df,
+        start_date=dt_date(2023, 1, 1),
+        end_date=dt_date(2023, 12, 31),
+        initial_capital=100_000,
+        target_vol=999.0,
+    )
 
     print(f"\n  {'策略':<24} {'全周期':>8} {'年化':>7} {'夏普':>6} {'回撤':>7} {'2023':>7}")
     print(f"  {'-' * 62}")
 
     nomgmt_ret = r_nomgmt["total_return"]
     nomgmt_ann = r_nomgmt["ann_return"]
-    nomgmt_2023 = (r_nomgmt_2023["equity_curve"]["equity"].iloc[-1] / 100_000 - 1) if r_nomgmt_2023.get("equity_curve") is not None else 0
+    nomgmt_2023 = (
+        (r_nomgmt_2023["equity_curve"]["equity"].iloc[-1] / 100_000 - 1)
+        if r_nomgmt_2023.get("equity_curve") is not None
+        else 0
+    )
 
-    print(f"  {'纯动量Top4(无管理)':<24} {nomgmt_ret:>+8.1%} {nomgmt_ann:>+7.1%} "
-          f"{r_nomgmt['sharpe']:>6.2f} {r_nomgmt['max_drawdown']:>7.1%} {nomgmt_2023:>+7.2%}")
-    print(f"  {'V5.1(动量+波动率管理)':<24} {total_ret:>+8.1%} {ann_ret:>+7.1%} "
-          f"{result['sharpe']:>6.2f} {result['max_drawdown']:>7.1%} {ret_2023:>+7.2%}")
+    print(
+        f"  {'纯动量Top4(无管理)':<24} {nomgmt_ret:>+8.1%} {nomgmt_ann:>+7.1%} "
+        f"{r_nomgmt['sharpe']:>6.2f} {r_nomgmt['max_drawdown']:>7.1%} {nomgmt_2023:>+7.2%}"
+    )
+    print(
+        f"  {'V5.1(动量+波动率管理)':<24} {total_ret:>+8.1%} {ann_ret:>+7.1%} "
+        f"{result['sharpe']:>6.2f} {result['max_drawdown']:>7.1%} {ret_2023:>+7.2%}"
+    )
     print(f"  {'沪深300':<24} {bench_300:>+8.1%} {'':>7} {'':>6} {'':>7} {'-11.4%':>7}")
 
     # Improvement
     dd_improve = r_nomgmt["max_drawdown"] - result["max_drawdown"]
     print(f"\n  波动率管理贡献:")
-    print(f"    回撤改善: {dd_improve:+.1%} (从{r_nomgmt['max_drawdown']:.1%}→{result['max_drawdown']:.1%})")
+    print(
+        f"    回撤改善: {dd_improve:+.1%} (从{r_nomgmt['max_drawdown']:.1%}→{result['max_drawdown']:.1%})"
+    )
     print(f"    2023改善: {ret_2023 - nomgmt_2023:+.2%}")
     print(f"    夏普变化: {result['sharpe'] - r_nomgmt['sharpe']:+.2f}")
     print(f"    收益代价: {total_ret - nomgmt_ret:+.1%}")
@@ -427,10 +464,19 @@ def main():
     summary = {
         "version": "v5.1",
         "method": "momentum_top4 + vol_scaling",
-        "params": {"target_vol": TARGET_VOL, "vol_lookback": VOL_LOOKBACK,
-                   "scale_min": SCALE_MIN, "scale_max": SCALE_MAX, "top_n": 4},
-        "full_period": {"return": total_ret, "ann_return": ann_ret,
-                        "sharpe": result["sharpe"], "max_dd": result["max_drawdown"]},
+        "params": {
+            "target_vol": TARGET_VOL,
+            "vol_lookback": VOL_LOOKBACK,
+            "scale_min": SCALE_MIN,
+            "scale_max": SCALE_MAX,
+            "top_n": 4,
+        },
+        "full_period": {
+            "return": total_ret,
+            "ann_return": ann_ret,
+            "sharpe": result["sharpe"],
+            "max_dd": result["max_drawdown"],
+        },
         "2023": {"return": ret_2023, "max_dd": dd23},
     }
     with open(OUTPUT_DIR / "v51_summary.json", "w") as f:

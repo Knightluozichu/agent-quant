@@ -46,11 +46,11 @@ from exp_short_window_patterns import (  # noqa: E402
 )
 
 # === 筛选参数 (C队阶段1) ===
-N_TESTS = 503            # 实验全部统计检验数的估计
+N_TESTS = 503  # 实验全部统计检验数的估计
 ALPHA_BONF = 0.05 / N_TESTS  # ≈ 0.0001
-MIN_EFFECT = 0.5         # Cohen's d 阈值
-CLUSTER_WINDOW = 5       # 事件聚类窗口 (交易日)
-KEEP_RATIO = 0.5         # 聚类后须保留的效应量比例
+MIN_EFFECT = 0.5  # Cohen's d 阈值
+CLUSTER_WINDOW = 5  # 事件聚类窗口 (交易日)
+KEEP_RATIO = 0.5  # 聚类后须保留的效应量比例
 
 
 # --------------------------------------------------------------------------- #
@@ -77,8 +77,9 @@ def welch_test(a: np.ndarray, b: np.ndarray) -> tuple[float, float]:
     return float(t), float(p)
 
 
-def cluster_events(dr: np.ndarray, thr: float, window: int = CLUSTER_WINDOW,
-                   direction: str = "up") -> list[list[int]]:
+def cluster_events(
+    dr: np.ndarray, thr: float, window: int = CLUSTER_WINDOW, direction: str = "up"
+) -> list[list[int]]:
     """将相距≤window日的连续事件聚类为簇.
 
     direction='up' 取 dr>=thr; 'down' 取 dr<=thr.
@@ -114,17 +115,21 @@ def r1_three_day_reversal(mat: dict) -> dict:
     q5_all, q1_all = [], []
     for close in mat.values():
         mom = window_ret(close, 3)
-        fwd = close[3 + 5:] / close[3:-5] - 1.0  # 动量结束后持有5日 (与实验同口径)
-        m = mom[:len(fwd)]
+        fwd = close[3 + 5 :] / close[3:-5] - 1.0  # 动量结束后持有5日 (与实验同口径)
+        m = mom[: len(fwd)]
         qs = pd.qcut(m, 5, labels=False, duplicates="drop")
         q5_all.append(fwd[qs == 4])
         q1_all.append(fwd[qs == 0])
     q5 = np.concatenate(q5_all)
     q1 = np.concatenate(q1_all)
     return {
-        "id": "R1", "name": "3日动量反转(Q5 vs Q1, 5日)",
-        "type": "cross-sectional", "a": q5, "b": q1,
-        "a_label": "R3最强组Q5", "b_label": "R3最弱组Q1",
+        "id": "R1",
+        "name": "3日动量反转(Q5 vs Q1, 5日)",
+        "type": "cross-sectional",
+        "a": q5,
+        "b": q1,
+        "a_label": "R3最强组Q5",
+        "b_label": "R3最弱组Q1",
         "note": "5/7资产为反转方向; 白银为唯一持续例外",
     }
 
@@ -134,14 +139,18 @@ def r2_ten_day_sign(mat: dict) -> dict:
     pos, neg = [], []
     for close in mat.values():
         m10 = window_ret(close, 10)
-        fwd = close[10 + 5:] / close[10:-5] - 1.0
-        m = m10[:len(fwd)]
+        fwd = close[10 + 5 :] / close[10:-5] - 1.0
+        m = m10[: len(fwd)]
         pos.append(fwd[m > 0])
         neg.append(fwd[m <= 0])
     return {
-        "id": "R2", "name": "10日动量符号(>0 vs ≤0, 5日)",
-        "type": "cross-sectional", "a": np.concatenate(pos), "b": np.concatenate(neg),
-        "a_label": "动量>0", "b_label": "动量≤0",
+        "id": "R2",
+        "name": "10日动量符号(>0 vs ≤0, 5日)",
+        "type": "cross-sectional",
+        "a": np.concatenate(pos),
+        "b": np.concatenate(neg),
+        "a_label": "动量>0",
+        "b_label": "动量≤0",
         "note": "实验 mom_sign 差 +3.09pp, 判别力最强",
     }
 
@@ -152,8 +161,9 @@ def r3_best_category(mat: dict, dates: list) -> dict:
     for code, close in mat.items():
         r5[code] = window_ret(close, 5)
     n = len(dates) - 5
-    cat_r5 = {cat: np.mean([r5[c] for c in codes if c in r5], axis=0)
-              for cat, codes in CATEGORIES.items()}
+    cat_r5 = {
+        cat: np.mean([r5[c] for c in codes if c in r5], axis=0) for cat, codes in CATEGORIES.items()
+    }
     idxs = list(range(0, n, 5))
     best_next, worst_next = [], []
     for i in range(len(idxs) - 1):
@@ -164,10 +174,13 @@ def r3_best_category(mat: dict, dates: list) -> dict:
         best_next.append(cat_r5[ranks[0]][t2])
         worst_next.append(cat_r5[ranks[-1]][t2])
     return {
-        "id": "R3", "name": "最强类别下周 vs 最弱类别下周",
+        "id": "R3",
+        "name": "最强类别下周 vs 最弱类别下周",
         "type": "cross-sectional",
-        "a": np.array(best_next), "b": np.array(worst_next),
-        "a_label": "最强类别下周", "b_label": "最弱类别下周",
+        "a": np.array(best_next),
+        "b": np.array(worst_next),
+        "a_label": "最强类别下周",
+        "b_label": "最弱类别下周",
         "note": "实验: 差+0.26pp, 胜率53.1% (弱信号)",
     }
 
@@ -202,11 +215,13 @@ def r4_surge_persistence(mat: dict) -> dict:
     clu = _after_events(mat, BIG_MOVE, "up", clustered=True)
     base = _all_5d(mat)
     return {
-        "id": "R4", "name": "暴涨>3%后5日持续",
+        "id": "R4",
+        "name": "暴涨>3%后5日持续",
         "type": "event",
         "raw": {"after": raw, "base": base},
         "clustered": {"after": clu, "base": base},
-        "a_label": "暴涨后5日", "b_label": "全样本5日",
+        "a_label": "暴涨后5日",
+        "b_label": "全样本5日",
         "note": "事件重叠严重 (原油80次/白银76次), 须聚类复核",
     }
 
@@ -223,7 +238,7 @@ def _drop_rebound(mat: dict, clustered: bool) -> tuple[np.ndarray, np.ndarray]:
             dr = daily_rets(close)
             for t in range(5, len(dr) - 5):
                 fwd = close[t + 5] / close[t] - 1.0
-                (dropped if (dr[t - 5:t] < -BIG_MOVE).any() else clean).append(fwd)
+                (dropped if (dr[t - 5 : t] < -BIG_MOVE).any() else clean).append(fwd)
         return np.array(dropped), np.array(clean)
     rebound, base = [], []
     for close in mat.values():
@@ -242,11 +257,13 @@ def r5_drop_rebound(mat: dict) -> dict:
     raw_a, raw_b = _drop_rebound(mat, clustered=False)
     clu_a, clu_b = _drop_rebound(mat, clustered=True)
     return {
-        "id": "R5", "name": "暴跌后短期反弹",
+        "id": "R5",
+        "name": "暴跌后短期反弹",
         "type": "event",
         "raw": {"after": raw_a, "base": raw_b},
         "clustered": {"after": clu_a, "base": clu_b},
-        "a_label": "暴跌后5日", "b_label": "基准5日",
+        "a_label": "暴跌后5日",
+        "b_label": "基准5日",
         "note": "raw口径: 暴跌池+0.74% vs 干净池+0.24%; 需聚类复核均值回归偏差",
     }
 
@@ -257,17 +274,20 @@ def r6_vol_regime(mat: dict) -> dict:
     for close in mat.values():
         dr = daily_rets(close)
         for t in range(20, len(dr) - 5):
-            v = np.std(dr[t - 20:t]) * np.sqrt(252)
+            v = np.std(dr[t - 20 : t]) * np.sqrt(252)
             fwd = close[t + 5] / close[t] - 1.0
             if v > 0.30:
                 high.append(fwd)
             elif v < 0.15:
                 low.append(fwd)
     return {
-        "id": "R6", "name": "高波动>30% vs 低波动<15% (5日)",
+        "id": "R6",
+        "name": "高波动>30% vs 低波动<15% (5日)",
         "type": "cross-sectional",
-        "a": np.array(high), "b": np.array(low),
-        "a_label": "高波动>30%", "b_label": "低波动<15%",
+        "a": np.array(high),
+        "b": np.array(low),
+        "a_label": "高波动>30%",
+        "b_label": "低波动<15%",
         "note": "实验: +0.71% vs +0.18%, 高波动胜率54.0%",
     }
 
@@ -285,10 +305,12 @@ def evaluate(cand: dict) -> dict:
         d = cohens_d(a, b)
         t_stat, p = welch_test(a, b)
         out["raw"] = {
-            "a": summarize(a), "b": summarize(b),
+            "a": summarize(a),
+            "b": summarize(b),
             "mean_diff": round(float(a.mean() - b.mean()), 6),
             "cohens_d": round(d, 4),
-            "t_stat": round(t_stat, 3), "p_value": round(p, 8),
+            "t_stat": round(t_stat, 3),
+            "p_value": round(p, 8),
             "effect_pass": bool(d >= MIN_EFFECT),
             "bonf_pass": bool(p < ALPHA_BONF),
         }
@@ -297,10 +319,12 @@ def evaluate(cand: dict) -> dict:
         d_raw = cohens_d(ra, rb)
         t_raw, p_raw = welch_test(ra, rb)
         out["raw"] = {
-            "a": summarize(ra), "b": summarize(rb),
+            "a": summarize(ra),
+            "b": summarize(rb),
             "mean_diff": round(float(ra.mean() - rb.mean()), 6),
             "cohens_d": round(d_raw, 4),
-            "t_stat": round(t_raw, 3), "p_value": round(p_raw, 8),
+            "t_stat": round(t_raw, 3),
+            "p_value": round(p_raw, 8),
             "effect_pass": bool(d_raw >= MIN_EFFECT),
             "bonf_pass": bool(p_raw < ALPHA_BONF),
         }
@@ -311,10 +335,12 @@ def evaluate(cand: dict) -> dict:
         keep_ratio = (d_clu / d_raw) if d_raw > 1e-12 else 0.0
         same_sign = bool(np.sign(d_clu) == np.sign(d_raw) or abs(d_clu) < 1e-12)
         out["clustered"] = {
-            "a": summarize(ca), "b": summarize(cb),
+            "a": summarize(ca),
+            "b": summarize(cb),
             "mean_diff": round(float(ca.mean() - cb.mean()), 6),
             "cohens_d": round(d_clu, 4),
-            "t_stat": round(t_clu, 3), "p_value": round(p_clu, 8),
+            "t_stat": round(t_clu, 3),
+            "p_value": round(p_clu, 8),
             "n_reduction": f"{len(ra)}→{len(ca)}",
             "keep_ratio": round(keep_ratio, 3),
             "same_sign": same_sign,
@@ -355,8 +381,10 @@ def evaluate(cand: dict) -> dict:
 def main() -> None:
     print("=" * 74)
     print("  C队阶段1: 候选规律快速筛选")
-    print(f"  效应量阈值 d≥{MIN_EFFECT} | Bonferroni α'={ALPHA_BONF:.2g} (N={N_TESTS}) | "
-          f"聚类保留≥{KEEP_RATIO:.0%}")
+    print(
+        f"  效应量阈值 d≥{MIN_EFFECT} | Bonferroni α'={ALPHA_BONF:.2g} (N={N_TESTS}) | "
+        f"聚类保留≥{KEEP_RATIO:.0%}"
+    )
     print("=" * 74)
 
     data = load_data()
@@ -384,13 +412,17 @@ def main() -> None:
         p = raw["p_value"]
         # 方向: mean_diff 为 a - b
         direction = "+" if mean_diff > 0 else ""
-        line = (f"  {res['id']:<8} {raw['cohens_d']:>8.2f} {direction}{mean_diff:>8.2%} "
-                f"{p:>10.3g} {res['verdict']:<14}")
+        line = (
+            f"  {res['id']:<8} {raw['cohens_d']:>8.2f} {direction}{mean_diff:>8.2%} "
+            f"{p:>10.3g} {res['verdict']:<14}"
+        )
         print(line)
         if res["type"] == "event":
             clu = res["clustered"]
-            print(f"      └ 聚类重抽样: n={clu['a']['n']:>5}  d={clu['cohens_d']:.2f}  "
-                  f"保留{clu['keep_ratio']:.0%}  p={clu['p_value']:.3g}")
+            print(
+                f"      └ 聚类重抽样: n={clu['a']['n']:>5}  d={clu['cohens_d']:.2f}  "
+                f"保留{clu['keep_ratio']:.0%}  p={clu['p_value']:.3g}"
+            )
         if res["reasons"]:
             print(f"      └ 淘汰原因: {'; '.join(res['reasons'])}")
 
@@ -405,12 +437,22 @@ def main() -> None:
 
     out_path = OUTPUT_DIR / "candidate_filter.json"
     with open(out_path, "w") as f:
-        json.dump({
-            "meta": {"n_tests": N_TESTS, "bonf_alpha": ALPHA_BONF,
-                     "min_effect": MIN_EFFECT, "cluster_window": CLUSTER_WINDOW,
-                     "period": f"{dates[0]} ~ {dates[-1]}"},
-            "candidates": results,
-        }, f, indent=2, ensure_ascii=False, default=str)
+        json.dump(
+            {
+                "meta": {
+                    "n_tests": N_TESTS,
+                    "bonf_alpha": ALPHA_BONF,
+                    "min_effect": MIN_EFFECT,
+                    "cluster_window": CLUSTER_WINDOW,
+                    "period": f"{dates[0]} ~ {dates[-1]}",
+                },
+                "candidates": results,
+            },
+            f,
+            indent=2,
+            ensure_ascii=False,
+            default=str,
+        )
     print(f"\n  结果已保存: {out_path}")
 
 

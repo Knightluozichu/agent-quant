@@ -3,6 +3,7 @@
 固定动量周期=(10日,20日), 只变权重组合, 跑全段(~6年)回测, 对比总收益。
 用法: uv run python scripts/exp_mom_weights.py
 """
+
 from __future__ import annotations
 
 import sys
@@ -41,14 +42,16 @@ def main() -> None:
         res = backtest(data, v3_select, params, 5)
         results.append((w, res))
         tag = "  ←当前" if w == (0.5, 0.5) else ""
-        print(f"  {str(w):<16}{res['total_return']*100:>+11.1f}%"
-              f"{res['ann_return']*100:>+9.1f}%{res['sharpe']:>8.2f}"
-              f"{res['max_drawdown']*100:>9.1f}%{tag}")
+        print(
+            f"  {str(w):<16}{res['total_return'] * 100:>+11.1f}%"
+            f"{res['ann_return'] * 100:>+9.1f}%{res['sharpe']:>8.2f}"
+            f"{res['max_drawdown'] * 100:>9.1f}%{tag}"
+        )
 
     # 找最优
     best_w, best_res = max(results, key=lambda x: x[1]["total_return"])
     print("  " + "-" * 60)
-    print(f"  最高总收益: 权重{best_w} → {best_res['total_return']*100:+.1f}%")
+    print(f"  最高总收益: 权重{best_w} → {best_res['total_return'] * 100:+.1f}%")
     print("=" * 66)
 
 

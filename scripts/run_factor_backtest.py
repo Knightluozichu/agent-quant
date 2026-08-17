@@ -34,6 +34,7 @@ from a_share_quant.regime import RegimeDetector
 # Data Loading
 # =============================================================================
 
+
 def load_data() -> dict[str, pd.DataFrame]:
     """Load all cached real data."""
     data_dir = PROJECT_ROOT / "data" / "real"
@@ -52,6 +53,7 @@ def load_data() -> dict[str, pd.DataFrame]:
 # =============================================================================
 # Full Period Backtest v2
 # =============================================================================
+
 
 def run_factor_backtest_v2(
     data: dict[str, pd.DataFrame],
@@ -99,22 +101,28 @@ def run_factor_backtest_v2(
         # Check rebalance
         signal = portfolio.generate_signal(tradable, td, regime.state_id, equity)
 
-        regime_history.append({
-            "date": td,
-            "state": regime.state_id,
-            "equity": equity,
-        })
+        regime_history.append(
+            {
+                "date": td,
+                "state": regime.state_id,
+                "equity": equity,
+            }
+        )
 
         if signal:
-            rebalance_log.append({
-                "date": td,
-                "holdings": signal.target_holdings,
-                "regime": signal.regime_state,
-                "position_scale": signal.position_scale,
-                "active_factors": signal.active_factors,
-                "ic_weights": signal.ic_weights,
-                "top_scores": signal.factor_scores.head(5)[["symbol", "composite_score"]].to_dict("records"),
-            })
+            rebalance_log.append(
+                {
+                    "date": td,
+                    "holdings": signal.target_holdings,
+                    "regime": signal.regime_state,
+                    "position_scale": signal.position_scale,
+                    "active_factors": signal.active_factors,
+                    "ic_weights": signal.ic_weights,
+                    "top_scores": signal.factor_scores.head(5)[
+                        ["symbol", "composite_score"]
+                    ].to_dict("records"),
+                }
+            )
 
             # Sell positions not in target
             for sym in list(holdings.keys()):
@@ -125,17 +133,24 @@ def run_factor_backtest_v2(
                         revenue = holdings[sym] * price
                         fee = revenue * fee_rate / 2
                         cash += revenue - fee
-                        trades.append({
-                            "date": td, "action": "SELL", "symbol": sym,
-                            "price": price, "quantity": holdings[sym],
-                            "fee": fee, "regime": signal.regime_state,
-                        })
+                        trades.append(
+                            {
+                                "date": td,
+                                "action": "SELL",
+                                "symbol": sym,
+                                "price": price,
+                                "quantity": holdings[sym],
+                                "fee": fee,
+                                "regime": signal.regime_state,
+                            }
+                        )
                         del holdings[sym]
 
             # Buy target positions
             total_equity = cash + sum(
                 holdings.get(s, 0) * data[s][data[s]["trade_date"] == td].iloc[0]["close"]
-                for s in holdings if s in data and not data[s][data[s]["trade_date"] == td].empty
+                for s in holdings
+                if s in data and not data[s][data[s]["trade_date"] == td].empty
             )
 
             for sym, weight in signal.weights.items():
@@ -149,13 +164,19 @@ def run_factor_backtest_v2(
                             cost = shares * price
                             fee = cost * fee_rate / 2
                             if cost + fee <= cash:
-                                cash -= (cost + fee)
+                                cash -= cost + fee
                                 holdings[sym] = shares
-                                trades.append({
-                                    "date": td, "action": "BUY", "symbol": sym,
-                                    "price": price, "quantity": shares,
-                                    "fee": fee, "regime": signal.regime_state,
-                                })
+                                trades.append(
+                                    {
+                                        "date": td,
+                                        "action": "BUY",
+                                        "symbol": sym,
+                                        "price": price,
+                                        "quantity": shares,
+                                        "fee": fee,
+                                        "regime": signal.regime_state,
+                                    }
+                                )
 
         # Calculate equity
         equity = cash
@@ -182,6 +203,7 @@ def run_factor_backtest_v2(
 # Walk-Forward Validation
 # =============================================================================
 
+
 def run_walk_forward(data: dict[str, pd.DataFrame]) -> list:
     """Run walk-forward validation."""
     validator = WalkForwardValidator(
@@ -197,6 +219,7 @@ def run_walk_forward(data: dict[str, pd.DataFrame]) -> list:
 # =============================================================================
 # Report
 # =============================================================================
+
 
 def print_report(result: dict, data: dict[str, pd.DataFrame], wf_results: list) -> None:
     """Print comprehensive report."""
@@ -221,7 +244,11 @@ def print_report(result: dict, data: dict[str, pd.DataFrame], wf_results: list) 
     warmup = 70
     bench_start = bench_df[bench_df["trade_date"] == all_dates[warmup]]
     bench_end = bench_df[bench_df["trade_date"] == all_dates[-1]]
-    bench_return = (bench_end.iloc[0]["close"] / bench_start.iloc[0]["close"]) - 1 if not bench_start.empty else 0
+    bench_return = (
+        (bench_end.iloc[0]["close"] / bench_start.iloc[0]["close"]) - 1
+        if not bench_start.empty
+        else 0
+    )
 
     total_fees = sum(t.get("fee", 0) for t in trades)
 
@@ -251,16 +278,20 @@ def print_report(result: dict, data: dict[str, pd.DataFrame], wf_results: list) 
     print(f"{'=' * 65}")
 
     if wf_results:
-        print(f"\n{'窗口':<6} {'测试期':<25} {'策略':>8} {'基准':>8} {'超额':>8} {'MaxDD':>8} {'交易':>5}")
+        print(
+            f"\n{'窗口':<6} {'测试期':<25} {'策略':>8} {'基准':>8} {'超额':>8} {'MaxDD':>8} {'交易':>5}"
+        )
         print("-" * 75)
 
         total_excess = 0
         wins = 0
         for r in wf_results:
             test_period = f"{r.test_start} ~ {r.test_end}"
-            print(f"  {r.window_id:<4} {test_period:<25} "
-                  f"{r.test_return:>7.2%} {r.benchmark_return:>7.2%} "
-                  f"{r.excess_return:>+7.2%} {r.max_drawdown:>7.2%} {r.n_trades:>4}")
+            print(
+                f"  {r.window_id:<4} {test_period:<25} "
+                f"{r.test_return:>7.2%} {r.benchmark_return:>7.2%} "
+                f"{r.excess_return:>+7.2%} {r.max_drawdown:>7.2%} {r.n_trades:>4}"
+            )
             total_excess += r.excess_return
             if r.excess_return > 0:
                 wins += 1

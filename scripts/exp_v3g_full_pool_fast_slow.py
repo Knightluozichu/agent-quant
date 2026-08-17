@@ -98,11 +98,7 @@ def run_full_pool_strategy(
         factors = compute_pair_factors(data, idx_map, factor_codes)
         candidate_codes = {code for code, _score in candidates}
         factors = {
-            code: (
-                factor
-                if code in candidate_codes
-                else replace(factor, eligible=False)
-            )
+            code: (factor if code in candidate_codes else replace(factor, eligible=False))
             for code, factor in factors.items()
         }
         raw = decide_full_pool_handoff(
@@ -176,14 +172,21 @@ def run_full_pool_strategy(
             if holding:
                 sell_price = rr.price_at(data, holding, idx_map)
                 if sell_price > 0:
-                    amount = float(state["shares"]) * sell_price * (
-                        1.0 - (rq.FEE + rq.SLIPPAGE) * cost_multiplier
+                    amount = (
+                        float(state["shares"])
+                        * sell_price
+                        * (1.0 - (rq.FEE + rq.SLIPPAGE) * cost_multiplier)
                     )
                     cash += amount
-                    trades.append({
-                        "date": str(td), "action": "sell", "code": holding,
-                        "price": sell_price, "amount": amount,
-                    })
+                    trades.append(
+                        {
+                            "date": str(td),
+                            "action": "sell",
+                            "code": holding,
+                            "price": sell_price,
+                            "amount": amount,
+                        }
+                    )
                     state["holding"] = None
                     state["shares"] = 0.0
                     state["entry_price"] = 0.0
@@ -191,17 +194,20 @@ def run_full_pool_strategy(
             if buy_price > 0:
                 shares = int(cash * risk.exposure * 0.99 / buy_price / 100) * 100
                 if shares > 0:
-                    amount = shares * buy_price * (
-                        1.0 + (rq.FEE + rq.SLIPPAGE) * cost_multiplier
-                    )
+                    amount = shares * buy_price * (1.0 + (rq.FEE + rq.SLIPPAGE) * cost_multiplier)
                     cash -= amount
                     state["holding"] = target
                     state["shares"] = float(shares)
                     state["entry_price"] = buy_price
-                    trades.append({
-                        "date": str(td), "action": "buy", "code": target,
-                        "price": buy_price, "amount": amount,
-                    })
+                    trades.append(
+                        {
+                            "date": str(td),
+                            "action": "buy",
+                            "code": target,
+                            "price": buy_price,
+                            "amount": amount,
+                        }
+                    )
                     trade_executed = target != old_holding
             state["cash"] = cash
             state["risk_exposure"] = 1.0
@@ -213,41 +219,42 @@ def run_full_pool_strategy(
             last_early_rotation = position
             held = factors.get(old_holding) if old_holding else None
             intended = factors.get(decision.target) if decision.target else None
-            rotation_events.append({
-                "trade_date_raw": td,
-                "date": str(td),
-                "from": old_holding,
-                "to": state["holding"],
-                "intended_to": decision.target,
-                "risk_redirected": state["holding"] != decision.target,
-                "reasons": list(decision.reasons),
-                "signal_hits": signal_hits,
-                "slow_gap": (
-                    intended.slow_momentum - held.slow_momentum
-                    if held and intended else 0.0
-                ),
-                "fast_3d_gap": (
-                    intended.return_3d - held.return_3d if held and intended else 0.0
-                ),
-                "fast_5d_gap": (
-                    intended.return_5d - held.return_5d if held and intended else 0.0
-                ),
-            })
+            rotation_events.append(
+                {
+                    "trade_date_raw": td,
+                    "date": str(td),
+                    "from": old_holding,
+                    "to": state["holding"],
+                    "intended_to": decision.target,
+                    "risk_redirected": state["holding"] != decision.target,
+                    "reasons": list(decision.reasons),
+                    "signal_hits": signal_hits,
+                    "slow_gap": (
+                        intended.slow_momentum - held.slow_momentum if held and intended else 0.0
+                    ),
+                    "fast_3d_gap": (
+                        intended.return_3d - held.return_3d if held and intended else 0.0
+                    ),
+                    "fast_5d_gap": (
+                        intended.return_5d - held.return_5d if held and intended else 0.0
+                    ),
+                }
+            )
 
         holding = state["holding"]
         equity = float(state["cash"])
         if holding:
             equity += float(state["shares"]) * rr.price_at(data, holding, idx_map)
-        equity_rows.append({
-            "trade_date": pd.Timestamp(td),
-            "equity": equity,
-            "holding": holding or rq.DEFENSE,
-        })
+        equity_rows.append(
+            {
+                "trade_date": pd.Timestamp(td),
+                "equity": equity,
+                "holding": holding or rq.DEFENSE,
+            }
+        )
 
     curve = pd.DataFrame(equity_rows)
-    enriched = enrich_pair_rotation_events(
-        rotation_events, data, trading_dates, index_maps
-    )
+    enriched = enrich_pair_rotation_events(rotation_events, data, trading_dates, index_maps)
     relative = {
         horizon: [
             float(event[f"ex_post_intended_relative_{horizon}d"])
@@ -257,24 +264,22 @@ def run_full_pool_strategy(
         ]
         for horizon in (5, 10, 20)
     }
-    reason_counts = Counter(
-        reason for event in enriched for reason in event.get("reasons", [])
-    )
+    reason_counts = Counter(reason for event in enriched for reason in event.get("reasons", []))
     metrics = rr.curve_metrics(curve, initial_capital=INITIAL_CAPITAL)
-    metrics.update({
-        "cost_multiplier": cost_multiplier,
-        "trade_legs": len(trades),
-        "early_rotations": len(enriched),
-        "signal_days": signal_days,
-        "scheduled_lock_blocks": scheduled_lock_blocks,
-        "realtime_filter_events": len(realtime_events),
-        "risk_events": len(risk_events),
-        "reason_counts": dict(reason_counts),
-    })
+    metrics.update(
+        {
+            "cost_multiplier": cost_multiplier,
+            "trade_legs": len(trades),
+            "early_rotations": len(enriched),
+            "signal_days": signal_days,
+            "scheduled_lock_blocks": scheduled_lock_blocks,
+            "realtime_filter_events": len(realtime_events),
+            "risk_events": len(risk_events),
+            "reason_counts": dict(reason_counts),
+        }
+    )
     for horizon, values in relative.items():
-        metrics[f"ex_post_relative_{horizon}d_avg"] = (
-            float(np.mean(values)) if values else 0.0
-        )
+        metrics[f"ex_post_relative_{horizon}d_avg"] = float(np.mean(values)) if values else 0.0
         metrics[f"ex_post_relative_{horizon}d_win_rate"] = (
             float(np.mean(np.asarray(values) > 0)) if values else 0.0
         )
@@ -306,15 +311,11 @@ def main() -> None:
         "baseline": FullPoolParams.disabled(),
         "slow": FullPoolParams(mode="slow"),
         "slow_confirm2": FullPoolParams(mode="slow", confirmation_hits=2),
-        "slow_gap1_confirm2": FullPoolParams(
-            mode="slow", slow_gap=0.01, confirmation_hits=2
-        ),
+        "slow_gap1_confirm2": FullPoolParams(mode="slow", slow_gap=0.01, confirmation_hits=2),
         "fast": FullPoolParams(mode="fast"),
         "fast_confirm2": FullPoolParams(mode="fast", confirmation_hits=2),
         "consensus": FullPoolParams(mode="consensus"),
-        "consensus_confirm2": FullPoolParams(
-            mode="consensus", confirmation_hits=2
-        ),
+        "consensus_confirm2": FullPoolParams(mode="consensus", confirmation_hits=2),
         "consensus_strict": FullPoolParams(
             mode="consensus",
             slow_gap=0.0075,
@@ -336,16 +337,13 @@ def main() -> None:
     def evaluate(params: FullPoolParams, cost: float = 1.0) -> dict[str, Any]:
         key = (params, cost)
         if key not in cache:
-            cache[key] = run_full_pool_strategy(
-                data, params, cost_multiplier=cost
-            )
+            cache[key] = run_full_pool_strategy(data, params, cost_multiplier=cost)
         return cache[key]
 
     named = {name: evaluate(params) for name, params in named_params.items()}
     costs = {
         f"{multiplier:.0f}x": {
-            name: compact(evaluate(params, multiplier))
-            for name, params in named_params.items()
+            name: compact(evaluate(params, multiplier)) for name, params in named_params.items()
         }
         for multiplier in (1.0, 2.0, 3.0)
     }
@@ -362,12 +360,8 @@ def main() -> None:
     slow_sensitivity: dict[str, Any] = {}
     for gap in (0.005, 0.01, 0.02, 0.03, 0.05):
         for hits in (1, 2):
-            params = FullPoolParams(
-                mode="slow", slow_gap=gap, confirmation_hits=hits
-            )
-            slow_sensitivity[f"gap{gap:.1%}_hits{hits}"] = compact(
-                evaluate(params)
-            )
+            params = FullPoolParams(mode="slow", slow_gap=gap, confirmation_hits=hits)
+            slow_sensitivity[f"gap{gap:.1%}_hits{hits}"] = compact(evaluate(params))
 
     print("\nvariant             final    CAGR Sharpe     MDD legs early rel5  rel10")
     for name, result in named.items():
@@ -383,10 +377,13 @@ def main() -> None:
 
     print("\ncost pressure")
     for label, rows in costs.items():
-        print(label, " ".join(
-            f"{name}={row['metrics']['final_value']:,.0f}/{row['metrics']['max_drawdown']:.1%}"
-            for name, row in rows.items()
-        ))
+        print(
+            label,
+            " ".join(
+                f"{name}={row['metrics']['final_value']:,.0f}/{row['metrics']['max_drawdown']:.1%}"
+                for name, row in rows.items()
+            ),
+        )
 
     payload = {
         "meta": {
@@ -403,9 +400,7 @@ def main() -> None:
         "segments": segments,
     }
     if args.save:
-        OUTPUT.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n"
-        )
+        OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n")
         print(f"\nsaved: {OUTPUT}")
 
 

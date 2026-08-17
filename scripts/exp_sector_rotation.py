@@ -4,6 +4,7 @@
 唯一区别是资产池。同期对比, 隔离"池子"这一个变量的影响。
 用法: uv run python scripts/exp_sector_rotation.py
 """
+
 from __future__ import annotations
 
 import sys
@@ -32,8 +33,9 @@ def mom_score(close: np.ndarray, periods=(10, 20), weights=(0.5, 0.5)) -> float:
     return s
 
 
-def sector_rotation(data: dict, codes: list, start_date, end_date,
-                    initial: float = 100000, rebalance_days: int = 5) -> dict:
+def sector_rotation(
+    data: dict, codes: list, start_date, end_date, initial: float = 100000, rebalance_days: int = 5
+) -> dict:
     common = None
     for c in codes:
         if c not in data:
@@ -42,8 +44,11 @@ def sector_rotation(data: dict, codes: list, start_date, end_date,
         common = set(d) if common is None else (common & set(d))
     common = sorted(common)
     dates = common[130:]
-    dates = [d for d in dates
-             if (start_date is None or d >= start_date) and (end_date is None or d <= end_date)]
+    dates = [
+        d
+        for d in dates
+        if (start_date is None or d >= start_date) and (end_date is None or d <= end_date)
+    ]
     rebalance = dates[::rebalance_days]
 
     cash = initial
@@ -110,9 +115,15 @@ def sector_rotation(data: dict, codes: list, start_date, end_date,
         ev = g["equity"].iloc[-1]
         yearly[int(y)] = {"return": float(ev / prev - 1)}
         prev = ev
-    return {"total_return": tr, "ann_return": ann, "sharpe": sharpe,
-            "max_drawdown": mdd, "n_trades": ntr, "yearly": yearly,
-            "final": float(eqdf["equity"].iloc[-1])}
+    return {
+        "total_return": tr,
+        "ann_return": ann,
+        "sharpe": sharpe,
+        "max_drawdown": mdd,
+        "n_trades": ntr,
+        "yearly": yearly,
+        "final": float(eqdf["equity"].iloc[-1]),
+    }
 
 
 def main() -> None:
@@ -133,19 +144,26 @@ def main() -> None:
 
     sr = sector_rotation(sectors, codes, start, end)
     v3data = rq.load_data()
-    v3 = backtest(v3data, v3_select,
-                  {"mom_periods": (10, 20), "mom_weights": (0.5, 0.5), "rebalance_days": 5},
-                  5, start_date=start.date(), end_date=end.date())
+    v3 = backtest(
+        v3data,
+        v3_select,
+        {"mom_periods": (10, 20), "mom_weights": (0.5, 0.5), "rebalance_days": 5},
+        5,
+        start_date=start.date(),
+        end_date=end.date(),
+    )
 
     sr_final = sr["final"] / 10000
     v3_final = v3["final_equity"] / 10000
     print(f"\n  {'指标':<10}{'行业轮动':>14}{'V3跨资产':>14}")
     print("  " + "-" * 40)
     print(f"  {'10万→':<10}{f'{sr_final:.1f}万':>14}{f'{v3_final:.1f}万':>14}")
-    print(f"  {'累计收益':<10}{sr['total_return']*100:>+13.0f}%{v3['total_return']*100:>+13.0f}%")
-    print(f"  {'年化':<10}{sr['ann_return']*100:>+13.1f}%{v3['ann_return']*100:>+13.1f}%")
+    print(
+        f"  {'累计收益':<10}{sr['total_return'] * 100:>+13.0f}%{v3['total_return'] * 100:>+13.0f}%"
+    )
+    print(f"  {'年化':<10}{sr['ann_return'] * 100:>+13.1f}%{v3['ann_return'] * 100:>+13.1f}%")
     print(f"  {'夏普':<10}{sr['sharpe']:>14.2f}{v3['sharpe']:>14.2f}")
-    print(f"  {'最大回撤':<10}{sr['max_drawdown']*100:>13.1f}%{v3['max_drawdown']*100:>13.1f}%")
+    print(f"  {'最大回撤':<10}{sr['max_drawdown'] * 100:>13.1f}%{v3['max_drawdown'] * 100:>13.1f}%")
     print(f"  {'交易次数':<10}{sr['n_trades']:>14}{v3['n_trades']:>14}")
 
     print("\n  逐年收益对比:")
@@ -153,8 +171,8 @@ def main() -> None:
     for y in years:
         s = sr["yearly"].get(y, {}).get("return")
         vv = v3["yearly"].get(y, {}).get("return")
-        ss = f"{s*100:+.0f}%" if s is not None else "-"
-        vvs = f"{vv*100:+.0f}%" if vv is not None else "-"
+        ss = f"{s * 100:+.0f}%" if s is not None else "-"
+        vvs = f"{vv * 100:+.0f}%" if vv is not None else "-"
         print(f"    {y}: 行业 {ss:>7}   V3 {vvs:>7}")
     print("=" * 66)
 

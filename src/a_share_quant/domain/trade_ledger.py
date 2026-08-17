@@ -176,10 +176,7 @@ class AttributionBreakdown(BaseModel):
     def total_cost(self) -> float:
         """Get total cost."""
         return (
-            self.commission_cost
-            + self.tax_cost
-            + self.slippage_cost
-            + self.failed_execution_cost
+            self.commission_cost + self.tax_cost + self.slippage_cost + self.failed_execution_cost
         )
 
     @property
@@ -346,7 +343,9 @@ class TradeLedger(BaseModel):
         """Get return as percentage."""
         if self.entry_price is None or self.entry_price == 0:
             return 0.0
-        return (self.net_pnl / (self.entry_price * self.quantity)) * 100 if self.quantity > 0 else 0.0
+        return (
+            (self.net_pnl / (self.entry_price * self.quantity)) * 100 if self.quantity > 0 else 0.0
+        )
 
     def get_failure_reason_code(self) -> Optional[FailureReasonCode]:
         """Get the failure reason code object."""

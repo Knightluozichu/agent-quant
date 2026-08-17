@@ -8,6 +8,7 @@
 
 用法: uv run python scripts/exp_same_day_close.py
 """
+
 from __future__ import annotations
 
 import sys
@@ -63,6 +64,7 @@ def main() -> None:
     rt_log = lm.get("rt_filter_log", [])
     print(f"\n  【实时急跌保护触发统计】共 {len(rt_log)} 次剔除")
     from collections import Counter
+
     by_name = Counter(r["name"] for r in rt_log)
     for name, cnt in by_name.most_common():
         print(f"    {name:<10} {cnt}次")
@@ -76,8 +78,10 @@ def main() -> None:
         print(f"    {d['date']} → {d['target_name']} (候选{d['n_candidates']}个)")
 
     eq = lm["equity_curve"]
-    print(f"\n  C模式当前持仓: {rq.ETF_POOL.get(eq['holding'].iloc[-1], '货币基金')} "
-          f"| 净值 {eq['equity'].iloc[-1]:,.0f} ({eq['trade_date'].iloc[-1].date()})")
+    print(
+        f"\n  C模式当前持仓: {rq.ETF_POOL.get(eq['holding'].iloc[-1], '货币基金')} "
+        f"| 净值 {eq['equity'].iloc[-1]:,.0f} ({eq['trade_date'].iloc[-1].date()})"
+    )
 
 
 if __name__ == "__main__":

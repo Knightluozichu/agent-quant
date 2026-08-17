@@ -82,16 +82,12 @@ def _load_idempotency() -> dict[str, float]:
     except (json.JSONDecodeError, OSError, ValueError) as e:
         print(f"  ⚠️  幂等文件损坏, 备份后重建: {e}")
         with contextlib.suppress(OSError):
-            _IDEMPOTENCY_FILE.replace(
-                _IDEMPOTENCY_FILE.with_suffix(".corrupt")
-            )
+            _IDEMPOTENCY_FILE.replace(_IDEMPOTENCY_FILE.with_suffix(".corrupt"))
         return {}
     if not isinstance(data, dict):
         print("  ⚠️  幂等文件内容非 dict, 备份后重建")
         with contextlib.suppress(OSError):
-            _IDEMPOTENCY_FILE.replace(
-                _IDEMPOTENCY_FILE.with_suffix(".corrupt")
-            )
+            _IDEMPOTENCY_FILE.replace(_IDEMPOTENCY_FILE.with_suffix(".corrupt"))
         return {}
     now = time.time()
     store: dict[str, float] = {}
@@ -134,9 +130,7 @@ def _idempotency_guard(key: str | None) -> Iterator[None]:
         fcntl.flock(lock_fd, fcntl.LOCK_EX)
         store = _load_idempotency()
         if key and key in store:
-            raise HTTPException(
-                status_code=409, detail="重复提交 (idempotency_key 已处理)"
-            )
+            raise HTTPException(status_code=409, detail="重复提交 (idempotency_key 已处理)")
         yield
         # 执行成功才记录; 失败 (如 400) 不记录, 允许客户端修正后重试
         if key:
@@ -145,6 +139,8 @@ def _idempotency_guard(key: str | None) -> Iterator[None]:
     finally:
         fcntl.flock(lock_fd, fcntl.LOCK_UN)
         os.close(lock_fd)
+
+
 # 金额/数量安全上限 (拒绝超大值, 防输入错误/注入)
 MAX_TRADE_AMOUNT = 1e9
 
@@ -159,11 +155,7 @@ def get_data() -> dict:
         return ls.load_data()
     mtime = max(f.stat().st_mtime for f in files)
     # 同时检查文件数量变化 (删除/新增)
-    if (
-        _DATA_CACHE is None
-        or mtime > _DATA_CACHE_TIME
-        or len(files) != _DATA_CACHE_FILES
-    ):
+    if _DATA_CACHE is None or mtime > _DATA_CACHE_TIME or len(files) != _DATA_CACHE_FILES:
         _DATA_CACHE = ls.load_data()
         _DATA_CACHE_TIME = time.time()
         _DATA_CACHE_FILES = len(files)
@@ -303,18 +295,17 @@ def login(payload: LoginRequest, request: Request, response: Response) -> dict:
     token = secrets.token_hex(16)
     cfg = load_config()
     cfg = _cleanup_expired_tokens(cfg)
-    cfg.setdefault("web_tokens", []).append({
-        "token": token,
-        "expires": time.time() + TOKEN_TTL,
-        "created": time.time(),
-    })
+    cfg.setdefault("web_tokens", []).append(
+        {
+            "token": token,
+            "expires": time.time() + TOKEN_TTL,
+            "created": time.time(),
+        }
+    )
     save_config(cfg)
 
     # 设置 HttpOnly cookie (浏览器自动管理, JS 无法读取, 防 XSS 窃取)
-    is_https = (
-        request.url.scheme == "https"
-        or request.headers.get("x-forwarded-proto") == "https"
-    )
+    is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
     response.set_cookie(
         key="qx_token",
         value=token,
@@ -334,8 +325,7 @@ def logout(request: Request, response: Response) -> dict:
     if token:
         cfg = load_config()
         cfg["web_tokens"] = [
-            t for t in cfg.get("web_tokens", [])
-            if isinstance(t, dict) and t.get("token") != token
+            t for t in cfg.get("web_tokens", []) if isinstance(t, dict) and t.get("token") != token
         ]
         save_config(cfg)
     response.delete_cookie(key="qx_token", path="/")
@@ -433,9 +423,7 @@ def api_signal(_: None = Depends(require_token)) -> dict:
         target = decision["final_target"]
         try:
             board_date = datetime.strptime(td, "%Y-%m-%d").date()
-            board = ls.momentum_board_data(
-                data, board_date, state.get("holding"), target
-            )
+            board = ls.momentum_board_data(data, board_date, state.get("holding"), target)
         except (KeyError, IndexError, ValueError):
             board = []
         return {
@@ -542,15 +530,13 @@ _BACKTEST_TIME: float = 0.0
 def api_backtest(_: None = Depends(require_token)) -> dict:
     """返回 V3-G 基线回测结果 (供网页绘制基准全景图)."""
     global _BACKTEST_CACHE, _BACKTEST_TIME
-    mtime = max(
-        (f.stat().st_mtime for f in ls.DATA_DIR.glob("*.parquet")), default=0.0
-    )
+    mtime = max((f.stat().st_mtime for f in ls.DATA_DIR.glob("*.parquet")), default=0.0)
     if _BACKTEST_CACHE is None or mtime > _BACKTEST_TIME:
         data = rq.load_data()
         result = rq.run_qixing_v3_no_lookahead(data)
         eq = result["equity_curve"]
         cummax = eq["equity"].cummax()
-        dd = ((eq["equity"] - cummax) / cummax * 100)
+        dd = (eq["equity"] - cummax) / cummax * 100
         span = (eq["trade_date"].iloc[-1] - eq["trade_date"].iloc[0]).days / 365.25
         _BACKTEST_CACHE = {
             "metrics": {
@@ -571,8 +557,11 @@ def api_backtest(_: None = Depends(require_token)) -> dict:
             "drawdown": [round(float(v), 2) for v in dd],
             "holdings": eq["holding"].tolist(),
             "yearly": [
-                {"year": y, "return": round(v["return"] * 100, 1),
-                 "max_dd": round(v["max_dd"] * 100, 1)}
+                {
+                    "year": y,
+                    "return": round(v["return"] * 100, 1),
+                    "max_dd": round(v["max_dd"] * 100, 1),
+                }
                 for y, v in sorted(result["yearly"].items())
             ],
             "etf_names": {**rq.ETF_POOL, rq.DEFENSE: "货币基金"},
@@ -586,6 +575,7 @@ def api_backtest(_: None = Depends(require_token)) -> dict:
 # --------------------------------------------------------------------------- #
 class _SellLeg(BaseModel):
     """卖出腿 (确认成交用)."""
+
     model_config = ConfigDict(extra="forbid")
     shares: int = Field(gt=0)
     price: float = Field(gt=0)
@@ -607,6 +597,7 @@ class _SellLeg(BaseModel):
 
 class _BuyLeg(BaseModel):
     """买入腿 (确认成交用)."""
+
     model_config = ConfigDict(extra="forbid")
     code: str = Field(min_length=6, max_length=6)
     shares: int = Field(gt=0)
@@ -629,6 +620,7 @@ class _BuyLeg(BaseModel):
 
 class ConfirmRequest(BaseModel):
     """确认待确认订单 (用真实成交数据)."""
+
     model_config = ConfigDict(extra="forbid")
     sell: _SellLeg | None = None
     buy: _BuyLeg | None = None
@@ -645,6 +637,7 @@ class ConfirmRequest(BaseModel):
 
 class TradeRequest(BaseModel):
     """手动记账 (买入/卖出)."""
+
     model_config = ConfigDict(extra="forbid")
     action: str
     code: str = Field(min_length=6, max_length=6)
@@ -735,16 +728,12 @@ def api_trade(payload: TradeRequest, _: None = Depends(require_token)) -> dict:
         # 代码必须在交易池内 (ETF_POOL + DEFENSE)
         allowed_codes = set(ls.ETF_POOL.keys()) | {ls.DEFENSE}
         if payload.code not in allowed_codes:
-            raise HTTPException(
-                status_code=400, detail=f"非法代码 {payload.code}, 不在交易池"
-            )
+            raise HTTPException(status_code=400, detail=f"非法代码 {payload.code}, 不在交易池")
 
         if payload.action == "buy":
             # 数量须为 100 的整数倍
             if payload.shares % 100 != 0:
-                raise HTTPException(
-                    status_code=400, detail="买入数量必须为 100 的整数倍"
-                )
+                raise HTTPException(status_code=400, detail="买入数量必须为 100 的整数倍")
             # 现金充足 (含手续费+滑点)
             cost = payload.shares * payload.price * (1 + ls.FEE + ls.SLIPPAGE)
             if cost > state["cash"]:
@@ -777,8 +766,11 @@ def api_trade(payload: TradeRequest, _: None = Depends(require_token)) -> dict:
 
         try:
             state = ls.record_manual_trade(
-                payload.action, payload.code, payload.shares,
-                payload.price, payload.date,
+                payload.action,
+                payload.code,
+                payload.shares,
+                payload.price,
+                payload.date,
             )
         except (ValueError, KeyError) as e:
             raise HTTPException(status_code=400, detail=str(e)) from e
@@ -808,15 +800,20 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="七星V4 实盘记账网页")
     parser.add_argument("--port", type=int, default=8090, help="监听端口 (默认8090)")
     parser.add_argument("--host", default="127.0.0.1", help="监听地址 (默认 127.0.0.1, 仅本地访问)")
-    parser.add_argument("--set-password", action="store_true",
-                        help="设置网页访问密码 (从 stdin 或 WEB_PASSWORD 环境变量读取)")
+    parser.add_argument(
+        "--set-password",
+        action="store_true",
+        help="设置网页访问密码 (从 stdin 或 WEB_PASSWORD 环境变量读取)",
+    )
     args = parser.parse_args()
 
     if args.set_password:
         import os
+
         pwd = os.environ.get("WEB_PASSWORD", "").strip()
         if not pwd:
             import getpass
+
             pwd = getpass.getpass("请输入新密码: ").strip()
             if not pwd:
                 print("  ❌ 密码不能为空")

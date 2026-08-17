@@ -40,6 +40,7 @@ def main() -> None:
 
     # === 1. 复现最轻版 B 的事件 (import run_v3_risk) ===
     import exp_v32_tail_risk as t
+
     r_b = t.run_v3_risk(data)
     events = r_b["risk_events"]
     print(f"\n最轻版 B 全量期末: {r_b['final_value']:,.0f} | 风控事件: {len(events)}")
@@ -56,8 +57,16 @@ def main() -> None:
         if frm not in mat or frm not in ETF_POOL:
             continue
         # 原持仓后续收益
-        fwd5 = mat[frm][td_i + 5] / mat[frm][td_i] - 1.0 if td_i + 5 < n and mat[frm][td_i] > 0 else 0.0
-        fwd20 = mat[frm][td_i + 20] / mat[frm][td_i] - 1.0 if td_i + 20 < n and mat[frm][td_i] > 0 else 0.0
+        fwd5 = (
+            mat[frm][td_i + 5] / mat[frm][td_i] - 1.0
+            if td_i + 5 < n and mat[frm][td_i] > 0
+            else 0.0
+        )
+        fwd20 = (
+            mat[frm][td_i + 20] / mat[frm][td_i] - 1.0
+            if td_i + 20 < n and mat[frm][td_i] > 0
+            else 0.0
+        )
         # 防御 (货币基金 511880) 同期收益 ≈0, 债券可能正
         e["fwd5_orig"] = round(float(fwd5), 4)
         e["fwd20_orig"] = round(float(fwd20), 4)
@@ -68,14 +77,17 @@ def main() -> None:
     worst = sorted(events_audit, key=lambda e: -e.get("opp_cost20", 0))[:6]
     print("机会成本最大的6次触发:")
     for e in worst:
-        print(f"  {e['date']} {e['type']} {ETF_POOL.get(e.get('from') or e.get('target',''),'?')} "
-              f"fwd5={e.get('fwd5_orig',0):+.1%} fwd20={e.get('fwd20_orig',0):+.1%}")
+        print(
+            f"  {e['date']} {e['type']} {ETF_POOL.get(e.get('from') or e.get('target', ''), '?')} "
+            f"fwd5={e.get('fwd5_orig', 0):+.1%} fwd20={e.get('fwd20_orig', 0):+.1%}"
+        )
 
     # === 2. 波动率环境分析: V3 基线持仓按 vol20 分桶 ===
     print("\n" + "=" * 74)
     print("  波动率环境分析 (V3基线持仓, 按持仓资产 vol20 分桶)")
     print("=" * 74)
     from run_qixing_v3 import run_qixing_v3_same_day
+
     r_a = run_qixing_v3_same_day(data)
     eq = r_a["equity_curve"]
     hold = eq["holding"].tolist()
@@ -94,7 +106,7 @@ def main() -> None:
         if idx is None or idx < 20:
             vol20_series.append(0.3)
             continue
-        seg = mat[h][idx - 19:idx + 1].astype(float)
+        seg = mat[h][idx - 19 : idx + 1].astype(float)
         if np.all(np.isfinite(seg)) and len(seg) > 1:
             dr = np.diff(seg) / seg[:-1]
             vol20_series.append(float(np.std(dr) * np.sqrt(252)))
@@ -113,18 +125,23 @@ def main() -> None:
         # 年化贡献 = 日均 × 252 × 天数占比
         ann_contrib = mean_d * 252 * mask.mean()
         deep = (vol20_arr[mask] > 0).sum()  # 占位
-        print(f"  [{lo:.2f}, {hi:.2f})          {mask.sum():>6} {mean_d:>+10.4%} "
-              f"{ann_contrib:>+10.1%}")
+        print(
+            f"  [{lo:.2f}, {hi:.2f})          {mask.sum():>6} {mean_d:>+10.4%} "
+            f"{ann_contrib:>+10.1%}"
+        )
 
     # 高波动期动量失效: vol20>0.45 时, 持仓日均收益 vs 低波动
     hv = vol20_arr > 0.45
     lv = vol20_arr <= 0.45
-    print(f"\n  高波动 (vol20>0.45) 持仓日均收益: {ret_arr[hv].mean():+.4%} "
-          f"({hv.sum()}天, 占{len(ret_arr):.0%}天)")
+    print(
+        f"\n  高波动 (vol20>0.45) 持仓日均收益: {ret_arr[hv].mean():+.4%} "
+        f"({hv.sum()}天, 占{len(ret_arr):.0%}天)"
+    )
     print(f"  低波动 (vol20≤0.45) 持仓日均收益: {ret_arr[lv].mean():+.4%} ({lv.sum()}天)")
 
     # 高波动+高动量 (追高) 的后续表现: 持仓 vol20>0.5 且 mom10>0.15
     from run_qixing_v3 import load_data as _ld
+
     hv_mom = 0.0
     hv_mom_n = 0
     for i, td in enumerate(eq_dates[:-1]):
@@ -134,7 +151,7 @@ def main() -> None:
         idx = idx_of.get(str(td.date()))
         if idx is None or idx < 20:
             continue
-        seg = mat[h][idx - 19:idx + 1].astype(float)
+        seg = mat[h][idx - 19 : idx + 1].astype(float)
         if not np.all(np.isfinite(seg)):
             continue
         dr = np.diff(seg) / seg[:-1]
@@ -144,14 +161,21 @@ def main() -> None:
             hv_mom += ret_arr[i]
             hv_mom_n += 1
     if hv_mom_n:
-        print(f"  高波动(vol>0.5)+高动量(mom10>0.15) 追高持仓: {hv_mom_n}天, "
-              f"日均 {hv_mom/hv_mom_n:+.4%}")
+        print(
+            f"  高波动(vol>0.5)+高动量(mom10>0.15) 追高持仓: {hv_mom_n}天, "
+            f"日均 {hv_mom / hv_mom_n:+.4%}"
+        )
 
-    out = {"events_audit": events_audit,
-           "total_opp_cost": round(float(total_opp_cost), 4),
-           "vol_buckets": {"hv_days": int(hv.sum()), "lv_days": int(lv.sum()),
-                           "hv_mean_daily": round(float(ret_arr[hv].mean()), 6),
-                           "lv_mean_daily": round(float(ret_arr[lv].mean()), 6)}}
+    out = {
+        "events_audit": events_audit,
+        "total_opp_cost": round(float(total_opp_cost), 4),
+        "vol_buckets": {
+            "hv_days": int(hv.sum()),
+            "lv_days": int(lv.sum()),
+            "hv_mean_daily": round(float(ret_arr[hv].mean()), 6),
+            "lv_mean_daily": round(float(ret_arr[lv].mean()), 6),
+        },
+    }
     with open(OUTPUT_DIR / "v3_loss_attribution.json", "w") as f:
         json.dump(out, f, indent=2, ensure_ascii=False, default=str)
     print(f"\n  已保存: {OUTPUT_DIR}/v3_loss_attribution.json")

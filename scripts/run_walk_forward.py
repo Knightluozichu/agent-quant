@@ -58,9 +58,12 @@ GRID_HOLD = (3, 5, 8)
 # R4 事件驱动回测
 # --------------------------------------------------------------------------- #
 def run_event_strategy(
-    mat: dict, codes: list,
-    threshold: float, hold: int,
-    start_idx: int, end_idx: int,
+    mat: dict,
+    codes: list,
+    threshold: float,
+    hold: int,
+    start_idx: int,
+    end_idx: int,
 ) -> dict:
     """在日期索引区间 [start_idx, end_idx) 内运行暴涨事件策略.
 
@@ -86,8 +89,13 @@ def run_event_strategy(
         if i >= start_idx + 2:
             for code in codes:
                 p1, p2 = mat[code][i - 1], mat[code][i - 2]
-                if (p1 > 0 and p2 > 0 and np.isfinite(p1) and np.isfinite(p2)
-                        and (p1 / p2 - 1.0) > threshold):
+                if (
+                    p1 > 0
+                    and p2 > 0
+                    and np.isfinite(p1)
+                    and np.isfinite(p2)
+                    and (p1 / p2 - 1.0) > threshold
+                ):
                     triggers.append(code)
 
         # 3. 入场: 今日收盘等权买入新触发资产
@@ -170,10 +178,13 @@ def run_mom_baseline(mat: dict, dates: list, codes: list, start_idx: int, end_id
     # 防御资产用货币基金 (mat 中无 511880? 有, close_matrix 含全部资产)
     frames[DEFENSE] = pd.DataFrame({"trade_date": dates, "close": mat[DEFENSE]})
     result = run_backtest(
-        frames, {c: c for c in codes}, score_m0,
+        frames,
+        {c: c for c in codes},
+        score_m0,
         start_date=dates[start_idx].isoformat(),
         end_date=dates[end_idx - 1].isoformat(),
-        use_a_share_filter=True, use_drop_filter=True,
+        use_a_share_filter=True,
+        use_drop_filter=True,
     )
     if "error" in result:
         return {"error": result["error"]}
@@ -202,12 +213,17 @@ def main() -> None:
     if len(starts) < N_WINDOWS:
         print(f"  ⚠️ 数据不足, 实际窗口数: {len(starts)}")
 
-    results = {"meta": {
-        "train_days": TRAIN_DAYS, "test_days": TEST_DAYS, "buffer_days": BUFFER_DAYS,
-        "grid": {"threshold": list(GRID_THRESHOLD), "hold": list(GRID_HOLD)},
-        "cost": {"fee": FEE, "slippage": SLIPPAGE},
-        "pass_criteria": "≥3/4窗口测试夏普>0 且平均年化>等权基准",
-    }, "windows": []}
+    results = {
+        "meta": {
+            "train_days": TRAIN_DAYS,
+            "test_days": TEST_DAYS,
+            "buffer_days": BUFFER_DAYS,
+            "grid": {"threshold": list(GRID_THRESHOLD), "hold": list(GRID_HOLD)},
+            "cost": {"fee": FEE, "slippage": SLIPPAGE},
+            "pass_criteria": "≥3/4窗口测试夏普>0 且平均年化>等权基准",
+        },
+        "windows": [],
+    }
 
     test_sharpes = []
     test_anns = []
@@ -218,8 +234,10 @@ def main() -> None:
         train_end = s0 + TRAIN_DAYS
         test_start = train_end + BUFFER_DAYS
         test_end = test_start + TEST_DAYS
-        print(f"\n  ── W{wi}: 训练 {dates[s0]}~{dates[train_end-1]} "
-              f"| 测试 {dates[test_start]}~{dates[test_end-1]}")
+        print(
+            f"\n  ── W{wi}: 训练 {dates[s0]}~{dates[train_end - 1]} "
+            f"| 测试 {dates[test_start]}~{dates[test_end - 1]}"
+        )
 
         # 1. 训练期网格搜索
         best_param, best_sharpe = None, -999.0
@@ -236,8 +254,7 @@ def main() -> None:
             print("    ✗ 训练期全部参数无效")
             continue
         thr_b, hold_b = best_param
-        print(f"    [训练] 最优参数: 阈值{thr_b:.0%} 持有{hold_b}日 "
-              f"(夏普{best_sharpe:.2f})")
+        print(f"    [训练] 最优参数: 阈值{thr_b:.0%} 持有{hold_b}日 (夏普{best_sharpe:.2f})")
 
         # 2. 测试期: 冻结参数 + 全组合稳健性 (冻结参数须处于测试期12组合的中位以上)
         test_all = {}
@@ -257,11 +274,14 @@ def main() -> None:
         test_anns.append(test_res["ann_return"])
         test_best.append({"threshold": thr_b, "hold": hold_b})
         passed = test_res["sharpe"] > 0
-        print(f"    [测试] 年化{test_res['ann_return']:+.1%} 夏普{test_res['sharpe']:.2f} "
-              f"回撤{test_res['max_drawdown']:.1%} 交易{test_res['n_trades']}笔 "
-              f"{'PASS' if passed else 'FAIL'}")
-        print(f"    [稳健] 冻结参数夏普在测试期{n_combos}组合中排第{rank}名 "
-              f"{'✓' if robust else '✗'}")
+        print(
+            f"    [测试] 年化{test_res['ann_return']:+.1%} 夏普{test_res['sharpe']:.2f} "
+            f"回撤{test_res['max_drawdown']:.1%} 交易{test_res['n_trades']}笔 "
+            f"{'PASS' if passed else 'FAIL'}"
+        )
+        print(
+            f"    [稳健] 冻结参数夏普在测试期{n_combos}组合中排第{rank}名 {'✓' if robust else '✗'}"
+        )
 
         # 3. 基准
         ew = run_equal_weight(mat, codes, test_start, test_end)
@@ -271,25 +291,30 @@ def main() -> None:
         mom_shp = mom.get("sharpe", 0.0)
         baseline_anns.append(ew_ann)
         beat_ew = test_res["ann_return"] > ew_ann
-        print(f"    [基准] 等权年化{ew_ann:+.1%} | M0动量年化{mom_ann:+.1%} 夏普{mom_shp:.2f} "
-              f"| R4 vs 等权: {'跑赢' if beat_ew else '跑输'}")
+        print(
+            f"    [基准] 等权年化{ew_ann:+.1%} | M0动量年化{mom_ann:+.1%} 夏普{mom_shp:.2f} "
+            f"| R4 vs 等权: {'跑赢' if beat_ew else '跑输'}"
+        )
 
-        results["windows"].append({
-            "window": f"W{wi}",
-            "train_span": [str(dates[s0]), str(dates[train_end - 1])],
-            "test_span": [str(dates[test_start]), str(dates[test_end - 1])],
-            "train_best": {"threshold": thr_b, "hold": hold_b, "sharpe": round(best_sharpe, 3)},
-            "train_grid": train_results,
-            "test": test_res,
-            "test_grid_all": test_all,
-            "test_sharpe_rank": rank,
-            "test_n_combos": n_combos,
-            "robust": robust,
-            "baselines": {
-                "equal_weight": ew, "mom_m0": mom,
-                "beat_equal_weight": beat_ew,
-            },
-        })
+        results["windows"].append(
+            {
+                "window": f"W{wi}",
+                "train_span": [str(dates[s0]), str(dates[train_end - 1])],
+                "test_span": [str(dates[test_start]), str(dates[test_end - 1])],
+                "train_best": {"threshold": thr_b, "hold": hold_b, "sharpe": round(best_sharpe, 3)},
+                "train_grid": train_results,
+                "test": test_res,
+                "test_grid_all": test_all,
+                "test_sharpe_rank": rank,
+                "test_n_combos": n_combos,
+                "robust": robust,
+                "baselines": {
+                    "equal_weight": ew,
+                    "mom_m0": mom,
+                    "beat_equal_weight": beat_ew,
+                },
+            }
+        )
 
     # === 综合判定 ===
     print("\n" + "=" * 74)
@@ -298,8 +323,10 @@ def main() -> None:
     n_robust = sum(1 for r in results["windows"] if r.get("robust"))
     avg_ann = float(np.mean(test_anns)) if test_anns else 0.0
     avg_base = float(np.mean(baseline_anns)) if baseline_anns else 0.0
-    print(f"  测试期: {n_win}/{n_valid} 窗口夏普>0 | 参数稳健 {n_robust}/{n_valid} 窗口 | "
-          f"平均年化 {avg_ann:+.1%} vs 等权基准 {avg_base:+.1%}")
+    print(
+        f"  测试期: {n_win}/{n_valid} 窗口夏普>0 | 参数稳健 {n_robust}/{n_valid} 窗口 | "
+        f"平均年化 {avg_ann:+.1%} vs 等权基准 {avg_base:+.1%}"
+    )
     passed_overall = (
         n_win >= max(3, (n_valid * 3 + 3) // 4)
         and avg_ann > avg_base
@@ -314,8 +341,11 @@ def main() -> None:
         if n_robust < max(2, (n_valid + 1) // 2):
             detail.append("参数稳健性不足")
         print(f"  未达标项: {', '.join(detail)}")
-    verdict = "✅ R4 通过 walk-forward 验证 (含稳健性)" if passed_overall else \
-        "❌ R4 未通过 walk-forward 验证 (形式达标但稳健性/收益不足)"
+    verdict = (
+        "✅ R4 通过 walk-forward 验证 (含稳健性)"
+        if passed_overall
+        else "❌ R4 未通过 walk-forward 验证 (形式达标但稳健性/收益不足)"
+    )
     print(f"  {verdict}")
     print("=" * 74)
 

@@ -4,6 +4,7 @@
 候选因子: 动量离散度/最强动量/平均动量/市场宽度/平均波动率。
 用法: uv run python scripts/exp_factor_regime.py
 """
+
 from __future__ import annotations
 
 import sys
@@ -19,7 +20,7 @@ from strategy_lab.engine import WARMUP, backtest, build_idx_map, get_common_date
 from strategy_lab.strategies import v3_select  # noqa: E402
 
 PARAMS = {"mom_periods": (10, 20), "mom_weights": (0.5, 0.5), "rebalance_days": 5}
-IS_END = pd.Timestamp("2024-01-01")   # 样本内/外分界
+IS_END = pd.Timestamp("2024-01-01")  # 样本内/外分界
 
 
 def compute_factors_at(data: dict, idx_map: dict) -> dict | None:
@@ -97,8 +98,10 @@ def main() -> None:
     print(f"  → 假设: {best_factor} > {thr:.4f}(高) 时做多, 否则防御")
     is_high = is_df[is_df[best_factor] > thr]
     is_low = is_df[is_df[best_factor] <= thr]
-    print(f"  【样本内验证】 高组平均下期收益 {is_high['fwd_ret'].mean()*100:+.2f}% "
-          f"vs 低组 {is_low['fwd_ret'].mean()*100:+.2f}%")
+    print(
+        f"  【样本内验证】 高组平均下期收益 {is_high['fwd_ret'].mean() * 100:+.2f}% "
+        f"vs 低组 {is_low['fwd_ret'].mean() * 100:+.2f}%"
+    )
 
     # === 样本外: 该因子是否依然有效 ===
     print(f"\n  【样本外 2024-2026, {len(oos_df)} 期】 同一因子是否仍有效?")
@@ -106,22 +109,25 @@ def main() -> None:
     oos_high = oos_df[oos_df[best_factor] > thr]
     oos_low = oos_df[oos_df[best_factor] <= thr]
     print(f"  样本外相关系数: {oos_corr:+.3f} (样本内 {is_corr[best_factor]:+.3f})")
-    print(f"  高组平均下期收益 {oos_high['fwd_ret'].mean()*100:+.2f}% "
-          f"vs 低组 {oos_low['fwd_ret'].mean()*100:+.2f}%")
+    print(
+        f"  高组平均下期收益 {oos_high['fwd_ret'].mean() * 100:+.2f}% "
+        f"vs 低组 {oos_low['fwd_ret'].mean() * 100:+.2f}%"
+    )
 
     # === OOS 规则模拟: 低因子值时持币防御 vs 纯V3 ===
     # 低组若持币(收益≈0), 高组正常 → 估算增强效果
     plain_oos = (1 + oos_df["fwd_ret"]).prod() - 1
     # 增强: 低组收益替换为0(持货币), 高组保留
-    enh_rets = oos_df.apply(
-        lambda r: r["fwd_ret"] if r[best_factor] > thr else 0.0, axis=1)
+    enh_rets = oos_df.apply(lambda r: r["fwd_ret"] if r[best_factor] > thr else 0.0, axis=1)
     enh_oos = (1 + enh_rets).prod() - 1
     print(f"\n  【OOS 策略对比 2024-2026】")
-    print(f"    纯V3:        {plain_oos*100:+.1f}%")
-    print(f"    增强(低{best_factor}持币): {enh_oos*100:+.1f}%")
-    verdict = "✅ 样本外依然有效(可考虑采纳)" if (
-        abs(oos_corr) > 0.1 and np.sign(oos_corr) == np.sign(is_corr[best_factor])
-    ) else "⚠️ 样本外失效(疑似过拟合, 否决)"
+    print(f"    纯V3:        {plain_oos * 100:+.1f}%")
+    print(f"    增强(低{best_factor}持币): {enh_oos * 100:+.1f}%")
+    verdict = (
+        "✅ 样本外依然有效(可考虑采纳)"
+        if (abs(oos_corr) > 0.1 and np.sign(oos_corr) == np.sign(is_corr[best_factor]))
+        else "⚠️ 样本外失效(疑似过拟合, 否决)"
+    )
     print(f"\n  【结论】 {verdict}")
     print("=" * 68)
 

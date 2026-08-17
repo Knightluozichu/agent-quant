@@ -34,9 +34,9 @@ STATE_FILE = PROJECT_ROOT / "data" / "live" / "state.json"
 DATA_DIR = PROJECT_ROOT / "data" / "cross_asset"
 
 # 误杀判定参数 (通用逻辑)
-REBOUND_THR = 0.05    # 5日内最高反弹 >5%
+REBOUND_THR = 0.05  # 5日内最高反弹 >5%
 NOT_DROP_THR = -0.02  # 5日最低 ≥ -2% (未显著跌破)
-DROP_THR = -0.05      # 5日最低 < -5% (明显继续跌)
+DROP_THR = -0.05  # 5日最低 < -5% (明显继续跌)
 
 # 组合级事件 (不判定误杀)
 SKIP_TYPES = {"熔断-30%清仓", "熔断-25%告警", "熔断-12%降仓", "目标不可交易"}
@@ -70,7 +70,7 @@ def judge(df: pd.DataFrame, trigger_date: str) -> dict | None:
     except (IndexError, KeyError):
         return None
     p0 = float(df.iloc[idx]["close"])
-    seg = df.iloc[idx + 1: idx + 6]["close"]
+    seg = df.iloc[idx + 1 : idx + 6]["close"]
     if len(seg) == 0 or p0 <= 0:
         return None
     h5 = float(seg.max())
@@ -106,12 +106,16 @@ def audit(state_path: Path) -> dict:
         res = judge(df, ev.get("date", ""))
         if res is None:
             continue
-        rows.append({
-            "date": ev.get("date"), "type": etype, "asset": code,
-            "rebound5": round(res["rebound5"], 4),
-            "drop5": round(res["drop5"], 4),
-            "verdict": res["verdict"],
-        })
+        rows.append(
+            {
+                "date": ev.get("date"),
+                "type": etype,
+                "asset": code,
+                "rebound5": round(res["rebound5"], 4),
+                "drop5": round(res["drop5"], 4),
+                "verdict": res["verdict"],
+            }
+        )
 
     n_kill = sum(1 for r in rows if r["verdict"] == "误杀")
     n_ok = sum(1 for r in rows if r["verdict"] == "正确避损")
@@ -122,12 +126,16 @@ def audit(state_path: Path) -> dict:
     print(hdr)
     print("  " + "-" * 62)
     for r in rows:
-        print(f"  {r['date']:<12} {r['type']:<12} {r['asset']:<8} "
-              f"{r['rebound5']:>+9.1%} {r['drop5']:>+8.1%} {r['verdict']:<8}")
+        print(
+            f"  {r['date']:<12} {r['type']:<12} {r['asset']:<8} "
+            f"{r['rebound5']:>+9.1%} {r['drop5']:>+8.1%} {r['verdict']:<8}"
+        )
 
     print("\n" + "=" * 62)
-    print(f"  审计汇总: 事件 {len(rows)} | 误杀 {n_kill} | 正确避损 {n_ok} | "
-          f"中性 {len(rows)-n_kill-n_ok}")
+    print(
+        f"  审计汇总: 事件 {len(rows)} | 误杀 {n_kill} | 正确避损 {n_ok} | "
+        f"中性 {len(rows) - n_kill - n_ok}"
+    )
     print(f"  误杀率: {kill_rate:.1%}")
     if kill_rate > 0.30:
         print("  ⚠️ 误杀率 >30% → 建议降级为监控版 (risk_mode=monitor, 仅告警不干预)")
@@ -135,20 +143,28 @@ def audit(state_path: Path) -> dict:
         print("  ✓ 误杀率 ≤30% → 风控干预质量可接受")
     print("=" * 62)
 
-    return {"n_events": len(log), "n_audited": len(rows),
-            "n_kill": n_kill, "n_ok": n_ok, "kill_rate": round(kill_rate, 4),
-            "rows": rows}
+    return {
+        "n_events": len(log),
+        "n_audited": len(rows),
+        "n_kill": n_kill,
+        "n_ok": n_ok,
+        "kill_rate": round(kill_rate, 4),
+        "rows": rows,
+    }
 
 
 def push_summary(result: dict) -> None:
     """Bark 月度摘要 (Key 缺失时静默跳过)."""
     from notify import get_bark_key, push_bark
+
     if not get_bark_key():
         print("  ⚠️ Bark Key 未配置, 跳过推送")
         return
-    body = (f"风控审计: 事件{result['n_events']} 已判{result['n_audited']} "
-            f"误杀{result['n_kill']} 正确{result['n_ok']} "
-            f"误杀率{result['kill_rate']:.1%}")
+    body = (
+        f"风控审计: 事件{result['n_events']} 已判{result['n_audited']} "
+        f"误杀{result['n_kill']} 正确{result['n_ok']} "
+        f"误杀率{result['kill_rate']:.1%}"
+    )
     push_bark("📊 七星V3 风控月度审计", body, level="active")
     print("  ✓ Bark 摘要已推送")
 

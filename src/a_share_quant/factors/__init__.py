@@ -28,42 +28,43 @@ import pandas as pd
 # Factor Configuration
 # =============================================================================
 
+
 @dataclass
 class FactorConfig:
     """Factor configuration with fixed parameters (academic defaults)."""
 
     # Momentum
-    momentum_long: int = 60   # ~3 months
-    momentum_skip: int = 20   # Skip recent 1 month (reversal contamination)
+    momentum_long: int = 60  # ~3 months
+    momentum_skip: int = 20  # Skip recent 1 month (reversal contamination)
 
     # Short-term reversal
     reversal_window: int = 5  # 1 week
 
     # Volatility
-    vol_window: int = 20      # 1 month realized vol
+    vol_window: int = 20  # 1 month realized vol
 
     # Trend
-    trend_fast: int = 20      # MA20
-    trend_slow: int = 60      # MA60
+    trend_fast: int = 20  # MA20
+    trend_slow: int = 60  # MA60
 
     # Volume
     volume_window: int = 20
     volume_baseline: int = 60
 
     # IC calculation
-    ic_lookback: int = 40     # Rolling IC window (~2 months)
+    ic_lookback: int = 40  # Rolling IC window (~2 months)
     ic_min_periods: int = 20  # Min observations for IC
 
     # Rebalance
-    rebalance_days: int = 5   # Weekly rebalance
+    rebalance_days: int = 5  # Weekly rebalance
 
     # Portfolio
-    top_n: int = 2            # Hold top N stocks
+    top_n: int = 2  # Hold top N stocks
     max_position_pct: float = 0.5
 
     # Risk overlay
     max_drawdown_threshold: float = 0.12  # 12% drawdown → reduce
-    momentum_crash_window: int = 10       # Detect crash in 10 days
+    momentum_crash_window: int = 10  # Detect crash in 10 days
     momentum_crash_threshold: float = -0.08  # -8% in 10 days = crash
 
 
@@ -87,6 +88,7 @@ REGIME_FACTOR_MAP: dict[str, list[str]] = {
 # =============================================================================
 # Factor Engine v2
 # =============================================================================
+
 
 class FactorEngine:
     """Calculate factors with regime-conditional activation and IC weighting."""
@@ -153,9 +155,7 @@ class FactorEngine:
 
         # IC-weighted composite (only active factors)
         weights = self._get_ic_weights(active_factors, as_of_date)
-        factor_df["composite_score"] = sum(
-            factor_df[f] * w for f, w in weights.items()
-        )
+        factor_df["composite_score"] = sum(factor_df[f] * w for f, w in weights.items())
 
         # Store for next IC calculation
         self._prev_scores = factor_df[["symbol", "composite_score"]].copy()
@@ -189,7 +189,7 @@ class FactorEngine:
 
         # 3. Low volatility (negative = lower vol is better)
         if n > cfg.vol_window:
-            returns = np.diff(close[-cfg.vol_window:]) / close[-cfg.vol_window:-1]
+            returns = np.diff(close[-cfg.vol_window :]) / close[-cfg.vol_window : -1]
             realized_vol = np.std(returns) * np.sqrt(252)
             volatility = -realized_vol
         else:
@@ -197,8 +197,8 @@ class FactorEngine:
 
         # 4. Trend (MA ratio)
         if n > cfg.trend_slow:
-            ma_fast = np.mean(close[-cfg.trend_fast:])
-            ma_slow = np.mean(close[-cfg.trend_slow:])
+            ma_fast = np.mean(close[-cfg.trend_fast :])
+            ma_slow = np.mean(close[-cfg.trend_slow :])
             trend = (ma_fast - ma_slow) / ma_slow
         else:
             trend = 0.0
@@ -206,8 +206,8 @@ class FactorEngine:
         # 5. Volume trend
         volume_trend = 0.0
         if volume is not None and len(volume) > cfg.volume_baseline:
-            recent_vol = np.mean(volume[-cfg.volume_window:])
-            baseline_vol = np.mean(volume[-cfg.volume_baseline:])
+            recent_vol = np.mean(volume[-cfg.volume_window :])
+            baseline_vol = np.mean(volume[-cfg.volume_baseline :])
             if baseline_vol > 0:
                 volume_trend = (recent_vol - baseline_vol) / baseline_vol
 
@@ -275,7 +275,7 @@ class FactorEngine:
         for factor in active_factors:
             history = self._ic_history.get(factor, [])
             # Use only recent IC values
-            recent = [ic for d, ic in history[-cfg.ic_lookback:]]
+            recent = [ic for d, ic in history[-cfg.ic_lookback :]]
 
             if len(recent) >= cfg.ic_min_periods:
                 ic_mean = np.mean(recent)
@@ -310,6 +310,7 @@ class FactorEngine:
 # =============================================================================
 # Risk Overlay
 # =============================================================================
+
 
 class RiskOverlay:
     """Portfolio-level risk management.
@@ -391,6 +392,7 @@ class RiskOverlay:
 # =============================================================================
 # Portfolio Construction v2
 # =============================================================================
+
 
 @dataclass
 class RebalanceSignal:
@@ -488,6 +490,7 @@ class FactorPortfolio:
 # Walk-Forward Validation
 # =============================================================================
 
+
 @dataclass
 class WalkForwardResult:
     """Result of walk-forward validation."""
@@ -528,13 +531,15 @@ class WalkForwardValidator:
             train_end_idx = start + self.train_days
             test_end_idx = train_end_idx + self.test_days
 
-            windows.append({
-                "window_id": window_id,
-                "train_start": all_dates[start],
-                "train_end": all_dates[train_end_idx - 1],
-                "test_start": all_dates[train_end_idx],
-                "test_end": all_dates[min(test_end_idx - 1, n - 1)],
-            })
+            windows.append(
+                {
+                    "window_id": window_id,
+                    "train_start": all_dates[start],
+                    "train_end": all_dates[train_end_idx - 1],
+                    "test_start": all_dates[train_end_idx],
+                    "test_end": all_dates[min(test_end_idx - 1, n - 1)],
+                }
+            )
 
             start += self.step_days
             window_id += 1
@@ -575,8 +580,7 @@ class WalkForwardValidator:
 
         bench_df = data[benchmark_symbol]
         test_dates = bench_df[
-            (bench_df["trade_date"] >= test_start) &
-            (bench_df["trade_date"] <= test_end)
+            (bench_df["trade_date"] >= test_start) & (bench_df["trade_date"] <= test_end)
         ]["trade_date"].tolist()
 
         if len(test_dates) < 5:
@@ -626,7 +630,8 @@ class WalkForwardValidator:
                 # Buy target positions
                 total_equity = cash + sum(
                     holdings.get(s, 0) * data[s][data[s]["trade_date"] == td].iloc[0]["close"]
-                    for s in holdings if s in data and not data[s][data[s]["trade_date"] == td].empty
+                    for s in holdings
+                    if s in data and not data[s][data[s]["trade_date"] == td].empty
                 )
 
                 for sym, weight in signal.weights.items():

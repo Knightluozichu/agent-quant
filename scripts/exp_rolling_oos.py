@@ -5,6 +5,7 @@
 判据: 因子须在多数年份(>=4/7)跑赢基线才算稳健alpha, 否则是某段行情的过拟合。
 用法: uv run python scripts/exp_rolling_oos.py
 """
+
 from __future__ import annotations
 
 import sys
@@ -17,7 +18,12 @@ sys.path.insert(0, str(Path(__file__).parent))
 
 import run_qixing_v3 as rq  # noqa: E402
 from exp_factor_zoo import (  # noqa: E402
-    f_breakout, f_low_vol, f_mom_short, f_risk_adj, f_strength, f_vol_trend,
+    f_breakout,
+    f_low_vol,
+    f_mom_short,
+    f_risk_adj,
+    f_strength,
+    f_vol_trend,
 )
 from strategy_lab.engine import backtest  # noqa: E402
 
@@ -26,9 +32,13 @@ WEIGHT = 0.5
 
 def make_selector_v2(factor_fn, weight):
     """因子增强选股器(修复版): 缓冲用原始动量阈值, weight=0时精确复现V3."""
+
     def select(data, idx_map, holding, params):
-        a_share_weak = (rq.check_a_share_weak(data, idx_map.get(rq.A_SHARE_ETF, 0))
-                        if rq.USE_A_SHARE_FILTER else False)
+        a_share_weak = (
+            rq.check_a_share_weak(data, idx_map.get(rq.A_SHARE_ETF, 0))
+            if rq.USE_A_SHARE_FILTER
+            else False
+        )
         cands = []
         for code in rq.ETF_POOL:
             if code not in idx_map:
@@ -69,6 +79,7 @@ def make_selector_v2(factor_fn, weight):
                 return best["code"] if best["mom"] > cur["mom"] + thr else holding
             return best["code"]
         return best["code"]
+
     return select
 
 
@@ -92,14 +103,22 @@ def main() -> None:
             r = backtest(data, sel, {}, 5, start_date=date(y, 1, 1), end_date=date(y, 12, 31))
             yearly[y] = r["total_return"] * 100
         rf = backtest(data, sel, {}, 5)
-        results[name] = {"yearly": yearly, "full": rf["total_return"] * 100,
-                         "sharpe": rf["sharpe"], "mdd": rf["max_drawdown"] * 100}
+        results[name] = {
+            "yearly": yearly,
+            "full": rf["total_return"] * 100,
+            "sharpe": rf["sharpe"],
+            "mdd": rf["max_drawdown"] * 100,
+        }
 
     base = results["V3基线"]["yearly"]
     print("=" * 92)
     print("  滚动OOS + 修复基线 | 逐年独立回测(每年从10万 fresh 起步) | 因子 vs 真实V3")
     print("=" * 92)
-    hdr = f"  {'因子':<13}" + "".join(f"{y:>8}" for y in years) + f"{'全周期':>9}{'夏普':>7}{'跑赢':>6}"
+    hdr = (
+        f"  {'因子':<13}"
+        + "".join(f"{y:>8}" for y in years)
+        + f"{'全周期':>9}{'夏普':>7}{'跑赢':>6}"
+    )
     print(hdr)
     print("  " + "-" * 88)
     for name, _ in factors:

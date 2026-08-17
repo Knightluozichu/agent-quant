@@ -182,10 +182,9 @@ def push_bark(
         except Exception as e:
             last_error = e  # 网络错误/超时/响应非 JSON, 退避重试
         if attempt < max_retries:
-            wait = 2 ** attempt
+            wait = 2**attempt
             print(
-                f"  ⚠️  Bark 推送失败 (尝试 {attempt}/{max_retries}): "
-                f"{last_error}, {wait}s 后重试"
+                f"  ⚠️  Bark 推送失败 (尝试 {attempt}/{max_retries}): {last_error}, {wait}s 后重试"
             )
             time.sleep(wait)
         else:

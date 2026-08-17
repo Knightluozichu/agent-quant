@@ -67,9 +67,7 @@ def test_archive_freezes_names_params_results_and_production_status() -> None:
     assert slow["yearly"] == source["named_variants"]["slow_gap1_confirm2"]["yearly"]
     assert strict["segments"]["IS"] == source["segments"]["IS"]["consensus_strict"]
     assert strict["cost_pressure"]["3x"]["final_value"] == pytest.approx(15405.809976987504)
-    assert slow["cost_pressure"]["3x"]["max_drawdown"] == pytest.approx(
-        -0.9782324085396407
-    )
+    assert slow["cost_pressure"]["3x"]["max_drawdown"] == pytest.approx(-0.9782324085396407)
     assert archive["source"]["sha256"] == sha256_file(SOURCE)
 
 

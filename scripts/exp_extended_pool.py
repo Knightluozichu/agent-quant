@@ -9,6 +9,7 @@
 验证: IS/OOS + 3滚动窗口 + 全回测
 公式: M0 (0.5*R10 + 0.5*R20), 上轮实验验证的最优公式
 """
+
 from __future__ import annotations
 
 import json
@@ -80,6 +81,7 @@ POOLS = [
 # 动量评分 (M0)
 # ============================================================================ #
 
+
 def score_m0(close: np.ndarray) -> float:
     """M0: 0.5*R(10) + 0.5*R(20)."""
     if len(close) <= 20:
@@ -92,6 +94,7 @@ def score_m0(close: np.ndarray) -> float:
 # ============================================================================ #
 # 回测引擎
 # ============================================================================ #
+
 
 def load_pool_data(pool: dict[str, str]) -> dict[str, pd.DataFrame]:
     """加载指定池的ETF数据."""
@@ -121,7 +124,7 @@ def check_a_share_weak(data: dict, as_of_idx: int) -> bool:
     df = data[A_SHARE_ETF]
     if as_of_idx < 20:
         return False
-    close = df["close"].values[:as_of_idx + 1].astype(float)
+    close = df["close"].values[: as_of_idx + 1].astype(float)
     return close[-1] < np.mean(close[-20:])
 
 
@@ -188,7 +191,7 @@ def run_backtest(
             if code == A_SHARE_ETF and a_share_weak:
                 continue
             idx = etf_data_at_date[code]
-            close = data[code]["close"].values[:idx + 1].astype(float)
+            close = data[code]["close"].values[: idx + 1].astype(float)
             if len(close) < WARMUP:
                 continue
             if not check_single_day_drop(close):
@@ -295,6 +298,7 @@ def calc_metrics(eq_df: pd.DataFrame, initial_capital: float, n_trades: int) -> 
 # 验证框架
 # ============================================================================ #
 
+
 def run_is_oos(data: dict, pool: dict, is_end: str = "2021-12-31") -> dict:
     """IS/OOS分段回测."""
     is_r = run_backtest(data, pool, end_date=is_end)
@@ -331,6 +335,7 @@ def run_full(data: dict, pool: dict) -> dict:
 # 主实验
 # ============================================================================ #
 
+
 def main():
     print("=" * 70)
     print("  扩展跨资产池实验: 增加低相关资产 vs 当前策略")
@@ -363,9 +368,11 @@ def main():
         oos = is_oos["OOS"]
         if "error" not in oos:
             is_m = is_oos["IS"]
-            print(f"IS年化={is_m.get('ann_return', 'ERR'):+.1%} "
-                  f"OOS年化={oos['ann_return']:+.1%} 夏普={oos['sharpe']:.2f} "
-                  f"{'PASS' if is_oos['passed'] else 'FAIL'}")
+            print(
+                f"IS年化={is_m.get('ann_return', 'ERR'):+.1%} "
+                f"OOS年化={oos['ann_return']:+.1%} 夏普={oos['sharpe']:.2f} "
+                f"{'PASS' if is_oos['passed'] else 'FAIL'}"
+            )
         else:
             print(f"ERROR: {oos.get('error', 'unknown')}")
 
@@ -375,7 +382,9 @@ def main():
         print(f"正收益={rolling['positive']}/3 {'PASS' if rolling['passed'] else 'FAIL'}")
         for wname, wr in rolling["windows"].items():
             if "error" not in wr:
-                print(f"    {wname}: 年化={wr['ann_return']:+.1%} 夏普={wr['sharpe']:.2f} 回撤={wr['max_drawdown']:.1%}")
+                print(
+                    f"    {wname}: 年化={wr['ann_return']:+.1%} 夏普={wr['sharpe']:.2f} 回撤={wr['max_drawdown']:.1%}"
+                )
             else:
                 print(f"    {wname}: {wr.get('error', 'ERR')}")
 
@@ -383,9 +392,11 @@ def main():
         print(f"  [3/3] Full...", end=" ", flush=True)
         full = run_full(data, pool)
         if "error" not in full:
-            print(f"年化={full['ann_return']:+.1%} 夏普={full['sharpe']:.2f} "
-                  f"回撤={full['max_drawdown']:.1%} Calmar={full['calmar']:.2f} "
-                  f"({full['span_years']}yr)")
+            print(
+                f"年化={full['ann_return']:+.1%} 夏普={full['sharpe']:.2f} "
+                f"回撤={full['max_drawdown']:.1%} Calmar={full['calmar']:.2f} "
+                f"({full['span_years']}yr)"
+            )
         else:
             print(f"ERROR: {full.get('error', 'unknown')}")
 
@@ -400,8 +411,10 @@ def main():
     print(f"\n\n{'=' * 70}")
     print("  汇总对比")
     print(f"{'=' * 70}")
-    print(f"  {'池':<32} {'Full年化':>8} {'夏普':>6} {'回撤':>8} {'Calmar':>7} "
-          f"{'OOS年化':>8} {'OOS夏普':>7} {'IS/OOS':>7} {'Roll':>5}")
+    print(
+        f"  {'池':<32} {'Full年化':>8} {'夏普':>6} {'回撤':>8} {'Calmar':>7} "
+        f"{'OOS年化':>8} {'OOS夏普':>7} {'IS/OOS':>7} {'Roll':>5}"
+    )
     print(f"  {'-' * 95}")
 
     for pool_name, res in all_results.items():
@@ -412,11 +425,13 @@ def main():
             continue
         oos_ann = f"{oos['ann_return']:+.1%}" if "error" not in oos else "ERR"
         oos_shp = f"{oos['sharpe']:.2f}" if "error" not in oos else "ERR"
-        print(f"  {pool_name:<32} {full['ann_return']:>+7.1%} {full['sharpe']:>6.2f} "
-              f"{full['max_drawdown']:>7.1%} {full['calmar']:>7.2f} "
-              f"{oos_ann:>8} {oos_shp:>7} "
-              f"{'PASS' if res['is_oos']['passed'] else 'FAIL':>7} "
-              f"{'PASS' if res['rolling']['passed'] else 'FAIL':>5}")
+        print(
+            f"  {pool_name:<32} {full['ann_return']:>+7.1%} {full['sharpe']:>6.2f} "
+            f"{full['max_drawdown']:>7.1%} {full['calmar']:>7.2f} "
+            f"{oos_ann:>8} {oos_shp:>7} "
+            f"{'PASS' if res['is_oos']['passed'] else 'FAIL':>7} "
+            f"{'PASS' if res['rolling']['passed'] else 'FAIL':>5}"
+        )
 
     # 年度对比
     print(f"\n  年度收益对比:")

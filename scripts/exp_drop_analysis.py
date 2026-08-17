@@ -10,6 +10,7 @@
 输出: 控制台专家团分析 + data/v9_results/drop_analysis.json
 用法: uv run python scripts/exp_drop_analysis.py
 """
+
 from __future__ import annotations
 
 import json
@@ -56,8 +57,7 @@ def collect_events(data: dict) -> list[dict]:
     h3.select_target = ORIG_SELECT
     h3.H3_ENABLED = False
 
-    dates = sorted(set.intersection(
-        *[set(data[c]["trade_date"]) for c in list(data.keys())]))
+    dates = sorted(set.intersection(*[set(data[c]["trade_date"]) for c in list(data.keys())]))
     ci = {d: i for i, d in enumerate(dates)}
 
     events = []
@@ -69,10 +69,11 @@ def collect_events(data: dict) -> list[dict]:
         if mask.sum() < WARMUP:
             continue
         idx = mask.sum() - 1
-        close = df["close"].values[:idx + 1].astype(float)
+        close = df["close"].values[: idx + 1].astype(float)
         drop = any(
             (close[i] - close[i - 1]) / close[i - 1] < rq.DROP_THRESHOLD
-            for i in range(-rq.DROP_LOOKBACK, 0))
+            for i in range(-rq.DROP_LOOKBACK, 0)
+        )
         if not drop:
             continue
 
@@ -130,22 +131,29 @@ def collect_events(data: dict) -> list[dict]:
             cm = data[c]
             cmask = cm["trade_date"] <= td
             if cmask.sum() > 30:
-                cclose = cm["close"].values[:cmask.sum()].astype(float)
+                cclose = cm["close"].values[: cmask.sum()].astype(float)
                 cr10 = (cclose[-1] - cclose[-11]) / cclose[-11]
                 cr20 = (cclose[-1] - cclose[-21]) / cclose[-21]
                 others.append(0.5 * cr10 + 0.5 * cr20)
         market_mom = float(np.mean(others)) if others else 0.0
 
-        events.append({
-            "date": str(td), "code": holding, "name": rq.ETF_POOL[holding],
-            "to": target, "day_drop": round(float(day_drop), 4),
-            "ret60": round(float(ret60), 4), "mom": round(float(mom), 4),
-            "dd_peak": round(float(dd_from_peak), 4),
-            "vol20": round(float(vol20), 3),
-            "market_mom": round(float(market_mom), 4),
-            "fwd": {str(k): round(v, 4) for k, v in fwd.items()},
-            "recover_days": recover, "to_fwd": {str(k): round(v, 4) for k, v in to_fwd.items()},
-        })
+        events.append(
+            {
+                "date": str(td),
+                "code": holding,
+                "name": rq.ETF_POOL[holding],
+                "to": target,
+                "day_drop": round(float(day_drop), 4),
+                "ret60": round(float(ret60), 4),
+                "mom": round(float(mom), 4),
+                "dd_peak": round(float(dd_from_peak), 4),
+                "vol20": round(float(vol20), 3),
+                "market_mom": round(float(market_mom), 4),
+                "fwd": {str(k): round(v, 4) for k, v in fwd.items()},
+                "recover_days": recover,
+                "to_fwd": {str(k): round(v, 4) for k, v in to_fwd.items()},
+            }
+        )
     return events
 
 
@@ -161,8 +169,10 @@ def bucket_report(events: list[dict], key: str, buckets: list[tuple], label: str
             continue
         fake = sum(1 for x in f5 if x > 0)
         avg = float(np.mean(f5))
-        print(f"    {name:<22} {len(grp):>2}次 误杀 {fake}/{len(f5)} = {fake / len(f5) * 100:>3.0f}% "
-              f"后5日均 {avg:+.2%}")
+        print(
+            f"    {name:<22} {len(grp):>2}次 误杀 {fake}/{len(f5)} = {fake / len(f5) * 100:>3.0f}% "
+            f"后5日均 {avg:+.2%}"
+        )
 
 
 def main() -> None:
@@ -188,9 +198,11 @@ def main() -> None:
         if not f5:
             continue
         fake = sum(1 for x in f5 if x > 0)
-        print(f"    {rq.ETF_POOL[code]:<8} {len(grp):>2}次 误杀 {fake}/{len(f5)} "
-              f"({fake / len(f5) * 100:.0f}%) 后5日均 {np.mean(f5):+.2%} "
-              f"后20日均 {np.mean([e['fwd'].get('20', np.nan) for e in grp if '20' in e['fwd']] or [np.nan]):+.2%}")
+        print(
+            f"    {rq.ETF_POOL[code]:<8} {len(grp):>2}次 误杀 {fake}/{len(f5)} "
+            f"({fake / len(f5) * 100:.0f}%) 后5日均 {np.mean(f5):+.2%} "
+            f"后20日均 {np.mean([e['fwd'].get('20', np.nan) for e in grp if '20' in e['fwd']] or [np.nan]):+.2%}"
+        )
 
     # === 2. 年度 × 正反 ===
     print("\n  【年度维度】")
@@ -200,24 +212,40 @@ def main() -> None:
         if not f5:
             continue
         fake = sum(1 for x in f5 if x > 0)
-        print(f"    {y}: {len(grp)}次 误杀 {fake}/{len(f5)} ({fake / len(f5) * 100:.0f}%) "
-              f"后5日均 {np.mean(f5):+.2%}")
+        print(
+            f"    {y}: {len(grp)}次 误杀 {fake}/{len(f5)} ({fake / len(f5) * 100:.0f}%) "
+            f"后5日均 {np.mean(f5):+.2%}"
+        )
 
     # === 3. 特征分桶 ===
     print("\n  【特征分桶 (误杀率)】")
-    bucket_report(events, "day_drop", [(-0.15, -0.05, "单日跌5%~15%"),
-                                        (-0.049, -0.03, "单日跌3%~5%")], "暴跌幅度")
-    bucket_report(events, "ret60", [(-1, 0.1, "ret60<10% (平淡)"),
-                                     (0.1, 0.3, "ret60 10%~30%"),
-                                     (0.3, 10, "ret60>30% (大涨)")], "趋势位置")
-    bucket_report(events, "dd_peak", [(-1, -0.1, "距60日峰值回撤>10%"),
-                                      (-0.099, 0, "距峰值回撤<10%")], "回撤深度")
-    bucket_report(events, "vol20", [(0, 0.35, "低波动<35%"),
-                                    (0.35, 0.6, "中波动35~60%"),
-                                    (0.6, 10, "高波动>60%")], "20日波动率")
-    bucket_report(events, "mom", [(-1, 0, "动量<0"),
-                                  (0, 0.1, "动量0~10%"),
-                                  (0.1, 10, "动量>10%")], "生产动量")
+    bucket_report(
+        events,
+        "day_drop",
+        [(-0.15, -0.05, "单日跌5%~15%"), (-0.049, -0.03, "单日跌3%~5%")],
+        "暴跌幅度",
+    )
+    bucket_report(
+        events,
+        "ret60",
+        [(-1, 0.1, "ret60<10% (平淡)"), (0.1, 0.3, "ret60 10%~30%"), (0.3, 10, "ret60>30% (大涨)")],
+        "趋势位置",
+    )
+    bucket_report(
+        events,
+        "dd_peak",
+        [(-1, -0.1, "距60日峰值回撤>10%"), (-0.099, 0, "距峰值回撤<10%")],
+        "回撤深度",
+    )
+    bucket_report(
+        events,
+        "vol20",
+        [(0, 0.35, "低波动<35%"), (0.35, 0.6, "中波动35~60%"), (0.6, 10, "高波动>60%")],
+        "20日波动率",
+    )
+    bucket_report(
+        events, "mom", [(-1, 0, "动量<0"), (0, 0.1, "动量0~10%"), (0.1, 10, "动量>10%")], "生产动量"
+    )
 
     # === 4. 机会成本 ===
     print("\n  【机会成本: 换入品种 vs 原品种 (5日)】")
@@ -227,9 +255,11 @@ def main() -> None:
             opp.append((e, e["to_fwd"]["5"] - e["fwd"]["5"]))
     if opp:
         arr = np.array([x[1] for x in opp])
-        print(f"    换仓净差 (换入-原品种): 平均 {arr.mean():+.2%} | "
-              f"误杀组: {np.mean([x[1] for x in opp if x[0]['fwd']['5'] > 0]):+.2%} | "
-              f"真跌组: {np.mean([x[1] for x in opp if x[0]['fwd']['5'] <= 0]):+.2%}")
+        print(
+            f"    换仓净差 (换入-原品种): 平均 {arr.mean():+.2%} | "
+            f"误杀组: {np.mean([x[1] for x in opp if x[0]['fwd']['5'] > 0]):+.2%} | "
+            f"真跌组: {np.mean([x[1] for x in opp if x[0]['fwd']['5'] <= 0]):+.2%}"
+        )
         better = sum(1 for x in opp if x[1] > 0)
         print(f"    换仓比持有原品种好: {better}/{len(opp)} = {better / len(opp) * 100:.0f}%")
 
@@ -238,18 +268,26 @@ def main() -> None:
     rec = [e["recover_days"] for e in fake5 if e["recover_days"]]
     nrec = [e for e in fake5 if not e["recover_days"]]
     if rec:
-        print(f"    恢复: {len(rec)}/{len(fake5)} 次, 中位数 {int(np.median(rec))} 交易日, "
-              f"平均 {np.mean(rec):.1f} 交易日")
+        print(
+            f"    恢复: {len(rec)}/{len(fake5)} 次, 中位数 {int(np.median(rec))} 交易日, "
+            f"平均 {np.mean(rec):.1f} 交易日"
+        )
     print(f"    30日内未恢复: {len(nrec)} 次")
 
     # === 6. 市场环境 ===
     print("\n  【市场环境: 同池其他品种平均动量】")
-    bucket_report(events, "market_mom", [(-1, -0.05, "同池弱 (均值<-5%)"),
-                                         (-0.05, 0.05, "同池中性"),
-                                         (0.05, 10, "同池强 (均值>5%)")], "市场强弱")
+    bucket_report(
+        events,
+        "market_mom",
+        [
+            (-1, -0.05, "同池弱 (均值<-5%)"),
+            (-0.05, 0.05, "同池中性"),
+            (0.05, 10, "同池强 (均值>5%)"),
+        ],
+        "市场强弱",
+    )
 
-    out = {"n_events": total, "n_fake5": len(fake5), "n_real5": len(real5),
-           "events": events}
+    out = {"n_events": total, "n_fake5": len(fake5), "n_real5": len(real5), "events": events}
     path = OUTPUT_DIR / "drop_analysis.json"
     path.write_text(json.dumps(out, indent=2, ensure_ascii=False, default=str))
     print(f"\n  ✓ 结果已保存: {path}")

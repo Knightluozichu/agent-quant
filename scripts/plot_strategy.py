@@ -3,6 +3,7 @@
 用法: uv run python scripts/plot_strategy.py
 输出: data/qixing_results/strategy_overview.png
 """
+
 from __future__ import annotations
 
 import sys
@@ -19,14 +20,19 @@ import pandas as pd  # noqa: E402
 
 # 中文字体 (macOS / Linux 兼容)
 matplotlib.rcParams["font.sans-serif"] = [
-    "Arial Unicode MS", "PingFang SC", "Heiti SC", "STHeiti", "SimHei", "Noto Sans CJK SC",
+    "Arial Unicode MS",
+    "PingFang SC",
+    "Heiti SC",
+    "STHeiti",
+    "SimHei",
+    "Noto Sans CJK SC",
 ]
 matplotlib.rcParams["axes.unicode_minus"] = False
 
 import run_qixing_v3 as rq  # noqa: E402
 
-UP = "#e5484d"      # 红涨
-DOWN = "#18a058"    # 绿跌
+UP = "#e5484d"  # 红涨
+DOWN = "#18a058"  # 绿跌
 
 NAMES = {**rq.ETF_POOL, rq.DEFENSE: "货币基金"}
 COLORS = {
@@ -55,9 +61,10 @@ def main() -> None:
     ax1.plot(eq["trade_date"], eq["equity"] / 10000, color=UP, linewidth=1.6)
     ax1.set_yscale("log")
     ax1.set_title(
-        f"七星V3 净值曲线  |  累计 {result['total_return']*100:+.0f}%  "
-        f"年化 {result['ann_return']*100:+.1f}%  夏普 {result['sharpe']:.2f}",
-        fontsize=13, fontweight="bold",
+        f"七星V3 净值曲线  |  累计 {result['total_return'] * 100:+.0f}%  "
+        f"年化 {result['ann_return'] * 100:+.1f}%  夏普 {result['sharpe']:.2f}",
+        fontsize=13,
+        fontweight="bold",
     )
     ax1.set_ylabel("账户净值 (万元, 对数)")
     ax1.grid(True, alpha=0.3)
@@ -70,7 +77,7 @@ def main() -> None:
     ax2.fill_between(eq["trade_date"], dd, 0, color=DOWN, alpha=0.35)
     ax2.plot(eq["trade_date"], dd, color=DOWN, linewidth=0.7)
     ax2.set_ylabel("回撤 %")
-    ax2.set_title(f"水下曲线 (最大回撤 {result['max_drawdown']*100:.1f}%)", fontsize=11)
+    ax2.set_title(f"水下曲线 (最大回撤 {result['max_drawdown'] * 100:.1f}%)", fontsize=11)
     ax2.grid(True, alpha=0.3)
 
     # ---- Panel 3: 逐年收益 ----
@@ -85,8 +92,13 @@ def main() -> None:
     ax3.axhline(0, color="black", linewidth=0.8)
     ax3.grid(True, axis="y", alpha=0.3)
     for b, r in zip(bars, rets):
-        ax3.text(b.get_x() + b.get_width() / 2, r + (3 if r >= 0 else -6),
-                 f"{r:+.0f}%", ha="center", fontsize=9)
+        ax3.text(
+            b.get_x() + b.get_width() / 2,
+            r + (3 if r >= 0 else -6),
+            f"{r:+.0f}%",
+            ha="center",
+            fontsize=9,
+        )
 
     # ---- Panel 4: 持仓时间线 ----
     ax4 = fig.add_subplot(gs[3])
@@ -95,9 +107,15 @@ def main() -> None:
     for c in codes:
         mask = eq["holding"] == c
         if mask.any():
-            ax4.scatter(eq.loc[mask, "trade_date"], [code_to_y[c]] * int(mask.sum()),
-                        color=COLORS.get(c, "gray"), s=26, marker="s",
-                        label=NAMES[c], edgecolors="none")
+            ax4.scatter(
+                eq.loc[mask, "trade_date"],
+                [code_to_y[c]] * int(mask.sum()),
+                color=COLORS.get(c, "gray"),
+                s=26,
+                marker="s",
+                label=NAMES[c],
+                edgecolors="none",
+            )
     ax4.set_yticks(range(len(codes)))
     ax4.set_yticklabels([f"{NAMES[c]} ({c})" for c in codes], fontsize=9)
     ax4.set_title("持仓时间线 (每点=一次调仓日持有的ETF)", fontsize=11)
@@ -110,7 +128,9 @@ def main() -> None:
     fig.suptitle(
         f"七星ETF轮动超级增强V3 — 策略全景 ({eq['trade_date'].min():%Y-%m} ~ "
         f"{eq['trade_date'].max():%Y-%m}, {span:.1f}年)",
-        fontsize=16, fontweight="bold", y=0.995,
+        fontsize=16,
+        fontweight="bold",
+        y=0.995,
     )
 
     out = Path("data/qixing_results/strategy_overview.png")

@@ -23,9 +23,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 # 默认配置路径: <project_root>/config/strategy_params.yaml
 # src/a_share_quant/strategies/params.py -> parents[3] = 项目根目录
 # ---------------------------------------------------------------------------
-DEFAULT_CONFIG_PATH: Path = (
-    Path(__file__).resolve().parents[3] / "config" / "strategy_params.yaml"
-)
+DEFAULT_CONFIG_PATH: Path = Path(__file__).resolve().parents[3] / "config" / "strategy_params.yaml"
 
 # 动量权重求和容差 (浮点比较)
 _WEIGHT_SUM_TOL: float = 1e-6
@@ -42,9 +40,7 @@ class UniverseParams(BaseModel):
     etf_pool: dict[str, str] = Field(..., description="主交易ETF池 code -> 名称")
     defense: str = Field(..., min_length=6, max_length=6, description="防御标的代码")
     a_share_etf: str = Field(..., min_length=6, max_length=6, description="A股代表标的代码")
-    categories: dict[str, list[str]] = Field(
-        ..., description="多类别ETF池 类别名 -> 代码列表"
-    )
+    categories: dict[str, list[str]] = Field(..., description="多类别ETF池 类别名 -> 代码列表")
 
     @field_validator("etf_pool")
     @classmethod
@@ -65,8 +61,7 @@ class UniverseParams(BaseModel):
             for code in codes:
                 if code not in pool_codes:
                     raise ValueError(
-                        f"category '{cat_name}' contains code {code!r} "
-                        f"not in etf_pool"
+                        f"category '{cat_name}' contains code {code!r} not in etf_pool"
                     )
         return self
 
@@ -107,9 +102,7 @@ class MomentumParams(BaseModel):
             raise ValueError("mom_periods must be >= 1")
         total = sum(self.mom_weights)
         if abs(total - 1.0) > _WEIGHT_SUM_TOL:
-            raise ValueError(
-                f"mom_weights must sum to 1.0 (got {total})"
-            )
+            raise ValueError(f"mom_weights must sum to 1.0 (got {total})")
         return self
 
 

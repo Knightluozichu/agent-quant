@@ -33,7 +33,6 @@ def create_trade_plan_layout(loader: DashboardDataLoader) -> html.Div:
         [
             # Page header
             html.H4("今日交易计划", className="mb-4"),
-
             # Summary cards
             dbc.Row(
                 [
@@ -76,7 +75,6 @@ def create_trade_plan_layout(loader: DashboardDataLoader) -> html.Div:
                 ],
                 className="mb-4",
             ),
-
             # Active signals
             dbc.Row(
                 [
@@ -95,7 +93,6 @@ def create_trade_plan_layout(loader: DashboardDataLoader) -> html.Div:
                 ],
                 className="mb-4",
             ),
-
             # Rejected signals
             dbc.Row(
                 [
@@ -176,7 +173,6 @@ def _create_signal_card(signal: TradeSignalData) -> dbc.Card:
                             width="auto",
                             className="d-flex align-items-center",
                         ),
-
                         # Symbol and strategy
                         dbc.Col(
                             [
@@ -188,7 +184,6 @@ def _create_signal_card(signal: TradeSignalData) -> dbc.Card:
                             ],
                             width=3,
                         ),
-
                         # Reason
                         dbc.Col(
                             [
@@ -197,7 +192,6 @@ def _create_signal_card(signal: TradeSignalData) -> dbc.Card:
                             ],
                             width=4,
                         ),
-
                         # Confidence
                         dbc.Col(
                             [
@@ -214,24 +208,27 @@ def _create_signal_card(signal: TradeSignalData) -> dbc.Card:
                     ],
                     className="align-items-center",
                 ),
-
                 # Target and stop-loss (if available)
                 html.Hr(className="my-2") if (signal.target_price or signal.stop_loss) else None,
                 dbc.Row(
                     [
                         dbc.Col(
                             html.Small(f"目标价: ¥{signal.target_price:.3f}")
-                            if signal.target_price else None,
+                            if signal.target_price
+                            else None,
                             width="auto",
                         ),
                         dbc.Col(
                             html.Small(f"止损价: ¥{signal.stop_loss:.3f}", className="text-danger")
-                            if signal.stop_loss else None,
+                            if signal.stop_loss
+                            else None,
                             width="auto",
                         ),
                     ],
                     className="mt-2",
-                ) if (signal.target_price or signal.stop_loss) else None,
+                )
+                if (signal.target_price or signal.stop_loss)
+                else None,
             ]
         ),
         className="mb-2 shadow-sm",

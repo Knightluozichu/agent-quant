@@ -12,6 +12,7 @@
 用法: uv run python scripts/exp_drop_gate.py
 输出: data/v9_results/drop_gate_ab.json
 """
+
 from __future__ import annotations
 
 import json
@@ -28,7 +29,13 @@ sys.path.insert(0, str(Path(__file__).parent))
 import run_qixing_v3 as rq  # noqa: E402
 from exp_short_window_patterns import close_matrix  # noqa: E402
 from exp_v32_tail_risk import (  # noqa: E402
-    IS_END, IS_START, OOS_END, OOS_START, OUTPUT_DIR, WARMUP, run_v3_risk,
+    IS_END,
+    IS_START,
+    OOS_END,
+    OOS_START,
+    OUTPUT_DIR,
+    WARMUP,
+    run_v3_risk,
 )
 
 ORIG_CHECK = rq.check_single_day_drop
@@ -42,6 +49,7 @@ def make_gated(ret60_thr: float = 0.0, mom_guard: bool = True):
         ret60_thr: 趋势位置阈值; ret60>=阈值视为前期上涨(排除), <阈值视为平淡(可放行)
         mom_guard: True 时要求生产动量评分>0 才放行 (平淡但动量转负仍排除)
     """
+
     def gated(close: np.ndarray) -> bool:
         if len(close) < rq.DROP_LOOKBACK + 1:
             return True
@@ -68,11 +76,11 @@ def make_gated(ret60_thr: float = 0.0, mom_guard: bool = True):
                 return False
         GATE_STATS["passed"] += 1
         return True
+
     return gated
 
 
-KEYS = ("final_value", "total_return", "ann_return", "sharpe",
-        "max_drawdown", "calmar", "n_trades")
+KEYS = ("final_value", "total_return", "ann_return", "sharpe", "max_drawdown", "calmar", "n_trades")
 
 
 def run_segment(name: str, s0: int, s1: int) -> dict:
@@ -100,8 +108,7 @@ def main() -> None:
         b = next(i for i, d in enumerate(dates) if str(d) >= s1)
         return max(a - WARMUP, 0), min(b, n)
 
-    segs = [("全周期", 0, n), ("IS", *seg(IS_START, IS_END)),
-            ("OOS", *seg(OOS_START, OOS_END))]
+    segs = [("全周期", 0, n), ("IS", *seg(IS_START, IS_END)), ("OOS", *seg(OOS_START, OOS_END))]
 
     # 变体: (名称, ret60阈值, 动量守卫)
     variants = [
@@ -113,21 +120,23 @@ def main() -> None:
 
     results: dict = {"variants": {}}
     for vname, thr, guard in variants:
-        rq.check_single_day_drop = (
-            make_gated(thr, guard) if thr is not None else ORIG_CHECK)
+        rq.check_single_day_drop = make_gated(thr, guard) if thr is not None else ORIG_CHECK
         GATE_STATS["passed"] = GATE_STATS["excluded"] = 0
         seg_results = {}
         for name, s0, s1 in segs:
             seg_results[name] = run_segment(name, s0, s1)
-        results["variants"][vname] = {"segs": seg_results,
-                                      "gate_stats": dict(GATE_STATS)}
-        print(f"\n  [{vname}]  (放行{results['variants'][vname]['gate_stats'].get('passed', 0)}次 / "
-              f"排除{results['variants'][vname]['gate_stats'].get('excluded', 0)}次)")
+        results["variants"][vname] = {"segs": seg_results, "gate_stats": dict(GATE_STATS)}
+        print(
+            f"\n  [{vname}]  (放行{results['variants'][vname]['gate_stats'].get('passed', 0)}次 / "
+            f"排除{results['variants'][vname]['gate_stats'].get('excluded', 0)}次)"
+        )
         for name in ("全周期", "IS", "OOS"):
             r = seg_results[name]
-            print(f"    {name:<6} 期末{r['final_value']:>12,.0f} "
-                  f"年化{r['ann_return'] * 100:>+7.1f}% 夏普{r['sharpe']:>6.2f} "
-                  f"回撤{r['max_drawdown'] * 100:>7.1f}% 交易{r['n_trades']:>4}")
+            print(
+                f"    {name:<6} 期末{r['final_value']:>12,.0f} "
+                f"年化{r['ann_return'] * 100:>+7.1f}% 夏普{r['sharpe']:>6.2f} "
+                f"回撤{r['max_drawdown'] * 100:>7.1f}% 交易{r['n_trades']:>4}"
+            )
     rq.check_single_day_drop = ORIG_CHECK  # 恢复
 
     # === 成本压力 (推荐变体 thr=0.00 guard=on) ===
@@ -141,16 +150,19 @@ def main() -> None:
         rq.check_single_day_drop = ORIG_CHECK
         cost_rows[f"{mult:g}x"] = {k: r[k] for k in KEYS}
         ratio = r["final_value"] / base["final_value"] if base["final_value"] else 0
-        print(f"    {mult:g}x 期末{r['final_value']:>12,.0f} "
-              f"(基线比 {ratio - 1:+.2%}) 夏普{r['sharpe']:>6.2f} "
-              f"回撤{r['max_drawdown'] * 100:>7.1f}%")
+        print(
+            f"    {mult:g}x 期末{r['final_value']:>12,.0f} "
+            f"(基线比 {ratio - 1:+.2%}) 夏普{r['sharpe']:>6.2f} "
+            f"回撤{r['max_drawdown'] * 100:>7.1f}%"
+        )
     results["cost_stress"] = {"base_final": base["final_value"], "rows": cost_rows}
 
     # === 判定 ===
     b = results["variants"]["基线(原版)"]["segs"]
     g = results["variants"]["门控 thr=0.00 guard=on"]["segs"]
     checks = {
-        "全周期收益不劣化(>=基线-1%)": g["全周期"]["final_value"] >= b["全周期"]["final_value"] * 0.99,
+        "全周期收益不劣化(>=基线-1%)": g["全周期"]["final_value"]
+        >= b["全周期"]["final_value"] * 0.99,
         "全周期回撤不劣化": g["全周期"]["max_drawdown"] >= b["全周期"]["max_drawdown"],
         "OOS收益不劣化(>=基线-1%)": g["OOS"]["final_value"] >= b["OOS"]["final_value"] * 0.99,
         "OOS夏普不劣化0.15": g["OOS"]["sharpe"] >= b["OOS"]["sharpe"] - 0.15,

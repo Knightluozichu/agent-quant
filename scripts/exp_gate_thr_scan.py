@@ -4,6 +4,7 @@
 用法: uv run python scripts/exp_gate_thr_scan.py
 输出: data/v9_results/gate_thr_scan.json
 """
+
 from __future__ import annotations
 
 import json
@@ -34,7 +35,8 @@ def run_with_thr(data, thr):
             return True
         triggered = any(
             (close[i] - close[i - 1]) / close[i - 1] < rq.DROP_THRESHOLD
-            for i in range(-rq.DROP_LOOKBACK, 0))
+            for i in range(-rq.DROP_LOOKBACK, 0)
+        )
         if not triggered:
             return True
         if len(close) <= 61:
@@ -69,6 +71,7 @@ def run_with_thr(data, thr):
 
     # 基线日志
     DECISIONS2 = []
+
     def wrapped2(d2, em, h):
         t, c, s, a = rq.select_target(d2, em, h)
         td = None
@@ -78,6 +81,7 @@ def run_with_thr(data, thr):
                 break
         DECISIONS2.append((str(td), h, t))
         return t, c, s, a
+
     h3.select_target = wrapped2
     h3.H3_ENABLED = False
     rep_base = h3.run_v3_risk_h3(data)
@@ -86,9 +90,14 @@ def run_with_thr(data, thr):
 
     amap = {d: t for d, h, t in DECISIONS2}
     div = sum(1 for d, h, t in log if amap.get(d) is not None and amap[d] != t)
-    return {"final": rep["final_value"], "base": rep_base["final_value"],
-            "sharpe": rep["sharpe"], "max_dd": rep["max_drawdown"],
-            "divergences": div, "n_trades": rep["n_trades"]}
+    return {
+        "final": rep["final_value"],
+        "base": rep_base["final_value"],
+        "sharpe": rep["sharpe"],
+        "max_dd": rep["max_drawdown"],
+        "divergences": div,
+        "n_trades": rep["n_trades"],
+    }
 
 
 def main():
@@ -101,12 +110,22 @@ def main():
     for thr in [round(x * 0.01, 2) for x in range(0, 11)]:
         r = run_with_thr(data, thr)
         diff = r["final"] / r["base"] - 1
-        results.append({"thr": thr, "final": r["final"], "base": r["base"],
-                        "diff": diff, "sharpe": r["sharpe"],
-                        "max_dd": r["max_dd"], "divergences": r["divergences"],
-                        "n_trades": r["n_trades"]})
-        print(f"  thr={thr:+.2f}: 期末{r['final']:>10,.0f} ({diff:+.1%}) "
-              f"夏普{r['sharpe']:.2f} 回撤{r['max_dd']:.1%} 分歧{r['divergences']:>3}次")
+        results.append(
+            {
+                "thr": thr,
+                "final": r["final"],
+                "base": r["base"],
+                "diff": diff,
+                "sharpe": r["sharpe"],
+                "max_dd": r["max_dd"],
+                "divergences": r["divergences"],
+                "n_trades": r["n_trades"],
+            }
+        )
+        print(
+            f"  thr={thr:+.2f}: 期末{r['final']:>10,.0f} ({diff:+.1%}) "
+            f"夏普{r['sharpe']:.2f} 回撤{r['max_dd']:.1%} 分歧{r['divergences']:>3}次"
+        )
 
     print("\n" + "=" * 80)
     print("  分歧次数 vs 表现:")
@@ -118,8 +137,7 @@ def main():
     if ok:
         thr_min = min(r["thr"] for r in ok)
         thr_max = max(r["thr"] for r in ok)
-        print(f"\n  分歧≥5 且 ≥基线的阈值区间: [{thr_min:.2f}, {thr_max:.2f}] "
-              f"({len(ok)}个点)")
+        print(f"\n  分歧≥5 且 ≥基线的阈值区间: [{thr_min:.2f}, {thr_max:.2f}] ({len(ok)}个点)")
         for r in ok:
             print(f"    thr={r['thr']:+.2f}: 分歧{r['divergences']}次 {r['diff']:+.1%}")
     else:

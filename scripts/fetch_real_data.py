@@ -103,12 +103,12 @@ def fetch_and_cache():
         print(f"\n合并数据集: {len(combined)} 条 → {combined_file}")
 
         # Summary
-        print(f"\n{'='*50}")
+        print(f"\n{'=' * 50}")
         print(f"数据摘要:")
         print(f"  标的数: {combined['symbol'].nunique()}")
         print(f"  日期范围: {combined['trade_date'].min()} ~ {combined['trade_date'].max()}")
         print(f"  总行数: {len(combined)}")
-        print(f"{'='*50}")
+        print(f"{'=' * 50}")
 
     # Final quota check
     quota_after = jqdatasdk.get_query_count()

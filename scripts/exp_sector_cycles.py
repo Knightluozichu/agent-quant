@@ -4,6 +4,7 @@
 用法: uv run python scripts/exp_sector_cycles.py
 输出: data/sector_etf/sector_price_cycles.png + sector_annual_heatmap.png
 """
+
 from __future__ import annotations
 
 import sys
@@ -18,7 +19,12 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
 matplotlib.rcParams["font.sans-serif"] = [
-    "Arial Unicode MS", "PingFang SC", "Heiti SC", "STHeiti", "SimHei", "Noto Sans CJK SC",
+    "Arial Unicode MS",
+    "PingFang SC",
+    "Heiti SC",
+    "STHeiti",
+    "SimHei",
+    "Noto Sans CJK SC",
 ]
 matplotlib.rcParams["axes.unicode_minus"] = False
 
@@ -27,10 +33,20 @@ SECTOR_DIR.mkdir(parents=True, exist_ok=True)
 
 # 行业ETF池 (代码: 名称), 含两个宽基做对照
 SECTORS = {
-    "510150": "消费", "512010": "医药", "512880": "证券", "512660": "军工",
-    "512800": "银行", "512400": "有色", "512200": "房地产", "512720": "计算机",
-    "515030": "新能源车", "512760": "芯片", "515220": "煤炭", "512690": "酒",
-    "510300": "沪深300", "159915": "创业板",
+    "510150": "消费",
+    "512010": "医药",
+    "512880": "证券",
+    "512660": "军工",
+    "512800": "银行",
+    "512400": "有色",
+    "512200": "房地产",
+    "512720": "计算机",
+    "515030": "新能源车",
+    "512760": "芯片",
+    "515220": "煤炭",
+    "512690": "酒",
+    "510300": "沪深300",
+    "159915": "创业板",
 }
 
 
@@ -40,6 +56,7 @@ def sina_symbol(code: str) -> str:
 
 def fetch_all() -> None:
     import akshare as ak
+
     for code, name in SECTORS.items():
         f = SECTOR_DIR / f"{code}.parquet"
         if f.exists():
@@ -128,8 +145,9 @@ def plot_price_cycles(data: dict) -> None:
         if len(sub) < 100:
             continue
         base = sub["close"].iloc[0]
-        ax.plot(sub["trade_date"], sub["close"] / base * 100,
-                label=f"{name}({code})", linewidth=1.3)
+        ax.plot(
+            sub["trade_date"], sub["close"] / base * 100, label=f"{name}({code})", linewidth=1.3
+        )
     ax.set_yscale("log")
     ax.axhline(100, color="gray", linestyle="--", linewidth=0.8, alpha=0.6)
     ax.set_title("行业ETF价格周期曲线 (2016年起归一化=100, 对数坐标)", fontsize=15)
@@ -165,8 +183,15 @@ def plot_heatmap(data: dict) -> None:
         for j in range(len(years)):
             v = matrix[i, j]
             if not np.isnan(v):
-                ax.text(j, i, f"{v:+.0f}", ha="center", va="center",
-                        fontsize=8, color="black" if abs(v) < vmax * 0.6 else "white")
+                ax.text(
+                    j,
+                    i,
+                    f"{v:+.0f}",
+                    ha="center",
+                    va="center",
+                    fontsize=8,
+                    color="black" if abs(v) < vmax * 0.6 else "white",
+                )
     ax.set_title("行业ETF年度收益热力图 (红涨绿跌, 看轮动)", fontsize=15)
     fig.colorbar(im, ax=ax, label="年度收益 %", shrink=0.8)
     out = SECTOR_DIR / "sector_annual_heatmap.png"
@@ -192,7 +217,8 @@ def main() -> None:
             continue
         yr = yearly_returns(data[code])
         row = f"{SECTORS[code]:<8}" + "".join(
-            f"{yr[y]*100:>+6.0f} " if y in yr else "    -  " for y in years)
+            f"{yr[y] * 100:>+6.0f} " if y in yr else "    -  " for y in years
+        )
         print(row)
 
 

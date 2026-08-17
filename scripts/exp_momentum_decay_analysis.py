@@ -7,6 +7,7 @@
 
 用法: uv run python scripts/exp_momentum_decay_analysis.py
 """
+
 from __future__ import annotations
 
 import json
@@ -54,7 +55,8 @@ def calc_momentum_derivative(close: np.ndarray, lookback=5) -> float:
 
 
 def run_v3_with_holding_analysis(
-    data: dict, initial_capital: float = 100_000.0,
+    data: dict,
+    initial_capital: float = 100_000.0,
 ) -> dict:
     """运行V3回测并详细追踪每次持仓期的动量变化.
 
@@ -79,7 +81,7 @@ def run_v3_with_holding_analysis(
     all_dates = sorted(common_dates)
     warmup = 130
     trading_dates = all_dates[warmup:]
-    rebalance_dates = trading_dates[::rq.REBALANCE_DAYS]
+    rebalance_dates = trading_dates[:: rq.REBALANCE_DAYS]
     rebalance_set = set(rebalance_dates)
 
     cash = initial_capital
@@ -144,13 +146,17 @@ def run_v3_with_holding_analysis(
 
             # 记录当前持仓期的动量追踪
             if holding and holding_mom is not None:
-                current_mom_track.append({
-                    "date": str(td),
-                    "momentum": round(holding_mom, 4),
-                    "momentum_d1": round(holding_mom_d1, 4) if holding_mom_d1 is not None else None,
-                    "code": holding,
-                    "name": rq.ETF_POOL.get(holding, "货币基金"),
-                })
+                current_mom_track.append(
+                    {
+                        "date": str(td),
+                        "momentum": round(holding_mom, 4),
+                        "momentum_d1": round(holding_mom_d1, 4)
+                        if holding_mom_d1 is not None
+                        else None,
+                        "code": holding,
+                        "name": rq.ETF_POOL.get(holding, "货币基金"),
+                    }
+                )
 
             # 执行交易
             if target != holding:
@@ -165,8 +171,16 @@ def run_v3_with_holding_analysis(
                         if current_holding_start is not None:
                             exit_mom = holding_mom
                             exit_mom_d1 = holding_mom_d1
-                            mom_values = [m["momentum"] for m in current_mom_track if m["momentum"] is not None]
-                            mom_d1_values = [m["momentum_d1"] for m in current_mom_track if m["momentum_d1"] is not None]
+                            mom_values = [
+                                m["momentum"]
+                                for m in current_mom_track
+                                if m["momentum"] is not None
+                            ]
+                            mom_d1_values = [
+                                m["momentum_d1"]
+                                for m in current_mom_track
+                                if m["momentum_d1"] is not None
+                            ]
 
                             # 计算持仓期内的动量变化指标
                             holding_period = {
@@ -174,16 +188,32 @@ def run_v3_with_holding_analysis(
                                 "name": rq.ETF_POOL.get(holding, "货币基金"),
                                 "start_date": str(current_holding_start),
                                 "end_date": str(td),
-                                "entry_momentum": round(current_mom_track[0]["momentum"], 4) if current_mom_track else None,
-                                "exit_momentum": round(exit_mom, 4) if exit_mom is not None else None,
+                                "entry_momentum": round(current_mom_track[0]["momentum"], 4)
+                                if current_mom_track
+                                else None,
+                                "exit_momentum": round(exit_mom, 4)
+                                if exit_mom is not None
+                                else None,
                                 "peak_momentum": round(max(mom_values), 4) if mom_values else None,
                                 "min_momentum": round(min(mom_values), 4) if mom_values else None,
-                                "mom_trend": round(mom_values[-1] - mom_values[0], 4) if len(mom_values) >= 2 else 0,
-                                "mom_peak_minus_exit": round(max(mom_values) - mom_values[-1], 4) if mom_values else None,
-                                "peak_mom_d1": round(max(mom_d1_values), 4) if mom_d1_values else None,
-                                "min_mom_d1": round(min(mom_d1_values), 4) if mom_d1_values else None,
-                                "last_mom_d1": round(mom_d1_values[-1], 4) if mom_d1_values else None,
-                                "mom_d1_trend": round(mom_d1_values[-1] - mom_d1_values[0], 4) if len(mom_d1_values) >= 2 else 0,
+                                "mom_trend": round(mom_values[-1] - mom_values[0], 4)
+                                if len(mom_values) >= 2
+                                else 0,
+                                "mom_peak_minus_exit": round(max(mom_values) - mom_values[-1], 4)
+                                if mom_values
+                                else None,
+                                "peak_mom_d1": round(max(mom_d1_values), 4)
+                                if mom_d1_values
+                                else None,
+                                "min_mom_d1": round(min(mom_d1_values), 4)
+                                if mom_d1_values
+                                else None,
+                                "last_mom_d1": round(mom_d1_values[-1], 4)
+                                if mom_d1_values
+                                else None,
+                                "mom_d1_trend": round(mom_d1_values[-1] - mom_d1_values[0], 4)
+                                if len(mom_d1_values) >= 2
+                                else 0,
                                 "n_rebalance_checks": len(current_mom_track),
                                 "momentum_trace": current_mom_track.copy(),
                             }
@@ -213,18 +243,22 @@ def run_v3_with_holding_analysis(
                             # 记录买入时的动量
                             target_idx = etf_data_at_date.get(target)
                             if target_idx is not None:
-                                target_close = data[target]["close"].values[: target_idx + 1].astype(float)
+                                target_close = (
+                                    data[target]["close"].values[: target_idx + 1].astype(float)
+                                )
                                 if len(target_close) >= 121:
                                     entry_mom = calc_momentum(target_close)
                                     entry_mom_d1 = calc_momentum_derivative(target_close)
-                                    current_mom_track = [{
-                                        "date": str(td),
-                                        "momentum": round(entry_mom, 4),
-                                        "momentum_d1": round(entry_mom_d1, 4),
-                                        "code": target,
-                                        "name": rq.ETF_POOL.get(target, "货币基金"),
-                                        "action": "BUY",
-                                    }]
+                                    current_mom_track = [
+                                        {
+                                            "date": str(td),
+                                            "momentum": round(entry_mom, 4),
+                                            "momentum_d1": round(entry_mom_d1, 4),
+                                            "code": target,
+                                            "name": rq.ETF_POOL.get(target, "货币基金"),
+                                            "action": "BUY",
+                                        }
+                                    ]
 
         # === 每日净值 ===
         equity = cash
@@ -233,7 +267,9 @@ def run_v3_with_holding_analysis(
             if not row.empty:
                 equity += holding_shares * float(row.iloc[0]["close"])
 
-        equity_history.append({"trade_date": td, "equity": equity, "holding": holding or rq.DEFENSE})
+        equity_history.append(
+            {"trade_date": td, "equity": equity, "holding": holding or rq.DEFENSE}
+        )
 
         # === 回撤事件追踪 ===
         if equity > peak_equity:
@@ -242,7 +278,9 @@ def run_v3_with_holding_analysis(
             if in_drawdown:
                 # 回撤结束
                 dd_end = td
-                dd_depth = (dd_start_equity - dd_start_equity * (1 + (equity - peak_equity) / peak_equity)) / dd_start_equity
+                dd_depth = (
+                    dd_start_equity - dd_start_equity * (1 + (equity - peak_equity) / peak_equity)
+                ) / dd_start_equity
                 # 简化: 记录回撤事件
                 in_drawdown = False
 
@@ -251,12 +289,14 @@ def run_v3_with_holding_analysis(
             in_drawdown = True
             dd_start = td
             dd_start_equity = peak_equity
-            drawdown_events.append({
-                "start_date": str(td),
-                "start_equity": round(peak_equity, 2),
-                "holding": holding or rq.DEFENSE,
-                "holding_name": rq.ETF_POOL.get(holding, "货币基金") if holding else "货币基金",
-            })
+            drawdown_events.append(
+                {
+                    "start_date": str(td),
+                    "start_equity": round(peak_equity, 2),
+                    "holding": holding or rq.DEFENSE,
+                    "holding_name": rq.ETF_POOL.get(holding, "货币基金") if holding else "货币基金",
+                }
+            )
         if in_drawdown:
             # 更新回撤深度
             current_dd = (equity - peak_equity) / peak_equity
@@ -267,43 +307,59 @@ def run_v3_with_holding_analysis(
 
         # 记录决策信息(含动量)
         if td in rebalance_set:
-            detailed_decisions.append({
-                "date": str(td),
-                "holding": holding or rq.DEFENSE,
-                "holding_name": rq.ETF_POOL.get(holding, "货币基金") if holding else "货币基金",
-                "holding_momentum": round(holding_mom, 4) if holding_mom is not None else None,
-                "holding_mom_d1": round(holding_mom_d1, 4) if holding_mom_d1 is not None else None,
-                "best_target": target,
-                "best_score": round(best_score, 4),
-                "n_candidates": len(candidates),
-                "a_share_weak": a_share_weak,
-                "equity": round(equity, 2),
-            })
+            detailed_decisions.append(
+                {
+                    "date": str(td),
+                    "holding": holding or rq.DEFENSE,
+                    "holding_name": rq.ETF_POOL.get(holding, "货币基金") if holding else "货币基金",
+                    "holding_momentum": round(holding_mom, 4) if holding_mom is not None else None,
+                    "holding_mom_d1": round(holding_mom_d1, 4)
+                    if holding_mom_d1 is not None
+                    else None,
+                    "best_target": target,
+                    "best_score": round(best_score, 4),
+                    "n_candidates": len(candidates),
+                    "a_share_weak": a_share_weak,
+                    "equity": round(equity, 2),
+                }
+            )
 
     # 完成最后一个持仓期
     if holding and current_mom_track:
         exit_mom = current_mom_track[-1]["momentum"] if current_mom_track else None
         mom_values = [m["momentum"] for m in current_mom_track if m["momentum"] is not None]
-        mom_d1_values = [m["momentum_d1"] for m in current_mom_track if m["momentum_d1"] is not None]
-        holding_periods.append({
-            "code": holding,
-            "name": rq.ETF_POOL.get(holding, "货币基金"),
-            "start_date": str(current_holding_start),
-            "end_date": str(trading_dates[-1]),
-            "entry_momentum": round(current_mom_track[0]["momentum"], 4) if current_mom_track else None,
-            "exit_momentum": round(exit_mom, 4) if exit_mom is not None else None,
-            "peak_momentum": round(max(mom_values), 4) if mom_values else None,
-            "min_momentum": round(min(mom_values), 4) if mom_values else None,
-            "mom_trend": round(mom_values[-1] - mom_values[0], 4) if len(mom_values) >= 2 else 0,
-            "mom_peak_minus_exit": round(max(mom_values) - mom_values[-1], 4) if mom_values else None,
-            "peak_mom_d1": round(max(mom_d1_values), 4) if mom_d1_values else None,
-            "min_mom_d1": round(min(mom_d1_values), 4) if mom_d1_values else None,
-            "last_mom_d1": round(mom_d1_values[-1], 4) if mom_d1_values else None,
-            "mom_d1_trend": round(mom_d1_values[-1] - mom_d1_values[0], 4) if len(mom_d1_values) >= 2 else 0,
-            "n_rebalance_checks": len(current_mom_track),
-            "momentum_trace": current_mom_track.copy(),
-            "is_active": True,
-        })
+        mom_d1_values = [
+            m["momentum_d1"] for m in current_mom_track if m["momentum_d1"] is not None
+        ]
+        holding_periods.append(
+            {
+                "code": holding,
+                "name": rq.ETF_POOL.get(holding, "货币基金"),
+                "start_date": str(current_holding_start),
+                "end_date": str(trading_dates[-1]),
+                "entry_momentum": round(current_mom_track[0]["momentum"], 4)
+                if current_mom_track
+                else None,
+                "exit_momentum": round(exit_mom, 4) if exit_mom is not None else None,
+                "peak_momentum": round(max(mom_values), 4) if mom_values else None,
+                "min_momentum": round(min(mom_values), 4) if mom_values else None,
+                "mom_trend": round(mom_values[-1] - mom_values[0], 4)
+                if len(mom_values) >= 2
+                else 0,
+                "mom_peak_minus_exit": round(max(mom_values) - mom_values[-1], 4)
+                if mom_values
+                else None,
+                "peak_mom_d1": round(max(mom_d1_values), 4) if mom_d1_values else None,
+                "min_mom_d1": round(min(mom_d1_values), 4) if mom_d1_values else None,
+                "last_mom_d1": round(mom_d1_values[-1], 4) if mom_d1_values else None,
+                "mom_d1_trend": round(mom_d1_values[-1] - mom_d1_values[0], 4)
+                if len(mom_d1_values) >= 2
+                else 0,
+                "n_rebalance_checks": len(current_mom_track),
+                "momentum_trace": current_mom_track.copy(),
+                "is_active": True,
+            }
+        )
 
     # 计算汇总指标
     eq_df = pd.DataFrame(equity_history)
@@ -345,11 +401,14 @@ def analyze_momentum_patterns(holding_periods: list[dict]) -> dict:
         by_etf[code].append(hp)
 
     # 1. 入场动量分布
-    entry_moms = [hp["entry_momentum"] for hp in holding_periods if hp["entry_momentum"] is not None]
+    entry_moms = [
+        hp["entry_momentum"] for hp in holding_periods if hp["entry_momentum"] is not None
+    ]
 
     # 2. 动量衰减分析: 动量峰值到退出时的差距
-    mom_peak_exit_diffs = [hp["mom_peak_minus_exit"] for hp in holding_periods
-                           if hp["mom_peak_minus_exit"] is not None]
+    mom_peak_exit_diffs = [
+        hp["mom_peak_minus_exit"] for hp in holding_periods if hp["mom_peak_minus_exit"] is not None
+    ]
 
     # 3. 动量趋势分析: 持仓期内动量变化方向
     positive_trend = sum(1 for hp in holding_periods if hp.get("mom_trend", 0) > 0)
@@ -357,13 +416,16 @@ def analyze_momentum_patterns(holding_periods: list[dict]) -> dict:
     flat_trend = len(holding_periods) - positive_trend - negative_trend
 
     # 4. 动量峰值后仍持有的次数 (动量过峰后未及时退出)
-    peaked_then_held = [hp for hp in holding_periods
-                        if hp.get("mom_peak_minus_exit", 0) > 0.02
-                        and hp.get("n_rebalance_checks", 0) >= 2]
+    peaked_then_held = [
+        hp
+        for hp in holding_periods
+        if hp.get("mom_peak_minus_exit", 0) > 0.02 and hp.get("n_rebalance_checks", 0) >= 2
+    ]
 
     # 5. 动量一阶导分析
-    d1_negative_exit = [hp for hp in holding_periods
-                        if hp.get("last_mom_d1") is not None and hp["last_mom_d1"] < 0]
+    d1_negative_exit = [
+        hp for hp in holding_periods if hp.get("last_mom_d1") is not None and hp["last_mom_d1"] < 0
+    ]
 
     return {
         "total_holding_periods": len(holding_periods),
@@ -385,40 +447,76 @@ def analyze_momentum_patterns(holding_periods: list[dict]) -> dict:
             },
         },
         "exit_momentum": {
-            "mean": round(float(np.mean([hp["exit_momentum"] for hp in holding_periods
-                                          if hp["exit_momentum"] is not None])), 4),
-            "median": round(float(np.median([hp["exit_momentum"] for hp in holding_periods
-                                              if hp["exit_momentum"] is not None])), 4),
+            "mean": round(
+                float(
+                    np.mean(
+                        [
+                            hp["exit_momentum"]
+                            for hp in holding_periods
+                            if hp["exit_momentum"] is not None
+                        ]
+                    )
+                ),
+                4,
+            ),
+            "median": round(
+                float(
+                    np.median(
+                        [
+                            hp["exit_momentum"]
+                            for hp in holding_periods
+                            if hp["exit_momentum"] is not None
+                        ]
+                    )
+                ),
+                4,
+            ),
         },
         "momentum_peak_to_exit": {
             "mean": round(float(np.mean(mom_peak_exit_diffs)), 4) if mom_peak_exit_diffs else None,
-            "median": round(float(np.median(mom_peak_exit_diffs)), 4) if mom_peak_exit_diffs else None,
+            "median": round(float(np.median(mom_peak_exit_diffs)), 4)
+            if mom_peak_exit_diffs
+            else None,
             "max": round(float(max(mom_peak_exit_diffs)), 4) if mom_peak_exit_diffs else None,
-            "pct_with_decay": round(float(np.mean([d > 0 for d in mom_peak_exit_diffs])), 4) if mom_peak_exit_diffs else None,
-            "pct_decay_over_2pct": round(float(np.mean([d > 0.02 for d in mom_peak_exit_diffs])), 4) if mom_peak_exit_diffs else None,
-            "pct_decay_over_5pct": round(float(np.mean([d > 0.05 for d in mom_peak_exit_diffs])), 4) if mom_peak_exit_diffs else None,
+            "pct_with_decay": round(float(np.mean([d > 0 for d in mom_peak_exit_diffs])), 4)
+            if mom_peak_exit_diffs
+            else None,
+            "pct_decay_over_2pct": round(float(np.mean([d > 0.02 for d in mom_peak_exit_diffs])), 4)
+            if mom_peak_exit_diffs
+            else None,
+            "pct_decay_over_5pct": round(float(np.mean([d > 0.05 for d in mom_peak_exit_diffs])), 4)
+            if mom_peak_exit_diffs
+            else None,
         },
         "momentum_trend": {
             "positive": positive_trend,
             "negative": negative_trend,
             "flat": flat_trend,
-            "pct_negative": round(negative_trend / len(holding_periods), 4) if holding_periods else 0,
+            "pct_negative": round(negative_trend / len(holding_periods), 4)
+            if holding_periods
+            else 0,
         },
         "peaked_then_held": {
             "count": len(peaked_then_held),
             "pct": round(len(peaked_then_held) / len(holding_periods), 4) if holding_periods else 0,
-            "avg_decay": round(float(np.mean([hp["mom_peak_minus_exit"]
-                                               for hp in peaked_then_held])), 4) if peaked_then_held else None,
+            "avg_decay": round(
+                float(np.mean([hp["mom_peak_minus_exit"] for hp in peaked_then_held])), 4
+            )
+            if peaked_then_held
+            else None,
         },
         "momentum_d1_analysis": {
             "negative_exit_count": len(d1_negative_exit),
-            "negative_exit_pct": round(len(d1_negative_exit) / len(holding_periods), 4) if holding_periods else 0,
+            "negative_exit_pct": round(len(d1_negative_exit) / len(holding_periods), 4)
+            if holding_periods
+            else 0,
         },
     }
 
 
 def simulate_momentum_d1_exit(
-    data: dict, initial_capital: float = 100_000.0,
+    data: dict,
+    initial_capital: float = 100_000.0,
     mom_d1_threshold: float = -0.02,
 ) -> dict:
     """模拟动量一阶导提前退出规则.
@@ -444,7 +542,7 @@ def simulate_momentum_d1_exit(
     all_dates = sorted(common_dates)
     warmup = 130
     trading_dates = all_dates[warmup:]
-    rebalance_dates = trading_dates[::rq.REBALANCE_DAYS]
+    rebalance_dates = trading_dates[:: rq.REBALANCE_DAYS]
     rebalance_set = set(rebalance_dates)
 
     cash = initial_capital
@@ -475,13 +573,15 @@ def simulate_momentum_d1_exit(
                     mom_d1 = calc_momentum_derivative(close)
                     if mom_d1 < mom_d1_threshold:
                         d1_triggered = True
-                        d1_exit_log.append({
-                            "date": str(td),
-                            "code": holding,
-                            "name": rq.ETF_POOL.get(holding, "货币基金"),
-                            "mom_d1": round(mom_d1, 4),
-                            "threshold": mom_d1_threshold,
-                        })
+                        d1_exit_log.append(
+                            {
+                                "date": str(td),
+                                "code": holding,
+                                "name": rq.ETF_POOL.get(holding, "货币基金"),
+                                "mom_d1": round(mom_d1, 4),
+                                "threshold": mom_d1_threshold,
+                            }
+                        )
 
             if d1_triggered:
                 target = rq.DEFENSE
@@ -517,7 +617,9 @@ def simulate_momentum_d1_exit(
             row = data[holding][data[holding]["trade_date"] == td]
             if not row.empty:
                 equity += holding_shares * float(row.iloc[0]["close"])
-        equity_history.append({"trade_date": td, "equity": equity, "holding": holding or rq.DEFENSE})
+        equity_history.append(
+            {"trade_date": td, "equity": equity, "holding": holding or rq.DEFENSE}
+        )
 
     if not equity_history:
         return {"total_return": 0, "ann_return": 0, "sharpe": 0, "max_drawdown": 0}
@@ -585,8 +687,12 @@ def print_analysis_report(
 
     if trend := pat.get("momentum_trend"):
         print(f"\n  [2b] 持仓期内动量趋势:")
-        print(f"      上升趋势: {trend['positive']}次 ({trend['positive']/pat['total_holding_periods']:.1%})")
-        print(f"      下降趋势: {trend['negative']}次 ({trend['negative']/pat['total_holding_periods']:.1%})")
+        print(
+            f"      上升趋势: {trend['positive']}次 ({trend['positive'] / pat['total_holding_periods']:.1%})"
+        )
+        print(
+            f"      下降趋势: {trend['negative']}次 ({trend['negative'] / pat['total_holding_periods']:.1%})"
+        )
         print(f"      持平:     {trend['flat']}次")
 
     if pte := pat.get("momentum_peak_to_exit"):
@@ -608,12 +714,16 @@ def print_analysis_report(
     print(f"  {'-' * 60}")
 
     d1a = pat.get("momentum_d1_analysis", {})
-    print(f"    退出时一阶导<0: {d1a.get('negative_exit_count', 0)}次 "
-          f"({d1a.get('negative_exit_pct', 0):.1%})")
+    print(
+        f"    退出时一阶导<0: {d1a.get('negative_exit_count', 0)}次 "
+        f"({d1a.get('negative_exit_pct', 0):.1%})"
+    )
 
     # 展示各ETF的动量特征
     print(f"\n  [3a] 各ETF持仓期动量特征:")
-    print(f"  {'ETF':<10} {'次数':<6} {'入场动量均值':<12} {'峰值→退出衰减':<14} {'衰减>2%比例':<12}")
+    print(
+        f"  {'ETF':<10} {'次数':<6} {'入场动量均值':<12} {'峰值→退出衰减':<14} {'衰减>2%比例':<12}"
+    )
     print(f"  {'-' * 58}")
     by_etf = pat.get("by_etf", {})
     for code in sorted(by_etf.keys()):
@@ -624,8 +734,10 @@ def print_analysis_report(
         avg_decay = float(np.mean(decays)) if decays else 0
         decay_pct = float(np.mean([d > 0.02 for d in decays])) if decays else 0
         name = rq.ETF_POOL.get(code, code)
-        print(f"  {name:<10} {len(periods):<6} {avg_entry:>+8.1%}    "
-              f"{avg_decay:>+8.1%}          {decay_pct:>6.1%}")
+        print(
+            f"  {name:<10} {len(periods):<6} {avg_entry:>+8.1%}    "
+            f"{avg_decay:>+8.1%}          {decay_pct:>6.1%}"
+        )
 
     # === 4. 回撤事件分析 ===
     print(f"\n  【4】回撤事件分析 (5%以上回撤)")
@@ -638,8 +750,10 @@ def print_analysis_report(
     if major_dd:
         print(f"\n    重大回撤 (>10%): {len(major_dd)}次")
         for i, dd in enumerate(major_dd[:10]):
-            print(f"    {i+1}. {dd['start_date']} ~ {dd.get('max_dd_date', '?')}  "
-                  f"回撤: {dd.get('max_dd', 0):.1%}  持仓: {dd['holding_name']}")
+            print(
+                f"    {i + 1}. {dd['start_date']} ~ {dd.get('max_dd_date', '?')}  "
+                f"回撤: {dd.get('max_dd', 0):.1%}  持仓: {dd['holding_name']}"
+            )
 
     # === 5. 动量一阶导退出模拟 ===
     print(f"\n  【5】动量一阶导(一阶导)退出信号模拟")
@@ -652,17 +766,25 @@ def print_analysis_report(
     print(f"  {'阈值':<8} {'年化':>8} {'夏普':>8} {'回撤':>8} {'交易':>6} {'触发':>6}")
     print(f"  {'-' * 46}")
     for threshold, res in d1_results:
-        print(f"  {threshold:<+8.1%} {res['ann_return']:>+8.1%} {res['sharpe']:>8.2f} "
-              f"{res['max_drawdown']:>8.1%} {res['n_trades']:>6} {res['d1_exit_count']:>6}")
+        print(
+            f"  {threshold:<+8.1%} {res['ann_return']:>+8.1%} {res['sharpe']:>8.2f} "
+            f"{res['max_drawdown']:>8.1%} {res['n_trades']:>6} {res['d1_exit_count']:>6}"
+        )
 
-    print(f"\n  V3基准:     年化 {v3_baseline['ann_return']:>+7.1%}  "
-          f"夏普 {v3_baseline['sharpe']:.2f}  回撤 {v3_baseline['max_drawdown']:.1%}")
-    print(f"  最佳夏普:   年化 {best_d1[1]['ann_return']:>+7.1%}  "
-          f"夏普 {best_d1[1]['sharpe']:.2f}  回撤 {best_d1[1]['max_drawdown']:.1%}  "
-          f"阈值={best_d1[0]:.1%}")
-    print(f"  最佳控回撤: 年化 {best_dd_d1[1]['ann_return']:>+7.1%}  "
-          f"夏普 {best_dd_d1[1]['sharpe']:.2f}  回撤 {best_dd_d1[1]['max_drawdown']:.1%}  "
-          f"阈值={best_dd_d1[0]:.1%}")
+    print(
+        f"\n  V3基准:     年化 {v3_baseline['ann_return']:>+7.1%}  "
+        f"夏普 {v3_baseline['sharpe']:.2f}  回撤 {v3_baseline['max_drawdown']:.1%}"
+    )
+    print(
+        f"  最佳夏普:   年化 {best_d1[1]['ann_return']:>+7.1%}  "
+        f"夏普 {best_d1[1]['sharpe']:.2f}  回撤 {best_d1[1]['max_drawdown']:.1%}  "
+        f"阈值={best_d1[0]:.1%}"
+    )
+    print(
+        f"  最佳控回撤: 年化 {best_dd_d1[1]['ann_return']:>+7.1%}  "
+        f"夏普 {best_dd_d1[1]['sharpe']:.2f}  回撤 {best_dd_d1[1]['max_drawdown']:.1%}  "
+        f"阈值={best_dd_d1[0]:.1%}"
+    )
 
     # === 6. 结论 ===
     print(f"\n  【6】核心结论与建议")
@@ -708,7 +830,8 @@ def print_analysis_report(
 
 
 def simulate_momentum_d1_exit_no_lookahead(
-    data: dict, initial_capital: float = 100_000.0,
+    data: dict,
+    initial_capital: float = 100_000.0,
     mom_d1_threshold: float = -0.02,
 ) -> dict:
     """无未来函数口径下, 动量一阶导提前退出模拟.
@@ -730,7 +853,7 @@ def simulate_momentum_d1_exit_no_lookahead(
     all_dates = sorted(common_dates)
     warmup = 130
     trading_dates = all_dates[warmup:]
-    rebalance_dates = trading_dates[::rq.REBALANCE_DAYS]
+    rebalance_dates = trading_dates[:: rq.REBALANCE_DAYS]
     rebalance_set = set(rebalance_dates)
 
     cash = initial_capital
@@ -778,7 +901,9 @@ def simulate_momentum_d1_exit_no_lookahead(
             row = data[holding][data[holding]["trade_date"] == td]
             if not row.empty:
                 equity += holding_shares * float(row.iloc[0]["close"])
-        equity_history.append({"trade_date": td, "equity": equity, "holding": holding or rq.DEFENSE})
+        equity_history.append(
+            {"trade_date": td, "equity": equity, "holding": holding or rq.DEFENSE}
+        )
 
         # 调仓日生成信号
         if td in rebalance_set:
@@ -800,12 +925,15 @@ def simulate_momentum_d1_exit_no_lookahead(
                     mom_d1 = calc_momentum_derivative(close)
                     if mom_d1 < mom_d1_threshold:
                         d1_triggered = True
-                        d1_exit_log.append({
-                            "date": str(td), "code": holding,
-                            "name": rq.ETF_POOL.get(holding, "货币基金"),
-                            "mom_d1": round(mom_d1, 4),
-                            "threshold": mom_d1_threshold,
-                        })
+                        d1_exit_log.append(
+                            {
+                                "date": str(td),
+                                "code": holding,
+                                "name": rq.ETF_POOL.get(holding, "货币基金"),
+                                "mom_d1": round(mom_d1, 4),
+                                "threshold": mom_d1_threshold,
+                            }
+                        )
 
             if d1_triggered:
                 target = rq.DEFENSE
@@ -833,16 +961,20 @@ def simulate_momentum_d1_exit_no_lookahead(
     max_dd = ((eq_df["equity"] - cummax) / cummax).min()
 
     return {
-        "total_return": total_return, "ann_return": ann_ret,
-        "sharpe": sharpe, "max_drawdown": max_dd,
-        "n_trades": n_trades, "d1_exit_count": len(d1_exit_log),
-        "d1_exit_log": d1_exit_log, "equity_curve": eq_df,
+        "total_return": total_return,
+        "ann_return": ann_ret,
+        "sharpe": sharpe,
+        "max_drawdown": max_dd,
+        "n_trades": n_trades,
+        "d1_exit_count": len(d1_exit_log),
+        "d1_exit_log": d1_exit_log,
+        "equity_curve": eq_df,
     }
 
 
-
 def simulate_d1_as_scoring_factor(
-    data: dict, initial_capital: float = 100_000.0,
+    data: dict,
+    initial_capital: float = 100_000.0,
     d1_weight: float = 0.5,
 ) -> dict:
     """将动量一阶导作为评分因子 (而非硬退出).
@@ -865,7 +997,7 @@ def simulate_d1_as_scoring_factor(
     all_dates = sorted(common_dates)
     warmup = 130
     trading_dates = all_dates[warmup:]
-    rebalance_dates = trading_dates[::rq.REBALANCE_DAYS]
+    rebalance_dates = trading_dates[:: rq.REBALANCE_DAYS]
     rebalance_set = set(rebalance_dates)
 
     cash = initial_capital
@@ -886,8 +1018,11 @@ def simulate_d1_as_scoring_factor(
                     continue
                 etf_data_at_date[code] = mask.sum() - 1
 
-            a_share_weak = (rq.check_a_share_weak(data, etf_data_at_date.get(rq.A_SHARE_ETF, 0))
-                            if rq.USE_A_SHARE_FILTER else False)
+            a_share_weak = (
+                rq.check_a_share_weak(data, etf_data_at_date.get(rq.A_SHARE_ETF, 0))
+                if rq.USE_A_SHARE_FILTER
+                else False
+            )
 
             candidates = []
             for code in rq.ETF_POOL:
@@ -948,7 +1083,9 @@ def simulate_d1_as_scoring_factor(
             row = data[holding][data[holding]["trade_date"] == td]
             if not row.empty:
                 equity += holding_shares * float(row.iloc[0]["close"])
-        equity_history.append({"trade_date": td, "equity": equity, "holding": holding or rq.DEFENSE})
+        equity_history.append(
+            {"trade_date": td, "equity": equity, "holding": holding or rq.DEFENSE}
+        )
 
     if not equity_history:
         return {"total_return": 0, "ann_return": 0, "sharpe": 0, "max_drawdown": 0}
@@ -966,9 +1103,12 @@ def simulate_d1_as_scoring_factor(
     max_dd = ((eq_df["equity"] - cummax) / cummax).min()
 
     return {
-        "total_return": total_return, "ann_return": ann_ret,
-        "sharpe": sharpe, "max_drawdown": max_dd,
-        "n_trades": n_trades, "equity_curve": eq_df,
+        "total_return": total_return,
+        "ann_return": ann_ret,
+        "sharpe": sharpe,
+        "max_drawdown": max_dd,
+        "n_trades": n_trades,
+        "equity_curve": eq_df,
     }
 
 
@@ -1001,8 +1141,7 @@ def main():
             "sharpe": analysis["sharpe"],
             "max_drawdown": analysis["max_drawdown"],
         },
-        "momentum_patterns": {k: v for k, v in momentum_patterns.items()
-                              if k != "by_etf"},
+        "momentum_patterns": {k: v for k, v in momentum_patterns.items() if k != "by_etf"},
         "drawdown_events": dd_events,
         "holding_period_count": len(hp),
         "decision_count": len(decisions),
@@ -1019,9 +1158,11 @@ def main():
         res = simulate_momentum_d1_exit(data, mom_d1_threshold=threshold)
         d1_results.append((threshold, res))
         name = f"d1_exit_{threshold:+.2f}".replace(".", "p").replace("-", "neg")
-        print(f"  阈值 {threshold:+6.1%}: 年化{res['ann_return']:>+7.1%}  "
-              f"夏普{res['sharpe']:.2f}  回撤{res['max_drawdown']:.1%}  "
-              f"触发{res['d1_exit_count']}次")
+        print(
+            f"  阈值 {threshold:+6.1%}: 年化{res['ann_return']:>+7.1%}  "
+            f"夏普{res['sharpe']:.2f}  回撤{res['max_drawdown']:.1%}  "
+            f"触发{res['d1_exit_count']}次"
+        )
 
     # === 4. 打印分析报告 ===
     print("\n\n")
@@ -1044,8 +1185,10 @@ def main():
     nl_thresholds = [0.0, -0.02, -0.05, -0.08]
     for threshold in nl_thresholds:
         res = simulate_momentum_d1_exit_no_lookahead(data, mom_d1_threshold=threshold)
-        print(f"  {threshold:<+8.1%} {res['ann_return']:>+8.1%} {res['sharpe']:>8.2f} "
-              f"{res['max_drawdown']:>8.1%} {res['n_trades']:>6} {res['d1_exit_count']:>6}")
+        print(
+            f"  {threshold:<+8.1%} {res['ann_return']:>+8.1%} {res['sharpe']:>8.2f} "
+            f"{res['max_drawdown']:>8.1%} {res['n_trades']:>6} {res['d1_exit_count']:>6}"
+        )
 
     # === 6. D1作为评分因子(非硬退出) ===
     print("\n")
@@ -1057,8 +1200,10 @@ def main():
     d1_weights = [0.0, 0.3, 0.5, 1.0, 2.0]
     for w in d1_weights:
         res = simulate_d1_as_scoring_factor(data, d1_weight=w)
-        print(f"  {w:<8.1f} {res['ann_return']:>+8.1%} {res['sharpe']:>8.2f} "
-              f"{res['max_drawdown']:>8.1%} {res['n_trades']:>6}")
+        print(
+            f"  {w:<8.1f} {res['ann_return']:>+8.1%} {res['sharpe']:>8.2f} "
+            f"{res['max_drawdown']:>8.1%} {res['n_trades']:>6}"
+        )
 
     # === 7. 保存详细持仓期数据 ===
     hp_records = []

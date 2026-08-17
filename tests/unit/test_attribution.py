@@ -67,8 +67,16 @@ def _eq_curve(
     )
 
 
-def _trade(i: int, df: pd.DataFrame, action: str, shares: int, price: float,
-           fee: float = 0.0, code: str = CODE, slippage: float | None = None) -> dict:
+def _trade(
+    i: int,
+    df: pd.DataFrame,
+    action: str,
+    shares: int,
+    price: float,
+    fee: float = 0.0,
+    code: str = CODE,
+    slippage: float | None = None,
+) -> dict:
     """Build a single trade_log entry."""
     entry: dict = {
         "date": _d(df, i),
@@ -160,7 +168,7 @@ class TestMfeMae:
         recs = _flat_records()
         # holding window idx 20..25 ; max high 115, min low 95
         recs[20] = (100.0, 102.0, 99.0)
-        recs[21] = (103.0, 104.0, 95.0)   # adverse low
+        recs[21] = (103.0, 104.0, 95.0)  # adverse low
         recs[22] = (108.0, 115.0, 107.0)  # favorable high
         recs[23] = (106.0, 109.0, 105.0)
         recs[24] = (109.0, 111.0, 108.0)
@@ -317,8 +325,10 @@ class TestReportStructure:
         for attr in ("entry_date", "exit_date", "code", "pnl", "mfe", "mae", "holding_days"):
             assert hasattr(t, attr)
         # monthly_summary shape
-        assert all(set(v) == {"return", "factor_contrib", "timing", "cost"}
-                       for v in report.monthly_summary.values())
+        assert all(
+            set(v) == {"return", "factor_contrib", "timing", "cost"}
+            for v in report.monthly_summary.values()
+        )
 
     def test_empty_trade_log(self):
         recs = _flat_records()

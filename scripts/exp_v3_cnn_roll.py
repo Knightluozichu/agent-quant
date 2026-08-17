@@ -66,8 +66,10 @@ def main() -> None:
     ohlcv = {}
     for c in codes:
         df = data[c].set_index("trade_date")
-        ohlcv[c] = {k: df[k].reindex(dates).astype(float).values
-                    for k in ("open", "high", "low", "close", "volume")}
+        ohlcv[c] = {
+            k: df[k].reindex(dates).astype(float).values
+            for k in ("open", "high", "low", "close", "volume")
+        }
 
     # 渲染数据集 (一次, 共享)
     print("\n  渲染 K线图数据集...")
@@ -75,11 +77,17 @@ def main() -> None:
     for code in codes:
         o = ohlcv[code]
         for t in range(SEQ_N + 1, n - FWD):
-            if not np.all(np.isfinite(o["close"][t - SEQ_N:t + 1])):
+            if not np.all(np.isfinite(o["close"][t - SEQ_N : t + 1])):
                 continue
-            imgs.append(render_tech_image(o["close"][:t + 1], o["high"][:t + 1],
-                                          o["low"][:t + 1], o["open"][:t + 1],
-                                          o["volume"][:t + 1]))
+            imgs.append(
+                render_tech_image(
+                    o["close"][: t + 1],
+                    o["high"][: t + 1],
+                    o["low"][: t + 1],
+                    o["open"][: t + 1],
+                    o["volume"][: t + 1],
+                )
+            )
             ys.append(o["close"][t + FWD] / o["close"][t] - 1.0)
             rows.append((t, code))
     imgs = np.array(imgs, np.float32)
@@ -95,15 +103,18 @@ def main() -> None:
         tr_mask = ts_arr < te_start
         tr_idx = np.where(tr_mask)[0]
         # 验证集: 训练末 15%
-        va_idx = tr_idx[int(len(tr_idx) * 0.85):]
-        tr_idx = tr_idx[:int(len(tr_idx) * 0.85)]
+        va_idx = tr_idx[int(len(tr_idx) * 0.85) :]
+        tr_idx = tr_idx[: int(len(tr_idx) * 0.85)]
         tb_start = max(te_start - WARMUP, 0)
 
-        print(f"\n  ── 段{seg_name}: 训练 ≤{test_start_str} | 测试 "
-              f"{dates[te_start]}~{dates[te_end-1]}")
+        print(
+            f"\n  ── 段{seg_name}: 训练 ≤{test_start_str} | 测试 "
+            f"{dates[te_start]}~{dates[te_end - 1]}"
+        )
         # CNN 训练 + 预测
-        model, _ = train_cnn(imgs[tr_idx], ys[tr_idx], imgs[va_idx], ys[va_idx],
-                             LR, LAYERS, FILTERS, DROPOUT)
+        model, _ = train_cnn(
+            imgs[tr_idx], ys[tr_idx], imgs[va_idx], ys[va_idx], LR, LAYERS, FILTERS, DROPOUT
+        )
         preds = predict_cnn(model, imgs)
         pmap = {}
         for j, (t, code) in enumerate(rows):
@@ -114,30 +125,63 @@ def main() -> None:
         r_cnn = run_dl_backtest(data, mat, tb_start, None, pmap, buffer=BUF)
         r_v3 = run_v3_r4_sameday(data, mat, thr=1.0, start_idx=tb_start)
         beat = r_cnn["final_value"] > r_v3["final_value"]
-        print(f"    CNN  期末 {r_cnn['final_value']:>10,.0f} ({r_cnn['total_return']:+.1%}) "
-              f"夏普{r_cnn['sharpe']:.2f} 回撤{r_cnn['max_drawdown']:.1%} 换手{r_cnn['n_trades']}")
-        print(f"    V3   期末 {r_v3['final_value']:>10,.0f} ({r_v3['total_return']:+.1%}) "
-              f"夏普{r_v3['sharpe']:.2f} 回撤{r_v3['max_drawdown']:.1%}")
+        print(
+            f"    CNN  期末 {r_cnn['final_value']:>10,.0f} ({r_cnn['total_return']:+.1%}) "
+            f"夏普{r_cnn['sharpe']:.2f} 回撤{r_cnn['max_drawdown']:.1%} 换手{r_cnn['n_trades']}"
+        )
+        print(
+            f"    V3   期末 {r_v3['final_value']:>10,.0f} ({r_v3['total_return']:+.1%}) "
+            f"夏普{r_v3['sharpe']:.2f} 回撤{r_v3['max_drawdown']:.1%}"
+        )
         print(f"    → CNN {'跑赢' if beat else '跑输'} V3")
-        seg_out.append({
-            "segment": seg_name, "test_span": [str(dates[te_start]), str(dates[te_end - 1])],
-            "cnn": {k: r_cnn[k] for k in ("final_value", "total_return", "ann_return",
-                                          "sharpe", "max_drawdown", "n_trades")},
-            "v3": {k: r_v3[k] for k in ("final_value", "total_return", "ann_return",
-                                        "sharpe", "max_drawdown", "n_trades")},
-            "beat": beat,
-        })
+        seg_out.append(
+            {
+                "segment": seg_name,
+                "test_span": [str(dates[te_start]), str(dates[te_end - 1])],
+                "cnn": {
+                    k: r_cnn[k]
+                    for k in (
+                        "final_value",
+                        "total_return",
+                        "ann_return",
+                        "sharpe",
+                        "max_drawdown",
+                        "n_trades",
+                    )
+                },
+                "v3": {
+                    k: r_v3[k]
+                    for k in (
+                        "final_value",
+                        "total_return",
+                        "ann_return",
+                        "sharpe",
+                        "max_drawdown",
+                        "n_trades",
+                    )
+                },
+                "beat": beat,
+            }
+        )
 
     wins = sum(1 for s in seg_out if s["beat"])
     passed = wins >= 2
     print("\n" + "=" * 74)
-    print(f"  滚动 OOS 判定: CNN 跑赢 {wins}/3 段 (标准: ≥2/3) → "
-          f"{'✅ 通过' if passed else '❌ 未通过'}")
+    print(
+        f"  滚动 OOS 判定: CNN 跑赢 {wins}/3 段 (标准: ≥2/3) → "
+        f"{'✅ 通过' if passed else '❌ 未通过'}"
+    )
     print("=" * 74)
 
-    out = {"meta": {"model": f"CNN L{LAYERS} F{FILTERS} lr{LR:.0e} drop{DROPOUT} buffer{BUF:.1%}",
-                    "note": "滚动OOS: 每段用段前数据训练, 测试段未参与训练(无未来函数)"},
-           "segments": seg_out, "wins": wins, "passed": passed}
+    out = {
+        "meta": {
+            "model": f"CNN L{LAYERS} F{FILTERS} lr{LR:.0e} drop{DROPOUT} buffer{BUF:.1%}",
+            "note": "滚动OOS: 每段用段前数据训练, 测试段未参与训练(无未来函数)",
+        },
+        "segments": seg_out,
+        "wins": wins,
+        "passed": passed,
+    }
     out_path = OUTPUT_DIR / "v3_cnn_roll.json"
     with open(out_path, "w") as f:
         json.dump(out, f, indent=2, ensure_ascii=False, default=str)

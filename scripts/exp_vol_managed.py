@@ -4,6 +4,7 @@
 近期波动率=20日已实现波动率(年化)。高波动减仓, 低波动满仓(不加杠杆)。
 用法: uv run python scripts/exp_vol_managed.py
 """
+
 from __future__ import annotations
 
 import sys
@@ -31,8 +32,15 @@ def price_on(data, code, td):
     return float(row.iloc[0]["close"]) if not row.empty else None
 
 
-def backtest_vol(data, target_vol, vol_lookback=20, rebalance_days=5,
-                 start_date=None, end_date=None, initial=100000):
+def backtest_vol(
+    data,
+    target_vol,
+    vol_lookback=20,
+    rebalance_days=5,
+    start_date=None,
+    end_date=None,
+    initial=100000,
+):
     """波动率管理版V3回测. target_vol=None 即纯V3(满仓)."""
     dates = get_common_dates(data)[WARMUP:]
     if start_date:
@@ -53,7 +61,7 @@ def backtest_vol(data, target_vol, vol_lookback=20, rebalance_days=5,
             idx = idx_map.get(target)
             if idx is not None and idx >= vol_lookback:
                 close = data[target]["close"].values[: idx + 1].astype(float)
-                rets = np.diff(close[-vol_lookback - 1:]) / close[-vol_lookback - 1:-1]
+                rets = np.diff(close[-vol_lookback - 1 :]) / close[-vol_lookback - 1 : -1]
                 rvol = np.std(rets) * np.sqrt(252)
                 if rvol > 0:
                     frac = min((target_vol / rvol) ** 2, 1.0)
@@ -92,8 +100,14 @@ def backtest_vol(data, target_vol, vol_lookback=20, rebalance_days=5,
     sharpe = ann / av if av > 0 else 0
     cm = eqdf["equity"].cummax()
     mdd = float(((eqdf["equity"] - cm) / cm).min())
-    return {"total": tr * 100, "ann": ann * 100, "sharpe": sharpe,
-            "mdd": mdd * 100, "ntr": ntr, "final": float(eqdf["equity"].iloc[-1])}
+    return {
+        "total": tr * 100,
+        "ann": ann * 100,
+        "sharpe": sharpe,
+        "mdd": mdd * 100,
+        "ntr": ntr,
+        "final": float(eqdf["equity"].iloc[-1]),
+    }
 
 
 def set_pool(codes):
@@ -124,9 +138,11 @@ def main() -> None:
     print("  " + "-" * 66)
     for name, tv in CONFIGS:
         r = backtest_vol(data, tv, start_date=date(2016, 1, 1))
-        final_s = f"{r['final']/10000:.1f}万"
-        print(f"  {name:<18}{final_s:>12}{r['total']:>+9.0f}%{r['ann']:>+8.1f}%"
-              f"{r['sharpe']:>7.2f}{r['mdd']:>+7.1f}%{r['ntr']:>7}")
+        final_s = f"{r['final'] / 10000:.1f}万"
+        print(
+            f"  {name:<18}{final_s:>12}{r['total']:>+9.0f}%{r['ann']:>+8.1f}%"
+            f"{r['sharpe']:>7.2f}{r['mdd']:>+7.1f}%{r['ntr']:>7}"
+        )
 
     # === 测试2: 样本内/样本外 (全8资产) ===
     restore()
@@ -134,13 +150,17 @@ def main() -> None:
     print("\n" + "=" * 72)
     print("  【测试2】样本内(2020-2023) / 样本外(2024-2026), 全8资产")
     print("=" * 72)
-    print(f"  {'配置':<18}{'IS年化':>9}{'IS夏普':>8}{'IS回撤':>8}{'OOS年化':>10}{'OOS夏普':>9}{'OOS回撤':>9}")
+    print(
+        f"  {'配置':<18}{'IS年化':>9}{'IS夏普':>8}{'IS回撤':>8}{'OOS年化':>10}{'OOS夏普':>9}{'OOS回撤':>9}"
+    )
     print("  " + "-" * 66)
     for name, tv in CONFIGS:
         is_r = backtest_vol(data, tv, start_date=date(2020, 1, 1), end_date=date(2023, 12, 31))
         oos_r = backtest_vol(data, tv, start_date=date(2024, 1, 1))
-        print(f"  {name:<18}{is_r['ann']:>+8.1f}%{is_r['sharpe']:>8.2f}{is_r['mdd']:>+7.1f}%"
-              f"{oos_r['ann']:>+9.1f}%{oos_r['sharpe']:>9.2f}{oos_r['mdd']:>+8.1f}%")
+        print(
+            f"  {name:<18}{is_r['ann']:>+8.1f}%{is_r['sharpe']:>8.2f}{is_r['mdd']:>+7.1f}%"
+            f"{oos_r['ann']:>+9.1f}%{oos_r['sharpe']:>9.2f}{oos_r['mdd']:>+8.1f}%"
+        )
 
     # === 测试3: 3年滚动窗口 (全8资产) ===
     restore()

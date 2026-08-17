@@ -24,6 +24,7 @@ import json
 
 class StrategyStatus(str, Enum):
     """Strategy lifecycle status."""
+
     CHALLENGER = "CHALLENGER"  # Being tested
     CHAMPION = "CHAMPION"  # Current best
     RETIRED = "RETIRED"  # No longer active
@@ -33,6 +34,7 @@ class StrategyStatus(str, Enum):
 @dataclass
 class StrategyPerformance:
     """Performance metrics for a strategy."""
+
     total_return: float = 0.0
     sharpe_ratio: float = 0.0
     max_drawdown: float = 0.0
@@ -54,6 +56,7 @@ class StrategyPerformance:
 @dataclass
 class StrategyVersion:
     """A versioned strategy configuration."""
+
     strategy_id: str
     version: int
     name: str
@@ -69,10 +72,13 @@ class StrategyVersion:
     @property
     def config_hash(self) -> str:
         """Get hash of strategy configuration for reproducibility."""
-        config_str = json.dumps({
-            "name": self.name,
-            "params": self.params,
-        }, sort_keys=True)
+        config_str = json.dumps(
+            {
+                "name": self.name,
+                "params": self.params,
+            },
+            sort_keys=True,
+        )
         return hashlib.sha256(config_str.encode()).hexdigest()[:16]
 
     def to_dict(self) -> dict:
@@ -91,6 +97,7 @@ class StrategyVersion:
 @dataclass
 class PromotionRecord:
     """Record of a strategy promotion/demotion."""
+
     timestamp: datetime
     champion_id: str
     champion_version: int
@@ -221,7 +228,10 @@ class EvolutionManager:
         if improvement >= self.promotion_threshold:
             return True, f"Challenger v{best_challenger.version} outperforms by {improvement:.1%}"
 
-        return False, f"Improvement {improvement:.1%} below threshold {self.promotion_threshold:.1%}"
+        return (
+            False,
+            f"Improvement {improvement:.1%} below threshold {self.promotion_threshold:.1%}",
+        )
 
     def promote_challenger(
         self,
@@ -272,9 +282,7 @@ class EvolutionManager:
         self._champions[strategy_id] = challenger
 
         # Remove from challengers
-        self._challengers[strategy_id] = [
-            c for c in challengers if c.version != challenger_version
-        ]
+        self._challengers[strategy_id] = [c for c in challengers if c.version != challenger_version]
 
         return True
 

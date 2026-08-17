@@ -339,9 +339,7 @@ class AttributionEngine:
             total_slip += self._estimate_slippage(t, data)
         return total_fee + total_slip
 
-    def _estimate_slippage(
-        self, t: dict[str, Any], data: dict[str, pd.DataFrame]
-    ) -> float:
+    def _estimate_slippage(self, t: dict[str, Any], data: dict[str, pd.DataFrame]) -> float:
         code = str(t.get("code", ""))
         d = self._to_date(self._trade_date_of(t))
         price = float(t.get("price", 0) or 0)
@@ -376,9 +374,7 @@ class AttributionEngine:
         eq_win = eq[eq["trade_date"] >= pd.Timestamp(first_buy)]
         strat_ret = self._series_return(eq_win["equity"]) if not eq_win.empty else 0.0
 
-        initial = [
-            t for t in buys if self._to_date(self._trade_date_of(t)) == first_buy
-        ]
+        initial = [t for t in buys if self._to_date(self._trade_date_of(t)) == first_buy]
         initial_cost = sum(
             float(t.get("shares", 0)) * float(t.get("price", 0)) + float(t.get("fee", 0))
             for t in initial
@@ -451,9 +447,7 @@ class AttributionEngine:
         if not buys:
             return {}
         first_buy = min(self._to_date(self._trade_date_of(t)) for t in buys)
-        initial = [
-            t for t in buys if self._to_date(self._trade_date_of(t)) == first_buy
-        ]
+        initial = [t for t in buys if self._to_date(self._trade_date_of(t)) == first_buy]
         initial_cost = sum(
             float(t.get("shares", 0)) * float(t.get("price", 0)) + float(t.get("fee", 0))
             for t in initial
@@ -551,17 +545,11 @@ class AttributionEngine:
             return None
         df = data[code].copy()
         df["trade_date"] = pd.to_datetime(df["trade_date"])
-        df = (
-            df.sort_values("trade_date")
-            .drop_duplicates("trade_date")
-            .set_index("trade_date")
-        )
+        df = df.sort_values("trade_date").drop_duplicates("trade_date").set_index("trade_date")
         self._df_cache[code] = df
         return df
 
-    def _close_on(
-        self, data: dict[str, pd.DataFrame], code: str, query_date: Any
-    ) -> float | None:
+    def _close_on(self, data: dict[str, pd.DataFrame], code: str, query_date: Any) -> float | None:
         df = self._norm_df(code, data)
         if df is None:
             return None

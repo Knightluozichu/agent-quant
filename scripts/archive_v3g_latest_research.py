@@ -19,12 +19,7 @@ from zoneinfo import ZoneInfo
 
 PROJECT_ROOT = Path(__file__).parent.parent
 SOURCE = PROJECT_ROOT / "data" / "v9_results" / "v3g_full_pool_fast_slow.json"
-OUTPUT = (
-    PROJECT_ROOT
-    / "data"
-    / "qixing_results"
-    / "v3g_latest_research_20260811.json"
-)
+OUTPUT = PROJECT_ROOT / "data" / "qixing_results" / "v3g_latest_research_20260811.json"
 
 EXPECTED_PARAMS: dict[str, dict[str, Any]] = {
     "baseline": {
@@ -80,9 +75,7 @@ VARIANT_SPECS = {
             "非网格日仅当全池慢动量 Top1 相对持仓领先至少 1pp，且连续 2 日确认时换仓；"
             "慢动量=0.5*r10+0.5*r20，最短持有 3 日。"
         ),
-        "verdict": (
-            "1x 终值提高但夏普下降、回撤扩大；2x 相对基线无实质优势，3x 成本压力下失效。"
-        ),
+        "verdict": ("1x 终值提高但夏普下降、回撤扩大；2x 相对基线无实质优势，3x 成本压力下失效。"),
     },
     "V4": {
         "source_key": "consensus_strict",

@@ -44,14 +44,16 @@ def make_test_df(days: int = 100, trend: str = "up") -> pd.DataFrame:
     low = close - 1
     volume = [1000000 + i * 1000 for i in range(days)]
 
-    return pd.DataFrame({
-        "trade_date": dates.date,
-        "open": close - 0.2,
-        "high": high,
-        "low": low,
-        "close": close,
-        "volume": volume,
-    })
+    return pd.DataFrame(
+        {
+            "trade_date": dates.date,
+            "open": close - 0.2,
+            "high": high,
+            "low": low,
+            "close": close,
+            "volume": volume,
+        }
+    )
 
 
 class TestRegimeDetector:
@@ -129,9 +131,7 @@ class TestTrendHoldStrategy:
         # Add volume spike at end
         df.loc[df.index[-1], "volume"] = 3000000
 
-        signal = strategy.generate_signal(
-            "510300.SSE", df, regime, None, df["trade_date"].iloc[-1]
-        )
+        signal = strategy.generate_signal("510300.SSE", df, regime, None, df["trade_date"].iloc[-1])
 
         # May or may not generate signal depending on exact conditions
         if signal:
@@ -143,9 +143,7 @@ class TestTrendHoldStrategy:
         df = make_test_df(100, "down")
         regime = RegimeState(Direction.DOWN, Oscillation.MEDIUM, 0.7, date(2024, 1, 15))
 
-        signal = strategy.generate_signal(
-            "510300.SSE", df, regime, None, df["trade_date"].iloc[-1]
-        )
+        signal = strategy.generate_signal("510300.SSE", df, regime, None, df["trade_date"].iloc[-1])
 
         assert signal is None
 
@@ -164,9 +162,7 @@ class TestTrendHoldStrategy:
             holding_days=10,
         )
 
-        should_exit, reason = strategy.should_exit(
-            position, df, regime, df["trade_date"].iloc[-1]
-        )
+        should_exit, reason = strategy.should_exit(position, df, regime, df["trade_date"].iloc[-1])
 
         # Should exit due to regime change
         assert should_exit or "熊市" in reason
@@ -180,9 +176,7 @@ class TestCashDefenseStrategy:
         df = make_test_df(100, "up")
         regime = RegimeState(Direction.UP, Oscillation.LOW, 0.8, date(2024, 1, 15))
 
-        signal = strategy.generate_signal(
-            "510300.SSE", df, regime, None, df["trade_date"].iloc[-1]
-        )
+        signal = strategy.generate_signal("510300.SSE", df, regime, None, df["trade_date"].iloc[-1])
 
         assert signal is None
 
@@ -201,9 +195,7 @@ class TestCashDefenseStrategy:
             holding_days=5,
         )
 
-        should_exit, reason = strategy.should_exit(
-            position, df, regime, df["trade_date"].iloc[-1]
-        )
+        should_exit, reason = strategy.should_exit(position, df, regime, df["trade_date"].iloc[-1])
 
         assert should_exit
         assert "防御" in reason

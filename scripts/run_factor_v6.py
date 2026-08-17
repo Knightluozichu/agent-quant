@@ -35,23 +35,35 @@ FEE = 0.001
 SLIPPAGE = 0.0005
 
 # Walk-Forward参数
-WF_TRAIN = 120      # 训练窗口(天)
-WF_GAP = 20         # Purge间隔
-WF_TEST = 60        # 测试窗口
-WF_STEP = 60        # 步长
+WF_TRAIN = 120  # 训练窗口(天)
+WF_GAP = 20  # Purge间隔
+WF_TEST = 60  # 测试窗口
+WF_STEP = 60  # 步长
 
 # NN超参
 NN_EPOCHS = 80
 NN_LR = 0.005
-NN_WD = 0.001       # weight decay (AdamW)
+NN_WD = 0.001  # weight decay (AdamW)
 NN_BATCH = 256
 
 # 16个因子名
 ALL_FACTORS = [
-    "momentum", "reversal", "low_vol", "trend", "volume_trend",
-    "bias", "rsi", "macd", "atr_ratio", "obv",
-    "skewness", "vol_change", "amplitude", "bollinger",
-    "momentum_accel", "breakout",
+    "momentum",
+    "reversal",
+    "low_vol",
+    "trend",
+    "volume_trend",
+    "bias",
+    "rsi",
+    "macd",
+    "atr_ratio",
+    "obv",
+    "skewness",
+    "vol_change",
+    "amplitude",
+    "bollinger",
+    "momentum_accel",
+    "breakout",
 ]
 
 # 6个聚类代表
@@ -62,6 +74,7 @@ CLUSTER_REPS = ["momentum", "reversal", "low_vol", "trend", "volume_trend", "ske
 # Factor Engine (from V4.3)
 # =============================================================================
 
+
 def calc_all_factors(df: pd.DataFrame, as_of: date) -> dict[str, float] | None:
     """计算单只ETF在as_of日期的16个因子."""
     hist = df[df["trade_date"] <= as_of].sort_values("trade_date")
@@ -70,7 +83,9 @@ def calc_all_factors(df: pd.DataFrame, as_of: date) -> dict[str, float] | None:
     close = hist["close"].values.astype(float)
     high = hist["high"].values.astype(float) if "high" in hist.columns else close
     low = hist["low"].values.astype(float) if "low" in hist.columns else close
-    volume = hist["volume"].values.astype(float) if "volume" in hist.columns else np.ones(len(close))
+    volume = (
+        hist["volume"].values.astype(float) if "volume" in hist.columns else np.ones(len(close))
+    )
 
     c = close[-1]
     factors = {}
@@ -81,11 +96,17 @@ def calc_all_factors(df: pd.DataFrame, as_of: date) -> dict[str, float] | None:
     else:
         factors["momentum"] = 0.0
     if len(close) >= 40:
-        factors["momentum_accel"] = (close[-10] - close[-20]) / close[-20] - (close[-20] - close[-30]) / close[-30] if len(close) >= 30 else 0.0
+        factors["momentum_accel"] = (
+            (close[-10] - close[-20]) / close[-20] - (close[-20] - close[-30]) / close[-30]
+            if len(close) >= 30
+            else 0.0
+        )
     else:
         factors["momentum_accel"] = 0.0
     if len(close) >= 60:
-        factors["breakout"] = (c - close[-60:].min()) / (close[-60:].max() - close[-60:].min() + 1e-8)
+        factors["breakout"] = (c - close[-60:].min()) / (
+            close[-60:].max() - close[-60:].min() + 1e-8
+        )
     else:
         factors["breakout"] = 0.5
 
@@ -110,9 +131,10 @@ def calc_all_factors(df: pd.DataFrame, as_of: date) -> dict[str, float] | None:
     else:
         factors["low_vol"] = 0.0
     if len(high) >= 20 and len(low) >= 20:
-        tr = np.maximum(high[-20:] - low[-20:],
-                        np.maximum(np.abs(high[-20:] - close[-21:-1]),
-                                   np.abs(low[-20:] - close[-21:-1])))
+        tr = np.maximum(
+            high[-20:] - low[-20:],
+            np.maximum(np.abs(high[-20:] - close[-21:-1]), np.abs(low[-20:] - close[-21:-1])),
+        )
         factors["atr_ratio"] = -np.mean(tr) / (c + 1e-8)
     else:
         factors["atr_ratio"] = 0.0
@@ -181,8 +203,7 @@ def build_factor_panel(
 ) -> dict[date, pd.DataFrame]:
     """构建因子面板: {date: DataFrame[symbol, factor1, ..., factor16]}."""
     index_symbols = {"idx_000300", "idx_000905", "000300", "000905"}
-    tradable = {k: v for k, v in data.items()
-                if k not in DEFENSIVE and k not in index_symbols}
+    tradable = {k: v for k, v in data.items() if k not in DEFENSIVE and k not in index_symbols}
 
     panels = {}
     for d in dates:
@@ -210,14 +231,22 @@ def rank_normalize(df: pd.DataFrame, cols: list[str]) -> pd.DataFrame:
 # Neural Network (Numpy)
 # =============================================================================
 
+
 class FactorNN:
     """2层前馈网络: input → hidden(ReLU) → output.
 
     用RankIC(Pearson相关)作为损失, AdamW优化.
     """
 
-    def __init__(self, n_in: int, n_hidden: int = 8, activation: str = "relu",
-                 lr: float = NN_LR, wd: float = NN_WD, seed: int = 42):
+    def __init__(
+        self,
+        n_in: int,
+        n_hidden: int = 8,
+        activation: str = "relu",
+        lr: float = NN_LR,
+        wd: float = NN_WD,
+        seed: int = 42,
+    ):
         rng = np.random.default_rng(seed)
         # He initialization
         self.W1 = rng.standard_normal((n_in, n_hidden)) * np.sqrt(2.0 / n_in)
@@ -314,7 +343,7 @@ class FactorNN:
         n = len(X)
         for _ in range(epochs):
             # Mini-batch
-            idx = np.random.permutation(n)[:min(NN_BATCH, n)]
+            idx = np.random.permutation(n)[: min(NN_BATCH, n)]
             Xb, yb = X[idx], y[idx]
             pred, _ = self.forward(Xb)
             grads = self.backward(pred, yb)
@@ -329,6 +358,7 @@ class FactorNN:
 # =============================================================================
 # RL Position Sizing (REINFORCE)
 # =============================================================================
+
 
 class RLPolicy:
     """简单策略梯度: 学习仓位缩放.
@@ -364,8 +394,10 @@ class RLPolicy:
 # Walk-Forward + Backtest
 # =============================================================================
 
-def get_forward_returns(data: dict[str, pd.DataFrame], panel: pd.DataFrame,
-                        as_of: date, horizon: int = 20) -> pd.Series:
+
+def get_forward_returns(
+    data: dict[str, pd.DataFrame], panel: pd.DataFrame, as_of: date, horizon: int = 20
+) -> pd.Series:
     """计算as_of日期后horizon天的收益率."""
     fwd = {}
     for _, row in panel.iterrows():
@@ -400,7 +432,7 @@ def run_strategy(
         return {"error": f"insufficient data: {len(all_dates)} < {WF_TRAIN + WF_GAP + WF_TEST}"}
 
     # 确定因子集
-    use_all_16 = (strategy_id == 7)
+    use_all_16 = strategy_id == 7
     factor_cols = ALL_FACTORS if use_all_16 else CLUSTER_REPS
     n_in = len(factor_cols)
 
@@ -426,8 +458,8 @@ def run_strategy(
     windows = []
     i = 0
     while i + WF_TRAIN + WF_GAP + WF_TEST <= len(all_dates):
-        train_dates = all_dates[i:i + WF_TRAIN]
-        test_dates = all_dates[i + WF_TRAIN + WF_GAP: i + WF_TRAIN + WF_GAP + WF_TEST]
+        train_dates = all_dates[i : i + WF_TRAIN]
+        test_dates = all_dates[i + WF_TRAIN + WF_GAP : i + WF_TRAIN + WF_GAP + WF_TEST]
         windows.append((train_dates, test_dates))
         i += WF_STEP
 
@@ -463,8 +495,7 @@ def run_strategy(
         # 训练NN (策略1和2不用NN)
         nn = None
         if strategy_id >= 3:
-            nn = FactorNN(n_in=n_in, n_hidden=n_hidden,
-                          activation=activation, wd=wd)
+            nn = FactorNN(n_in=n_in, n_hidden=n_hidden, activation=activation, wd=wd)
             nn.train(X_train, y_train, epochs=NN_EPOCHS)
 
         # === 测试阶段: 只在调仓日(每20天)交易 ===
@@ -520,15 +551,24 @@ def run_strategy(
                     ic = idx["close"].values.astype(float)
                     mkt_ret = (ic[-1] - ic[-20]) / ic[-20]
                 avg_score = scores[selected].mean() if len(selected) > 0 else 0
-                state = np.array([mkt_ret, np.std(y_train) if len(y_train) > 0 else 0.1,
-                                  1.0 if position_scale > 0 else 0.0, avg_score])
+                state = np.array(
+                    [
+                        mkt_ret,
+                        np.std(y_train) if len(y_train) > 0 else 0.1,
+                        1.0 if position_scale > 0 else 0.0,
+                        avg_score,
+                    ]
+                )
                 position_scale *= rl_policy.get_position(state)
 
             # 记录预测 (用于后续计算收益)
-            oos_predictions.append({
-                "date": td, "selected": selected,
-                "position_scale": position_scale,
-            })
+            oos_predictions.append(
+                {
+                    "date": td,
+                    "selected": selected,
+                    "position_scale": position_scale,
+                }
+            )
 
     # === 模拟交易 ===
     # 简化: 每20天调仓, 等权持有selected
@@ -615,9 +655,13 @@ def run_strategy(
                     r0 = data[sym][data[sym]["trade_date"] == rebalance_dates[i - 1]]
                     r1 = data[sym][data[sym]["trade_date"] == td]
                     if not r0.empty and not r1.empty:
-                        prev_ret += (r1.iloc[0]["close"] - r0.iloc[0]["close"]) / r0.iloc[0]["close"]
+                        prev_ret += (r1.iloc[0]["close"] - r0.iloc[0]["close"]) / r0.iloc[0][
+                            "close"
+                        ]
             prev_ret /= max(len(prev_p["selected"]), 1)
-            idx = index_df[index_df["trade_date"] <= rebalance_dates[i - 1]].sort_values("trade_date")
+            idx = index_df[index_df["trade_date"] <= rebalance_dates[i - 1]].sort_values(
+                "trade_date"
+            )
             mkt_ret = 0.0
             if len(idx) >= 20:
                 ic = idx["close"].values.astype(float)
@@ -665,9 +709,12 @@ def run_strategy(
         prev_val = end_val
 
     return {
-        "total_return": total_return, "ann_return": ann_ret,
-        "sharpe": sharpe, "max_drawdown": max_dd,
-        "yearly": yearly, "equity_curve": eq_df,
+        "total_return": total_return,
+        "ann_return": ann_ret,
+        "sharpe": sharpe,
+        "max_drawdown": max_dd,
+        "yearly": yearly,
+        "equity_curve": eq_df,
     }
 
 
@@ -675,11 +722,16 @@ def run_strategy(
 # Main
 # =============================================================================
 
+
 def load_data():
     data = {}
     for f in DATA_DIR.glob("*.parquet"):
-        if f.name in ("combined_long.parquet", "northbound.parquet",
-                      "pe_percentile.parquet", "margin_sentiment.parquet"):
+        if f.name in (
+            "combined_long.parquet",
+            "northbound.parquet",
+            "pe_percentile.parquet",
+            "margin_sentiment.parquet",
+        ):
             continue
         df = pd.read_parquet(f)
         if "symbol" not in df.columns or "trade_date" not in df.columns:
@@ -768,7 +820,9 @@ def main():
         if "error" in r:
             print(f"ERROR: {r['error']}")
         else:
-            print(f"全周期{r['total_return']:+.1%} | 夏普{r['sharpe']:.2f} | 回撤{r['max_drawdown']:.1%}")
+            print(
+                f"全周期{r['total_return']:+.1%} | 夏普{r['sharpe']:.2f} | 回撤{r['max_drawdown']:.1%}"
+            )
 
     # === 输出10×5年度矩阵 ===
     print(f"\n{'=' * 70}")
@@ -776,7 +830,11 @@ def main():
     print(f"{'=' * 70}")
 
     years = sorted(set(y for r in results.values() for y in r.get("yearly", {}).keys()))
-    header = f"  {'策略':<20}" + "".join(f"{y:>8}" for y in years) + f"{'全周期':>8}{'夏普':>6}{'回撤':>7}"
+    header = (
+        f"  {'策略':<20}"
+        + "".join(f"{y:>8}" for y in years)
+        + f"{'全周期':>8}{'夏普':>6}{'回撤':>7}"
+    )
     print(header)
     print(f"  {'-' * (20 + 8 * len(years) + 21)}")
 

@@ -69,16 +69,12 @@ def create_app(provider_type: str = "mock") -> Dash:
                 ],
                 className="my-4",
             ),
-
             # Navigation tabs
             tabs,
-
             # Tab content
             html.Div(id="tab-content"),
-
             # Store for provider type
             dcc.Store(id="provider-type", data=provider_type),
-
             # Footer
             html.Hr(),
             html.Footer(

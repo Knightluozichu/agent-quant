@@ -78,8 +78,17 @@ class TestRequiredFields:
     def test_all_top_level_fields_present(self, valid_params: dict) -> None:
         """顶层字段齐全."""
         params = StrategyParams.model_validate(valid_params)
-        for field in ["version", "name", "description", "universe", "trading",
-                      "momentum", "filters", "flags", "changelog"]:
+        for field in [
+            "version",
+            "name",
+            "description",
+            "universe",
+            "trading",
+            "momentum",
+            "filters",
+            "flags",
+            "changelog",
+        ]:
             assert hasattr(params, field), f"missing top-level field: {field}"
 
     def test_universe_fields(self, valid_params: dict) -> None:
@@ -172,9 +181,7 @@ class TestValidators:
         with pytest.raises(ValidationError):
             StrategyParams.model_validate(bad)
 
-    def test_weights_and_periods_length_mismatch_rejected(
-        self, valid_params: dict
-    ) -> None:
+    def test_weights_and_periods_length_mismatch_rejected(self, valid_params: dict) -> None:
         """动量权重与周期长度不一致被拒绝."""
         bad = copy.deepcopy(valid_params)
         bad["momentum"]["mom_weights"] = [0.5, 0.3, 0.2]  # 3 个权重
@@ -182,9 +189,7 @@ class TestValidators:
         with pytest.raises(ValidationError):
             StrategyParams.model_validate(bad)
 
-    def test_non_negative_drop_threshold_rejected(
-        self, valid_params: dict
-    ) -> None:
+    def test_non_negative_drop_threshold_rejected(self, valid_params: dict) -> None:
         """跌幅阈值为正被拒绝 (必须为负)."""
         bad = copy.deepcopy(valid_params)
         bad["filters"]["drop_threshold"] = 0.03

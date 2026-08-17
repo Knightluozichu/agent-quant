@@ -41,7 +41,7 @@ from run_qixing_v3 import (  # noqa: E402
     select_target,
 )
 
-WARMUP = 130          # V3 预热期 (与生产一致)
+WARMUP = 130  # V3 预热期 (与生产一致)
 INITIAL_CAPITAL = 100_000.0
 GUARD_THRESHOLDS = (0.50, 0.55, 0.60)
 
@@ -56,9 +56,12 @@ STEP = (TRAIN_DAYS + TEST_DAYS) // 2
 # V3 回测引擎 (复刻 run_qixing_v3 逻辑, 支持时间区间 + RF减仓层)
 # --------------------------------------------------------------------------- #
 def run_v3_window(
-    data: dict, dates: list,
-    start_idx: int, end_idx: int,
-    rf_proba: dict | None = None, guard_thr: float | None = None,
+    data: dict,
+    dates: list,
+    start_idx: int,
+    end_idx: int,
+    rf_proba: dict | None = None,
+    guard_thr: float | None = None,
 ) -> dict:
     """在日期索引区间 [start_idx, end_idx) 运行 V3 周频动量轮动.
 
@@ -175,8 +178,7 @@ def main() -> None:
     data = load_data()
     dates = common_dates(data)
     mat = close_matrix(data, dates)
-    vol_mat = {c: data[c].set_index("trade_date")["volume"].reindex(dates).values
-               for c in ETF_POOL}
+    vol_mat = {c: data[c].set_index("trade_date")["volume"].reindex(dates).values for c in ETF_POOL}
     print("\n  构建特征面板...")
     x, meta, feat_names = build_features(mat, vol_mat, dates)
     order = sorted(range(len(meta)), key=lambda i: meta[i]["date"])
@@ -202,7 +204,7 @@ def main() -> None:
     for wi, s0 in enumerate(starts, 1):
         test_start = s0 + TRAIN_DAYS + BUFFER_DAYS
         test_end = test_start + TEST_DAYS
-        print(f"\n  ── 段{wi}: 测试 {dates[test_start]}~{dates[test_end-1]}")
+        print(f"\n  ── 段{wi}: 测试 {dates[test_start]}~{dates[test_end - 1]}")
 
         # 训练 RF (段前全部样本, 无未来函数)
         test_start_date = str(dates[test_start])
@@ -215,8 +217,8 @@ def main() -> None:
             print("    ⚠️ 训练样本不足, 跳过")
             continue
         rf = RandomForestClassifier(
-            n_estimators=300, max_depth=6, min_samples_leaf=50,
-            random_state=42, n_jobs=-1)
+            n_estimators=300, max_depth=6, min_samples_leaf=50, random_state=42, n_jobs=-1
+        )
         rf.fit(x[tr_mask], y_dn[tr_mask])
         proba = rf.predict_proba(x)[:, 1]  # 全样本概率 (段内取用)
 
@@ -227,13 +229,21 @@ def main() -> None:
 
         # 各配置回测
         print(f"    {'配置':<14} {'年化':>8} {'夏普':>6} {'回撤':>8} {'交易':>4} {'减仓':>4}")
-        row = {"window": f"W{wi}",
-               "test_span": [str(dates[test_start]), str(dates[test_end - 1])],
-               "n_train": int(tr_mask.sum()), "configs": {}}
+        row = {
+            "window": f"W{wi}",
+            "test_span": [str(dates[test_start]), str(dates[test_end - 1])],
+            "n_train": int(tr_mask.sum()),
+            "configs": {},
+        }
         for cfg, thr in zip(configs, [None, *GUARD_THRESHOLDS], strict=False):
-            res = run_v3_window(data, dates, test_start, test_end,
-                                rf_proba=proba_map if thr is not None else None,
-                                guard_thr=thr)
+            res = run_v3_window(
+                data,
+                dates,
+                test_start,
+                test_end,
+                rf_proba=proba_map if thr is not None else None,
+                guard_thr=thr,
+            )
             if "error" in res:
                 print(f"    {cfg:<14} ERROR: {res['error']}")
                 continue
@@ -242,8 +252,10 @@ def main() -> None:
             agg[cfg]["dd"].append(res["max_drawdown"])
             agg[cfg]["trades"].append(res["n_trades"])
             row["configs"][cfg] = res
-            print(f"    {cfg:<14} {res['ann_return']:>+8.1%} {res['sharpe']:>6.2f} "
-                  f"{res['max_drawdown']:>8.1%} {res['n_trades']:>4} {res['guard_hits']:>4}")
+            print(
+                f"    {cfg:<14} {res['ann_return']:>+8.1%} {res['sharpe']:>6.2f} "
+                f"{res['max_drawdown']:>8.1%} {res['n_trades']:>4} {res['guard_hits']:>4}"
+            )
         windows_out.append(row)
 
     # 4. 汇总
@@ -260,8 +272,12 @@ def main() -> None:
         shp = float(np.mean(a["sharpe"]))
         dd = float(np.mean(a["dd"]))
         tr = float(np.mean(a["trades"]))
-        summary[cfg] = {"ann": round(ann, 4), "sharpe": round(shp, 3),
-                        "max_dd": round(dd, 4), "trades": round(tr, 1)}
+        summary[cfg] = {
+            "ann": round(ann, 4),
+            "sharpe": round(shp, 3),
+            "max_dd": round(dd, 4),
+            "trades": round(tr, 1),
+        }
         print(f"  {cfg:<14} {ann:>+8.1%} {shp:>6.2f} {dd:>8.1%} {tr:>8.0f}")
 
     # 判定: 减仓层 vs 基线
@@ -275,15 +291,21 @@ def main() -> None:
             d_ann = (s["ann"] - base["ann"]) * 100
             d_dd = (s["max_dd"] - base["max_dd"]) * 100
             d_shp = s["sharpe"] - base["sharpe"]
-            print(f"    {cfg:<14} 年化 {d_ann:+.1f}pp | 夏普 {d_shp:+.2f} | "
-                  f"回撤 {d_dd:+.1f}pp {'(改善)' if d_dd > 0 else '(恶化)'}")
+            print(
+                f"    {cfg:<14} 年化 {d_ann:+.1f}pp | 夏普 {d_shp:+.2f} | "
+                f"回撤 {d_dd:+.1f}pp {'(改善)' if d_dd > 0 else '(恶化)'}"
+            )
 
-    out = {"meta": {
-        "thresholds": list(GUARD_THRESHOLDS),
-        "rf": "RandomForest(n=300, depth=6, leaf=50), 22动态特征, 段前训练",
-        "windows": starts,
-        "pass_note": "A/B对比: 减仓层是否在保住年化的前提下改善夏普/回撤",
-    }, "windows": windows_out, "summary": summary}
+    out = {
+        "meta": {
+            "thresholds": list(GUARD_THRESHOLDS),
+            "rf": "RandomForest(n=300, depth=6, leaf=50), 22动态特征, 段前训练",
+            "windows": starts,
+            "pass_note": "A/B对比: 减仓层是否在保住年化的前提下改善夏普/回撤",
+        },
+        "windows": windows_out,
+        "summary": summary,
+    }
     out_path = OUTPUT_DIR / "v3_rf_guard_ab.json"
     with open(out_path, "w") as f:
         json.dump(out, f, indent=2, ensure_ascii=False, default=str)

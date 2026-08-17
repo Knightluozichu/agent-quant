@@ -338,9 +338,7 @@ class ParamRegistry:
         reasons: list[str] = []
 
         if metrics.n_trades < self.min_trades:
-            reasons.append(
-                f"insufficient trades: {metrics.n_trades} < min {self.min_trades}"
-            )
+            reasons.append(f"insufficient trades: {metrics.n_trades} < min {self.min_trades}")
         if not metrics.manual_approved:
             reasons.append("manual approval required (manual_approved=False)")
         if not metrics.cost_stress_passed:
@@ -357,8 +355,7 @@ class ParamRegistry:
             champ_dd = float(champion.metrics.get("max_drawdown", -1.0))
             if metrics.max_drawdown < champ_dd:
                 reasons.append(
-                    f"drawdown {metrics.max_drawdown:.4f} worse than "
-                    f"champion {champ_dd:.4f}"
+                    f"drawdown {metrics.max_drawdown:.4f} worse than champion {champ_dd:.4f}"
                 )
         return reasons
 

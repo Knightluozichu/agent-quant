@@ -33,10 +33,22 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # 16 cross-sectional factors (external ones removed from ranking)
 CROSS_FACTORS = [
-    "momentum", "reversal", "low_vol", "trend", "volume_trend",
-    "bias", "rsi", "macd", "atr_ratio", "obv",
-    "skewness", "vol_change", "amplitude", "bollinger",
-    "momentum_accel", "breakout",
+    "momentum",
+    "reversal",
+    "low_vol",
+    "trend",
+    "volume_trend",
+    "bias",
+    "rsi",
+    "macd",
+    "atr_ratio",
+    "obv",
+    "skewness",
+    "vol_change",
+    "amplitude",
+    "bollinger",
+    "momentum_accel",
+    "breakout",
 ]
 N_CROSS = len(CROSS_FACTORS)  # 16
 
@@ -51,6 +63,7 @@ SLIPPAGE = 0.0005  # 滑点万五
 # =============================================================================
 # Factor Calculator
 # =============================================================================
+
 
 class FactorCalc:
     """16 cross-sectional factors + 3 market-level signals."""
@@ -83,7 +96,11 @@ class FactorCalc:
             close = hist["close"].values.astype(float)
             high = hist["high"].values.astype(float)
             low = hist["low"].values.astype(float)
-            volume = hist["volume"].values.astype(float) if "volume" in hist.columns else np.ones(len(close))
+            volume = (
+                hist["volume"].values.astype(float)
+                if "volume" in hist.columns
+                else np.ones(len(close))
+            )
 
             f = self._calc_16(close, high, low, volume)
             f["symbol"] = symbol
@@ -148,7 +165,9 @@ class FactorCalc:
             f["low_vol"] = -(np.std(rets) * np.sqrt(252))
         else:
             f["low_vol"] = 0.0
-        f["trend"] = (close[-20:].mean() - close[-60:].mean()) / close[-60:].mean() if n > 60 else 0.0
+        f["trend"] = (
+            (close[-20:].mean() - close[-60:].mean()) / close[-60:].mean() if n > 60 else 0.0
+        )
         if n > 60:
             v20, v60 = volume[-20:].mean(), volume[-60:].mean()
             f["volume_trend"] = (v20 - v60) / v60 if v60 > 0 else 0.0
@@ -175,9 +194,10 @@ class FactorCalc:
         else:
             f["macd"] = 0.0
         if n > 15:
-            tr = np.maximum(high[-14:] - low[-14:],
-                           np.maximum(np.abs(high[-14:] - close[-15:-1]),
-                                      np.abs(low[-14:] - close[-15:-1])))
+            tr = np.maximum(
+                high[-14:] - low[-14:],
+                np.maximum(np.abs(high[-14:] - close[-15:-1]), np.abs(low[-14:] - close[-15:-1])),
+            )
             f["atr_ratio"] = -(tr.mean() / close[-1])
         else:
             f["atr_ratio"] = 0.0
@@ -246,6 +266,7 @@ class FactorCalc:
 # =============================================================================
 # Absolute Risk Gate (market-level, NOT cross-sectional)
 # =============================================================================
+
 
 def absolute_risk_gate(
     index_df: pd.DataFrame,
@@ -330,6 +351,7 @@ def absolute_risk_gate(
 # Purged Walk-Forward (NO checkpoint selection)
 # =============================================================================
 
+
 def purged_walk_forward(
     data: dict[str, pd.DataFrame],
     index_df: pd.DataFrame,
@@ -353,8 +375,9 @@ def purged_walk_forward(
     calc.load_external()
 
     index_symbols = {"idx_000300", "idx_000905", "000300", "000905"}
-    tradable = {k: v for k, v in data.items()
-                if k not in DEFENSIVE_ASSETS and k not in index_symbols}
+    tradable = {
+        k: v for k, v in data.items() if k not in DEFENSIVE_ASSETS and k not in index_symbols
+    }
 
     all_dates = sorted(index_df["trade_date"].tolist())
     n_total = len(all_dates)
@@ -400,37 +423,40 @@ def purged_walk_forward(
         t_step += 1
         logits -= lr * 0.01 * logits  # weight decay
         m = 0.9 * m + 0.1 * grad
-        v = 0.999 * v + 0.001 * grad ** 2
-        m_hat = m / (1 - 0.9 ** t_step)
-        v_hat = v / (1 - 0.999 ** t_step)
+        v = 0.999 * v + 0.001 * grad**2
+        m_hat = m / (1 - 0.9**t_step)
+        v_hat = v / (1 - 0.999**t_step)
         logits -= lr * m_hat / (np.sqrt(v_hat) + 1e-8)
 
         weights = _softmax(logits)
 
         # --- TEST: run backtest on OOS period with these weights ---
         oos_ret = _run_oos_period(
-            calc, data, tradable, index_df, weights,
-            test_dates[0], test_dates[-1]
+            calc, data, tradable, index_df, weights, test_dates[0], test_dates[-1]
         )
 
-        oos_results.append({
-            "round": ri + 1,
-            "test_start": str(test_dates[0]),
-            "test_end": str(test_dates[-1]),
-            "oos_return": oos_ret["total_return"],
-            "n_trades": oos_ret["n_trades"],
-            "gate_triggered": oos_ret["gate_triggered"],
-        })
+        oos_results.append(
+            {
+                "round": ri + 1,
+                "test_start": str(test_dates[0]),
+                "test_end": str(test_dates[-1]),
+                "oos_return": oos_ret["total_return"],
+                "n_trades": oos_ret["n_trades"],
+                "gate_triggered": oos_ret["gate_triggered"],
+            }
+        )
         round_weights.append(weights.copy())
 
-        print(f"  R{ri + 1:2d}/{n_rounds} | OOS: {oos_ret['total_return']:+.2%} | "
-              f"{test_dates[0]}~{test_dates[-1]} | "
-              f"gate={'YES' if oos_ret['gate_triggered'] else 'no'}")
+        print(
+            f"  R{ri + 1:2d}/{n_rounds} | OOS: {oos_ret['total_return']:+.2%} | "
+            f"{test_dates[0]}~{test_dates[-1]} | "
+            f"gate={'YES' if oos_ret['gate_triggered'] else 'no'}"
+        )
 
     # Concatenate OOS: geometric linking
     total_oos = 1.0
     for r in oos_results:
-        total_oos *= (1 + r["oos_return"])
+        total_oos *= 1 + r["oos_return"]
     total_oos -= 1
 
     print(f"\n  OOS拼接总收益: {total_oos:+.2%} (非选择, 是拼接)")
@@ -527,8 +553,10 @@ def _run_oos_period(calc, data, tradable, index_df, weights, start_date, end_dat
                     if not row.empty:
                         price = row.iloc[0]["close"]
                         equity = cash + sum(
-                            holdings.get(s, 0) * data[s][data[s]["trade_date"] == td].iloc[0]["close"]
-                            for s in holdings if s in data and not data[s][data[s]["trade_date"] == td].empty
+                            holdings.get(s, 0)
+                            * data[s][data[s]["trade_date"] == td].iloc[0]["close"]
+                            for s in holdings
+                            if s in data and not data[s][data[s]["trade_date"] == td].empty
                         )
                         target_val = equity * target_weight
                         cur = holdings.get(sym, 0)
@@ -575,8 +603,10 @@ def _run_oos_period(calc, data, tradable, index_df, weights, start_date, end_dat
                     row = data["511010"][data["511010"]["trade_date"] == td]
                     if not row.empty:
                         equity = cash + sum(
-                            holdings.get(s, 0) * data[s][data[s]["trade_date"] == td].iloc[0]["close"]
-                            for s in holdings if s in data and not data[s][data[s]["trade_date"] == td].empty
+                            holdings.get(s, 0)
+                            * data[s][data[s]["trade_date"] == td].iloc[0]["close"]
+                            for s in holdings
+                            if s in data and not data[s][data[s]["trade_date"] == td].empty
                         )
                         price = row.iloc[0]["close"]
                         shares = int(equity * 0.9 / price / 10) * 10
@@ -597,7 +627,9 @@ def _run_oos_period(calc, data, tradable, index_df, weights, start_date, end_dat
                     for sym in selected:
                         hist = tradable[sym][tradable[sym]["trade_date"] <= td]
                         if len(hist) > 40:
-                            rets = np.diff(hist["close"].values[-40:]) / hist["close"].values[-40:-1]
+                            rets = (
+                                np.diff(hist["close"].values[-40:]) / hist["close"].values[-40:-1]
+                            )
                             vols[sym] = np.std(rets) * np.sqrt(252)
                         else:
                             vols[sym] = 0.2
@@ -612,7 +644,9 @@ def _run_oos_period(calc, data, tradable, index_df, weights, start_date, end_dat
                         if sym not in selected and sym not in DEFENSIVE_ASSETS:
                             row = data[sym][data[sym]["trade_date"] == td]
                             if not row.empty:
-                                cash += holdings[sym] * row.iloc[0]["close"] * (1 - FEE_RATE - SLIPPAGE)
+                                cash += (
+                                    holdings[sym] * row.iloc[0]["close"] * (1 - FEE_RATE - SLIPPAGE)
+                                )
                                 del holdings[sym]
                                 n_trades += 1
                     # Sell bonds if holding
@@ -620,7 +654,11 @@ def _run_oos_period(calc, data, tradable, index_df, weights, start_date, end_dat
                         if bsym in holdings:
                             row = data[bsym][data[bsym]["trade_date"] == td]
                             if not row.empty:
-                                cash += holdings[bsym] * row.iloc[0]["close"] * (1 - FEE_RATE - SLIPPAGE)
+                                cash += (
+                                    holdings[bsym]
+                                    * row.iloc[0]["close"]
+                                    * (1 - FEE_RATE - SLIPPAGE)
+                                )
                                 del holdings[bsym]
                                 n_trades += 1
 
@@ -647,6 +685,7 @@ def _run_oos_period(calc, data, tradable, index_df, weights, start_date, end_dat
 # 5-Layer Attribution
 # =============================================================================
 
+
 def run_attribution(
     data: dict[str, pd.DataFrame],
     index_df: pd.DataFrame,
@@ -668,8 +707,9 @@ def run_attribution(
     calc.load_external()
 
     index_symbols = {"idx_000300", "idx_000905", "000300", "000905"}
-    tradable = {k: v for k, v in data.items()
-                if k not in DEFENSIVE_ASSETS and k not in index_symbols}
+    tradable = {
+        k: v for k, v in data.items() if k not in DEFENSIVE_ASSETS and k not in index_symbols
+    }
 
     all_dates = sorted(index_df["trade_date"].tolist())
     period_dates = [d for d in all_dates if start_date <= d <= end_date]
@@ -741,17 +781,19 @@ def run_attribution(
         # Layer E: - costs (round-trip ~0.3%)
         layer_e = layer_d - 0.003  # Approximate round-trip cost
 
-        records.append({
-            "date": str(td),
-            "benchmark": bench_ret,
-            "A_selection": layer_a,
-            "B_risk_parity": layer_b,
-            "C_conviction": layer_c,
-            "D_gate": layer_d,
-            "E_execution": layer_e,
-            "gate_on": gate["risk_on"],
-            "top4": ",".join(top4),
-        })
+        records.append(
+            {
+                "date": str(td),
+                "benchmark": bench_ret,
+                "A_selection": layer_a,
+                "B_risk_parity": layer_b,
+                "C_conviction": layer_c,
+                "D_gate": layer_d,
+                "E_execution": layer_e,
+                "gate_on": gate["risk_on"],
+                "top4": ",".join(top4),
+            }
+        )
 
     return pd.DataFrame(records)
 
@@ -760,11 +802,13 @@ def run_attribution(
 # 5 Benchmarks
 # =============================================================================
 
+
 def run_benchmarks(data, index_df, start_date, end_date):
     """Run 5 benchmark strategies for comparison."""
     index_symbols = {"idx_000300", "idx_000905", "000300", "000905"}
-    tradable = {k: v for k, v in data.items()
-                if k not in DEFENSIVE_ASSETS and k not in index_symbols}
+    tradable = {
+        k: v for k, v in data.items() if k not in DEFENSIVE_ASSETS and k not in index_symbols
+    }
 
     all_dates = sorted(index_df["trade_date"].tolist())
     period_dates = [d for d in all_dates if start_date <= d <= end_date]
@@ -772,7 +816,9 @@ def run_benchmarks(data, index_df, start_date, end_date):
     results = {}
 
     # 1. CSI300 buy-and-hold
-    idx_period = index_df[(index_df["trade_date"] >= start_date) & (index_df["trade_date"] <= end_date)]
+    idx_period = index_df[
+        (index_df["trade_date"] >= start_date) & (index_df["trade_date"] <= end_date)
+    ]
     if len(idx_period) > 1:
         results["沪深300"] = (idx_period["close"].iloc[-1] / idx_period["close"].iloc[0]) - 1
     else:
@@ -822,7 +868,7 @@ def _simple_factor_backtest(calc, tradable, data, index_df, period_dates, factor
                 if not future.empty and not current.empty:
                     period_rets.append((future.iloc[-1]["close"] / current.iloc[0]["close"]) - 1)
         if period_rets:
-            total_ret *= (1 + np.mean(period_rets))
+            total_ret *= 1 + np.mean(period_rets)
     return total_ret - 1
 
 
@@ -855,9 +901,11 @@ def _faber_backtest(tradable, data, index_df, period_dates):
                     future = data[sym][data[sym]["trade_date"] > td].head(20)
                     current = data[sym][data[sym]["trade_date"] == td]
                     if not future.empty and not current.empty:
-                        period_rets.append((future.iloc[-1]["close"] / current.iloc[0]["close"]) - 1)
+                        period_rets.append(
+                            (future.iloc[-1]["close"] / current.iloc[0]["close"]) - 1
+                        )
             if period_rets:
-                total_ret *= (1 + np.mean(period_rets))
+                total_ret *= 1 + np.mean(period_rets)
         # else: hold bonds (0% return for period)
     return total_ret - 1
 
@@ -866,11 +914,16 @@ def _faber_backtest(tradable, data, index_df, period_dates):
 # Main
 # =============================================================================
 
+
 def load_data():
     data = {}
     for f in DATA_DIR.glob("*.parquet"):
-        if f.name in ("combined_long.parquet", "northbound.parquet",
-                      "pe_percentile.parquet", "margin_sentiment.parquet"):
+        if f.name in (
+            "combined_long.parquet",
+            "northbound.parquet",
+            "pe_percentile.parquet",
+            "margin_sentiment.parquet",
+        ):
             continue
         df = pd.read_parquet(f)
         if "symbol" not in df.columns or "trade_date" not in df.columns:
@@ -911,15 +964,22 @@ def main():
     # === Step 2: 5-Layer Attribution (2023 stress test) ===
     print("\n[2/4] 5层收益归因 (2023压力测试)...")
     from datetime import date as dt_date
+
     attr_2023 = run_attribution(
-        data, index_df, final_weights,
-        dt_date(2023, 1, 1), dt_date(2023, 12, 31)
+        data, index_df, final_weights, dt_date(2023, 1, 1), dt_date(2023, 12, 31)
     )
     if not attr_2023.empty:
         print(f"\n  2023年归因 (每期平均):")
         print(f"  {'层级':<20} {'平均收益':>10} {'累计':>10}")
         print(f"  {'-' * 42}")
-        for col in ["benchmark", "A_selection", "B_risk_parity", "C_conviction", "D_gate", "E_execution"]:
+        for col in [
+            "benchmark",
+            "A_selection",
+            "B_risk_parity",
+            "C_conviction",
+            "D_gate",
+            "E_execution",
+        ]:
             avg = attr_2023[col].mean()
             cum = (1 + attr_2023[col]).prod() - 1
             label = col.replace("_", " ").title()
@@ -973,8 +1033,9 @@ def main():
     calc = FactorCalc()
     calc.load_external()
     index_symbols = {"idx_000300", "idx_000905", "000300", "000905"}
-    tradable = {k: v for k, v in data.items()
-                if k not in DEFENSIVE_ASSETS and k not in index_symbols}
+    tradable = {
+        k: v for k, v in data.items() if k not in DEFENSIVE_ASSETS and k not in index_symbols
+    }
     conv_triggers = 0
     total_rebal = 0
     for td in [d for d in all_dates if dt_date(2023, 1, 1) <= d <= dt_date(2023, 12, 31)][70::20]:

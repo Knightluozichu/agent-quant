@@ -46,16 +46,21 @@ def create_market_state_layout(loader: DashboardDataLoader) -> html.Div:
 
     # State colors
     state_colors = [
-        "#2ca02c", "#17becf", "#ff7f0e",  # UP: green, cyan, orange
-        "#7f7f7f", "#bcbd22", "#ff7f0e",  # FLAT: gray, yellow-green, orange
-        "#d62728", "#d62728", "#1f1f1f",  # DOWN: red, red, dark
+        "#2ca02c",
+        "#17becf",
+        "#ff7f0e",  # UP: green, cyan, orange
+        "#7f7f7f",
+        "#bcbd22",
+        "#ff7f0e",  # FLAT: gray, yellow-green, orange
+        "#d62728",
+        "#d62728",
+        "#1f1f1f",  # DOWN: red, red, dark
     ]
 
     return html.Div(
         [
             # Page header
             html.H4("市场状态监控", className="mb-4"),
-
             # Current state card (full width)
             dbc.Row(
                 [
@@ -66,7 +71,6 @@ def create_market_state_layout(loader: DashboardDataLoader) -> html.Div:
                 ],
                 className="mb-4",
             ),
-
             # Key metrics row
             dbc.Row(
                 [
@@ -100,7 +104,6 @@ def create_market_state_layout(loader: DashboardDataLoader) -> html.Div:
                 ],
                 className="mb-4",
             ),
-
             # Charts row
             dbc.Row(
                 [
@@ -124,7 +127,6 @@ def create_market_state_layout(loader: DashboardDataLoader) -> html.Div:
                         ),
                         width=6,
                     ),
-
                     # State distribution pie
                     dbc.Col(
                         dbc.Card(
@@ -135,7 +137,7 @@ def create_market_state_layout(loader: DashboardDataLoader) -> html.Div:
                                         labels=pie_labels,
                                         values=pie_values,
                                         title="",
-                                        colors=state_colors[:len(pie_labels)],
+                                        colors=state_colors[: len(pie_labels)],
                                     ),
                                 ]
                             ),
@@ -146,7 +148,6 @@ def create_market_state_layout(loader: DashboardDataLoader) -> html.Div:
                 ],
                 className="mb-4",
             ),
-
             # State history timeline
             dbc.Row(
                 [

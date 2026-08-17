@@ -78,15 +78,17 @@ def _make_synthetic_data(
             # 缓慢下跌: 每日 -0.1%
             close = 100.0 * (0.999 ** np.arange(n_days))
 
-        df = pd.DataFrame({
-            "trade_date": dates[:n_days],
-            "open": close * 0.998,  # 开盘略低于收盘
-            "close": close,
-            "high": close * 1.005,
-            "low": close * 0.995,
-            "volume": 10000.0,
-            "symbol": code,
-        })
+        df = pd.DataFrame(
+            {
+                "trade_date": dates[:n_days],
+                "open": close * 0.998,  # 开盘略低于收盘
+                "close": close,
+                "high": close * 1.005,
+                "low": close * 0.995,
+                "volume": 10000.0,
+                "symbol": code,
+            }
+        )
         data[code] = df
 
     return data

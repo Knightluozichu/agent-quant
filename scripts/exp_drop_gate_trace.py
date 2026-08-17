@@ -9,6 +9,7 @@
 用法: uv run python scripts/exp_drop_gate_trace.py
 输出: data/v9_results/drop_gate_trace.json
 """
+
 from __future__ import annotations
 
 import json
@@ -47,7 +48,7 @@ def main() -> None:
         common &= set(data[rq.DEFENSE]["trade_date"].tolist())
     all_dates = sorted(common)
     trading_dates = all_dates[WARMUP:]
-    rebalance_set = set(trading_dates[::rq.REBALANCE_DAYS])
+    rebalance_set = set(trading_dates[:: rq.REBALANCE_DAYS])
     dates_idx = {d: i for i, d in enumerate(all_dates)}
 
     rows = []
@@ -80,12 +81,17 @@ def main() -> None:
                 prow = df[df["trade_date"] == fut]
                 if not prow.empty:
                     fwd = float(prow.iloc[0]["close"]) / close[-1] - 1.0
-            rows.append({
-                "code": code, "name": rq.ETF_POOL[code], "date": str(td),
-                "ret60": round(ret60, 4) if ret60 is not None else None,
-                "mom": round(float(mom), 4), "gated_pass": bool(gated_pass),
-                "fwd5": round(fwd, 4) if fwd is not None else None,
-            })
+            rows.append(
+                {
+                    "code": code,
+                    "name": rq.ETF_POOL[code],
+                    "date": str(td),
+                    "ret60": round(ret60, 4) if ret60 is not None else None,
+                    "mom": round(float(mom), 4),
+                    "gated_pass": bool(gated_pass),
+                    "fwd5": round(fwd, 4) if fwd is not None else None,
+                }
+            )
 
     df_out = pd.DataFrame(rows)
     total = len(df_out)
@@ -93,8 +99,10 @@ def main() -> None:
     excluded = df_out[~df_out["gated_pass"]]
 
     print("=" * 74)
-    print(f"  门控追踪 | 触发暴跌过滤 {total}次 (调仓日口径) | "
-          f"放行{len(passed)}次 / 排除{len(excluded)}次")
+    print(
+        f"  门控追踪 | 触发暴跌过滤 {total}次 (调仓日口径) | "
+        f"放行{len(passed)}次 / 排除{len(excluded)}次"
+    )
     print("=" * 74)
 
     def report(d: pd.DataFrame, label: str) -> dict | None:
@@ -104,8 +112,11 @@ def main() -> None:
         cont = (v < 0).mean() * 100
         avg = v.mean() * 100
         print(f"    {label:<24} {len(d):>3}次 | 后5日继续跌 {cont:>3.0f}% | 平均 {avg:+.2f}%")
-        return {"n": int(len(d)), "cont_pct": round(float(cont), 1),
-                "avg_fwd": round(float(avg), 2)}
+        return {
+            "n": int(len(d)),
+            "cont_pct": round(float(cont), 1),
+            "avg_fwd": round(float(avg), 2),
+        }
 
     print("\n  【全部触发事件的后5日表现】")
     report(df_out, "全部触发")
@@ -113,8 +124,10 @@ def main() -> None:
     g_passed = report(passed, "放行 (ret60<0)")
     g_excluded = report(excluded, "排除 (ret60>=0)")
     print("\n  【按段分组 (放行事件)】")
-    segs = [("IS(2020-06~2023-12)", "2020-06-01", "2023-12-31"),
-            ("OOS(2024-01~)", "2024-01-01", "9999-12-31")]
+    segs = [
+        ("IS(2020-06~2023-12)", "2020-06-01", "2023-12-31"),
+        ("OOS(2024-01~)", "2024-01-01", "9999-12-31"),
+    ]
     seg_stats = {}
     for name, s0, s1 in segs:
         sub = passed[(passed["date"] >= s0) & (passed["date"] <= s1)]
@@ -122,16 +135,16 @@ def main() -> None:
     print("\n  【放行事件明细 (含后5日)】")
     pd.set_option("display.width", 120)
     show = passed.copy()
-    show["gain_loss"] = show["fwd5"].apply(
-        lambda x: "赚" if (x or 0) > 0 else "亏")
-    print(show[["date", "name", "ret60", "mom", "fwd5", "gain_loss"]]
-          .to_string(index=False))
+    show["gain_loss"] = show["fwd5"].apply(lambda x: "赚" if (x or 0) > 0 else "亏")
+    print(show[["date", "name", "ret60", "mom", "fwd5", "gain_loss"]].to_string(index=False))
 
     result = {
-        "n_triggered": total, "n_passed": int(len(passed)),
+        "n_triggered": total,
+        "n_passed": int(len(passed)),
         "n_excluded": int(len(excluded)),
         "all": report(df_out, "全部触发"),
-        "passed": g_passed, "excluded": g_excluded,
+        "passed": g_passed,
+        "excluded": g_excluded,
         "seg_stats": seg_stats,
         "detail": df_out.to_dict(orient="records"),
     }

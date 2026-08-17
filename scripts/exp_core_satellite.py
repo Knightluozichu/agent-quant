@@ -6,6 +6,7 @@ Satellite (30%): 行业ETF动量轮动 (M0公式, Top1集中)
 验证: IS/OOS + 3滚动窗口 + 10年全回测
 对比: 纯Core vs Core+Satellite, 看卫星仓增量贡献
 """
+
 from __future__ import annotations
 
 import json
@@ -62,6 +63,7 @@ A_SHARE_ETF = "159915"
 # 动量评分 (M0基线, Step3验证胜出)
 # ============================================================================ #
 
+
 def score_m0(close: np.ndarray) -> float:
     """M0 基线: 0.5*R(10) + 0.5*R(20)."""
     if len(close) <= 20:
@@ -74,6 +76,7 @@ def score_m0(close: np.ndarray) -> float:
 # ============================================================================ #
 # 回测引擎 (单策略)
 # ============================================================================ #
+
 
 def load_pool_data(pool: dict[str, str], data_dir: Path) -> dict[str, pd.DataFrame]:
     """加载指定池的ETF数据."""
@@ -104,7 +107,7 @@ def check_a_share_weak(data: dict, as_of_idx: int) -> bool:
     df = data[A_SHARE_ETF]
     if as_of_idx < 20:
         return False
-    close = df["close"].values[:as_of_idx + 1].astype(float)
+    close = df["close"].values[: as_of_idx + 1].astype(float)
     ma = np.mean(close[-20:])
     return close[-1] < ma
 
@@ -182,7 +185,7 @@ def run_single_backtest(
             if code == A_SHARE_ETF and a_share_weak:
                 continue
             idx = etf_data_at_date[code]
-            close = data[code]["close"].values[:idx + 1].astype(float)
+            close = data[code]["close"].values[: idx + 1].astype(float)
             if len(close) < WARMUP:
                 continue
             if use_drop_filter and not check_single_day_drop(close):
@@ -247,8 +250,10 @@ def run_single_backtest(
 # 组合回测
 # ============================================================================ #
 
+
 def run_combined_backtest(
-    core_data: dict, sat_data: dict,
+    core_data: dict,
+    sat_data: dict,
     start_date: str | None = None,
     end_date: str | None = None,
     initial_capital: float = INITIAL_CAPITAL,
@@ -263,18 +268,26 @@ def run_combined_backtest(
 
     # Core: 跨资产轮动 (启用A股走弱过滤)
     core_eq = run_single_backtest(
-        core_data, CORE_POOL, score_m0,
-        start_date=start_date, end_date=end_date,
+        core_data,
+        CORE_POOL,
+        score_m0,
+        start_date=start_date,
+        end_date=end_date,
         initial_capital=core_capital,
-        use_a_share_filter=True, use_drop_filter=True,
+        use_a_share_filter=True,
+        use_drop_filter=True,
     )
 
     # Satellite: 行业ETF轮动 (不启用A股走弱过滤, 因为全是A股行业)
     sat_eq = run_single_backtest(
-        sat_data, SAT_POOL, score_m0,
-        start_date=start_date, end_date=end_date,
+        sat_data,
+        SAT_POOL,
+        score_m0,
+        start_date=start_date,
+        end_date=end_date,
         initial_capital=sat_capital,
-        use_a_share_filter=False, use_drop_filter=True,
+        use_a_share_filter=False,
+        use_drop_filter=True,
     )
 
     if core_eq.empty or sat_eq.empty:
@@ -307,17 +320,20 @@ def run_combined_backtest(
     if core_final.empty:
         return pd.DataFrame(columns=["trade_date", "equity", "holding"])
 
-    combined = pd.DataFrame({
-        "trade_date": core_final.index,
-        "equity": core_final.values + sat_final.values,
-        "holding": "combined",
-    })
+    combined = pd.DataFrame(
+        {
+            "trade_date": core_final.index,
+            "equity": core_final.values + sat_final.values,
+            "holding": "combined",
+        }
+    )
     return combined
 
 
 # ============================================================================ #
 # 指标计算
 # ============================================================================ #
+
 
 def calc_metrics(eq_df: pd.DataFrame, initial_capital: float) -> dict:
     """从equity曲线计算绩效指标."""
@@ -368,6 +384,7 @@ def calc_metrics(eq_df: pd.DataFrame, initial_capital: float) -> dict:
 # 验证框架
 # ============================================================================ #
 
+
 def validate_strategy(name: str, run_fn: Callable, initial_capital: float = INITIAL_CAPITAL):
     """对单个策略/组合跑3种验证."""
     print(f"\n  === {name} ===")
@@ -385,8 +402,10 @@ def validate_strategy(name: str, run_fn: Callable, initial_capital: float = INIT
         and oos_m["sharpe"] > is_m["sharpe"] * 0.5
     )
     if "error" not in oos_m:
-        print(f"IS夏普={is_m.get('sharpe', 'N/A'):.2f} OOS年化={oos_m['ann_return']:+.1%} "
-              f"OOS夏普={oos_m['sharpe']:.2f} {'PASS' if is_oos_pass else 'FAIL'}")
+        print(
+            f"IS夏普={is_m.get('sharpe', 'N/A'):.2f} OOS年化={oos_m['ann_return']:+.1%} "
+            f"OOS夏普={oos_m['sharpe']:.2f} {'PASS' if is_oos_pass else 'FAIL'}"
+        )
     else:
         print(f"ERROR: {oos_m}")
 
@@ -403,20 +422,26 @@ def validate_strategy(name: str, run_fn: Callable, initial_capital: float = INIT
         w_m = calc_metrics(w_eq, initial_capital)
         rolling_results[wname] = w_m
     # 通过标准: 至少2/3窗口正收益
-    positive_windows = sum(1 for r in rolling_results.values() if "error" not in r and r["ann_return"] > 0)
+    positive_windows = sum(
+        1 for r in rolling_results.values() if "error" not in r and r["ann_return"] > 0
+    )
     rolling_pass = positive_windows >= 2
     print(f"正收益窗口={positive_windows}/3 {'PASS' if rolling_pass else 'FAIL'}")
     for wname, wm in rolling_results.items():
         if "error" not in wm:
-            print(f"      {wname}: 年化={wm['ann_return']:+.1%} 夏普={wm['sharpe']:.2f} 回撤={wm['max_drawdown']:.1%}")
+            print(
+                f"      {wname}: 年化={wm['ann_return']:+.1%} 夏普={wm['sharpe']:.2f} 回撤={wm['max_drawdown']:.1%}"
+            )
 
     # 3. 全回测
     print(f"    [3/3] Full...", end=" ", flush=True)
     full_eq = run_fn(start_date=None, end_date=None)
     full_m = calc_metrics(full_eq, initial_capital)
     if "error" not in full_m:
-        print(f"年化={full_m['ann_return']:+.1%} 夏普={full_m['sharpe']:.2f} "
-              f"回撤={full_m['max_drawdown']:.1%} Calmar={full_m['calmar']:.2f}")
+        print(
+            f"年化={full_m['ann_return']:+.1%} 夏普={full_m['sharpe']:.2f} "
+            f"回撤={full_m['max_drawdown']:.1%} Calmar={full_m['calmar']:.2f}"
+        )
     else:
         print(f"ERROR: {full_m}")
 
@@ -433,6 +458,7 @@ def validate_strategy(name: str, run_fn: Callable, initial_capital: float = INIT
 # ============================================================================ #
 # 主实验
 # ============================================================================ #
+
 
 def main():
     print("=" * 70)
@@ -459,8 +485,11 @@ def main():
     core_results = validate_strategy(
         "纯Core (跨资产轮动)",
         lambda start_date, end_date: run_single_backtest(
-            core_data, CORE_POOL, score_m0,
-            start_date=start_date, end_date=end_date,
+            core_data,
+            CORE_POOL,
+            score_m0,
+            start_date=start_date,
+            end_date=end_date,
             initial_capital=INITIAL_CAPITAL,
             use_a_share_filter=True,
         ),
@@ -470,8 +499,11 @@ def main():
     sat_results = validate_strategy(
         "纯Satellite (行业ETF轮动)",
         lambda start_date, end_date: run_single_backtest(
-            sat_data, SAT_POOL, score_m0,
-            start_date=start_date, end_date=end_date,
+            sat_data,
+            SAT_POOL,
+            score_m0,
+            start_date=start_date,
+            end_date=end_date,
             initial_capital=INITIAL_CAPITAL,
             use_a_share_filter=False,
         ),
@@ -481,8 +513,10 @@ def main():
     combined_results = validate_strategy(
         f"Core({W_CORE:.0%}) + Satellite({W_SAT:.0%}) 组合",
         lambda start_date, end_date: run_combined_backtest(
-            core_data, sat_data,
-            start_date=start_date, end_date=end_date,
+            core_data,
+            sat_data,
+            start_date=start_date,
+            end_date=end_date,
             initial_capital=INITIAL_CAPITAL,
         ),
     )
@@ -501,8 +535,10 @@ def main():
     ]:
         full = res["full"]
         if "error" not in full:
-            print(f"  {label:<28} {full['ann_return']:>+7.1%} {full['sharpe']:>6.2f} "
-                  f"{full['max_drawdown']:>7.1%} {full['calmar']:>8.2f}")
+            print(
+                f"  {label:<28} {full['ann_return']:>+7.1%} {full['sharpe']:>6.2f} "
+                f"{full['max_drawdown']:>7.1%} {full['calmar']:>8.2f}"
+            )
         else:
             print(f"  {label:<28} ERROR")
 
@@ -514,7 +550,9 @@ def main():
     core_yearly = core_results["full"].get("yearly", {})
     sat_yearly = sat_results["full"].get("yearly", {})
     comb_yearly = combined_results["full"].get("yearly", {})
-    all_years = sorted(set(list(core_yearly.keys()) + list(sat_yearly.keys()) + list(comb_yearly.keys())))
+    all_years = sorted(
+        set(list(core_yearly.keys()) + list(sat_yearly.keys()) + list(comb_yearly.keys()))
+    )
 
     for year in all_years:
         c = core_yearly.get(year, {}).get("return", None)
@@ -547,7 +585,8 @@ def main():
 
     output = {
         "config": {
-            "W_CORE": W_CORE, "W_SAT": W_SAT,
+            "W_CORE": W_CORE,
+            "W_SAT": W_SAT,
             "core_pool": list(CORE_POOL.keys()),
             "sat_pool": list(SAT_POOL.keys()),
             "score_fn": "M0_baseline",

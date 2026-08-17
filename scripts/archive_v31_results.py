@@ -10,6 +10,7 @@
 
 用法: uv run python scripts/archive_v31_results.py
 """
+
 from __future__ import annotations
 
 import json
@@ -68,10 +69,8 @@ def main() -> None:
     for name, P in {
         "V31_conservative_sigma028": {"vol_target": 0.28, "vol_floor": 0.3, **P2},
         "A0_exit_only": dict(P2),
-        "A1_crisis_sigma_h050": {"vol_mode": "crisis", "sigma_high": 0.50,
-                                 "vol_floor": 0.3, **P2},
-        "A2_trend_gate_sigma028": {"vol_target": 0.28, "vol_floor": 0.3,
-                                   "trend_gate": 0.10, **P2},
+        "A1_crisis_sigma_h050": {"vol_mode": "crisis", "sigma_high": 0.50, "vol_floor": 0.3, **P2},
+        "A2_trend_gate_sigma028": {"vol_target": 0.28, "vol_floor": 0.3, "trend_gate": 0.10, **P2},
         "A3_high_sigma040": {"vol_target": 0.40, "vol_floor": 0.3, **P2},
     }.items():
         r = ex.run_v31(data, P, dmap)

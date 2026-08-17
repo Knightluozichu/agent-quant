@@ -2,6 +2,7 @@
 
 新增策略只需: 实现 select 函数 + 填 hypothesis(经济逻辑) + 定 param_grid, 然后注册到 REGISTRY.
 """
+
 from __future__ import annotations
 
 import sys
@@ -16,10 +17,10 @@ import run_qixing_v3 as rq  # noqa: E402
 @dataclass
 class Strategy:
     name: str
-    hypothesis: str            # 经济逻辑, 必填(空则否决)
-    params: dict               # 默认参数
-    param_grid: dict           # {参数: [候选值]} 稳健性扫描范围
-    select: Callable           # select(data, idx_map, holding, params) -> 目标代码
+    hypothesis: str  # 经济逻辑, 必填(空则否决)
+    params: dict  # 默认参数
+    param_grid: dict  # {参数: [候选值]} 稳健性扫描范围
+    select: Callable  # select(data, idx_map, holding, params) -> 目标代码
     rebalance_days: int = 5
 
 
@@ -69,8 +70,8 @@ def strawman_select(data: dict, idx_map: dict, holding, params: dict):
         scores.append((code, rq.calc_momentum_score(close)))
     if not scores:
         return rq.DEFENSE
-    scores.sort(key=lambda x: x[1])   # 升序: 最弱在前
-    return scores[0][0]               # 选最弱 (错误逻辑)
+    scores.sort(key=lambda x: x[1])  # 升序: 最弱在前
+    return scores[0][0]  # 选最弱 (错误逻辑)
 
 
 STRAWMAN = Strategy(

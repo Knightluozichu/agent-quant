@@ -118,12 +118,14 @@ class DashboardDataLoader:
         for d in sample_dates:
             regime = self.regime_detector.detect(df, d)
             state_key = f"{regime.direction.value}_{regime.oscillation.value}"
-            state_history.append({
-                "date": d,
-                "state": state_key,
-                "direction": regime.direction.value,
-                "oscillation": regime.oscillation.value,
-            })
+            state_history.append(
+                {
+                    "date": d,
+                    "state": state_key,
+                    "direction": regime.direction.value,
+                    "oscillation": regime.oscillation.value,
+                }
+            )
             state_distribution[state_key] = state_distribution.get(state_key, 0) + 1
 
         # Current state
@@ -131,6 +133,7 @@ class DashboardDataLoader:
 
         # Recommended strategy
         from a_share_quant.regime import REGIME_STRATEGY_MAP
+
         recommended_list = REGIME_STRATEGY_MAP.get(current_regime.state_id, ["CASH_DEFENSE"])
         recommended = recommended_list[0] if recommended_list else "CASH_DEFENSE"
 

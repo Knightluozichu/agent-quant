@@ -46,9 +46,7 @@ class _FakeResp:
 
 
 def _make_http_error(code: int) -> urllib.error.HTTPError:
-    return urllib.error.HTTPError(
-        "https://api.day.app", code, "error", hdrs=None, fp=None
-    )
+    return urllib.error.HTTPError("https://api.day.app", code, "error", hdrs=None, fp=None)
 
 
 def _isolate_notify(monkeypatch, tmp_path) -> tuple[list, list]:
@@ -59,9 +57,7 @@ def _isolate_notify(monkeypatch, tmp_path) -> tuple[list, list]:
     monkeypatch.setenv("BARK_KEY", "testkey123")
     monkeypatch.setattr(notify, "LIVE_DIR", tmp_path / "live")
     monkeypatch.setattr(notify, "CONFIG_FILE", tmp_path / "live" / "config.json")
-    monkeypatch.setattr(
-        notify, "FAILURE_LOG", tmp_path / "live" / "notify_failures.log"
-    )
+    monkeypatch.setattr(notify, "FAILURE_LOG", tmp_path / "live" / "notify_failures.log")
     timeouts: list[float] = []
     sleeps: list[float] = []
     monkeypatch.setattr(notify.time, "sleep", lambda s: sleeps.append(s))
@@ -69,9 +65,7 @@ def _isolate_notify(monkeypatch, tmp_path) -> tuple[list, list]:
 
 
 @pytest.mark.unit
-def test_push_bark_retries_network_errors_with_exponential_backoff(
-    monkeypatch, tmp_path
-):
+def test_push_bark_retries_network_errors_with_exponential_backoff(monkeypatch, tmp_path):
     timeouts, sleeps = _isolate_notify(monkeypatch, tmp_path)
 
     def fake_urlopen(req, timeout):

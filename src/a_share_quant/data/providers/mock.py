@@ -83,17 +83,13 @@ class MockProvider(BaseDataProvider):
         }
 
         # Generate trading calendar
-        self._trading_days = self._generate_trading_calendar(
-            date(2010, 1, 1), date(2026, 12, 31)
-        )
+        self._trading_days = self._generate_trading_calendar(date(2010, 1, 1), date(2026, 12, 31))
 
     @property
     def name(self) -> str:
         return "mock"
 
-    def _generate_trading_calendar(
-        self, start: date, end: date
-    ) -> list[date]:
+    def _generate_trading_calendar(self, start: date, end: date) -> list[date]:
         """Generate trading calendar excluding weekends."""
         days = []
         current = start
@@ -152,9 +148,17 @@ class MockProvider(BaseDataProvider):
             low = min(low, open_price, close)
 
             # Volume and amount
-            base_volume = 1_000_000 if "ETF" in self._securities.get(symbol, SecurityInfo(
-                symbol=symbol, code="", exchange="", name="", security_type="stock"
-            )).name else 500_000
+            base_volume = (
+                1_000_000
+                if "ETF"
+                in self._securities.get(
+                    symbol,
+                    SecurityInfo(
+                        symbol=symbol, code="", exchange="", name="", security_type="stock"
+                    ),
+                ).name
+                else 500_000
+            )
             volume = base_volume * (1 + abs(returns[i]) * 10) * rng.uniform(0.5, 1.5)
             amount = volume * close
 
@@ -162,21 +166,23 @@ class MockProvider(BaseDataProvider):
             limit_up = round(prev_close * 1.10, 2)
             limit_down = round(prev_close * 0.90, 2)
 
-            data.append({
-                "symbol": symbol,
-                "trade_date": day,
-                "open": round(open_price, 2),
-                "high": round(high, 2),
-                "low": round(low, 2),
-                "close": round(close, 2),
-                "volume": int(volume),
-                "amount": round(amount, 2),
-                "pre_close": round(prev_close, 2),
-                "limit_up": limit_up,
-                "limit_down": limit_down,
-                "is_suspended": False,
-                "turnover_rate": round(rng.uniform(0.5, 3.0), 2),
-            })
+            data.append(
+                {
+                    "symbol": symbol,
+                    "trade_date": day,
+                    "open": round(open_price, 2),
+                    "high": round(high, 2),
+                    "low": round(low, 2),
+                    "close": round(close, 2),
+                    "volume": int(volume),
+                    "amount": round(amount, 2),
+                    "pre_close": round(prev_close, 2),
+                    "limit_up": limit_up,
+                    "limit_down": limit_down,
+                    "is_suspended": False,
+                    "turnover_rate": round(rng.uniform(0.5, 3.0), 2),
+                }
+            )
 
             prev_close = close
 
@@ -193,10 +199,12 @@ class MockProvider(BaseDataProvider):
         end = self._normalize_date(end_date) if end_date else self._trading_days[-1]
 
         days = [d for d in self._trading_days if start <= d <= end]
-        return pd.DataFrame({
-            "trade_date": days,
-            "is_open": [True] * len(days),
-        })
+        return pd.DataFrame(
+            {
+                "trade_date": days,
+                "is_open": [True] * len(days),
+            }
+        )
 
     def get_security_list(
         self,
@@ -268,11 +276,13 @@ class MockProvider(BaseDataProvider):
         data = []
         for symbol in symbol_list:
             for day in trading_days:
-                data.append({
-                    "symbol": symbol,
-                    "trade_date": day,
-                    "factor": 1.0,
-                })
+                data.append(
+                    {
+                        "symbol": symbol,
+                        "trade_date": day,
+                        "factor": 1.0,
+                    }
+                )
 
         return pd.DataFrame(data)
 
@@ -309,13 +319,17 @@ class MockProvider(BaseDataProvider):
         for symbol in symbol_list:
             sec = self._securities.get(symbol)
             if sec:
-                industry = "金融" if "银行" in sec.name else "消费" if "茅台" in sec.name else "宽基指数"
-                data.append({
-                    "symbol": symbol,
-                    "industry_code": "MOCK01",
-                    "industry_name": industry,
-                    "level": level,
-                })
+                industry = (
+                    "金融" if "银行" in sec.name else "消费" if "茅台" in sec.name else "宽基指数"
+                )
+                data.append(
+                    {
+                        "symbol": symbol,
+                        "industry_code": "MOCK01",
+                        "industry_name": industry,
+                        "level": level,
+                    }
+                )
 
         return pd.DataFrame(data)
 

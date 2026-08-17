@@ -21,6 +21,7 @@ from scipy import stats
 # Drift Detection Results
 # =============================================================================
 
+
 @dataclass
 class DriftAlert:
     """A drift detection alert."""
@@ -52,6 +53,7 @@ class DriftAlert:
 # =============================================================================
 # Statistical Drift Detection
 # =============================================================================
+
 
 class StatisticalDriftDetector:
     """Detect drift using statistical tests."""
@@ -111,7 +113,9 @@ class StatisticalDriftDetector:
             self._alert_counter += 1
             baseline_mean = float(np.mean(baseline))
             current_mean = float(np.mean(current))
-            drift_pct = abs(current_mean - baseline_mean) / abs(baseline_mean) if baseline_mean != 0 else 0
+            drift_pct = (
+                abs(current_mean - baseline_mean) / abs(baseline_mean) if baseline_mean != 0 else 0
+            )
 
             severity = "CRITICAL" if drift_pct > 0.5 else "WARNING"
 
@@ -132,6 +136,7 @@ class StatisticalDriftDetector:
 # =============================================================================
 # Performance Drift Monitor
 # =============================================================================
+
 
 @dataclass
 class PerformanceWindow:
@@ -183,36 +188,44 @@ class PerformanceDriftMonitor:
         # Check return degradation
         avg_recent_return = np.mean(recent_returns)
         if self._baseline.total_return != 0:
-            return_drift = (self._baseline.total_return - avg_recent_return) / abs(self._baseline.total_return)
+            return_drift = (self._baseline.total_return - avg_recent_return) / abs(
+                self._baseline.total_return
+            )
             if return_drift > self.alert_threshold:
                 self._detector._alert_counter += 1
-                alerts.append(DriftAlert(
-                    alert_id=f"PERF_{self._detector._alert_counter:06d}",
-                    drift_type="PERFORMANCE",
-                    severity="CRITICAL" if return_drift > 0.5 else "WARNING",
-                    metric_name="total_return",
-                    baseline_value=self._baseline.total_return,
-                    current_value=avg_recent_return,
-                    drift_score=return_drift,
-                    description=f"Return degraded by {return_drift:.1%}",
-                ))
+                alerts.append(
+                    DriftAlert(
+                        alert_id=f"PERF_{self._detector._alert_counter:06d}",
+                        drift_type="PERFORMANCE",
+                        severity="CRITICAL" if return_drift > 0.5 else "WARNING",
+                        metric_name="total_return",
+                        baseline_value=self._baseline.total_return,
+                        current_value=avg_recent_return,
+                        drift_score=return_drift,
+                        description=f"Return degraded by {return_drift:.1%}",
+                    )
+                )
 
         # Check Sharpe degradation
         avg_recent_sharpe = np.mean(recent_sharpes)
         if self._baseline.sharpe_ratio != 0:
-            sharpe_drift = (self._baseline.sharpe_ratio - avg_recent_sharpe) / abs(self._baseline.sharpe_ratio)
+            sharpe_drift = (self._baseline.sharpe_ratio - avg_recent_sharpe) / abs(
+                self._baseline.sharpe_ratio
+            )
             if sharpe_drift > self.alert_threshold:
                 self._detector._alert_counter += 1
-                alerts.append(DriftAlert(
-                    alert_id=f"PERF_{self._detector._alert_counter:06d}",
-                    drift_type="PERFORMANCE",
-                    severity="WARNING",
-                    metric_name="sharpe_ratio",
-                    baseline_value=self._baseline.sharpe_ratio,
-                    current_value=avg_recent_sharpe,
-                    drift_score=sharpe_drift,
-                    description=f"Sharpe degraded by {sharpe_drift:.1%}",
-                ))
+                alerts.append(
+                    DriftAlert(
+                        alert_id=f"PERF_{self._detector._alert_counter:06d}",
+                        drift_type="PERFORMANCE",
+                        severity="WARNING",
+                        metric_name="sharpe_ratio",
+                        baseline_value=self._baseline.sharpe_ratio,
+                        current_value=avg_recent_sharpe,
+                        drift_score=sharpe_drift,
+                        description=f"Sharpe degraded by {sharpe_drift:.1%}",
+                    )
+                )
 
         return alerts
 
@@ -220,6 +233,7 @@ class PerformanceDriftMonitor:
 # =============================================================================
 # Regime Drift Monitor
 # =============================================================================
+
 
 class RegimeDriftMonitor:
     """Monitor market regime distribution changes."""
@@ -243,8 +257,7 @@ class RegimeDriftMonitor:
         if self._total_observations == 0:
             return {}
         return {
-            state: count / self._total_observations
-            for state, count in self._current_counts.items()
+            state: count / self._total_observations for state, count in self._current_counts.items()
         }
 
     def check_drift(self) -> Optional[DriftAlert]:

@@ -23,6 +23,7 @@ from a_share_quant.config import load_market_rules_config
 # Fee Rules
 # =============================================================================
 
+
 @dataclass
 class FeeSchedule:
     """Fee schedule for a specific date range."""
@@ -83,7 +84,9 @@ class FeeCalculator:
             if schedule.is_effective(on_date):
                 return schedule
         # Return most recent if no match
-        return self._schedules[0] if self._schedules else FeeSchedule(effective_from=date(2000, 1, 1))
+        return (
+            self._schedules[0] if self._schedules else FeeSchedule(effective_from=date(2000, 1, 1))
+        )
 
     def calculate_buy_cost(self, amount: float, on_date: date) -> dict[str, float]:
         """Calculate total cost for a buy order."""
@@ -119,6 +122,7 @@ class FeeCalculator:
 # =============================================================================
 # Price Limit Rules
 # =============================================================================
+
 
 @dataclass
 class PriceLimitRule:
@@ -199,6 +203,7 @@ class PriceLimitCalculator:
 # T+1 Settlement Rules
 # =============================================================================
 
+
 class SettlementRule:
     """T+1 settlement rule implementation."""
 
@@ -227,6 +232,7 @@ class SettlementRule:
 # =============================================================================
 # Order State Machine
 # =============================================================================
+
 
 class OrderState(str, Enum):
     """Order lifecycle states."""
@@ -289,12 +295,18 @@ class OrderStateMachine:
     @property
     def is_terminal(self) -> bool:
         """Check if order is in a terminal state."""
-        return self.state in {OrderState.FILLED, OrderState.CANCELLED, OrderState.REJECTED, OrderState.EXPIRED}
+        return self.state in {
+            OrderState.FILLED,
+            OrderState.CANCELLED,
+            OrderState.REJECTED,
+            OrderState.EXPIRED,
+        }
 
 
 # =============================================================================
 # Account and Position Ledger
 # =============================================================================
+
 
 @dataclass
 class CashAccount:
@@ -314,13 +326,15 @@ class CashAccount:
         if amount <= 0:
             raise ValueError("Deposit amount must be positive")
         self.balance += amount
-        self.history.append({
-            "date": on_date,
-            "type": "deposit",
-            "amount": amount,
-            "balance_after": self.balance,
-            "memo": memo,
-        })
+        self.history.append(
+            {
+                "date": on_date,
+                "type": "deposit",
+                "amount": amount,
+                "balance_after": self.balance,
+                "memo": memo,
+            }
+        )
 
     def withdraw(self, amount: float, on_date: date, memo: str = "") -> None:
         """Withdraw cash."""
@@ -329,13 +343,15 @@ class CashAccount:
         if amount > self.available:
             raise ValueError(f"Insufficient available balance: {self.available}")
         self.balance -= amount
-        self.history.append({
-            "date": on_date,
-            "type": "withdraw",
-            "amount": -amount,
-            "balance_after": self.balance,
-            "memo": memo,
-        })
+        self.history.append(
+            {
+                "date": on_date,
+                "type": "withdraw",
+                "amount": -amount,
+                "balance_after": self.balance,
+                "memo": memo,
+            }
+        )
 
     def freeze(self, amount: float) -> None:
         """Freeze cash for pending orders."""
@@ -357,13 +373,15 @@ class CashAccount:
             net_proceeds = amount - fee
             self.balance += net_proceeds
 
-        self.history.append({
-            "date": on_date,
-            "type": f"trade_{side.lower()}",
-            "amount": -amount - fee if side == "BUY" else amount - fee,
-            "fee": fee,
-            "balance_after": self.balance,
-        })
+        self.history.append(
+            {
+                "date": on_date,
+                "type": f"trade_{side.lower()}",
+                "amount": -amount - fee if side == "BUY" else amount - fee,
+                "fee": fee,
+                "balance_after": self.balance,
+            }
+        )
 
 
 @dataclass
@@ -387,12 +405,14 @@ class PositionLedger:
         """Add a new position lot."""
         if symbol not in self.positions:
             self.positions[symbol] = []
-        self.positions[symbol].append(PositionLot(
-            quantity=quantity,
-            cost_price=price,
-            buy_date=on_date,
-            sellable=False,  # T+1: not sellable on buy day
-        ))
+        self.positions[symbol].append(
+            PositionLot(
+                quantity=quantity,
+                cost_price=price,
+                buy_date=on_date,
+                sellable=False,  # T+1: not sellable on buy day
+            )
+        )
 
     def update_settlement(self, current_date: date) -> None:
         """Update sellable status based on T+1 rule."""

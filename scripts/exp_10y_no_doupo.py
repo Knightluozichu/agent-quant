@@ -6,6 +6,7 @@
 
 注意: 这是独立实验脚本, 不修改生产 run_qixing_v3.py.
 """
+
 from __future__ import annotations
 
 import sys

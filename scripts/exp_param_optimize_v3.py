@@ -90,15 +90,21 @@ def main():
                 best_score_r1 = s
                 best_params_r1 = params.copy()
             if rd == 5:  # 只打印部分
-                print(f"  DT={dt:<6} RD={rd:<3}              "
-                      f"{r['ann_return']:>+8.1%} {r['sharpe']:>6.2f} "
-                      f"{r['max_drawdown']:>8.1%} {s:>8.3f}")
+                print(
+                    f"  DT={dt:<6} RD={rd:<3}              "
+                    f"{r['ann_return']:>+8.1%} {r['sharpe']:>6.2f} "
+                    f"{r['max_drawdown']:>8.1%} {s:>8.3f}"
+                )
 
-    print(f"\n  ★ 第1轮最优: DT={best_params_r1['DROP_THRESHOLD']}, "
-          f"RD={best_params_r1['REBALANCE_DAYS']} (评分={best_score_r1:.3f})")
+    print(
+        f"\n  ★ 第1轮最优: DT={best_params_r1['DROP_THRESHOLD']}, "
+        f"RD={best_params_r1['REBALANCE_DAYS']} (评分={best_score_r1:.3f})"
+    )
 
     # === 第二轮: 动量周期配置 (锁定第1轮最优) ===
-    print(f"\n  [第2轮] 动量周期配置 (DT={best_params_r1['DROP_THRESHOLD']}, RD={best_params_r1['REBALANCE_DAYS']})")
+    print(
+        f"\n  [第2轮] 动量周期配置 (DT={best_params_r1['DROP_THRESHOLD']}, RD={best_params_r1['REBALANCE_DAYS']})"
+    )
     print(f"  {'配置':<20} {'年化':>8} {'夏普':>6} {'回撤':>8} {'评分':>8}")
     print(f"  {'-' * 54}")
 
@@ -112,8 +118,10 @@ def main():
         }
         r = run_with_params(data, params)
         s = score_result(r)
-        print(f"  {label:<20} {r['ann_return']:>+8.1%} {r['sharpe']:>6.2f} "
-              f"{r['max_drawdown']:>8.1%} {s:>8.3f}")
+        print(
+            f"  {label:<20} {r['ann_return']:>+8.1%} {r['sharpe']:>6.2f} "
+            f"{r['max_drawdown']:>8.1%} {s:>8.3f}"
+        )
         if s > best_score_r2:
             best_score_r2 = s
             best_mom = (periods, weights, label)
@@ -136,8 +144,10 @@ def main():
         }
         r = run_with_params(data, params)
         s = score_result(r)
-        print(f"  MA={ma:<6} {r['ann_return']:>+8.1%} {r['sharpe']:>6.2f} "
-              f"{r['max_drawdown']:>8.1%} {s:>8.3f}")
+        print(
+            f"  MA={ma:<6} {r['ann_return']:>+8.1%} {r['sharpe']:>6.2f} "
+            f"{r['max_drawdown']:>8.1%} {s:>8.3f}"
+        )
         if s > best_score_r3:
             best_score_r3 = s
             best_ma = ma

@@ -5,6 +5,7 @@
 警示: 测N个因子, 样本内最优者多半是运气(多重检验); 只有OOS也优才是真alpha。
 用法: uv run python scripts/exp_factor_zoo.py
 """
+
 from __future__ import annotations
 
 import sys
@@ -77,9 +78,13 @@ def f_strength(close, volume):  # 趋势强度(收盘价相对均线偏离)
 
 def make_selector(factor_fn, weight):
     """构造因子增强选股器(截面z-score综合排名)."""
+
     def select(data, idx_map, holding, params):
-        a_share_weak = (rq.check_a_share_weak(data, idx_map.get(rq.A_SHARE_ETF, 0))
-                        if rq.USE_A_SHARE_FILTER else False)
+        a_share_weak = (
+            rq.check_a_share_weak(data, idx_map.get(rq.A_SHARE_ETF, 0))
+            if rq.USE_A_SHARE_FILTER
+            else False
+        )
         raw = []
         for code in rq.ETF_POOL:
             if code not in idx_map:
@@ -120,13 +125,16 @@ def make_selector(factor_fn, weight):
                 return best["code"] if best["score"] > cur["score"] + thr else holding
             return best["code"]
         return best["code"]
+
     return select
 
 
 def combo_selector(fns, weight):
     """多因子组合: 各因子z-score平均后加权."""
+
     def combo_fn(close, volume):
         return np.mean([fn(close, volume) for fn in fns])
+
     return make_selector(combo_fn, weight)
 
 
@@ -149,7 +157,9 @@ def main() -> None:
     print("=" * 82)
     print(f"  因子大筛查 | 权重{WEIGHT} | IS=2020-2023, OOS=2024-2026 | 重点看OOS")
     print("=" * 82)
-    print(f"  {'因子':<20}{'IS年化':>9}{'IS夏普':>8}{'IS回撤':>9}{'OOS年化':>10}{'OOS夏普':>9}{'OOS回撤':>9}{'OOS胜?':>8}")
+    print(
+        f"  {'因子':<20}{'IS年化':>9}{'IS夏普':>8}{'IS回撤':>9}{'OOS年化':>10}{'OOS夏普':>9}{'OOS回撤':>9}{'OOS胜?':>8}"
+    )
     print("  " + "-" * 76)
     base_oos_sharpe = None
     for name, sel in factors:
@@ -160,9 +170,11 @@ def main() -> None:
         win = "✓" if oos_r["sharpe"] > base_oos_sharpe else "✗"
         if name.startswith("V3"):
             win = "-"
-        print(f"  {name:<20}{is_r['ann_return']*100:>+8.1f}%{is_r['sharpe']:>8.2f}"
-              f"{is_r['max_drawdown']*100:>8.1f}%{oos_r['ann_return']*100:>+9.1f}%"
-              f"{oos_r['sharpe']:>9.2f}{oos_r['max_drawdown']*100:>8.1f}%{win:>8}")
+        print(
+            f"  {name:<20}{is_r['ann_return'] * 100:>+8.1f}%{is_r['sharpe']:>8.2f}"
+            f"{is_r['max_drawdown'] * 100:>8.1f}%{oos_r['ann_return'] * 100:>+9.1f}%"
+            f"{oos_r['sharpe']:>9.2f}{oos_r['max_drawdown'] * 100:>8.1f}%{win:>8}"
+        )
     print("=" * 82)
     print("  判读: 'OOS胜?'=该因子OOS夏普是否超过V3基线。测11个因子, 即使全无效,")
     print("        样本内也会有2-3个'看起来好'(运气); 只有OOS也胜的才是真alpha。")

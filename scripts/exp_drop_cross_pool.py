@@ -12,6 +12,7 @@
 用法: uv run python scripts/exp_drop_cross_pool.py
 输出: data/v9_results/drop_cross_pool.json
 """
+
 from __future__ import annotations
 
 import json
@@ -61,8 +62,9 @@ def load_pool_data(pool: dict, defense: str) -> dict:
     return data
 
 
-def run_variant(data, check_fn, exempt: bool, h3on: bool,
-               start_idx: int = 0, end_idx: int | None = None) -> dict:
+def run_variant(
+    data, check_fn, exempt: bool, h3on: bool, start_idx: int = 0, end_idx: int | None = None
+) -> dict:
     rq.check_single_day_drop = check_fn
     h3.select_target = select_target_exempt if exempt else rq.select_target
     h3.H3_ENABLED = h3on
@@ -106,9 +108,13 @@ def main() -> None:
         return max(a - WARMUP, 0), min(b, n)
 
     from exp_v32_tail_risk import IS_START, IS_END, OOS_START, OOS_END
+
     OOS_END_ACTUAL = min(OOS_END, str(dates[-1]))
-    segs = [("全周期", 0, n), ("IS", *seg(IS_START, IS_END)),
-            ("OOS", *seg(OOS_START, OOS_END_ACTUAL))]
+    segs = [
+        ("全周期", 0, n),
+        ("IS", *seg(IS_START, IS_END)),
+        ("OOS", *seg(OOS_START, OOS_END_ACTUAL)),
+    ]
 
     variants = [
         ("基线 (原版过滤)", h3.ORIG_CHECK, False, False),
@@ -120,18 +126,21 @@ def main() -> None:
     for vname, check_fn, exempt, h3on in variants:
         results[vname] = {}
         for name, s0, s1 in segs:
-            r = run_variant(data, check_fn, exempt, h3on,
-                           start_idx=s0, end_idx=max(s1 - WARMUP, 0))
+            r = run_variant(data, check_fn, exempt, h3on, start_idx=s0, end_idx=max(s1 - WARMUP, 0))
             results[vname][name] = {k: r[k] for k in KEYS}
         r = results[vname]["全周期"]
         is_r = results[vname]["IS"]
         oos_r = results[vname]["OOS"]
         print(f"\n  [{vname}]")
-        print(f"    全周期 期末{r['final_value']:>12,.0f} 年化{r['ann_return']*100:>+6.1f}% "
-              f"夏普{r['sharpe']:>5.2f} 回撤{r['max_drawdown']*100:>6.1f}% "
-              f"交易{r['n_trades']:>4}")
-        print(f"    IS     {is_r['final_value']:>12,.0f} 年化{is_r['ann_return']*100:>+6.1f}% | "
-              f"OOS    {oos_r['final_value']:>12,.0f} 年化{oos_r['ann_return']*100:>+6.1f}%")
+        print(
+            f"    全周期 期末{r['final_value']:>12,.0f} 年化{r['ann_return'] * 100:>+6.1f}% "
+            f"夏普{r['sharpe']:>5.2f} 回撤{r['max_drawdown'] * 100:>6.1f}% "
+            f"交易{r['n_trades']:>4}"
+        )
+        print(
+            f"    IS     {is_r['final_value']:>12,.0f} 年化{is_r['ann_return'] * 100:>+6.1f}% | "
+            f"OOS    {oos_r['final_value']:>12,.0f} 年化{oos_r['ann_return'] * 100:>+6.1f}%"
+        )
 
     # 判定
     base = results["基线 (原版过滤)"]

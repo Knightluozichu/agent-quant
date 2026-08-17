@@ -4,6 +4,7 @@
   - select_fn(data, idx_map, holding, params) -> 目标ETF代码, 只用截至当日数据.
   - 费率/滑点/调仓与实盘 V3 完全一致 (万五手续费 + 0.1%滑点 + 整数手).
 """
+
 from __future__ import annotations
 
 import sys
@@ -51,8 +52,15 @@ def build_idx_map(data: dict, td) -> dict:
     return idx_map
 
 
-def backtest(data: dict, select_fn, params: dict, rebalance_days: int = 5,
-             initial: float = 100_000.0, start_date=None, end_date=None) -> dict:
+def backtest(
+    data: dict,
+    select_fn,
+    params: dict,
+    rebalance_days: int = 5,
+    initial: float = 100_000.0,
+    start_date=None,
+    end_date=None,
+) -> dict:
     """通用回测.
 
     Args:
@@ -113,9 +121,16 @@ def backtest(data: dict, select_fn, params: dict, rebalance_days: int = 5,
         equity_history.append({"trade_date": td, "equity": equity, "holding": holding or DEFENSE})
 
     if not equity_history:
-        return {"total_return": 0.0, "ann_return": 0.0, "sharpe": 0.0,
-                "max_drawdown": 0.0, "yearly": {}, "n_trades": 0,
-                "equity_curve": pd.DataFrame(), "final_equity": initial}
+        return {
+            "total_return": 0.0,
+            "ann_return": 0.0,
+            "sharpe": 0.0,
+            "max_drawdown": 0.0,
+            "yearly": {},
+            "n_trades": 0,
+            "equity_curve": pd.DataFrame(),
+            "final_equity": initial,
+        }
 
     eq_df = pd.DataFrame(equity_history)
     eq_df["trade_date"] = pd.to_datetime(eq_df["trade_date"])
@@ -143,8 +158,12 @@ def backtest(data: dict, select_fn, params: dict, rebalance_days: int = 5,
         prev = end_val
 
     return {
-        "total_return": float(total_return), "ann_return": float(ann_ret),
-        "sharpe": float(sharpe), "max_drawdown": max_dd, "yearly": yearly,
-        "n_trades": n_trades, "equity_curve": eq_df,
+        "total_return": float(total_return),
+        "ann_return": float(ann_ret),
+        "sharpe": float(sharpe),
+        "max_drawdown": max_dd,
+        "yearly": yearly,
+        "n_trades": n_trades,
+        "equity_curve": eq_df,
         "final_equity": float(eq_df["equity"].iloc[-1]),
     }

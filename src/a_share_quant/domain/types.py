@@ -196,7 +196,9 @@ class Money:
 
     __slots__ = ("_amount", "_currency")
 
-    def __init__(self, amount: float | int | Decimal | str, currency: Currency | str = Currency.CNY) -> None:
+    def __init__(
+        self, amount: float | int | Decimal | str, currency: Currency | str = Currency.CNY
+    ) -> None:
         self._amount = Decimal(str(amount))
         self._currency = Currency(currency) if isinstance(currency, str) else currency
 

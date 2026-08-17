@@ -39,13 +39,13 @@ from run_qixing_v3 import ETF_POOL, load_data  # noqa: E402
 
 WARMUP = 130
 INITIAL_CAPITAL = 100_000.0
-N_ASSETS = len(ETF_POOL)          # 7
+N_ASSETS = len(ETF_POOL)  # 7
 FEAT_DIM = 64
-PRICE_FEATS = 2                    # mom5, vol20
+PRICE_FEATS = 2  # mom5, vol20
 STATE_DIM = N_ASSETS * (FEAT_DIM + PRICE_FEATS) + N_ASSETS + 1  # 448+14+8=470
-N_ACTIONS = N_ASSETS + 1           # 8: 0=持有, 1..7=切换
-LAM = 0.0                          # 波动惩罚(关闭: 年化vol≈3%远超日收益0.1%, 导致现金最优)
-COST = 0.003                       # 换仓双向成本 万五+千一 ×2 (收益单位%)
+N_ACTIONS = N_ASSETS + 1  # 8: 0=持有, 1..7=切换
+LAM = 0.0  # 波动惩罚(关闭: 年化vol≈3%远超日收益0.1%, 导致现金最优)
+COST = 0.003  # 换仓双向成本 万五+千一 ×2 (收益单位%)
 
 TRAIN_START, TRAIN_END = "2023-07-03", "2024-12-31"
 TEST_START, TEST_END = "2025-01-02", "2026-08-03"
@@ -63,20 +63,30 @@ SEED = 42
 class ETFEnv:
     """ETF 轮动环境 (14:50 同日成交口径, 无未来函数)."""
 
-    def __init__(self, data, dates, mat, feats_map, price_map, code_list,
-                 start_idx, end_idx, initial_capital: float = INITIAL_CAPITAL):
+    def __init__(
+        self,
+        data,
+        dates,
+        mat,
+        feats_map,
+        price_map,
+        code_list,
+        start_idx,
+        end_idx,
+        initial_capital: float = INITIAL_CAPITAL,
+    ):
         self.data = data
         self.dates = dates
         self.mat = mat
-        self.feats_map = feats_map      # {(date_str, code): 64维特征}
-        self.price_map = price_map      # {(date_str, code): [mom5, vol20]}
+        self.feats_map = feats_map  # {(date_str, code): 64维特征}
+        self.price_map = price_map  # {(date_str, code): [mom5, vol20]}
         self.codes = code_list
         self.code_idx = {c: i for i, c in enumerate(code_list)}
         self.start_idx = start_idx
         self.end_idx = end_idx
         self.initial_capital = float(initial_capital)
         self.t = start_idx
-        self.holding = N_ACTIONS - 1    # 现金 = index 7 (现金用 onehot 第8位)
+        self.holding = N_ACTIONS - 1  # 现金 = index 7 (现金用 onehot 第8位)
         self.cash = float(initial_capital)
         self.shares = 0.0
 
@@ -97,7 +107,7 @@ class ETFEnv:
 
     def reset(self) -> np.ndarray:
         self.t = self.start_idx
-        self.holding = N_ACTIONS - 1    # 现金
+        self.holding = N_ACTIONS - 1  # 现金
         self.cash = self.initial_capital
         self.shares = 0.0
         return self._state(self.t)
@@ -125,7 +135,7 @@ class ETFEnv:
     def step(self, action: int, eps: float = 0.0):
         """t 日收盘执行 action → 奖励 (t→t+1 收益) → 新状态."""
         t = self.t
-        done = (t + 1 >= self.end_idx)
+        done = t + 1 >= self.end_idx
         cost_pen = 0.0
         # 执行动作 (14:50 口径: 今日收盘成交)
         if action != self.holding:
@@ -188,8 +198,9 @@ class ETFEnv:
 class ActorCritic(nn.Module):
     def __init__(self, state_dim: int, n_actions: int, hidden: int = 256):
         super().__init__()
-        self.backbone = nn.Sequential(nn.Linear(state_dim, hidden), nn.Tanh(),
-                                      nn.Linear(hidden, hidden), nn.Tanh())
+        self.backbone = nn.Sequential(
+            nn.Linear(state_dim, hidden), nn.Tanh(), nn.Linear(hidden, hidden), nn.Tanh()
+        )
         self.pi = nn.Linear(hidden, n_actions)
         self.v = nn.Linear(hidden, 1)
 
@@ -223,8 +234,13 @@ def ppo_train(env: ETFEnv, episodes: int = N_EPISODES, device="mps") -> ActorCri
             if done:
                 break
             s = s2
-        return (np.array(states, np.float32), np.array(actions), np.array(rewards),
-                np.array(dones), np.array(logps))
+        return (
+            np.array(states, np.float32),
+            np.array(actions),
+            np.array(rewards),
+            np.array(dones),
+            np.array(logps),
+        )
 
     for ep in range(episodes):
         states, actions, rewards, dones, logps = rollout(ac, env, device)
@@ -254,14 +270,15 @@ def ppo_train(env: ETFEnv, episodes: int = N_EPISODES, device="mps") -> ActorCri
         for _ in range(PPO_EPOCHS):
             perm = torch.randperm(n, device=device)
             for i in range(0, n, BATCH):
-                idx = perm[i:i + BATCH]
+                idx = perm[i : i + BATCH]
                 logits, v = ac(st_t[idx])
                 dist = torch.distributions.Categorical(logits=logits)
                 logp = dist.log_prob(a_t[idx])
                 ratio = (logp - old_logp[idx]).exp()
                 adv_b = adv_t[idx]
-                loss_pi = -torch.min(ratio * adv_b,
-                                     torch.clamp(ratio, 1 - PPO_CLIP, 1 + PPO_CLIP) * adv_b).mean()
+                loss_pi = -torch.min(
+                    ratio * adv_b, torch.clamp(ratio, 1 - PPO_CLIP, 1 + PPO_CLIP) * adv_b
+                ).mean()
                 loss_v = functional.mse_loss(v, ret_t[idx])
                 entropy = dist.entropy().mean()
                 loss = loss_pi + 0.5 * loss_v - ENTROPY * entropy
@@ -270,8 +287,10 @@ def ppo_train(env: ETFEnv, episodes: int = N_EPISODES, device="mps") -> ActorCri
                 nn.utils.clip_grad_norm_(ac.parameters(), 0.5)
                 opt.step()
         if (ep + 1) % 200 == 0:
-            print(f"    轮 {ep + 1}/{episodes} | 累计奖励 {rewards.sum():.1f} | "
-                  f"换手 {int((actions[1:] != actions[:-1]).sum())}")
+            print(
+                f"    轮 {ep + 1}/{episodes} | 累计奖励 {rewards.sum():.1f} | "
+                f"换手 {int((actions[1:] != actions[:-1]).sum())}"
+            )
     return ac
 
 
@@ -303,12 +322,14 @@ def ppo_eval(env: ETFEnv, ac: ActorCritic, device="mps") -> dict:
     sharpe = ann_ret / ann_vol if ann_vol > 1e-12 else 0.0
     cummax = np.maximum.accumulate(eq)
     max_dd = float(((eq - cummax) / cummax).min())
-    return {"final_value": round(float(eq[-1]), 0),
-            "total_return": round(float(total), 4),
-            "ann_return": round(float(ann_ret), 4),
-            "sharpe": round(float(sharpe), 3),
-            "max_drawdown": round(max_dd, 4),
-            "n_trades": trades}
+    return {
+        "final_value": round(float(eq[-1]), 0),
+        "total_return": round(float(total), 4),
+        "ann_return": round(float(ann_ret), 4),
+        "sharpe": round(float(sharpe), 3),
+        "max_drawdown": round(max_dd, 4),
+        "n_trades": trades,
+    }
 
 
 # --------------------------------------------------------------------------- #
@@ -317,8 +338,10 @@ def ppo_eval(env: ETFEnv, ac: ActorCritic, device="mps") -> dict:
 def main() -> None:
     print("=" * 74)
     print("  RL(PPO) + CNN视觉特征 — 动态调仓 vs V3 (14:50口径)")
-    print(f"  状态 {STATE_DIM}维 | 动作 {N_ACTIONS} | PPO {N_EPISODES}轮 | "
-          f"device={'mps' if torch.backends.mps.is_available() else 'cpu'}")
+    print(
+        f"  状态 {STATE_DIM}维 | 动作 {N_ACTIONS} | PPO {N_EPISODES}轮 | "
+        f"device={'mps' if torch.backends.mps.is_available() else 'cpu'}"
+    )
     print("=" * 74)
 
     data = load_data()
@@ -327,6 +350,7 @@ def main() -> None:
     codes = [c for c in ETF_POOL if c in data]
     mat = None  # 环境用 data 查询价格, mat 仅 V3 需要
     from exp_short_window_patterns import close_matrix
+
     mat = close_matrix(data, dates)
 
     # 加载 CNN 特征表
@@ -349,7 +373,7 @@ def main() -> None:
                 mom5 = close.iloc[i] / close.iloc[i - 5] - 1.0
             else:
                 mom5 = 0.0
-            seg = close.iloc[i - 19:i + 1].astype(float)
+            seg = close.iloc[i - 19 : i + 1].astype(float)
             if seg.isna().any():
                 vol20 = 0.3
             else:
@@ -365,8 +389,8 @@ def main() -> None:
 
     tr_s, tr_e = seg_idx(TRAIN_START, TRAIN_END)
     te_s, te_e = seg_idx(TEST_START, TEST_END)
-    print(f"  训练段: {dates[tr_s]}~{dates[tr_e-1]} ({tr_e-tr_s}天)")
-    print(f"  测试段: {dates[te_s]}~{dates[te_e-1]} ({te_e-te_s}天)")
+    print(f"  训练段: {dates[tr_s]}~{dates[tr_e - 1]} ({tr_e - tr_s}天)")
+    print(f"  测试段: {dates[te_s]}~{dates[te_e - 1]} ({te_e - te_s}天)")
 
     # 环境 (每段新实例)
     env_tr = ETFEnv(data, dates, mat, feats_map, price_map, codes, tr_s, tr_e)
@@ -384,29 +408,47 @@ def main() -> None:
     # V3 同段对比
     tb_start = max(te_s - WARMUP, 0)
     r_v3 = run_v3_r4_sameday(data, mat, thr=1.0, start_idx=tb_start)
-    v3 = {k: r_v3[k] for k in ("final_value", "total_return", "ann_return",
-                               "sharpe", "max_drawdown", "n_trades")}
+    v3 = {
+        k: r_v3[k]
+        for k in ("final_value", "total_return", "ann_return", "sharpe", "max_drawdown", "n_trades")
+    }
 
     print("\n" + "=" * 74)
     hdr = f"  {'配置':<14} {'期末金额':>10} {'总收益':>9} {'年化':>8} "
     hdr += f"{'夏普':>6} {'回撤':>8} {'换手':>4}"
     print(hdr)
     for name, r in (("V3基线", v3), ("RL+CNN", rl)):
-        print(f"  {name:<14} {r['final_value']:>10,.0f} {r['total_return']:>+9.1%} "
-              f"{r['ann_return']:>+8.1%} {r['sharpe']:>6.2f} {r['max_drawdown']:>8.1%} "
-              f"{r['n_trades']:>4}")
+        print(
+            f"  {name:<14} {r['final_value']:>10,.0f} {r['total_return']:>+9.1%} "
+            f"{r['ann_return']:>+8.1%} {r['sharpe']:>6.2f} {r['max_drawdown']:>8.1%} "
+            f"{r['n_trades']:>4}"
+        )
     beat = rl["final_value"] > v3["final_value"]
     print("=" * 74)
     print(f"  → RL+CNN {'跑赢' if beat else '跑输'} V3")
 
-    out = {"meta": {
-        "state_dim": STATE_DIM, "n_actions": N_ACTIONS, "lam": LAM,
-        "ppo": {"clip": PPO_CLIP, "gamma": GAMMA, "gae": GAE_LAMBDA,
-                "lr": PPO_LR, "epochs": PPO_EPOCHS, "episodes": N_EPISODES},
-        "train_seg": f"{TRAIN_START}~{TRAIN_END}",
-        "test_seg": f"{TEST_START}~{TEST_END}",
-        "cost": "万五+千一 单边", "device": device,
-    }, "rl": rl, "v3": v3, "beat": beat}
+    out = {
+        "meta": {
+            "state_dim": STATE_DIM,
+            "n_actions": N_ACTIONS,
+            "lam": LAM,
+            "ppo": {
+                "clip": PPO_CLIP,
+                "gamma": GAMMA,
+                "gae": GAE_LAMBDA,
+                "lr": PPO_LR,
+                "epochs": PPO_EPOCHS,
+                "episodes": N_EPISODES,
+            },
+            "train_seg": f"{TRAIN_START}~{TRAIN_END}",
+            "test_seg": f"{TEST_START}~{TEST_END}",
+            "cost": "万五+千一 单边",
+            "device": device,
+        },
+        "rl": rl,
+        "v3": v3,
+        "beat": beat,
+    }
     out_path = OUT_DIR / "rl_ppo_ab.json"
     with open(out_path, "w") as f:
         json.dump(out, f, indent=2, ensure_ascii=False, default=str)

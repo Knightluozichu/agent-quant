@@ -62,10 +62,15 @@ MOM_PERIODS = (10, 5, 0)
 # 引擎: V3 周频 + R4 加速器 v2 (提前换手)
 # --------------------------------------------------------------------------- #
 def run_v3_r4_v2(
-    data: dict, dates: list, mat: dict,
-    start_idx: int, end_idx: int,
-    thr: float = 0.03, mom_period: int = 10,
-    mode: str = "switch", buffer: float = 0.0,
+    data: dict,
+    dates: list,
+    mat: dict,
+    start_idx: int,
+    end_idx: int,
+    thr: float = 0.03,
+    mom_period: int = 10,
+    mode: str = "switch",
+    buffer: float = 0.0,
 ) -> dict:
     """非调仓日: 事件资产动量评分超持仓评分+缓冲 → 提前换仓."""
     trading_dates = dates[WARMUP:]
@@ -166,22 +171,34 @@ def run_v3_r4_v2(
             elif mode == "conservative":
                 # 仅空仓/防御时入场
                 if holding is None or holding == DEFENSE:
-                    trade_to(best_code, i, "r4_enter",
-                             {"prev_ret": round(float(ev_ret), 4),
-                              "score": round(float(best_score), 4)})
+                    trade_to(
+                        best_code,
+                        i,
+                        "r4_enter",
+                        {"prev_ret": round(float(ev_ret), 4), "score": round(float(best_score), 4)},
+                    )
             else:  # switch 提前换手
                 if holding is None or holding == DEFENSE:
-                    trade_to(best_code, i, "r4_enter",
-                             {"prev_ret": round(float(ev_ret), 4),
-                              "score": round(float(best_score), 4)})
+                    trade_to(
+                        best_code,
+                        i,
+                        "r4_enter",
+                        {"prev_ret": round(float(ev_ret), 4), "score": round(float(best_score), 4)},
+                    )
                 elif holding in ETF_POOL:
                     cur_s = mom_score(holding, i)
                     if best_score > cur_s + buffer:
-                        trade_to(best_code, i, "r4_switch",
-                                 {"prev_ret": round(float(ev_ret), 4),
-                                  "score": round(float(best_score), 4),
-                                  "from": holding,
-                                  "from_score": round(float(cur_s), 4)})
+                        trade_to(
+                            best_code,
+                            i,
+                            "r4_switch",
+                            {
+                                "prev_ret": round(float(ev_ret), 4),
+                                "score": round(float(best_score), 4),
+                                "from": holding,
+                                "from_score": round(float(cur_s), 4),
+                            },
+                        )
 
         # 每日净值
         value = cash
@@ -195,8 +212,7 @@ def run_v3_r4_v2(
     return calc_metrics(eq, INITIAL_CAPITAL, n_trades, events, mat)
 
 
-def calc_metrics(eq: np.ndarray, init: float, n_trades: int,
-                 events: list[dict], mat: dict) -> dict:
+def calc_metrics(eq: np.ndarray, init: float, n_trades: int, events: list[dict], mat: dict) -> dict:
     if len(eq) < 2:
         return {"error": "insufficient"}
     total = eq[-1] / init - 1.0
@@ -243,17 +259,23 @@ def main() -> None:
     print(f"\n  数据: {n} 交易日 | OOS段: {len(starts)}")
 
     # 基线 (全量 + OOS), thr=1.0 永不触发 = 纯 V3
-    base_full = run_v3_r4_v2(data, dates, mat, WARMUP, n, thr=1.0, mom_period=10,
-                             mode="conservative", buffer=0.0)
-    print(f"\n  V3基线 (全量): 期末 {base_full['final_value']:,.0f} "
-          f"({base_full['total_return']:+.1%}) 夏普{base_full['sharpe']:.2f} "
-          f"回撤{base_full['max_drawdown']:.1%}")
+    base_full = run_v3_r4_v2(
+        data, dates, mat, WARMUP, n, thr=1.0, mom_period=10, mode="conservative", buffer=0.0
+    )
+    print(
+        f"\n  V3基线 (全量): 期末 {base_full['final_value']:,.0f} "
+        f"({base_full['total_return']:+.1%}) 夏普{base_full['sharpe']:.2f} "
+        f"回撤{base_full['max_drawdown']:.1%}"
+    )
     base_oos = []
     for s0 in starts:
         ts = s0 + TRAIN_DAYS + BUFFER_DAYS
         te = ts + TEST_DAYS
-        base_oos.append(run_v3_r4_v2(data, dates, mat, ts, te, thr=1.0,
-                                     mom_period=10, mode="conservative", buffer=0.0))
+        base_oos.append(
+            run_v3_r4_v2(
+                data, dates, mat, ts, te, thr=1.0, mom_period=10, mode="conservative", buffer=0.0
+            )
+        )
 
     # ---------- 主网格 ----------
     print("\n" + "=" * 74)
@@ -264,23 +286,30 @@ def main() -> None:
     for thr in GRID_THR:
         for mode in GRID_MODES:
             for buf in GRID_BUF:
-                key = f"thr{thr:.1%}_{'换' if mode=='switch' else '保'}_b{buf:.0%}"
-                r_full = run_v3_r4_v2(data, dates, mat, WARMUP, n, thr=thr,
-                                      mom_period=10, mode=mode, buffer=buf)
+                key = f"thr{thr:.1%}_{'换' if mode == 'switch' else '保'}_b{buf:.0%}"
+                r_full = run_v3_r4_v2(
+                    data, dates, mat, WARMUP, n, thr=thr, mom_period=10, mode=mode, buffer=buf
+                )
                 wins = 0
                 for s0, rb in zip(starts, base_oos, strict=False):
                     ts = s0 + TRAIN_DAYS + BUFFER_DAYS
                     te = ts + TEST_DAYS
-                    rr = run_v3_r4_v2(data, dates, mat, ts, te, thr=thr,
-                                      mom_period=10, mode=mode, buffer=buf)
+                    rr = run_v3_r4_v2(
+                        data, dates, mat, ts, te, thr=thr, mom_period=10, mode=mode, buffer=buf
+                    )
                     wins += int(rr["final_value"] > rb["final_value"])
                 grid_out[key] = {
-                    "thr": thr, "mode": mode, "buffer": buf,
-                    "full": r_full, "oos_wins": wins,
+                    "thr": thr,
+                    "mode": mode,
+                    "buffer": buf,
+                    "full": r_full,
+                    "oos_wins": wins,
                 }
-                print(f"  {key:<22} {r_full['final_value']:>10,.0f} "
-                      f"{r_full['sharpe']:>5.2f} {r_full['max_drawdown']:>7.1%} "
-                      f"{r_full['n_events']:>4} {wins:>3}/4")
+                print(
+                    f"  {key:<22} {r_full['final_value']:>10,.0f} "
+                    f"{r_full['sharpe']:>5.2f} {r_full['max_drawdown']:>7.1%} "
+                    f"{r_full['n_events']:>4} {wins:>3}/4"
+                )
 
     # 最优: 全量期末最高 且 OOS≥3/4
     ranked = sorted(grid_out.items(), key=lambda kv: kv[1]["full"]["final_value"], reverse=True)
@@ -289,7 +318,7 @@ def main() -> None:
         if v["oos_wins"] >= 3:
             best = (key, v)
             break
-    best_hint = (best[0] if best else "无候选(没有配置满足OOS≥3/4)")
+    best_hint = best[0] if best else "无候选(没有配置满足OOS≥3/4)"
     print("\n  → 主网格最优 (全量最高且OOS≥3/4):", best_hint)
 
     # ---------- mom 敏感性 (对最优配置) ----------
@@ -300,11 +329,22 @@ def main() -> None:
         print("=" * 74)
         mom_out = {}
         for mp in MOM_PERIODS:
-            r = run_v3_r4_v2(data, dates, mat, WARMUP, n, thr=vb["thr"],
-                             mom_period=mp, mode=vb["mode"], buffer=vb["buffer"])
+            r = run_v3_r4_v2(
+                data,
+                dates,
+                mat,
+                WARMUP,
+                n,
+                thr=vb["thr"],
+                mom_period=mp,
+                mode=vb["mode"],
+                buffer=vb["buffer"],
+            )
             mom_out[str(mp)] = r
-            print(f"  mom{mp:>3}  期末 {r['final_value']:>10,.0f} "
-                  f"({r['total_return']:+.1%}) 触发{r['n_events']}")
+            print(
+                f"  mom{mp:>3}  期末 {r['final_value']:>10,.0f} "
+                f"({r['total_return']:+.1%}) 触发{r['n_events']}"
+            )
         best_mom = max(mom_out.items(), key=lambda kv: kv[1]["final_value"])
         print(f"  → mom 最优: {best_mom[0]} (期末 {best_mom[1]['final_value']:,.0f})")
 
@@ -317,13 +357,19 @@ def main() -> None:
         enters = [e for e in evs if e["type"] == "r4_enter"]
         switches = [e for e in evs if e["type"] == "r4_switch"]
         win5 = sum(1 for e in evs if (e.get("fwd5") or 0) > 0)
-        print(f"  入场 {len(enters)} 次 | 提前换手 {len(switches)} 次 | "
-              f"总触发 {len(evs)} 次 | 后续5日胜率 {win5/len(evs):.1%}" if evs else "  无事件")
+        print(
+            f"  入场 {len(enters)} 次 | 提前换手 {len(switches)} 次 | "
+            f"总触发 {len(evs)} 次 | 后续5日胜率 {win5 / len(evs):.1%}"
+            if evs
+            else "  无事件"
+        )
         for e in evs[:12]:
             f5 = e.get("fwd5")
             tag = "换手" if e["type"] == "r4_switch" else "入场"
-            print(f"  {e['date']} {tag} {ETF_POOL.get(e['asset'],'?')} 事件{e['prev_ret']:+.1%} "
-                  f"评分{e['score']:+.1%} → 5日 {f5 if f5 is None else f'{f5:+.1%}'}")
+            print(
+                f"  {e['date']} {tag} {ETF_POOL.get(e['asset'], '?')} 事件{e['prev_ret']:+.1%} "
+                f"评分{e['score']:+.1%} → 5日 {f5 if f5 is None else f'{f5:+.1%}'}"
+            )
     else:
         print("  主网格无配置满足 OOS≥3/4, 不输出事件日志")
 
@@ -331,15 +377,23 @@ def main() -> None:
     out = {
         "meta": {
             "note": "R4加速器v2: 非调仓日事件资产动量评分超持仓+缓冲→提前换手; "
-                    "网格: thr×mode×buffer, mom固定10; 判定: 全量期末+OOS≥3/4",
+            "网格: thr×mode×buffer, mom固定10; 判定: 全量期末+OOS≥3/4",
             "golden_standard": "全量10万→期末优先; 滚动OOS≥3/4段跑赢",
         },
         "baseline_full": {k: v for k, v in base_full.items() if k != "events"},
-        "grid": {k: {kk: (vv if kk != "full" else {x: y for x, y in vv.items() if x != "events"})
-                     for kk, vv in v.items()} for k, v in grid_out.items()},
+        "grid": {
+            k: {
+                kk: (vv if kk != "full" else {x: y for x, y in vv.items() if x != "events"})
+                for kk, vv in v.items()
+            }
+            for k, v in grid_out.items()
+        },
         "best": best[0] if best else None,
-        "mom_sensitivity": {k: {kk: vv for kk, vv in v.items() if kk != "events"}
-                            for k, v in mom_out.items()} if best else {},
+        "mom_sensitivity": {
+            k: {kk: vv for kk, vv in v.items() if kk != "events"} for k, v in mom_out.items()
+        }
+        if best
+        else {},
         "best_events": best[1]["full"]["events"] if best else [],
     }
     out_path = OUTPUT_DIR / "v3_r4_grid.json"

@@ -30,12 +30,17 @@ from scripts.run_qixing_v3 import (  # noqa: E402
 OUTPUT = PROJECT_ROOT / "data" / "v9_results" / "v3_tail_analysis.json"
 
 ASSET_NAMES = {
-    "518880": "黄金ETF", "159985": "豆粕ETF", "501018": "南方原油",
-    "161226": "白银LOF", "513100": "纳指ETF", "159915": "创业板ETF",
-    "511220": "城投债ETF", "511880": "货币基金",
+    "518880": "黄金ETF",
+    "159985": "豆粕ETF",
+    "501018": "南方原油",
+    "161226": "白银LOF",
+    "513100": "纳指ETF",
+    "159915": "创业板ETF",
+    "511220": "城投债ETF",
+    "511880": "货币基金",
 }
 COMMODITY = ["161226", "501018", "159985", "518880"]  # 商品类
-STOCKS = ["159915", "513100"]                          # 股票类
+STOCKS = ["159915", "513100"]  # 股票类
 
 
 def asset_tail_stats(data: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -45,28 +50,43 @@ def asset_tail_stats(data: dict) -> tuple[pd.DataFrame, pd.DataFrame]:
         df = data[code]
         close = df["close"].astype(float).values
         ret = np.diff(close) / close[:-1]
-        rows.append({
-            "code": code, "name": ASSET_NAMES[code], "n_days": len(ret),
-            "ann_ret": (close[-1] / close[0]) ** (252 / len(ret)) - 1,
-            "ann_vol": ret.std() * np.sqrt(252),
-            "skew": float(pd.Series(ret).skew()),
-            "kurt": float(pd.Series(ret).kurt()),          # 超额峰度
-            "var95": float(np.percentile(ret, 5)),
-            "es95": float(ret[ret <= np.percentile(ret, 5)].mean()),
-            "var99": float(np.percentile(ret, 1)),
-            "es99": float(ret[ret <= np.percentile(ret, 1)].mean()),
-            "max_daily_drop": float(ret.min()),
-            "drop_gt3pct": int((ret < -0.03).sum()),
-            "drop_gt5pct": int((ret < -0.05).sum()),
-            "max_consec_down": _max_consecutive_negative(ret),
-        })
+        rows.append(
+            {
+                "code": code,
+                "name": ASSET_NAMES[code],
+                "n_days": len(ret),
+                "ann_ret": (close[-1] / close[0]) ** (252 / len(ret)) - 1,
+                "ann_vol": ret.std() * np.sqrt(252),
+                "skew": float(pd.Series(ret).skew()),
+                "kurt": float(pd.Series(ret).kurt()),  # 超额峰度
+                "var95": float(np.percentile(ret, 5)),
+                "es95": float(ret[ret <= np.percentile(ret, 5)].mean()),
+                "var99": float(np.percentile(ret, 1)),
+                "es99": float(ret[ret <= np.percentile(ret, 1)].mean()),
+                "max_daily_drop": float(ret.min()),
+                "drop_gt3pct": int((ret < -0.03).sum()),
+                "drop_gt5pct": int((ret < -0.05).sum()),
+                "max_consec_down": _max_consecutive_negative(ret),
+            }
+        )
     t = pd.DataFrame(rows).set_index("code")
 
     # 类别对比: 商品 vs 股票
     cat = {}
     for name, codes in [("商品(银油粕金)", COMMODITY), ("股票(创业板/纳指)", STOCKS)]:
-        r = t.loc[codes, ["ann_vol", "skew", "kurt", "var99", "es99", "max_daily_drop",
-                          "drop_gt3pct", "drop_gt5pct"]].mean()
+        r = t.loc[
+            codes,
+            [
+                "ann_vol",
+                "skew",
+                "kurt",
+                "var99",
+                "es99",
+                "max_daily_drop",
+                "drop_gt3pct",
+                "drop_gt5pct",
+            ],
+        ].mean()
         cat[name] = r.to_dict()
     # 相关性 (日收益, 对齐公共日期)
     common_dates: set | None = None
@@ -115,13 +135,18 @@ def snapshot_features(data: dict, td: str) -> dict:
         hi = close[-window:].max()
         dd52w = close[-1] / hi - 1 if hi > 0 else 0.0
         per_asset[code] = {
-            "mom10": mom10, "mom20": mom20, "score": score,
-            "vol20": vol20, "dd_52w": dd52w,
+            "mom10": mom10,
+            "mom20": mom20,
+            "score": score,
+            "vol20": vol20,
+            "dd_52w": dd52w,
         }
     feat["per_asset"] = per_asset
 
     # 全池动量一致性 (按 V3 过滤后的候选集合)
-    etf_data_at_date = {c: _idx_at(data[c], td) for c in ETF_POOL if _idx_at(data[c], td) is not None}
+    etf_data_at_date = {
+        c: _idx_at(data[c], td) for c in ETF_POOL if _idx_at(data[c], td) is not None
+    }
     if len(etf_data_at_date) >= 5:
         _t, candidates, best_score, a_share_weak = select_target(data, etf_data_at_date, None)
         scores = sorted((s for _, s in candidates), reverse=True)
@@ -136,6 +161,7 @@ def snapshot_features(data: dict, td: str) -> dict:
 def run_backtest(data: dict) -> pd.DataFrame:
     """同日口径回测 (对齐 14:50 执行), 返回每日净值+持仓."""
     from scripts.run_qixing_v3 import run_qixing_v3_same_day
+
     result = run_qixing_v3_same_day(data)
     eq = result["equity_curve"]
     eq["trade_date"] = pd.to_datetime(eq["trade_date"])
@@ -169,19 +195,21 @@ def find_drawdowns(eq: pd.DataFrame, min_depth: float = 0.03) -> list[dict]:
                 first_hold = str(holdings[i])
                 trough_hold = str(holdings[trough])
                 recovered = j < n  # 段末在数据内 => 已回到峰值
-                segments.append({
-                    "start": str(pd.Timestamp(dates[i]).date()),
-                    "end": str(pd.Timestamp(dates[j - 1]).date()),
-                    "trough": str(pd.Timestamp(dates[trough]).date()),
-                    "depth": depth,
-                    "days": j - i,
-                    "recovery_days_from_trough": (j - 1 - trough) if recovered else None,
-                    "recovered": recovered,
-                    "holding": first_hold,                      # 段首持仓 (买入时点)
-                    "holding_name": ASSET_NAMES.get(first_hold, ""),
-                    "trough_holding": trough_hold,              # 谷底持仓 (最深时点)
-                    "trough_holding_name": ASSET_NAMES.get(trough_hold, ""),
-                })
+                segments.append(
+                    {
+                        "start": str(pd.Timestamp(dates[i]).date()),
+                        "end": str(pd.Timestamp(dates[j - 1]).date()),
+                        "trough": str(pd.Timestamp(dates[trough]).date()),
+                        "depth": depth,
+                        "days": j - i,
+                        "recovery_days_from_trough": (j - 1 - trough) if recovered else None,
+                        "recovered": recovered,
+                        "holding": first_hold,  # 段首持仓 (买入时点)
+                        "holding_name": ASSET_NAMES.get(first_hold, ""),
+                        "trough_holding": trough_hold,  # 谷底持仓 (最深时点)
+                        "trough_holding_name": ASSET_NAMES.get(trough_hold, ""),
+                    }
+                )
             i = j
         else:
             i += 1
@@ -216,7 +244,7 @@ def enrich_segments(segments: list[dict], data: dict, eq: pd.DataFrame) -> list[
         sig = {
             "hold_mom10": float(np.mean(vals["mom10"])) if vals["mom10"] else None,
             "hold_mom20": float(np.mean(vals["mom20"])) if vals["mom20"] else None,
-            "hold_slope": None,   # mom10 - mom20
+            "hold_slope": None,  # mom10 - mom20
             "hold_vol20": float(np.mean(vals["vol20"])) if vals["vol20"] else None,
             "hold_dd52w": float(np.mean(vals["dd_52w"])) if vals["dd_52w"] else None,
             "n_candidates": int(np.mean([f["n_candidates"] for f in valid])),
@@ -249,13 +277,18 @@ def baseline_signals(data: dict, eq: pd.DataFrame) -> dict:
         pa = f.get("per_asset", {}).get(h)
         if pa is None or not f.get("n_candidates"):
             continue
-        rows.append({
-            "hold_mom10": pa["mom10"], "hold_mom20": pa["mom20"],
-            "hold_slope": pa["mom10"] - pa["mom20"],
-            "hold_vol20": pa["vol20"], "hold_dd52w": pa["dd_52w"],
-            "n_candidates": f["n_candidates"], "top_margin": f["top_margin"],
-            "pool_mean": f["pool_mean"],
-        })
+        rows.append(
+            {
+                "hold_mom10": pa["mom10"],
+                "hold_mom20": pa["mom20"],
+                "hold_slope": pa["mom10"] - pa["mom20"],
+                "hold_vol20": pa["vol20"],
+                "hold_dd52w": pa["dd_52w"],
+                "n_candidates": f["n_candidates"],
+                "top_margin": f["top_margin"],
+                "pool_mean": f["pool_mean"],
+            }
+        )
         sampled += 1
     df = pd.DataFrame(rows)
     out = {}
@@ -295,19 +328,24 @@ def main() -> None:
     for thr in (0.15, 0.25, 0.35):
         segs_t = [s for s in segs if s["depth"] <= -thr]
         time_pct = float((dd_time <= -thr).mean())
-        freq[f"gt{int(thr*100)}"] = {
+        freq[f"gt{int(thr * 100)}"] = {
             "n_segments": len(segs_t),
             "annual_freq": len(segs_t) / n_years,
             "time_pct": time_pct,
-            "depth_range": [float(min(s["depth"] for s in segs_t)),
-                            float(max(s["depth"] for s in segs_t))] if segs_t else None,
+            "depth_range": [
+                float(min(s["depth"] for s in segs_t)),
+                float(max(s["depth"] for s in segs_t)),
+            ]
+            if segs_t
+            else None,
             "median_days": float(np.median([s["days"] for s in segs_t])) if segs_t else None,
             "recovery_ok": [s["recovery_days_from_trough"] for s in segs_t if s["recovered"]],
             "not_recovered": [s["start"] for s in segs_t if not s["recovered"]],
         }
-        freq[f"gt{int(thr*100)}"]["median_recovery_days"] = (
-            float(np.median(freq[f"gt{int(thr*100)}"]["recovery_ok"]))
-            if freq[f"gt{int(thr*100)}"]["recovery_ok"] else None
+        freq[f"gt{int(thr * 100)}"]["median_recovery_days"] = (
+            float(np.median(freq[f"gt{int(thr * 100)}"]["recovery_ok"]))
+            if freq[f"gt{int(thr * 100)}"]["recovery_ok"]
+            else None
         )
 
     print("\n=== 深回撤频率 ===")
@@ -318,16 +356,20 @@ def main() -> None:
     print(f"\n=== 深回撤段明细 (深度>15%, 共{len(deep)}段) ===")
     for s in sorted(deep, key=lambda x: x["depth"]):
         sig = s["signal"] or {}
-        rec = (f"恢复{s['recovery_days_from_trough']}天" if s["recovered"] else "未恢复")
-        print(f"{s['start']}~{s['end']} {s['days']}天 {s['depth']:+.1%} "
-              f"买:{s['holding_name']} 谷底:{s['trough_holding_name']} "
-              f"谷底日:{s['trough']} {rec}")
+        rec = f"恢复{s['recovery_days_from_trough']}天" if s["recovered"] else "未恢复"
+        print(
+            f"{s['start']}~{s['end']} {s['days']}天 {s['depth']:+.1%} "
+            f"买:{s['holding_name']} 谷底:{s['trough_holding_name']} "
+            f"谷底日:{s['trough']} {rec}"
+        )
         if sig:
-            print(f"  段首前5日信号: mom10={sig.get('hold_mom10'):+.3f} mom20={sig.get('hold_mom20'):+.3f} "
-                  f"slope={sig.get('hold_slope'):+.3f} vol20={sig.get('hold_vol20'):.2f} "
-                  f"dd52w={sig.get('hold_dd52w'):+.1%} n_cand={sig.get('n_candidates')} "
-                  f"margin={sig.get('top_margin'):+.3f} pool={sig.get('pool_mean'):+.3f} "
-                  f"a弱={int(sig.get('a_share_weak', 0))}")
+            print(
+                f"  段首前5日信号: mom10={sig.get('hold_mom10'):+.3f} mom20={sig.get('hold_mom20'):+.3f} "
+                f"slope={sig.get('hold_slope'):+.3f} vol20={sig.get('hold_vol20'):.2f} "
+                f"dd52w={sig.get('hold_dd52w'):+.1%} n_cand={sig.get('n_candidates')} "
+                f"margin={sig.get('top_margin'):+.3f} pool={sig.get('pool_mean'):+.3f} "
+                f"a弱={int(sig.get('a_share_weak', 0))}"
+            )
 
     # 4b. 商品齐跌情境 (银油粕 20日收益同时为负的时间占比)
     print("\n=== 商品齐跌情境 (20日收益同负) ===")
@@ -344,7 +386,7 @@ def main() -> None:
     r20df = pd.DataFrame(r20, index=cd)
     all_neg = (r20df < 0).all(axis=1)
     any_neg = (r20df < 0).any(axis=1)
-    print(f"银油粕20日齐跌时间占比: {all_neg.mean():.1%} ({(cd[-1] - cd[0]).days/365.25:.1f}年)")
+    print(f"银油粕20日齐跌时间占比: {all_neg.mean():.1%} ({(cd[-1] - cd[0]).days / 365.25:.1f}年)")
     print(f"至少一个为负: {any_neg.mean():.1%}")
     # 策略持仓期间商品齐跌的暴露
     eq_by_date = eq.set_index("trade_date")["holding"]
@@ -379,8 +421,11 @@ def main() -> None:
         "n_years": n_years,
         "backtest": {
             "final": float(eq["equity"].iloc[-1]),
-            "ann_return": float((eq["equity"].iloc[-1] / eq["equity"].iloc[0])
-                                ** (365.25 / (eq["trade_date"].iloc[-1] - eq["trade_date"].iloc[0]).days) - 1),
+            "ann_return": float(
+                (eq["equity"].iloc[-1] / eq["equity"].iloc[0])
+                ** (365.25 / (eq["trade_date"].iloc[-1] - eq["trade_date"].iloc[0]).days)
+                - 1
+            ),
             "max_dd": float(dd_time.min()),
         },
     }

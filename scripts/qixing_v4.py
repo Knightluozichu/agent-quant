@@ -91,9 +91,7 @@ def _config_payload(params: FullPoolParams = V4_PARAMS) -> dict[str, Any]:
 
 
 def config_hash(params: FullPoolParams = V4_PARAMS) -> str:
-    payload = json.dumps(
-        _config_payload(params), sort_keys=True, separators=(",", ":")
-    ).encode()
+    payload = json.dumps(_config_payload(params), sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(payload).hexdigest()
 
 
@@ -269,11 +267,7 @@ def update_candidate_history(
         if isinstance(item, dict) and item.get("date")
     }
     normalized[td] = raw_target
-    result = [
-        {"date": day, "target": normalized[day]}
-        for day in valid_dates
-        if day in normalized
-    ]
+    result = [{"date": day, "target": normalized[day]} for day in valid_dates if day in normalized]
     hits = sum(item["target"] == raw_target for item in result) if raw_target else 0
     return result, hits
 

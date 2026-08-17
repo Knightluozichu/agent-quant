@@ -83,10 +83,7 @@ def should_early_rotate(
         return RotationDecision(False, reason="outside_scope")
     if leader_score <= 0:
         return RotationDecision(False, reason="leader_not_positive")
-    if (
-        days_since_early_rotation < params.minimum_hold_days
-        and holding_score > 0
-    ):
+    if days_since_early_rotation < params.minimum_hold_days and holding_score > 0:
         return RotationDecision(False, reason="minimum_hold")
 
     relative_gap = leader_score - holding_score
@@ -116,9 +113,7 @@ def common_dates(data: dict[str, pd.DataFrame]) -> list[Any]:
     return sorted(dates or set())
 
 
-def build_index_maps(
-    data: dict[str, pd.DataFrame], dates: list[Any]
-) -> dict[Any, dict[str, int]]:
+def build_index_maps(data: dict[str, pd.DataFrame], dates: list[Any]) -> dict[Any, dict[str, int]]:
     by_code = {
         code: dict(zip(df["trade_date"].tolist(), range(len(df)), strict=False))
         for code, df in data.items()
@@ -133,15 +128,11 @@ def build_index_maps(
     return maps
 
 
-def close_through(
-    data: dict[str, pd.DataFrame], code: str, idx_map: dict[str, int]
-) -> np.ndarray:
+def close_through(data: dict[str, pd.DataFrame], code: str, idx_map: dict[str, int]) -> np.ndarray:
     return data[code]["close"].values[: idx_map[code] + 1].astype(float)
 
 
-def price_at(
-    data: dict[str, pd.DataFrame], code: str | None, idx_map: dict[str, int]
-) -> float:
+def price_at(data: dict[str, pd.DataFrame], code: str | None, idx_map: dict[str, int]) -> float:
     if not code or code not in idx_map:
         return 0.0
     return float(data[code].iloc[idx_map[code]]["close"])
@@ -180,12 +171,14 @@ def apply_server_realtime_filter(
         r20 = close[-1] / close[-21] - 1.0
         momentum = 0.5 * r10 + 0.5 * r20
         if ret60 >= 0.01 or momentum <= 0:
-            dropped.append({
-                "code": code,
-                "intraday": intraday,
-                "ret60": ret60,
-                "momentum": momentum,
-            })
+            dropped.append(
+                {
+                    "code": code,
+                    "intraday": intraday,
+                    "ret60": ret60,
+                    "momentum": momentum,
+                }
+            )
     dropped_codes = {row["code"] for row in dropped}
     filtered = [(code, score) for code, score in candidates if code not in dropped_codes]
     return filtered, dropped
@@ -242,9 +235,7 @@ def curve_metrics(
 def segment_metrics(curve: pd.DataFrame, start: str, end: str) -> dict[str, Any]:
     start_ts = pd.Timestamp(start)
     end_ts = pd.Timestamp(end)
-    segment = curve[
-        (curve["trade_date"] >= start_ts) & (curve["trade_date"] <= end_ts)
-    ].copy()
+    segment = curve[(curve["trade_date"] >= start_ts) & (curve["trade_date"] <= end_ts)].copy()
     if segment.empty:
         return {"error": "empty"}
     indexed = segment.copy()
@@ -275,12 +266,14 @@ def enrich_rotation_events(
             new_future = price_at(data, event["to"], future_map)
             old_fwd = old_future / old_now - 1.0 if old_now > 0 else 0.0
             new_fwd = new_future / new_now - 1.0 if new_now > 0 else 0.0
-            row.update({
-                "ex_post_date_5d": str(future_td),
-                "ex_post_old_return_5d": old_fwd,
-                "ex_post_new_return_5d": new_fwd,
-                "ex_post_relative_5d": new_fwd - old_fwd,
-            })
+            row.update(
+                {
+                    "ex_post_date_5d": str(future_td),
+                    "ex_post_old_return_5d": old_fwd,
+                    "ex_post_new_return_5d": new_fwd,
+                    "ex_post_relative_5d": new_fwd - old_fwd,
+                }
+            )
         row.pop("trade_date_raw", None)
         enriched.append(row)
     return enriched
@@ -321,9 +314,7 @@ def run_strategy(
     for position, td in enumerate(trading_dates):
         idx_map = index_maps[td]
         holding = state["holding"]
-        target, candidates, _best_score, _weak = rq.select_target(
-            data, idx_map, holding
-        )
+        target, candidates, _best_score, _weak = rq.select_target(data, idx_map, holding)
         candidates, dropped = apply_server_realtime_filter(data, idx_map, candidates)
         if dropped:
             for event in dropped:
@@ -398,101 +389,103 @@ def run_strategy(
             if holding:
                 sell_price = price_at(data, holding, idx_map)
                 if sell_price > 0:
-                    amount = float(state["shares"]) * sell_price * (
-                        1.0 - (rq.FEE + rq.SLIPPAGE) * cost_multiplier
+                    amount = (
+                        float(state["shares"])
+                        * sell_price
+                        * (1.0 - (rq.FEE + rq.SLIPPAGE) * cost_multiplier)
                     )
                     cash += amount
-                    trades.append({
-                        "date": str(td),
-                        "action": "sell",
-                        "code": holding,
-                        "price": sell_price,
-                        "amount": amount,
-                    })
+                    trades.append(
+                        {
+                            "date": str(td),
+                            "action": "sell",
+                            "code": holding,
+                            "price": sell_price,
+                            "amount": amount,
+                        }
+                    )
                     state["holding"] = None
                     state["shares"] = 0.0
                     state["entry_price"] = 0.0
             buy_price = price_at(data, target, idx_map)
             if buy_price > 0:
-                shares = int(
-                    cash * risk.exposure * 0.99 / buy_price / 100
-                ) * 100
+                shares = int(cash * risk.exposure * 0.99 / buy_price / 100) * 100
                 if shares > 0:
-                    amount = shares * buy_price * (
-                        1.0 + (rq.FEE + rq.SLIPPAGE) * cost_multiplier
-                    )
+                    amount = shares * buy_price * (1.0 + (rq.FEE + rq.SLIPPAGE) * cost_multiplier)
                     cash -= amount
                     state["holding"] = target
                     state["shares"] = float(shares)
                     state["entry_price"] = buy_price
-                    trades.append({
-                        "date": str(td),
-                        "action": "buy",
-                        "code": target,
-                        "price": buy_price,
-                        "amount": amount,
-                    })
+                    trades.append(
+                        {
+                            "date": str(td),
+                            "action": "buy",
+                            "code": target,
+                            "price": buy_price,
+                            "amount": amount,
+                        }
+                    )
                     trade_executed = target != old_holding
             state["cash"] = cash
             state["risk_exposure"] = 1.0
         else:
             state["risk_exposure"] = risk.exposure
 
-        state["cooldown_until"] = (
-            str(risk.cooldown_until) if risk.cooldown_until else None
-        )
+        state["cooldown_until"] = str(risk.cooldown_until) if risk.cooldown_until else None
 
         if early_decision.triggered and trade_executed:
             last_early_rotation = position
-            rotation_events.append({
-                "trade_date_raw": td,
-                "date": str(td),
-                "kind": early_decision.kind,
-                "from": old_holding,
-                "to": state["holding"],
-                "intended_to": leader,
-                "risk_redirected": state["holding"] != leader,
-                "leader_score": leader_score,
-                "holding_score": held_score,
-                "relative_gap": leader_score - held_score,
-                "holding_drawdown_5d": held_drawdown,
-                "leader_hits": persistence,
-            })
+            rotation_events.append(
+                {
+                    "trade_date_raw": td,
+                    "date": str(td),
+                    "kind": early_decision.kind,
+                    "from": old_holding,
+                    "to": state["holding"],
+                    "intended_to": leader,
+                    "risk_redirected": state["holding"] != leader,
+                    "leader_score": leader_score,
+                    "holding_score": held_score,
+                    "relative_gap": leader_score - held_score,
+                    "holding_drawdown_5d": held_drawdown,
+                    "leader_hits": persistence,
+                }
+            )
 
         holding = state["holding"]
         equity = float(state["cash"])
         if holding:
             equity += float(state["shares"]) * price_at(data, holding, idx_map)
-        equity_rows.append({
-            "trade_date": pd.Timestamp(td),
-            "equity": equity,
-            "holding": holding or rq.DEFENSE,
-        })
+        equity_rows.append(
+            {
+                "trade_date": pd.Timestamp(td),
+                "equity": equity,
+                "holding": holding or rq.DEFENSE,
+            }
+        )
 
     curve = pd.DataFrame(equity_rows)
-    enriched = enrich_rotation_events(
-        rotation_events, data, trading_dates, index_maps
-    )
+    enriched = enrich_rotation_events(rotation_events, data, trading_dates, index_maps)
     relative_5d = [
-        float(event["ex_post_relative_5d"])
-        for event in enriched
-        if "ex_post_relative_5d" in event
+        float(event["ex_post_relative_5d"]) for event in enriched if "ex_post_relative_5d" in event
     ]
     metrics = curve_metrics(curve, initial_capital=INITIAL_CAPITAL)
-    metrics.update({
-        "cost_multiplier": cost_multiplier,
-        "trade_legs": len(trades),
-        "early_rotations": len(enriched),
-        "standard_rotations": sum(event["kind"] == "standard" for event in enriched),
-        "fast_rotations": sum(event["kind"] == "fast" for event in enriched),
-        "minimum_hold_blocks": minimum_hold_blocks,
-        "realtime_filter_events": len(realtime_events),
-        "risk_events": len(risk_events),
-        "ex_post_relative_5d_avg": float(np.mean(relative_5d)) if relative_5d else 0.0,
-        "ex_post_relative_5d_win_rate": (
-            float(np.mean(np.asarray(relative_5d) > 0)) if relative_5d else 0.0
-        ),
-    })
+    metrics.update(
+        {
+            "cost_multiplier": cost_multiplier,
+            "trade_legs": len(trades),
+            "early_rotations": len(enriched),
+            "standard_rotations": sum(event["kind"] == "standard" for event in enriched),
+            "fast_rotations": sum(event["kind"] == "fast" for event in enriched),
+            "minimum_hold_blocks": minimum_hold_blocks,
+            "realtime_filter_events": len(realtime_events),
+            "risk_events": len(risk_events),
+            "ex_post_relative_5d_avg": float(np.mean(relative_5d)) if relative_5d else 0.0,
+            "ex_post_relative_5d_win_rate": (
+                float(np.mean(np.asarray(relative_5d) > 0)) if relative_5d else 0.0
+            ),
+        }
+    )
     return {
         "params": asdict(params),
         "metrics": metrics,
@@ -540,13 +533,9 @@ def main() -> None:
             fast_drawdown=None,
             minimum_hold_days=0,
         ),
-        "loose": RotationParams(
-            relative_gap=0.01, holding_drawdown=0.03, fast_drawdown=0.06
-        ),
+        "loose": RotationParams(relative_gap=0.01, holding_drawdown=0.03, fast_drawdown=0.06),
         "proposal": proposal_params,
-        "strict": RotationParams(
-            relative_gap=0.03, holding_drawdown=0.05, fast_drawdown=0.08
-        ),
+        "strict": RotationParams(relative_gap=0.03, holding_drawdown=0.05, fast_drawdown=0.08),
         "proposal_no_fast": replace(proposal_params, fast_drawdown=None),
         "precious_pair_rank_flip": RotationParams(
             relative_gap=0.0,
@@ -561,9 +550,7 @@ def main() -> None:
             fast_drawdown=0.06,
             scope_assets=("518880", "161226"),
         ),
-        "precious_pair_proposal": replace(
-            proposal_params, scope_assets=("518880", "161226")
-        ),
+        "precious_pair_proposal": replace(proposal_params, scope_assets=("518880", "161226")),
         "precious_pair_strict": RotationParams(
             relative_gap=0.03,
             holding_drawdown=0.05,
@@ -668,9 +655,7 @@ def main() -> None:
         "segments": segments,
     }
     if args.save:
-        OUTPUT.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n"
-        )
+        OUTPUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, default=str) + "\n")
         print(f"\nsaved: {OUTPUT}")
 
 

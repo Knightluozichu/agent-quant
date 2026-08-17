@@ -46,23 +46,23 @@ WARMUP = 130
 INITIAL_CAPITAL = 100_000.0
 
 # === 风控参数 (通用先验) ===
-USE_IMPROVED = True       # 改进版: 高波动(vol>0.45)+动量衰减确认 → 降仓0.7 (仅尾部场景)
-USE_VOL_TARGET = False   # 关闭层1 波动率目标
-USE_DD_HALF = False      # 关闭 -20% 熔断减半
-SIGMA_TARGET = 0.40   # 层1: 波动率目标 (USE_VOL_TARGET=True 时启用)
+USE_IMPROVED = True  # 改进版: 高波动(vol>0.45)+动量衰减确认 → 降仓0.7 (仅尾部场景)
+USE_VOL_TARGET = False  # 关闭层1 波动率目标
+USE_DD_HALF = False  # 关闭 -20% 熔断减半
+SIGMA_TARGET = 0.40  # 层1: 波动率目标 (USE_VOL_TARGET=True 时启用)
 EXPO_FLOOR = 0.35
 TREND_GATE = 0.10
-DECAY_THRESH = -0.02      # 层2: 动量5日变化
+DECAY_THRESH = -0.02  # 层2: 动量5日变化
 MA10_CONFIRM = True
-ABS_WEAK = 0.08           # 层2: 绝对动量弱化
-ENTRY_DD = 0.06           # 层2: 自买入回撤>6% → 防御
-H1_DD = -0.15             # 层3: 自买入回撤硬触发(放宽, 2022商品误杀频繁)
-H2_DAY = -0.05            # 层3: 当日跌幅硬触发
-DD_WARN, DD_HALF, DD_FLUSH = -0.12, -0.25, -0.30   # 层4: 组合熔断(改进版-30%清仓)
-CAT_MOM_CAP = 0.70        # 层4: 商品类别动量<0.02 → 暴露70%
+ABS_WEAK = 0.08  # 层2: 绝对动量弱化
+ENTRY_DD = 0.06  # 层2: 自买入回撤>6% → 防御
+H1_DD = -0.15  # 层3: 自买入回撤硬触发(放宽, 2022商品误杀频繁)
+H2_DAY = -0.05  # 层3: 当日跌幅硬触发
+DD_WARN, DD_HALF, DD_FLUSH = -0.12, -0.25, -0.30  # 层4: 组合熔断(改进版-30%清仓)
+CAT_MOM_CAP = 0.70  # 层4: 商品类别动量<0.02 → 暴露70%
 CAT_MOM_THR = 0.02
-VOL_HV_THR = 0.45   # 改进版: 高波动阈值
-EXPO_REDUCE = 1.0    # V3-G 关闭降仓层 (1.0=不降)
+VOL_HV_THR = 0.45  # 改进版: 高波动阈值
+EXPO_REDUCE = 1.0  # V3-G 关闭降仓层 (1.0=不降)
 DEFENSE_SEQ = ["511260", "511220", "511880"]  # 十年国债→城投债→货币
 
 IS_START, IS_END = "2020-06-01", "2023-12-31"
@@ -72,9 +72,9 @@ OOS_START, OOS_END = "2024-01-01", "2026-08-03"
 # --------------------------------------------------------------------------- #
 # V3 + 四层风控引擎 (14:50口径, 基座=run_v3_r4_sameday thr=1.0)
 # --------------------------------------------------------------------------- #
-def run_v3_risk(data: dict,
-                 start_idx: int = 0, end_idx: int | None = None,
-                 cost_multiplier: float = 1.0) -> dict:
+def run_v3_risk(
+    data: dict, start_idx: int = 0, end_idx: int | None = None, cost_multiplier: float = 1.0
+) -> dict:
     """V3 + 四层风控. Returns 含指标/回撤剖面/风控事件日志."""
     common_dates: set = set()
     for code in ETF_POOL:
@@ -93,8 +93,8 @@ def run_v3_risk(data: dict,
     holding_shares = 0.0
     entry_price = 0.0
     peak_equity = float(INITIAL_CAPITAL)
-    cooldown_until = None          # 冷却截止交易日 (date)
-    exposure = 1.0                 # 当前暴露系数 (层1/3/4 输出)
+    cooldown_until = None  # 冷却截止交易日 (date)
+    exposure = 1.0  # 当前暴露系数 (层1/3/4 输出)
     equity_history: list[dict] = []
     risk_events: list[dict] = []
     n_trades = 0
@@ -194,16 +194,26 @@ def run_v3_risk(data: dict,
                 if USE_IMPROVED:
                     # 仅降仓不切防御: 保留反弹 (H1/H2机会成本0.6%极低, 切防御浪费)
                     exposure = min(exposure, EXPO_REDUCE)
-                    risk_events.append({"date": str(td), "type": "改进-H1/H2降仓",
-                                        "from": holding,
-                                        "reason": f"entry_dd={entry_dd:.1%} day={day_ret:.1%}"})
+                    risk_events.append(
+                        {
+                            "date": str(td),
+                            "type": "改进-H1/H2降仓",
+                            "from": holding,
+                            "reason": f"entry_dd={entry_dd:.1%} day={day_ret:.1%}",
+                        }
+                    )
                 else:
                     target_d = _pick_defense(td)
                     _trade_to(target_d, td)
                     cooldown_until = td
-                    risk_events.append({"date": str(td), "type": "H1/H2硬触发",
-                                        "from": holding,
-                                        "reason": f"entry_dd={entry_dd:.1%} day={day_ret:.1%}"})
+                    risk_events.append(
+                        {
+                            "date": str(td),
+                            "type": "H1/H2硬触发",
+                            "from": holding,
+                            "reason": f"entry_dd={entry_dd:.1%} day={day_ret:.1%}",
+                        }
+                    )
 
         # === 层4 组合熔断 ===
         if cooldown_until is None:
@@ -212,13 +222,15 @@ def run_v3_risk(data: dict,
                 _trade_to(target_d, td)
                 cooldown_until = td
                 exposure = 1.0
-                risk_events.append({"date": str(td), "type": "熔断-30%清仓",
-                                    "dd": round(float(dd), 4)})
+                risk_events.append(
+                    {"date": str(td), "type": "熔断-30%清仓", "dd": round(float(dd), 4)}
+                )
             elif dd < DD_HALF:
                 if USE_DD_HALF:
                     exposure = 0.5
-                risk_events.append({"date": str(td), "type": "熔断-20%告警",
-                                    "dd": round(float(dd), 4)})
+                risk_events.append(
+                    {"date": str(td), "type": "熔断-20%告警", "dd": round(float(dd), 4)}
+                )
             elif dd < DD_WARN:
                 exposure = 1.0  # V3-G 关闭降仓层: 仅告警不降仓
 
@@ -246,23 +258,33 @@ def run_v3_risk(data: dict,
                 mom5_prev = _mom(target, all_dates[idx_of[td] - 5], 10) if idx_of[td] >= 5 else 0.0
                 delta_s = _mom_score(target, td) - mom5_prev
                 vol_t = _vol20(target, td)
-                decay_triple = (delta_s < DECAY_THRESH and close[-1] < ma10
-                                and s_score < ABS_WEAK)
+                decay_triple = delta_s < DECAY_THRESH and close[-1] < ma10 and s_score < ABS_WEAK
                 # 改进核心: 仅"高波动 + 动量衰减确认"触发适度降仓 (数据: 高波动本身是收益源,
                 # 只有叠加动量转负才指向尾部风险; 纯波动率降仓/类别静默降仓均伤害收益)
                 if USE_IMPROVED:
                     if vol_t > VOL_HV_THR and decay_triple:
                         exposure = min(exposure, EXPO_REDUCE)
-                        risk_events.append({"date": str(td), "type": "改进-高波动衰减降仓",
-                                            "vol": round(float(vol_t), 3),
-                                            "delta_s": round(float(delta_s), 4)})
+                        risk_events.append(
+                            {
+                                "date": str(td),
+                                "type": "改进-高波动衰减降仓",
+                                "vol": round(float(vol_t), 3),
+                                "delta_s": round(float(delta_s), 4),
+                            }
+                        )
                 elif decay_triple:
                     exposure = min(exposure, 0.5)
                     entry_dd = (_price(target, td) / entry_price - 1.0) if entry_price > 0 else 0.0
                     if entry_dd < -ENTRY_DD:
                         target = _pick_defense(td)
-                        risk_events.append({"date": str(td), "type": "层2衰减退出",
-                                            "target": target, "delta_s": round(float(delta_s), 4)})
+                        risk_events.append(
+                            {
+                                "date": str(td),
+                                "type": "层2衰减退出",
+                                "target": target,
+                                "delta_s": round(float(delta_s), 4),
+                            }
+                        )
 
             # 层1 趋势门控波动率目标 (轻干预版关闭) + 层4 类别约束 (暴露系数)
             if target in ETF_POOL:
@@ -270,8 +292,11 @@ def run_v3_risk(data: dict,
                     sig = _vol20(target, td)
                     e = min(1.0, SIGMA_TARGET / sig) if sig > 0 else 1.0
                     exposure = min(exposure, max(e, EXPO_FLOOR))
-                if (not USE_IMPROVED and target in ("518880", "159985", "501018", "161226")
-                        and _cat_mom(td) < CAT_MOM_THR):
+                if (
+                    not USE_IMPROVED
+                    and target in ("518880", "159985", "501018", "161226")
+                    and _cat_mom(td) < CAT_MOM_THR
+                ):
                     exposure = min(exposure, CAT_MOM_CAP)
                 if _price(target, td) <= 0 or not _tradable(target, td):
                     target = _pick_defense(td)
@@ -351,14 +376,14 @@ def main() -> None:
 
     results = {}
     for name, s0, s1 in segs:
-        r_a = run_v3_r4_sameday(data, mat, thr=1.0, start_idx=s0,
-                                end_idx=max(s1 - WARMUP, 0))
+        r_a = run_v3_r4_sameday(data, mat, thr=1.0, start_idx=s0, end_idx=max(s1 - WARMUP, 0))
         r_b = run_v3_risk(data, start_idx=s0, end_idx=max(s1 - WARMUP, 0))
-        keys = ("final_value", "total_return", "ann_return", "sharpe",
-                "max_drawdown", "n_trades")
-        results[name] = {"A": {k: r_a[k] for k in keys}, "B": {
-            k: r_b[k] for k in (*keys, "deep_dd_time", "cvar95", "n_risk_events")},
-            "risk_events": r_b.get("risk_events", [])}
+        keys = ("final_value", "total_return", "ann_return", "sharpe", "max_drawdown", "n_trades")
+        results[name] = {
+            "A": {k: r_a[k] for k in keys},
+            "B": {k: r_b[k] for k in (*keys, "deep_dd_time", "cvar95", "n_risk_events")},
+            "risk_events": r_b.get("risk_events", []),
+        }
         print(f"\n  [{name}] A(纯V3) vs B(四层风控):")
         for k in keys:
             print(f"    {k:<14} A={results[name]['A'][k]:>12}  B={results[name]['B'][k]:>12}")
@@ -371,20 +396,36 @@ def main() -> None:
     checks = {}
     checks["G1 金额≥85%基线"] = all(
         results[s]["B"]["final_value"] >= results[s]["A"]["final_value"] * 0.85
-        for s in ("IS", "OOS") if s in results)
+        for s in ("IS", "OOS")
+        if s in results
+    )
     checks["G2 maxDD≤-28.5%"] = res_b["max_drawdown"] >= -0.285
     checks["G2 深回撤时间减半"] = res_b["deep_dd_time"] <= 0.209 / 2
     checks["G5 夏普不劣化0.15"] = res_b["sharpe"] >= res_a["sharpe"] - 0.15
     for k, v in checks.items():
         print(f"    {k:<20} {'✅' if v else '❌'}" if v is not None else f"    {k:<20} -")
 
-    out = {"meta": {"note": "四层风控先验参数(无网格)", "params": {
-        "sigma_target": SIGMA_TARGET, "floor": EXPO_FLOOR, "trend_gate": TREND_GATE,
-        "decay": DECAY_THRESH, "abs_weak": ABS_WEAK, "h1": H1_DD, "h2": H2_DAY,
-        "dd_warn": DD_WARN, "dd_half": DD_HALF, "dd_flush": DD_FLUSH,
-        "defense_seq": DEFENSE_SEQ}},
-        "results": results, "g_checks": {k: bool(v) for k, v in checks.items() if v is not None},
-        "risk_events_full": results["全周期"].get("risk_events", [])}
+    out = {
+        "meta": {
+            "note": "四层风控先验参数(无网格)",
+            "params": {
+                "sigma_target": SIGMA_TARGET,
+                "floor": EXPO_FLOOR,
+                "trend_gate": TREND_GATE,
+                "decay": DECAY_THRESH,
+                "abs_weak": ABS_WEAK,
+                "h1": H1_DD,
+                "h2": H2_DAY,
+                "dd_warn": DD_WARN,
+                "dd_half": DD_HALF,
+                "dd_flush": DD_FLUSH,
+                "defense_seq": DEFENSE_SEQ,
+            },
+        },
+        "results": results,
+        "g_checks": {k: bool(v) for k, v in checks.items() if v is not None},
+        "risk_events_full": results["全周期"].get("risk_events", []),
+    }
     out_path = OUTPUT_DIR / "v3_tail_risk_ab.json"
     with open(out_path, "w") as f:
         json.dump(out, f, indent=2, ensure_ascii=False, default=str)

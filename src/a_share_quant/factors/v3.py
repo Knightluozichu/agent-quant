@@ -25,6 +25,7 @@ import pandas as pd
 # Configuration
 # =============================================================================
 
+
 @dataclass
 class V3Config:
     """v3 strategy configuration."""
@@ -40,15 +41,15 @@ class V3Config:
     volume_baseline: int = 60
 
     # Portfolio construction
-    top_n: int = 4              # Hold top 4-5 (was 2 in v2)
-    rebalance_days: int = 20    # Monthly (was 5 in v2)
+    top_n: int = 4  # Hold top 4-5 (was 2 in v2)
+    rebalance_days: int = 20  # Monthly (was 5 in v2)
 
     # Defensive assets
     defensive_symbols: list[str] = field(default_factory=lambda: ["511010", "511880"])
     defensive_alloc: float = 0.3  # 30% to defensive in DOWN regime
 
     # Crash protection
-    crash_window: int = 5       # 5-day window
+    crash_window: int = 5  # 5-day window
     crash_threshold: float = -0.10  # -10% in 5 days → force sell
 
     # Risk parity
@@ -72,6 +73,7 @@ REGIME_FACTOR_MAP: dict[str, list[str]] = {
 # =============================================================================
 # Factor Engine v3
 # =============================================================================
+
 
 class FactorEngineV3:
     """Factor calculation with risk parity awareness."""
@@ -99,7 +101,10 @@ class FactorEngineV3:
             factors["symbol"] = symbol
             # Also store realized vol for risk parity
             if len(close) > self.config.risk_parity_lookback:
-                rets = np.diff(close[-self.config.risk_parity_lookback:]) / close[-self.config.risk_parity_lookback:-1]
+                rets = (
+                    np.diff(close[-self.config.risk_parity_lookback :])
+                    / close[-self.config.risk_parity_lookback : -1]
+                )
                 factors["realized_vol"] = np.std(rets) * np.sqrt(252)
             else:
                 factors["realized_vol"] = 0.2  # Default 20% annual vol
@@ -129,7 +134,9 @@ class FactorEngineV3:
 
         # Momentum
         if n > cfg.momentum_long + cfg.momentum_skip:
-            momentum = (close[-cfg.momentum_skip] - close[-(cfg.momentum_long + cfg.momentum_skip)]) / close[-(cfg.momentum_long + cfg.momentum_skip)]
+            momentum = (
+                close[-cfg.momentum_skip] - close[-(cfg.momentum_long + cfg.momentum_skip)]
+            ) / close[-(cfg.momentum_long + cfg.momentum_skip)]
         else:
             momentum = 0.0
 
@@ -141,22 +148,24 @@ class FactorEngineV3:
 
         # Low volatility
         if n > cfg.vol_window:
-            rets = np.diff(close[-cfg.vol_window:]) / close[-cfg.vol_window:-1]
+            rets = np.diff(close[-cfg.vol_window :]) / close[-cfg.vol_window : -1]
             volatility = -(np.std(rets) * np.sqrt(252))
         else:
             volatility = 0.0
 
         # Trend
         if n > cfg.trend_slow:
-            trend = (np.mean(close[-cfg.trend_fast:]) - np.mean(close[-cfg.trend_slow:])) / np.mean(close[-cfg.trend_slow:])
+            trend = (
+                np.mean(close[-cfg.trend_fast :]) - np.mean(close[-cfg.trend_slow :])
+            ) / np.mean(close[-cfg.trend_slow :])
         else:
             trend = 0.0
 
         # Volume trend
         volume_trend = 0.0
         if volume is not None and len(volume) > cfg.volume_baseline:
-            recent_vol = np.mean(volume[-cfg.volume_window:])
-            baseline_vol = np.mean(volume[-cfg.volume_baseline:])
+            recent_vol = np.mean(volume[-cfg.volume_window :])
+            baseline_vol = np.mean(volume[-cfg.volume_baseline :])
             if baseline_vol > 0:
                 volume_trend = (recent_vol - baseline_vol) / baseline_vol
 
@@ -181,6 +190,7 @@ class FactorEngineV3:
 # Crash Protection
 # =============================================================================
 
+
 class CrashProtector:
     """Detect and protect against momentum crashes."""
 
@@ -198,7 +208,9 @@ class CrashProtector:
         ret = (hist.iloc[-1]["close"] / hist.iloc[-self.config.crash_window]["close"]) - 1
         return ret < self.config.crash_threshold
 
-    def check_market_crash(self, data: dict[str, pd.DataFrame], index_symbol: str, as_of_date: date) -> bool:
+    def check_market_crash(
+        self, data: dict[str, pd.DataFrame], index_symbol: str, as_of_date: date
+    ) -> bool:
         """Check if the broad market has crashed."""
         return self.check_crash(data, index_symbol, as_of_date)
 
@@ -206,6 +218,7 @@ class CrashProtector:
 # =============================================================================
 # Risk Parity Weighting
 # =============================================================================
+
 
 def risk_parity_weights(vols: dict[str, float]) -> dict[str, float]:
     """Calculate inverse-volatility weights (risk parity).
@@ -239,9 +252,11 @@ def risk_parity_weights(vols: dict[str, float]) -> dict[str, float]:
 # v3 Portfolio
 # =============================================================================
 
+
 @dataclass
 class V3Signal:
     """Rebalancing signal from v3 strategy."""
+
     date: date
     target_holdings: list[str]
     weights: dict[str, float]
@@ -283,7 +298,9 @@ class V3Portfolio:
 
         # Update peak equity for drawdown
         self._peak_equity = max(self._peak_equity, equity)
-        current_dd = (equity - self._peak_equity) / self._peak_equity if self._peak_equity > 0 else 0
+        current_dd = (
+            (equity - self._peak_equity) / self._peak_equity if self._peak_equity > 0 else 0
+        )
 
         # Position scale based on regime + drawdown
         position_scale = self._get_position_scale(regime_state, current_dd)
@@ -374,9 +391,11 @@ class V3Portfolio:
 # Champion / Challenger Flywheel Evolution
 # =============================================================================
 
+
 @dataclass
 class StrategyVariant:
     """A strategy variant in the flywheel."""
+
     name: str
     config: V3Config
     # Performance tracking
@@ -435,8 +454,14 @@ class FlywheelEvolution:
             ("top_n_5", V3Config(top_n=5, rebalance_days=cfg.rebalance_days)),
             ("top_n_3", V3Config(top_n=3, rebalance_days=cfg.rebalance_days)),
             ("monthly_25", V3Config(top_n=cfg.top_n, rebalance_days=25)),
-            ("defensive_40", V3Config(top_n=cfg.top_n, rebalance_days=cfg.rebalance_days, defensive_alloc=0.4)),
-            ("crash_8pct", V3Config(top_n=cfg.top_n, rebalance_days=cfg.rebalance_days, crash_threshold=-0.08)),
+            (
+                "defensive_40",
+                V3Config(top_n=cfg.top_n, rebalance_days=cfg.rebalance_days, defensive_alloc=0.4),
+            ),
+            (
+                "crash_8pct",
+                V3Config(top_n=cfg.top_n, rebalance_days=cfg.rebalance_days, crash_threshold=-0.08),
+            ),
         ]
 
         # Pick next mutation (cycle through)
@@ -464,12 +489,14 @@ class FlywheelEvolution:
             c.total_return += challenger_return
             c.n_periods += 1
 
-        self.history.append({
-            "period": period_id,
-            "champion_return": champion_return,
-            "challenger_return": challenger_return,
-            "challenger_name": self.challengers[0].name if self.challengers else "",
-        })
+        self.history.append(
+            {
+                "period": period_id,
+                "champion_return": champion_return,
+                "challenger_return": challenger_return,
+                "challenger_name": self.challengers[0].name if self.challengers else "",
+            }
+        )
 
     def check_promotion(self, min_periods: int = 3) -> bool:
         """Check if challenger should be promoted.

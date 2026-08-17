@@ -95,7 +95,7 @@ class TestMetricsCalculator:
 
         assert metrics.total_return == pytest.approx(0.15)  # 15%
         assert metrics.total_trades == 3
-        assert metrics.win_rate == pytest.approx(2/3)
+        assert metrics.win_rate == pytest.approx(2 / 3)
 
     def test_empty_equity(self):
         calc = MetricsCalculator()
@@ -128,13 +128,15 @@ class TestBacktestEngine:
         # Simple buy-and-hold strategy
         def strategy(trade_date, market_data, positions):
             if "510300.SSE" in market_data and not positions.get("510300.SSE"):
-                return [OrderEvent(
-                    trade_date=trade_date,
-                    symbol="510300.SSE",
-                    side="BUY",
-                    quantity=10000,
-                    strategy_name="buy_hold",
-                )]
+                return [
+                    OrderEvent(
+                        trade_date=trade_date,
+                        symbol="510300.SSE",
+                        side="BUY",
+                        quantity=10000,
+                        strategy_name="buy_hold",
+                    )
+                ]
             return []
 
         result = engine.run(strategy)
@@ -171,12 +173,14 @@ class TestBacktestEngine:
 
         def strategy(trade_date, market_data, positions):
             if "510300.SSE" in market_data and not positions.get("510300.SSE"):
-                return [OrderEvent(
-                    trade_date=trade_date,
-                    symbol="510300.SSE",
-                    side="BUY",
-                    quantity=10000,
-                )]
+                return [
+                    OrderEvent(
+                        trade_date=trade_date,
+                        symbol="510300.SSE",
+                        side="BUY",
+                        quantity=10000,
+                    )
+                ]
             return []
 
         result = engine.run(strategy)

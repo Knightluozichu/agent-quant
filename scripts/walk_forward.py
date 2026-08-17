@@ -96,9 +96,7 @@ PARAM_PERTURBATIONS = [
 MIN_TRADES_PER_SEGMENT = 20
 
 
-def _filter_data_by_date(
-    data: dict, start: str, end: str
-) -> dict:
+def _filter_data_by_date(data: dict, start: str, end: str) -> dict:
     """筛选指定日期范围内的数据."""
     start_dt = pd.to_datetime(start)
     end_dt = pd.to_datetime(end)
@@ -110,9 +108,7 @@ def _filter_data_by_date(
     return filtered
 
 
-def _run_backtest_with_params(
-    data: dict, drop_lookback: int, a_share_ma: int
-) -> dict:
+def _run_backtest_with_params(data: dict, drop_lookback: int, a_share_ma: int) -> dict:
     """用指定参数运行无未来函数回测.
 
     临时修改全局参数, 运行后恢复.
@@ -145,27 +141,29 @@ def run_walk_forward(data: dict) -> list[dict]:
     results = []
     for seg in WALK_FORWARD_SEGMENTS:
         print(f"\n  {'=' * 50}")
-        print(f"  {seg['name']}: train {seg['train_start']} ~ {seg['train_end']}"
-              f" → test {seg['test_start']} ~ {seg['test_end']}")
+        print(
+            f"  {seg['name']}: train {seg['train_start']} ~ {seg['train_end']}"
+            f" → test {seg['test_start']} ~ {seg['test_end']}"
+        )
         if seg.get("contaminated"):
             print(f"  ⚠️  此段测试期落在已污染区间 (2023-2024)")
         print(f"  {'=' * 50}")
 
         # 筛选测试期数据
-        test_data = _filter_data_by_date(
-            data, seg["test_start"], seg["test_end"]
-        )
+        test_data = _filter_data_by_date(data, seg["test_start"], seg["test_end"])
 
         # 检查数据量
         sample_code = next(iter(test_data))
         n_days = len(test_data[sample_code])
         if n_days < 130:
             print(f"  ⚠️  测试期数据不足 ({n_days}天 < 130 warmup), 跳过")
-            results.append({
-                "segment": seg["name"],
-                "status": "insufficient_data",
-                "n_days": n_days,
-            })
+            results.append(
+                {
+                    "segment": seg["name"],
+                    "status": "insufficient_data",
+                    "n_days": n_days,
+                }
+            )
             continue
 
         # 运行基准参数回测
@@ -174,11 +172,13 @@ def run_walk_forward(data: dict) -> list[dict]:
 
         if "error" in result:
             print(f"  ❌ 回测失败: {result['error']}")
-            results.append({
-                "segment": seg["name"],
-                "status": "error",
-                "error": result["error"],
-            })
+            results.append(
+                {
+                    "segment": seg["name"],
+                    "status": "error",
+                    "error": result["error"],
+                }
+            )
             continue
 
         n_trades = result["n_trades"]
@@ -198,8 +198,10 @@ def run_walk_forward(data: dict) -> list[dict]:
             "status": "ok" if n_trades >= MIN_TRADES_PER_SEGMENT else "low_trades",
         }
 
-        print(f"  交易: {n_trades}笔 | 夏普: {result['sharpe']:.2f} | "
-              f"收益: {result['total_return']:+.1%} | 回撤: {result['max_drawdown']:.1%}")
+        print(
+            f"  交易: {n_trades}笔 | 夏普: {result['sharpe']:.2f} | "
+            f"收益: {result['total_return']:+.1%} | 回撤: {result['max_drawdown']:.1%}"
+        )
 
         if n_trades < MIN_TRADES_PER_SEGMENT:
             print(f"  ⚠️  交易数 {n_trades} < {MIN_TRADES_PER_SEGMENT}, 标记为低交易量")
@@ -220,8 +222,10 @@ def run_walk_forward(data: dict) -> list[dict]:
                     "total_return": pert_result["total_return"],
                 }
                 perturbation_results.append(pr)
-                print(f"    {pert['label']:<10} 夏普: {pert_result['sharpe']:>6.2f} "
-                      f"收益: {pert_result['total_return']:>+8.1%}")
+                print(
+                    f"    {pert['label']:<10} 夏普: {pert_result['sharpe']:>6.2f} "
+                    f"收益: {pert_result['total_return']:>+8.1%}"
+                )
 
         segment_result["perturbation"] = perturbation_results
 
@@ -230,13 +234,10 @@ def run_walk_forward(data: dict) -> list[dict]:
             sharpes = [p["sharpe"] for p in perturbation_results]
             baseline_sharpe = result["sharpe"]
             if baseline_sharpe > 0:
-                max_deviation = max(
-                    abs(s - baseline_sharpe) / baseline_sharpe for s in sharpes
-                )
+                max_deviation = max(abs(s - baseline_sharpe) / baseline_sharpe for s in sharpes)
                 segment_result["stability"] = "stable" if max_deviation < 0.3 else "unstable"
                 segment_result["max_sharpe_deviation"] = max_deviation
-                print(f"  稳定性: {segment_result['stability']} "
-                      f"(最大偏差: {max_deviation:.1%})")
+                print(f"  稳定性: {segment_result['stability']} (最大偏差: {max_deviation:.1%})")
 
         results.append(segment_result)
 
@@ -256,8 +257,7 @@ def calculate_pbo(wf_results: list[dict]) -> dict:
     """
     # 收集有扰动结果的段落 (不限交易量, 只要参数扰动数据可用)
     valid_segments = [
-        r for r in wf_results
-        if r.get("perturbation") and r.get("status") in ("ok", "low_trades")
+        r for r in wf_results if r.get("perturbation") and r.get("status") in ("ok", "low_trades")
     ]
     if len(valid_segments) < 2:
         return {
@@ -325,10 +325,7 @@ def calculate_pbo(wf_results: list[dict]) -> dict:
         "pbo": round(pbo, 3),
         "n_overfit": n_overfit,
         "n_total": n_total,
-        "interpretation": (
-            f"PBO={pbo:.1%}: "
-            + ("过拟合风险低" if pbo < 0.5 else "过拟合风险高")
-        ),
+        "interpretation": (f"PBO={pbo:.1%}: " + ("过拟合风险低" if pbo < 0.5 else "过拟合风险高")),
     }
 
 
@@ -352,8 +349,10 @@ def main():
     pbo_result = calculate_pbo(wf_results)
     print(f"  {pbo_result.get('interpretation', pbo_result.get('reason', 'N/A'))}")
     if pbo_result.get("pbo") is not None:
-        print(f"  PBO = {pbo_result['pbo']:.1%} "
-              f"({pbo_result['n_overfit']}/{pbo_result['n_total']} 次过拟合)")
+        print(
+            f"  PBO = {pbo_result['pbo']:.1%} "
+            f"({pbo_result['n_overfit']}/{pbo_result['n_total']} 次过拟合)"
+        )
 
     # 汇总
     print(f"\n  {'=' * 50}")
@@ -364,9 +363,11 @@ def main():
     for r in wf_results:
         if r.get("status") == "ok":
             contam = "⚠️" if r.get("contaminated") else "  "
-            print(f"  {r['segment']:<8} {r['n_trades']:>6} {r['sharpe']:>8.2f} "
-                  f"{r['total_return']:>+10.1%} {r['max_drawdown']:>8.1%} "
-                  f"{r.get('stability', 'N/A'):>6} {contam}")
+            print(
+                f"  {r['segment']:<8} {r['n_trades']:>6} {r['sharpe']:>8.2f} "
+                f"{r['total_return']:>+10.1%} {r['max_drawdown']:>8.1%} "
+                f"{r.get('stability', 'N/A'):>6} {contam}"
+            )
         else:
             print(f"  {r['segment']:<8} {r.get('status', 'N/A')}")
 

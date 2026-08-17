@@ -4,6 +4,7 @@
 周期指标(因果, 无前瞻): 等权池60日趋势 + 动量离散度。
 用法: uv run python scripts/exp_regime_detect.py
 """
+
 from __future__ import annotations
 
 import sys
@@ -20,8 +21,8 @@ from strategy_lab.strategies import v3_select  # noqa: E402
 
 PARAMS = {"mom_periods": (10, 20), "mom_weights": (0.5, 0.5), "rebalance_days": 5}
 IS_END = pd.Timestamp("2024-01-01")
-TREND_WIN = 60          # 周期趋势窗口(日)
-TREND_THR = 0.05        # 涨跌周期阈值(±5%)
+TREND_WIN = 60  # 周期趋势窗口(日)
+TREND_THR = 0.05  # 涨跌周期阈值(±5%)
 
 
 def pool_trend_and_dispersion(data: dict, idx_map: dict) -> tuple[float, float] | None:
@@ -63,8 +64,15 @@ def build_panel(data: dict) -> pd.DataFrame:
             continue
         trend, disp = td_result
         fwd_ret = eq["equity"].iloc[i + 1] / eq["equity"].iloc[i] - 1
-        rows.append({"date": td, "trend": trend, "dispersion": disp,
-                     "regime": classify_regime(trend, disp), "fwd_ret": fwd_ret})
+        rows.append(
+            {
+                "date": td,
+                "trend": trend,
+                "dispersion": disp,
+                "regime": classify_regime(trend, disp),
+                "fwd_ret": fwd_ret,
+            }
+        )
     return pd.DataFrame(rows)
 
 
@@ -90,10 +98,12 @@ def main() -> None:
     oos_df = panel[panel["date"] >= IS_END]
 
     print("=" * 64)
-    print(f"  周期识别分析 | 趋势窗口{TREND_WIN}日 阈值±{TREND_THR*100:.0f}%")
+    print(f"  周期识别分析 | 趋势窗口{TREND_WIN}日 阈值±{TREND_THR * 100:.0f}%")
     print("=" * 64)
-    print(f"\n  周期分布(全段): " +
-          "  ".join(f"{r}:{(panel['regime']==r).sum()}期" for r in ["上涨", "震荡", "下跌"]))
+    print(
+        f"\n  周期分布(全段): "
+        + "  ".join(f"{r}:{(panel['regime'] == r).sum()}期" for r in ["上涨", "震荡", "下跌"])
+    )
 
     summarize_by_regime(is_df, "样本内 2020-2024")
     summarize_by_regime(oos_df, "样本外 2024-2026")
@@ -106,12 +116,18 @@ def main() -> None:
     is_up, is_side = regime_avg(is_df, "上涨"), regime_avg(is_df, "震荡")
     oos_up, oos_side = regime_avg(oos_df, "上涨"), regime_avg(oos_df, "震荡")
     print("\n  【核心前提检验】 上涨期 vs 震荡期 平均收益:")
-    print(f"    样本内: 上涨 {is_up:+.2f}% vs 震荡 {is_side:+.2f}%  "
-          f"({'上涨>震荡 ✓' if is_up > is_side else '上涨<震荡 ✗'})")
-    print(f"    样本外: 上涨 {oos_up:+.2f}% vs 震荡 {oos_side:+.2f}%  "
-          f"({'上涨>震荡 ✓' if oos_up > oos_side else '上涨<震荡 ✗'})")
+    print(
+        f"    样本内: 上涨 {is_up:+.2f}% vs 震荡 {is_side:+.2f}%  "
+        f"({'上涨>震荡 ✓' if is_up > is_side else '上涨<震荡 ✗'})"
+    )
+    print(
+        f"    样本外: 上涨 {oos_up:+.2f}% vs 震荡 {oos_side:+.2f}%  "
+        f"({'上涨>震荡 ✓' if oos_up > oos_side else '上涨<震荡 ✗'})"
+    )
     stable = (is_up > is_side) == (oos_up > oos_side)
-    print(f"\n  【结论】 周期-表现关系样本内外{'一致 ✓ (前提成立, 可继续)' if stable else '不一致 ✗ (前提存疑, 警惕过拟合)'}")
+    print(
+        f"\n  【结论】 周期-表现关系样本内外{'一致 ✓ (前提成立, 可继续)' if stable else '不一致 ✗ (前提存疑, 警惕过拟合)'}"
+    )
     print("=" * 64)
 
 

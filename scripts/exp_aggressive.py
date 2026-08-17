@@ -2,6 +2,7 @@
 
 用法: uv run python scripts/exp_aggressive.py
 """
+
 from __future__ import annotations
 
 import sys
@@ -53,11 +54,15 @@ def main() -> None:
     for name, sel in versions:
         res = backtest(data, sel, PARAMS, 5)
         print(f"\n  【{name}】")
-        print(f"    10万 → {res['final_equity']/10000:.1f}万  "
-              f"(累计 {res['total_return']*100:+.0f}%, 年化 {res['ann_return']*100:+.1f}%)")
-        print(f"    夏普 {res['sharpe']:.2f} | 最大回撤 {res['max_drawdown']*100:.1f}% | "
-              f"交易 {res['n_trades']} 次")
-        yr = "  ".join(f"{y}:{v['return']*100:+.0f}%" for y, v in sorted(res["yearly"].items()))
+        print(
+            f"    10万 → {res['final_equity'] / 10000:.1f}万  "
+            f"(累计 {res['total_return'] * 100:+.0f}%, 年化 {res['ann_return'] * 100:+.1f}%)"
+        )
+        print(
+            f"    夏普 {res['sharpe']:.2f} | 最大回撤 {res['max_drawdown'] * 100:.1f}% | "
+            f"交易 {res['n_trades']} 次"
+        )
+        yr = "  ".join(f"{y}:{v['return'] * 100:+.0f}%" for y, v in sorted(res["yearly"].items()))
         print(f"    逐年: {yr}")
 
     # 滚动4年: 看激进版的最坏情况
@@ -69,17 +74,28 @@ def main() -> None:
     s = date(2020, 7, 1)
     finals, dds = [], []
     while add_months(s, 48) <= date(2026, 7, 21):
-        res = backtest(data, v3_aggressive_select, PARAMS, 5,
-                       initial=100000.0, start_date=s, end_date=add_months(s, 48))
+        res = backtest(
+            data,
+            v3_aggressive_select,
+            PARAMS,
+            5,
+            initial=100000.0,
+            start_date=s,
+            end_date=add_months(s, 48),
+        )
         finals.append(res["final_equity"])
         dds.append(res["max_drawdown"] * 100)
         fw = res["final_equity"] / 10000
-        print(f"  {str(s):<13}{f'{fw:.1f}万':<12}"
-              f"{res['ann_return']*100:>+8.1f}%{res['max_drawdown']*100:>9.1f}%")
+        print(
+            f"  {str(s):<13}{f'{fw:.1f}万':<12}"
+            f"{res['ann_return'] * 100:>+8.1f}%{res['max_drawdown'] * 100:>9.1f}%"
+        )
         s = add_months(s, 3)
     print("  " + "-" * 48)
-    print(f"  激进版4年: 金额 {min(finals)/10000:.1f}万~{max(finals)/10000:.1f}万 | "
-          f"最深回撤 {min(dds):.1f}%")
+    print(
+        f"  激进版4年: 金额 {min(finals) / 10000:.1f}万~{max(finals) / 10000:.1f}万 | "
+        f"最深回撤 {min(dds):.1f}%"
+    )
     print("=" * 68)
 
 

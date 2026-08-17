@@ -4,6 +4,7 @@
 检验: 离散度能否稳定预测V3表现 (样本内2020-2024 → 样本外2024-2026)。
 用法: uv run python scripts/exp_regime_dispersion.py
 """
+
 from __future__ import annotations
 
 import sys
@@ -71,8 +72,9 @@ def main() -> None:
 
     for label, df in [("样本内 2020-2024", is_df), ("样本外 2024-2026", oos_df)]:
         df = df.copy()
-        df["tercile"] = pd.qcut(df["dispersion"], 3,
-                                labels=["低分散(震荡)", "中分散", "高分散(趋势)"])
+        df["tercile"] = pd.qcut(
+            df["dispersion"], 3, labels=["低分散(震荡)", "中分散", "高分散(趋势)"]
+        )
         print(f"\n  【{label}】 按离散度三分位:")
         print(f"  {'分组':<14}{'期数':>6}{'平均收益':>12}{'胜率':>10}{'累计':>12}")
         print("  " + "-" * 52)
@@ -90,16 +92,23 @@ def main() -> None:
         df = df.copy()
         df["t"] = pd.qcut(df["dispersion"], 3, labels=["lo", "mid", "hi"])
         return df[df["t"] == "hi"]["fwd_ret"].mean(), df[df["t"] == "lo"]["fwd_ret"].mean()
+
     is_hi, is_lo = hi_lo(is_df)
     oos_hi, oos_lo = hi_lo(oos_df)
     print(f"\n  【核心检验】 高分散 vs 低分散:")
-    print(f"    样本内: 高 {is_hi*100:+.2f}% vs 低 {is_lo*100:+.2f}%  "
-          f"({'高>低 ✓' if is_hi > is_lo else '高<低 ✗'})")
-    print(f"    样本外: 高 {oos_hi*100:+.2f}% vs 低 {oos_lo*100:+.2f}%  "
-          f"({'高>低 ✓' if oos_hi > oos_lo else '高<低 ✗'})")
+    print(
+        f"    样本内: 高 {is_hi * 100:+.2f}% vs 低 {is_lo * 100:+.2f}%  "
+        f"({'高>低 ✓' if is_hi > is_lo else '高<低 ✗'})"
+    )
+    print(
+        f"    样本外: 高 {oos_hi * 100:+.2f}% vs 低 {oos_lo * 100:+.2f}%  "
+        f"({'高>低 ✓' if oos_hi > oos_lo else '高<低 ✗'})"
+    )
     stable = (is_hi > is_lo) == (oos_hi > oos_lo)
-    print(f"\n  【结论】 离散度周期信号样本内外"
-          f"{'一致 ✓ (可作为周期判据)' if stable else '不一致 ✗ (仍不稳定)'}")
+    print(
+        f"\n  【结论】 离散度周期信号样本内外"
+        f"{'一致 ✓ (可作为周期判据)' if stable else '不一致 ✗ (仍不稳定)'}"
+    )
     print("=" * 64)
 
 

@@ -4,6 +4,7 @@
 样本内(2020-2023)找有效信号 → 样本外(2024-2026)验证是否过拟合。
 用法: uv run python scripts/exp_escape_signal.py
 """
+
 from __future__ import annotations
 
 import sys
@@ -41,7 +42,7 @@ def n_day_ma(data: dict, code: str, td, n: int):
     idx = int((df["trade_date"] <= td).sum())
     if idx < n:
         return None
-    return float(df["close"].values[idx - n:idx].astype(float).mean())
+    return float(df["close"].values[idx - n : idx].astype(float).mean())
 
 
 def check_escape(etype: str, param, data: dict, code: str, td, price, peak) -> bool:
@@ -56,9 +57,15 @@ def check_escape(etype: str, param, data: dict, code: str, td, price, peak) -> b
     return False
 
 
-def backtest_escape(data: dict, escape_type: str | None, escape_param,
-                    start_date=None, end_date=None, initial: float = 100000,
-                    rebalance_days: int = 5) -> dict:
+def backtest_escape(
+    data: dict,
+    escape_type: str | None,
+    escape_param,
+    start_date=None,
+    end_date=None,
+    initial: float = 100000,
+    rebalance_days: int = 5,
+) -> dict:
     """V3 + 日频逃离检查. escape_type=None 即纯V3基线."""
     dates = get_common_dates(data)[WARMUP:]
     if start_date:
@@ -101,8 +108,13 @@ def backtest_escape(data: dict, escape_type: str | None, escape_param,
                             ntr += 1
 
         # === 每日逃离检查 ===
-        if (escape_type and holding and holding in data and holding != rq.DEFENSE
-                and td not in rebalance_set):
+        if (
+            escape_type
+            and holding
+            and holding in data
+            and holding != rq.DEFENSE
+            and td not in rebalance_set
+        ):
             p = price_on(data, holding, td)
             if p:
                 peak = max(peak, p)
@@ -130,8 +142,14 @@ def backtest_escape(data: dict, escape_type: str | None, escape_param,
     sharpe = ann / av if av > 0 else 0
     cm = eqdf["equity"].cummax()
     mdd = float(((eqdf["equity"] - cm) / cm).min())
-    return {"total_return": tr, "ann_return": ann, "sharpe": sharpe,
-            "max_drawdown": mdd, "n_trades": ntr, "n_escape": n_escape}
+    return {
+        "total_return": tr,
+        "ann_return": ann,
+        "sharpe": sharpe,
+        "max_drawdown": mdd,
+        "n_trades": ntr,
+        "n_escape": n_escape,
+    }
 
 
 def main() -> None:
@@ -151,15 +169,19 @@ def main() -> None:
     print("=" * 78)
     print("  紧急逃离信号实验 | 样本内2020-2023 → 样本外2024-2026")
     print("=" * 78)
-    print(f"  {'策略':<16}{'IS年化':>9}{'IS夏普':>8}{'IS回撤':>9}{'OOS年化':>10}{'OOS夏普':>9}{'OOS回撤':>9}{'逃离次数':>9}")
+    print(
+        f"  {'策略':<16}{'IS年化':>9}{'IS夏普':>8}{'IS回撤':>9}{'OOS年化':>10}{'OOS夏普':>9}{'OOS回撤':>9}{'逃离次数':>9}"
+    )
     print("  " + "-" * 74)
     for name, etype, param in configs:
         is_r = backtest_escape(data, etype, param, end_date=IS_END)
         oos_r = backtest_escape(data, etype, param, start_date=IS_END)
-        print(f"  {name:<16}{is_r['ann_return']*100:>+8.1f}%{is_r['sharpe']:>8.2f}"
-              f"{is_r['max_drawdown']*100:>8.1f}%{oos_r['ann_return']*100:>+9.1f}%"
-              f"{oos_r['sharpe']:>9.2f}{oos_r['max_drawdown']*100:>8.1f}%"
-              f"{oos_r['n_escape']:>9}")
+        print(
+            f"  {name:<16}{is_r['ann_return'] * 100:>+8.1f}%{is_r['sharpe']:>8.2f}"
+            f"{is_r['max_drawdown'] * 100:>8.1f}%{oos_r['ann_return'] * 100:>+9.1f}%"
+            f"{oos_r['sharpe']:>9.2f}{oos_r['max_drawdown'] * 100:>8.1f}%"
+            f"{oos_r['n_escape']:>9}"
+        )
     print("=" * 78)
     print("  判读: 逃离信号若真有效, 应样本内外都提升夏普/降回撤; 若仅样本内好=过拟合。")
 

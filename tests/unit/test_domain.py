@@ -90,9 +90,7 @@ class TestMarketRegime:
     """Test MarketRegime enum."""
 
     def test_from_direction_oscillation(self) -> None:
-        regime = MarketRegime.from_direction_oscillation(
-            MarketDirection.UP, OscillationLevel.LOW
-        )
+        regime = MarketRegime.from_direction_oscillation(MarketDirection.UP, OscillationLevel.LOW)
         assert regime == MarketRegime.SMOOTH_UPTREND
 
     def test_all_nine_regimes(self) -> None:

@@ -11,6 +11,7 @@ W3震荡市真实亏损-12.3% → 被判定不可上线. 本脚本检查新方�
 用法: uv run python scripts/exp_overfit_audit.py
 输出: data/v9_results/overfit_audit.json
 """
+
 from __future__ import annotations
 
 import json
@@ -62,9 +63,11 @@ def main() -> None:
     common = ea.index.intersection(eb.index)
     diff = (eb[common] - ea[common]).resample("ME").last()  # 月末超额净值差
 
-    print(f"\n  基线期末 {rep_a['final_value']:,.0f} | "
-          f"门控+豁免+H3 期末 {rep_b['final_value']:,.0f} | "
-          f"超额 {rep_b['final_value'] - rep_a['final_value']:,.0f}")
+    print(
+        f"\n  基线期末 {rep_a['final_value']:,.0f} | "
+        f"门控+豁免+H3 期末 {rep_b['final_value']:,.0f} | "
+        f"超额 {rep_b['final_value'] - rep_a['final_value']:,.0f}"
+    )
 
     # === 按年分解超额 (用月末净值差增量) ===
     monthly = diff.resample("ME").last()
@@ -83,15 +86,18 @@ def main() -> None:
     # 集中度判定
     sorted_years = sorted(yearly_excess, key=lambda k: -abs(yearly_excess[k]))
     top1 = yearly_excess[sorted_years[0]] / total_excess if total_excess else 0
-    top2 = (yearly_excess[sorted_years[0]] + yearly_excess[sorted_years[1]]) / total_excess if total_excess else 0
+    top2 = (
+        (yearly_excess[sorted_years[0]] + yearly_excess[sorted_years[1]]) / total_excess
+        if total_excess
+        else 0
+    )
     print(f"    最大单年贡献: {abs(top1):.1%} | 最大两年合计: {abs(top2):.1%}")
 
     # === 负超额月份统计 ===
     monthly_delta = diff.diff().dropna()
     neg_months = (monthly_delta < 0).sum()
     n_months = len(monthly_delta)
-    print(f"\n  【月度超额】 负超额月份 {neg_months}/{n_months} "
-          f"({neg_months / n_months:.0%})")
+    print(f"\n  【月度超额】 负超额月份 {neg_months}/{n_months} ({neg_months / n_months:.0%})")
 
     # === 按资产统计: 放行事件后5日收益分布 (机制信息源) ===
     print("\n  【机制事件审计】")
@@ -108,6 +114,7 @@ def main() -> None:
 
     # 用 trace 脚本数据 (已有 JSON) 审计放行质量
     import pandas as pd
+
     trace_path = OUTPUT_DIR / "drop_gate_trace.json"
     if trace_path.exists():
         t = json.loads(trace_path.read_text())
@@ -119,14 +126,18 @@ def main() -> None:
             if len(fwd) < 3:
                 print(f"    {rq.ETF_POOL[code]}: {len(grp)}次 (后5日样本少)")
                 continue
-            print(f"    {rq.ETF_POOL[code]}: {len(grp)}次 后5日均 {fwd.mean():+.2%} "
-                  f"继续跌 {(fwd < 0).mean() * 100:.0f}%")
+            print(
+                f"    {rq.ETF_POOL[code]}: {len(grp)}次 后5日均 {fwd.mean():+.2%} "
+                f"继续跌 {(fwd < 0).mean() * 100:.0f}%"
+            )
 
     result = {
-        "base_final": rep_a["final_value"], "new_final": rep_b["final_value"],
+        "base_final": rep_a["final_value"],
+        "new_final": rep_b["final_value"],
         "total_excess": total_excess,
         "yearly_excess": {k: round(v, 0) for k, v in yearly_excess.items()},
-        "top1_year_share": round(abs(top1), 4), "top2_year_share": round(abs(top2), 4),
+        "top1_year_share": round(abs(top1), 4),
+        "top2_year_share": round(abs(top2), 4),
         "neg_months_ratio": round(neg_months / n_months, 3),
     }
     out = OUTPUT_DIR / "overfit_audit_concentration.json"

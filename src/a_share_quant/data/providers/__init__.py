@@ -34,6 +34,7 @@ def get_data_provider(provider_type: str = "mock", **kwargs: object) -> DataProv
 
     if provider_type == "joinquant":
         from a_share_quant.data.providers.joinquant import JoinQuantProvider
+
         return JoinQuantProvider(**kwargs)  # type: ignore[arg-type]
 
     msg = f"Unknown provider type: {provider_type}"

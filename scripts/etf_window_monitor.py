@@ -277,9 +277,7 @@ def print_week_table(data: dict, pool: dict, week_map: list) -> None:
 # --------------------------------------------------------------------------- #
 # 输出: 叙事摘要
 # --------------------------------------------------------------------------- #
-def build_summary(
-    data: dict, pool: dict, week_map: list, asof: dt_date
-) -> str:
+def build_summary(data: dict, pool: dict, week_map: list, asof: dt_date) -> str:
     """自然语言摘要 (对应'上周白银+8% / 今天原油+2.75%'这类观察)."""
     active = {c: df for c, df in data.items() if c in pool or c == DEFENSE}
     lines: list[str] = []
@@ -336,8 +334,7 @@ def build_summary(
                 if a is not None and b is not None and abs((a - b) * 100) >= 3.0:
                     direction = "反转" if a * b < 0 else ("加速" if abs(a) > abs(b) else "降温")
                     movers.append(
-                        f"{name} {lbl_b}{b * 100:+.2f}% → "
-                        f"{lbl_a}{a * 100:+.2f}% ({direction})"
+                        f"{name} {lbl_b}{b * 100:+.2f}% → {lbl_a}{a * 100:+.2f}% ({direction})"
                     )
         if movers:
             lines.append("• 周际动能变化:")
@@ -382,6 +379,7 @@ def run(args) -> tuple[dict, str]:
 
     if args.update:
         from live_signal import update_data
+
         print("  增量更新行情...")
         data = update_data(data)
         data = load_pool_data(pool)  # 重新加载 (update_data 已写回 parquet)
@@ -405,15 +403,21 @@ def run(args) -> tuple[dict, str]:
     }
     active = {c: df for c, df in data.items() if c in pool or c == DEFENSE}
     for code, df in active.items():
-        result["assets"].append({
-            "code": code,
-            "name": pool.get(code, DEFENSE_NAME),
-            "daily": {str(d): round(r, 6) for d, r in daily_rets(df, args.days)},
-            "windows": {f"r{n}": (round(v, 6) if v is not None else None)
-                        for n, v in window_rets(df).items()},
-            "weeks": {lbl: (round(v, 6) if v is not None else None)
-                      for lbl, v in week_returns(df, week_map).items()},
-        })
+        result["assets"].append(
+            {
+                "code": code,
+                "name": pool.get(code, DEFENSE_NAME),
+                "daily": {str(d): round(r, 6) for d, r in daily_rets(df, args.days)},
+                "windows": {
+                    f"r{n}": (round(v, 6) if v is not None else None)
+                    for n, v in window_rets(df).items()
+                },
+                "weeks": {
+                    lbl: (round(v, 6) if v is not None else None)
+                    for lbl, v in week_returns(df, week_map).items()
+                },
+            }
+        )
     result["summary"] = summary
 
     # === 终端输出 ===
@@ -432,6 +436,7 @@ def run(args) -> tuple[dict, str]:
 
     if args.notify:
         from notify import push_bark
+
         push_bark(f"📊 短期窗口监控 {asof}", summary, level="active")
         print("\n  ✓ 已推送 Bark")
 

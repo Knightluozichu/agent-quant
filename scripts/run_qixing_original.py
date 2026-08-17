@@ -49,8 +49,7 @@ PROFIT_PROTECTION_DD = 0.05  # 盈利保护: 回撤5%切货币
 WARMUP = 130
 
 # 聚宽原版逐年收益 (评论区用户数据) — 对比基准
-ORIGINAL = {2020: 0.2716, 2021: 0.3278, 2022: 0.7605,
-            2023: 0.0810, 2024: 0.5473, 2025: 2.3803}
+ORIGINAL = {2020: 0.2716, 2021: 0.3278, 2022: 0.7605, 2023: 0.0810, 2024: 0.5473, 2025: 2.3803}
 
 
 def orig_momentum_score(close: np.ndarray) -> float:
@@ -74,8 +73,8 @@ def select_target_original(data: dict, etf_data_at_date: dict) -> str:
             continue
         idx = etf_data_at_date[code]
         df = data[code]
-        close = df["close"].values[:idx + 1].astype(float)
-        volume = df["volume"].values[:idx + 1].astype(float)
+        close = df["close"].values[: idx + 1].astype(float)
+        volume = df["volume"].values[: idx + 1].astype(float)
         if len(close) < 121:
             continue
         # 原版三大过滤全开
@@ -145,7 +144,10 @@ def run_original(data: dict, initial_capital: float = 100_000.0) -> dict:
                 price = float(row.iloc[0]["close"])
                 if price > holding_peak:
                     holding_peak = price
-                if holding_peak > 0 and (price - holding_peak) / holding_peak < -PROFIT_PROTECTION_DD:
+                if (
+                    holding_peak > 0
+                    and (price - holding_peak) / holding_peak < -PROFIT_PROTECTION_DD
+                ):
                     profit_prot = True
 
         target = select_target_original(data, etf_data_at_date)
@@ -189,7 +191,9 @@ def run_original(data: dict, initial_capital: float = 100_000.0) -> dict:
     total_return = eq_df["equity"].iloc[-1] / initial_capital - 1
     daily_rets = eq_df["equity"].pct_change().dropna()
     ann_vol = daily_rets.std() * np.sqrt(252) if len(daily_rets) > 1 else 0.0
-    span_years = max((eq_df["trade_date"].iloc[-1] - eq_df["trade_date"].iloc[0]).days / 365.25, 1e-9)
+    span_years = max(
+        (eq_df["trade_date"].iloc[-1] - eq_df["trade_date"].iloc[0]).days / 365.25, 1e-9
+    )
     ann_ret = (1 + total_return) ** (1 / span_years) - 1
     sharpe = ann_ret / ann_vol if ann_vol > 0 else 0.0
     cummax = eq_df["equity"].cummax()
@@ -207,8 +211,15 @@ def run_original(data: dict, initial_capital: float = 100_000.0) -> dict:
         yearly[int(year)] = {"return": end / prev - 1, "max_dd": dd}
         prev = end
 
-    return {"total_return": total_return, "ann_return": ann_ret, "sharpe": sharpe,
-            "max_drawdown": max_dd, "yearly": yearly, "n_trades": n_trades, "eq_df": eq_df}
+    return {
+        "total_return": total_return,
+        "ann_return": ann_ret,
+        "sharpe": sharpe,
+        "max_drawdown": max_dd,
+        "yearly": yearly,
+        "n_trades": n_trades,
+        "eq_df": eq_df,
+    }
 
 
 def main() -> None:
@@ -240,11 +251,14 @@ def main() -> None:
     final = eq["equity"].iloc[-1]
     print(f"  {'-' * 60}")
     print(f"\n  10万 → {final:,.0f} ({final / 100_000 - 1:+.1%})")
-    print(f"  年化: {res['ann_return']:+.1%} | 夏普: {res['sharpe']:.2f} | "
-          f"回撤: {res['max_drawdown']:.1%} | 交易: {res['n_trades']}次")
+    print(
+        f"  年化: {res['ann_return']:+.1%} | 夏普: {res['sharpe']:.2f} | "
+        f"回撤: {res['max_drawdown']:.1%} | 交易: {res['n_trades']}次"
+    )
 
     # 持仓分布
     from collections import Counter
+
     counts = Counter(eq["holding"].tolist())
     total_days = len(eq)
     print(f"\n  持仓分布 (共{total_days}天):")

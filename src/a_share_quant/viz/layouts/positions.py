@@ -26,7 +26,6 @@ def create_positions_layout(loader: DashboardDataLoader) -> html.Div:
         [
             # Page header
             html.H4("持仓管理", className="mb-4"),
-
             # Portfolio summary cards
             dbc.Row(
                 [
@@ -53,7 +52,7 @@ def create_positions_layout(loader: DashboardDataLoader) -> html.Div:
                             "浮动盈亏",
                             f"¥{summary['total_unrealized_pnl']:+,.0f}",
                             f"{summary['total_unrealized_pnl_pct']:+.2%}",
-                            color="success" if summary['total_unrealized_pnl'] >= 0 else "danger",
+                            color="success" if summary["total_unrealized_pnl"] >= 0 else "danger",
                         ),
                         width=3,
                     ),
@@ -69,7 +68,6 @@ def create_positions_layout(loader: DashboardDataLoader) -> html.Div:
                 ],
                 className="mb-4",
             ),
-
             # Positions table
             dbc.Row(
                 [
@@ -88,7 +86,6 @@ def create_positions_layout(loader: DashboardDataLoader) -> html.Div:
                 ],
                 className="mb-4",
             ),
-
             # Position detail cards with stop-loss/take-profit
             dbc.Row(
                 [
@@ -100,7 +97,6 @@ def create_positions_layout(loader: DashboardDataLoader) -> html.Div:
                     for pos in positions
                 ],
             ),
-
             # Drawdown chart (mock data)
             dbc.Row(
                 [
@@ -110,7 +106,14 @@ def create_positions_layout(loader: DashboardDataLoader) -> html.Div:
                                 [
                                     html.H6("组合回撤", className="card-title"),
                                     create_drawdown_chart(
-                                        dates=["2024-01", "2024-02", "2024-03", "2024-04", "2024-05", "2024-06"],
+                                        dates=[
+                                            "2024-01",
+                                            "2024-02",
+                                            "2024-03",
+                                            "2024-04",
+                                            "2024-05",
+                                            "2024-06",
+                                        ],
                                         drawdowns=[0, -0.02, -0.05, -0.03, -0.08, -0.04],
                                     ),
                                 ]
@@ -221,7 +224,6 @@ def _create_position_detail_card(pos: PositionData) -> dbc.Card:
                     ],
                     className="mb-3",
                 ),
-
                 # Price info
                 dbc.Row(
                     [
@@ -235,28 +237,34 @@ def _create_position_detail_card(pos: PositionData) -> dbc.Card:
                         dbc.Col(
                             [
                                 html.Small("现价", className="text-muted d-block"),
-                                html.Span(f"¥{pos.current_price:.3f}", className=f"text-{pnl_color}"),
+                                html.Span(
+                                    f"¥{pos.current_price:.3f}", className=f"text-{pnl_color}"
+                                ),
                             ],
                             width=4,
                         ),
                         dbc.Col(
                             [
                                 html.Small("盈亏", className="text-muted d-block"),
-                                html.Span(f"¥{pos.unrealized_pnl:+,.0f}", className=f"text-{pnl_color}"),
+                                html.Span(
+                                    f"¥{pos.unrealized_pnl:+,.0f}", className=f"text-{pnl_color}"
+                                ),
                             ],
                             width=4,
                         ),
                     ],
                     className="mb-3",
                 ),
-
                 # Stop-loss / Take-profit progress bar
                 html.Div(
                     [
                         html.Div(
                             [
                                 html.Small(f"止损 ¥{pos.stop_loss:.3f}", className="text-danger"),
-                                html.Small(f"止盈 ¥{pos.take_profit:.3f}", className="text-success float-end"),
+                                html.Small(
+                                    f"止盈 ¥{pos.take_profit:.3f}",
+                                    className="text-success float-end",
+                                ),
                             ],
                             className="mb-1",
                         ),

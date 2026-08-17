@@ -5,6 +5,7 @@
 用法: uv run python scripts/next_rebalance.py [--update]
   --update  先增量更新数据到最新(需网络/akshare)
 """
+
 from __future__ import annotations
 
 import datetime as dt
@@ -100,8 +101,7 @@ def main() -> None:
     else:
         print(f"  下个调仓日   : 约 {next_rb} (数据未覆盖, 按日历估算)")
     hold_name = ls.name_of(holding) if holding else "空仓(货币)"
-    print(f"  当前持仓     : {hold_name}" +
-          (f" ({state.get('shares',0)}股)" if holding else ""))
+    print(f"  当前持仓     : {hold_name}" + (f" ({state.get('shares', 0)}股)" if holding else ""))
     if a_share_weak:
         print("  ⚠️  A股走弱(创业板<MA20), 已排除创业板")
 
@@ -109,7 +109,7 @@ def main() -> None:
     ranked = sorted(candidates, key=lambda x: -x[1])
     for code, score in ranked:
         tag = " ◀当前目标" if code == target else ""
-        print(f"    {ls.name_of(code):<10} {score*100:+6.2f}%{tag}")
+        print(f"    {ls.name_of(code):<10} {score * 100:+6.2f}%{tag}")
 
     print(f"\n  【调仓预览】(基于最新数据, 实际以调仓日当天为准)")
     if target == holding:

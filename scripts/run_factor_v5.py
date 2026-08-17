@@ -43,6 +43,7 @@ SLIPPAGE = 0.0005
 # Layer 1: Absolute Risk Gate
 # =============================================================================
 
+
 class AbsoluteRiskGate:
     """Market-level absolute signals. NOT cross-sectional.
 
@@ -69,8 +70,9 @@ class AbsoluteRiskGate:
         if mg.exists():
             self.margin_data = pd.read_parquet(mg)
 
-    def evaluate(self, index_df: pd.DataFrame, tradable: dict[str, pd.DataFrame],
-                 as_of: date) -> dict:
+    def evaluate(
+        self, index_df: pd.DataFrame, tradable: dict[str, pd.DataFrame], as_of: date
+    ) -> dict:
         """Returns {risk_on: bool, score: float, reasons: list, details: dict}."""
         idx = index_df[index_df["trade_date"] <= as_of].sort_values("trade_date")
         if len(idx) < 60:
@@ -179,6 +181,7 @@ class AbsoluteRiskGate:
 # Layer 2: Expert Models
 # =============================================================================
 
+
 class ExpertModels:
     """4 experts, each produces a ranking of ETFs.
 
@@ -254,7 +257,7 @@ class ExpertModels:
         if all(len(r) >= 2 for r in self._expert_returns):
             trailing = []
             for ei in range(self.n_experts):
-                recent = self._expert_returns[ei][-self._lookback:]
+                recent = self._expert_returns[ei][-self._lookback :]
                 trailing.append(np.mean(recent))
 
             # Softmax with temperature (moderate concentration)
@@ -269,7 +272,9 @@ class ExpertModels:
             new_weights /= new_weights.sum()
             self.expert_weights = new_weights
 
-    def get_expert_returns(self, factor_df: pd.DataFrame, forward_returns: dict[str, float]) -> list[float]:
+    def get_expert_returns(
+        self, factor_df: pd.DataFrame, forward_returns: dict[str, float]
+    ) -> list[float]:
         """Calculate what each expert alone would have returned (for weight update)."""
         results = []
         for ei, (ename, factors) in enumerate(self.EXPERT_FACTORS.items()):
@@ -287,6 +292,7 @@ class ExpertModels:
 # =============================================================================
 # Layer 3: Correlation-Aware Position Sizing (HRP-inspired)
 # =============================================================================
+
 
 def correlation_cluster_weights(
     selected: list[str],
@@ -316,7 +322,7 @@ def correlation_cluster_weights(
         hist = data[sym][data[sym]["trade_date"] <= as_of].sort_values("trade_date")
         if len(hist) < lookback + 1:
             continue
-        close = hist["close"].values[-lookback - 1:]
+        close = hist["close"].values[-lookback - 1 :]
         rets = np.diff(close) / close[:-1]
         ret_matrix.append(rets)
         valid_symbols.append(sym)
@@ -356,7 +362,7 @@ def correlation_cluster_weights(
         vols = {}
         for sym in members:
             hist = data[sym][data[sym]["trade_date"] <= as_of].sort_values("trade_date")
-            close = hist["close"].values[-lookback - 1:]
+            close = hist["close"].values[-lookback - 1 :]
             rets = np.diff(close) / close[:-1]
             vols[sym] = np.std(rets) * np.sqrt(252)
 
@@ -386,6 +392,7 @@ def correlation_cluster_weights(
 # Layer 4: Staggered Rebalance + Dynamic Exit
 # =============================================================================
 
+
 class DynamicExitManager:
     """Daily exit check with hysteresis.
 
@@ -395,8 +402,13 @@ class DynamicExitManager:
     NO trailing stop (causes whipsaw on ETFs)
     """
 
-    def __init__(self, entry_rank: int = 3, exit_rank: int = 8,
-                 stop_loss: float = -0.15, trailing_stop: float = -999.0):
+    def __init__(
+        self,
+        entry_rank: int = 3,
+        exit_rank: int = 8,
+        stop_loss: float = -0.15,
+        trailing_stop: float = -999.0,
+    ):
         self.entry_rank = entry_rank
         self.exit_rank = exit_rank
         self.stop_loss = stop_loss
@@ -422,8 +434,9 @@ class DynamicExitManager:
                         self.positions[sym]["peak_price"], price
                     )
 
-    def check_exits(self, data: dict[str, pd.DataFrame], as_of: date,
-                    current_ranks: dict[str, int]) -> list[tuple[str, str]]:
+    def check_exits(
+        self, data: dict[str, pd.DataFrame], as_of: date, current_ranks: dict[str, int]
+    ) -> list[tuple[str, str]]:
         """Check which positions should exit. Returns [(symbol, reason)]."""
         exits = []
         for sym, info in list(self.positions.items()):
@@ -464,6 +477,7 @@ class DynamicExitManager:
 # V5 Backtest Engine
 # =============================================================================
 
+
 def run_v5_backtest(
     data: dict[str, pd.DataFrame],
     index_df: pd.DataFrame,
@@ -479,8 +493,7 @@ def run_v5_backtest(
     exit_mgr = DynamicExitManager()
 
     index_symbols = {"idx_000300", "idx_000905", "000300", "000905"}
-    tradable = {k: v for k, v in data.items()
-                if k not in DEFENSIVE and k not in index_symbols}
+    tradable = {k: v for k, v in data.items() if k not in DEFENSIVE and k not in index_symbols}
 
     all_dates = sorted(index_df["trade_date"].tolist())
     if start_date:
@@ -503,6 +516,7 @@ def run_v5_backtest(
 
     # Factor calculator (reuse from v4.3)
     from run_factor_v43 import FactorCalc, CROSS_FACTORS
+
     calc = FactorCalc()
     calc.load_external()
 
@@ -536,10 +550,15 @@ def run_v5_backtest(
                         entry_info = exit_mgr.positions.get(sym, {})
                         entry_p = entry_info.get("entry_price", price)
                         ret = (price - entry_p) / entry_p
-                        trade_log.append({
-                            "date": str(td), "action": "EXIT", "symbol": sym,
-                            "reason": reason, "return": ret,
-                        })
+                        trade_log.append(
+                            {
+                                "date": str(td),
+                                "action": "EXIT",
+                                "symbol": sym,
+                                "reason": reason,
+                                "return": ret,
+                            }
+                        )
                         n_trades += 1
                         del holdings[sym]
                         exit_mgr.remove(sym)
@@ -551,10 +570,14 @@ def run_v5_backtest(
 
             # Layer 1: Absolute Risk Gate
             gate_result = gate.evaluate(index_df, tradable, td)
-            gate_log.append({
-                "date": str(td), "risk_on": gate_result["risk_on"],
-                "score": gate_result["score"], "reasons": gate_result["reasons"],
-            })
+            gate_log.append(
+                {
+                    "date": str(td),
+                    "risk_on": gate_result["risk_on"],
+                    "score": gate_result["score"],
+                    "reasons": gate_result["reasons"],
+                }
+            )
 
             if not gate_result["risk_on"]:
                 # Switch to bonds
@@ -572,8 +595,10 @@ def run_v5_backtest(
                     if not row.empty:
                         price = row.iloc[0]["close"]
                         equity_now = cash + sum(
-                            holdings.get(s, 0) * data[s][data[s]["trade_date"] == td].iloc[0]["close"]
-                            for s in holdings if s in data and not data[s][data[s]["trade_date"] == td].empty
+                            holdings.get(s, 0)
+                            * data[s][data[s]["trade_date"] == td].iloc[0]["close"]
+                            for s in holdings
+                            if s in data and not data[s][data[s]["trade_date"] == td].empty
                         )
                         shares = int(equity_now * 0.9 / price / 10) * 10
                         if shares > 0 and shares * price <= cash:
@@ -619,7 +644,8 @@ def run_v5_backtest(
                     # Buy targets
                     equity_now = cash + sum(
                         holdings.get(s, 0) * data[s][data[s]["trade_date"] == td].iloc[0]["close"]
-                        for s in holdings if s in data and not data[s][data[s]["trade_date"] == td].empty
+                        for s in holdings
+                        if s in data and not data[s][data[s]["trade_date"] == td].empty
                     )
                     for sym, w in weights.items():
                         if w <= 0:
@@ -649,16 +675,22 @@ def run_v5_backtest(
                                 future = data[sym][data[sym]["trade_date"] > td].head(20)
                                 current = data[sym][data[sym]["trade_date"] == td]
                                 if len(future) >= 10 and not current.empty:
-                                    fwd[sym] = (future.iloc[-1]["close"] / current.iloc[0]["close"]) - 1
+                                    fwd[sym] = (
+                                        future.iloc[-1]["close"] / current.iloc[0]["close"]
+                                    ) - 1
                         if len(fwd) >= 4:
                             expert_rets = experts.get_expert_returns(factor_df, fwd)
                             experts.update_weights(expert_rets)
 
-                    expert_weight_history.append({
-                        "date": str(td),
-                        **{f"w_{n}": experts.expert_weights[i]
-                           for i, n in enumerate(experts.expert_names)},
-                    })
+                    expert_weight_history.append(
+                        {
+                            "date": str(td),
+                            **{
+                                f"w_{n}": experts.expert_weights[i]
+                                for i, n in enumerate(experts.expert_names)
+                            },
+                        }
+                    )
 
         # Record equity
         equity = cash
@@ -687,11 +719,17 @@ def run_v5_backtest(
     max_dd = ((eq_df["equity"] - cummax) / cummax).min()
 
     return {
-        "total_return": total_return, "ann_return": ann_return,
-        "ann_vol": ann_vol, "sharpe": sharpe, "max_drawdown": max_dd,
-        "n_trades": n_trades, "n_days": n_days,
-        "equity_curve": eq_df, "trade_log": trade_log,
-        "gate_log": gate_log, "expert_weights": expert_weight_history,
+        "total_return": total_return,
+        "ann_return": ann_return,
+        "ann_vol": ann_vol,
+        "sharpe": sharpe,
+        "max_drawdown": max_dd,
+        "n_trades": n_trades,
+        "n_days": n_days,
+        "equity_curve": eq_df,
+        "trade_log": trade_log,
+        "gate_log": gate_log,
+        "expert_weights": expert_weight_history,
     }
 
 
@@ -699,11 +737,16 @@ def run_v5_backtest(
 # Main
 # =============================================================================
 
+
 def load_data():
     data = {}
     for f in DATA_DIR.glob("*.parquet"):
-        if f.name in ("combined_long.parquet", "northbound.parquet",
-                      "pe_percentile.parquet", "margin_sentiment.parquet"):
+        if f.name in (
+            "combined_long.parquet",
+            "northbound.parquet",
+            "pe_percentile.parquet",
+            "margin_sentiment.parquet",
+        ):
             continue
         df = pd.read_parquet(f)
         if "symbol" not in df.columns or "trade_date" not in df.columns:
@@ -763,7 +806,9 @@ def main():
 
     print(f"  {'-' * 46}")
     print(f"\n  10万 → {final:,.0f} ({total_ret:+.1%}, {final / 100_000:.2f}x)")
-    print(f"  年化: {ann_ret:+.1%} | 夏普: {result['sharpe']:.2f} | 回撤: {result['max_drawdown']:.1%}")
+    print(
+        f"  年化: {ann_ret:+.1%} | 夏普: {result['sharpe']:.2f} | 回撤: {result['max_drawdown']:.1%}"
+    )
     print(f"  交易次数: {result['n_trades']}")
 
     # Gate statistics
@@ -791,10 +836,14 @@ def main():
     # 2023 stress test
     print(f"\n[2/2] 2023压力测试...")
     from datetime import date as dt_date
-    r2023 = run_v5_backtest(data, index_df,
-                            start_date=dt_date(2023, 1, 1),
-                            end_date=dt_date(2023, 12, 31),
-                            initial_capital=100_000)
+
+    r2023 = run_v5_backtest(
+        data,
+        index_df,
+        start_date=dt_date(2023, 1, 1),
+        end_date=dt_date(2023, 12, 31),
+        initial_capital=100_000,
+    )
     if r2023.get("equity_curve") is not None:
         eq23 = r2023["equity_curve"]
         ret_2023 = (eq23["equity"].iloc[-1] / 100_000) - 1

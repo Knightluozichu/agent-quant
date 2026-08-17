@@ -55,9 +55,7 @@ class TestPaperBroker:
             )
             broker.submit_order("510300.SSE", "BUY", 1000)
 
-            market_data = {
-                "510300.SSE": {"open": 4.0, "high": 4.1, "low": 3.95, "close": 4.05}
-            }
+            market_data = {"510300.SSE": {"open": 4.0, "high": 4.1, "low": 3.95, "close": 4.05}}
             filled = broker.execute_pending_orders(market_data, date(2024, 1, 15))
 
             assert len(filled) == 1

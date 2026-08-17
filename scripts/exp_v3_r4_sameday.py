@@ -43,9 +43,13 @@ INITIAL_CAPITAL = 100_000.0
 
 
 def run_v3_r4_sameday(
-    data: dict, mat: dict,
-    thr: float = 1.0, buffer: float = 0.0, mom_period: int = 10,
-    start_idx: int = 0, end_idx: int | None = None,
+    data: dict,
+    mat: dict,
+    thr: float = 1.0,
+    buffer: float = 0.0,
+    mom_period: int = 10,
+    start_idx: int = 0,
+    end_idx: int | None = None,
     cost_multiplier: float = 1.0,
 ) -> dict:
     """14:50 同日口径 + R4 提前换手层 (thr=1.0 时等价纯 V3).
@@ -94,16 +98,34 @@ def run_v3_r4_sameday(
         nonlocal cash, holding, holding_shares
         can, reason = _check_close_tradable(code, td)
         if not can:
-            trade_log.append({"date": str(td), "action": "sell", "code": code,
-                              "status": "cancelled", "reason": f"卖出失败: {reason}", "tag": tag})
+            trade_log.append(
+                {
+                    "date": str(td),
+                    "action": "sell",
+                    "code": code,
+                    "status": "cancelled",
+                    "reason": f"卖出失败: {reason}",
+                    "tag": tag,
+                }
+            )
             return False
         price = float(data[code][data[code]["trade_date"] == td].iloc[0]["close"])
         amount = holding_shares * price * (1 - (FEE + SLIPPAGE) * cost_multiplier)
         cash += amount
         holding, holding_shares = None, 0
-        trade_log.append({"date": str(td), "action": "sell", "code": code,
-                          "shares": 0, "price": price, "amount": round(amount, 2),
-                          "status": "executed", "reason": "", "tag": tag})
+        trade_log.append(
+            {
+                "date": str(td),
+                "action": "sell",
+                "code": code,
+                "shares": 0,
+                "price": price,
+                "amount": round(amount, 2),
+                "status": "executed",
+                "reason": "",
+                "tag": tag,
+            }
+        )
         return True
 
     def _buy(code: str, td, tag: str) -> bool:
@@ -111,8 +133,16 @@ def run_v3_r4_sameday(
         nonlocal cash, holding, holding_shares
         can, reason = _check_close_tradable(code, td)
         if not can:
-            trade_log.append({"date": str(td), "action": "buy", "code": code,
-                              "status": "cancelled", "reason": f"买入失败: {reason}", "tag": tag})
+            trade_log.append(
+                {
+                    "date": str(td),
+                    "action": "buy",
+                    "code": code,
+                    "status": "cancelled",
+                    "reason": f"买入失败: {reason}",
+                    "tag": tag,
+                }
+            )
             return False
         price = float(data[code][data[code]["trade_date"] == td].iloc[0]["close"])
         shares = int(cash * 0.99 / price / 100) * 100
@@ -120,10 +150,19 @@ def run_v3_r4_sameday(
             return False
         cash -= shares * price * (1 + (FEE + SLIPPAGE) * cost_multiplier)
         holding, holding_shares = code, shares
-        trade_log.append({"date": str(td), "action": "buy", "code": code,
-                          "shares": shares, "price": price,
-                          "amount": round(shares * price * (1 + FEE + SLIPPAGE), 2),
-                          "status": "executed", "reason": "", "tag": tag})
+        trade_log.append(
+            {
+                "date": str(td),
+                "action": "buy",
+                "code": code,
+                "shares": shares,
+                "price": price,
+                "amount": round(shares * price * (1 + FEE + SLIPPAGE), 2),
+                "status": "executed",
+                "reason": "",
+                "tag": tag,
+            }
+        )
         return True
 
     def _mom_score(code: str, td) -> float:
@@ -186,23 +225,34 @@ def run_v3_r4_sameday(
                         if holding == DEFENSE:
                             _sell(DEFENSE, td, "r4_enter")
                         _buy(best_code, td, "r4_enter")
-                        r4_events.append({"date": str(td), "type": "r4_enter",
-                                          "asset": best_code,
-                                          "prev_ret": round(float(ev_ret), 4),
-                                          "score": round(float(best_s), 4),
-                                          "idx": i})
+                        r4_events.append(
+                            {
+                                "date": str(td),
+                                "type": "r4_enter",
+                                "asset": best_code,
+                                "prev_ret": round(float(ev_ret), 4),
+                                "score": round(float(best_s), 4),
+                                "idx": i,
+                            }
+                        )
                     elif holding in ETF_POOL:
                         cur_s = _mom_score(holding, td)
                         if best_s > cur_s + buffer:
                             sold = _sell(holding, td, "r4_switch")
                             if sold:
                                 _buy(best_code, td, "r4_switch")
-                                r4_events.append({"date": str(td), "type": "r4_switch",
-                                                  "asset": best_code, "from": holding,
-                                                  "prev_ret": round(float(ev_ret), 4),
-                                                  "score": round(float(best_s), 4),
-                                                  "from_score": round(float(cur_s), 4),
-                                                  "idx": i})
+                                r4_events.append(
+                                    {
+                                        "date": str(td),
+                                        "type": "r4_switch",
+                                        "asset": best_code,
+                                        "from": holding,
+                                        "prev_ret": round(float(ev_ret), 4),
+                                        "score": round(float(best_s), 4),
+                                        "from_score": round(float(cur_s), 4),
+                                        "idx": i,
+                                    }
+                                )
 
         # ===== 每日净值 (与生产一致) =====
         equity = cash
@@ -281,15 +331,19 @@ def main() -> None:
         ("V3+thr1.5%_换_b0%", {"thr": 0.015, "buffer": 0.0}),
     ]
     results = {}
-    print(f"\n  {'配置':<20} {'期末金额':>12} {'总收益':>9} {'年化':>8} {'夏普':>6} "
-          f"{'回撤':>8} {'交易':>4} {'取消':>4} {'触发':>4}")
+    print(
+        f"\n  {'配置':<20} {'期末金额':>12} {'总收益':>9} {'年化':>8} {'夏普':>6} "
+        f"{'回撤':>8} {'交易':>4} {'取消':>4} {'触发':>4}"
+    )
     for name, kw in configs:
         r = run_v3_r4_sameday(data, mat, **kw)
         results[name] = {k: v for k, v in r.items() if k not in ("events", "equity_curve")}
         results[name]["_events"] = r["events"]
-        print(f"  {name:<20} {r['final_value']:>12,.0f} {r['total_return']:>+9.1%} "
-              f"{r['ann_return']:>+8.1%} {r['sharpe']:>6.2f} {r['max_drawdown']:>8.1%} "
-              f"{r['n_trades']:>4} {r['n_cancelled']:>4} {r['n_events']:>4}")
+        print(
+            f"  {name:<20} {r['final_value']:>12,.0f} {r['total_return']:>+9.1%} "
+            f"{r['ann_return']:>+8.1%} {r['sharpe']:>6.2f} {r['max_drawdown']:>8.1%} "
+            f"{r['n_trades']:>4} {r['n_cancelled']:>4} {r['n_events']:>4}"
+        )
 
     # 年度对比
     print("\n  年度收益对比:")
@@ -306,13 +360,20 @@ def main() -> None:
     evs = results["V3+thr2.0%_换_b2%"]["_events"]
     for e in evs[:10]:
         f5 = e.get("fwd5")
-        print(f"    {e['date']} {e['type']} {ETF_POOL.get(e['asset'],'?')} "
-              f"事件{e['prev_ret']:+.1%} → 5日 {f5 if f5 is None else f'{f5:+.1%}'}")
+        print(
+            f"    {e['date']} {e['type']} {ETF_POOL.get(e['asset'], '?')} "
+            f"事件{e['prev_ret']:+.1%} → 5日 {f5 if f5 is None else f'{f5:+.1%}'}"
+        )
 
     out_path = OUTPUT_DIR / "v3_r4_sameday_full.json"
     with open(out_path, "w") as f:
-        json.dump({k: {kk: vv for kk, vv in v.items() if kk != "_events"}
-                   for k, v in results.items()}, f, indent=2, ensure_ascii=False, default=str)
+        json.dump(
+            {k: {kk: vv for kk, vv in v.items() if kk != "_events"} for k, v in results.items()},
+            f,
+            indent=2,
+            ensure_ascii=False,
+            default=str,
+        )
     print(f"\n  结果已保存: {out_path}")
 
 

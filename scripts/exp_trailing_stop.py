@@ -8,6 +8,7 @@
 
 结论: 验证止损是否改善最大回撤/夏普, 同时不过度损害收益.
 """
+
 from __future__ import annotations
 
 import sys
@@ -22,19 +23,19 @@ import run_qixing_v3 as rq  # noqa: E402
 # === 止损参数 ===
 TRAILING_STOP = {
     # 商品类: 波动大, 给更宽的空间
-    "518880": 0.15,   # 黄金
-    "159985": 0.15,   # 豆粕
-    "501018": 0.15,   # 原油
-    "161226": 0.15,   # 白银
+    "518880": 0.15,  # 黄金
+    "159985": 0.15,  # 豆粕
+    "501018": 0.15,  # 原油
+    "161226": 0.15,  # 白银
     # 股票类: 中等波动
-    "513100": 0.12,   # 纳指
-    "159915": 0.12,   # 创业板
+    "513100": 0.12,  # 纳指
+    "159915": 0.12,  # 创业板
     # 债券类: 极低波动
-    "511220": 0.05,   # 城投债
+    "511220": 0.05,  # 城投债
 }
 DEFAULT_STOP = 0.12
-MA_EXIT_PERIOD = 20       # MA退出周期
-COOLDOWN_DAYS = 10        # 止损后冷却交易日数
+MA_EXIT_PERIOD = 20  # MA退出周期
+COOLDOWN_DAYS = 10  # 止损后冷却交易日数
 
 
 def run_with_stop_loss(
@@ -75,13 +76,13 @@ def run_with_stop_loss(
     holding_peak: float = 0.0
     equity_history = []
     n_trades = 0
-    stop_events = []       # 记录止损事件
-    cooldown_until = {}    # {code: 冷却截止日期}
-    equity_peak = initial_capital   # 账户级高点
-    breaker_until = -1              # 熔断冷却截止的日索引
+    stop_events = []  # 记录止损事件
+    cooldown_until = {}  # {code: 冷却截止日期}
+    equity_peak = initial_capital  # 账户级高点
+    breaker_until = -1  # 熔断冷却截止的日索引
 
     # 调仓日集合
-    rebalance_set = set(trading_dates[::rq.REBALANCE_DAYS])
+    rebalance_set = set(trading_dates[:: rq.REBALANCE_DAYS])
     rebalance_counter = 0
 
     for di, td in enumerate(trading_dates):
@@ -107,12 +108,17 @@ def run_with_stop_loss(
             acct_dd = (cur_equity - equity_peak) / equity_peak
             if acct_dd < -equity_breaker_pct:
                 breaker_triggered = True
-                stop_events.append({
-                    "date": str(td), "code": holding,
-                    "name": rq.ETF_POOL.get(holding, ""),
-                    "dd": acct_dd, "peak": equity_peak,
-                    "price": cur_price or 0, "type": "breaker",
-                })
+                stop_events.append(
+                    {
+                        "date": str(td),
+                        "code": holding,
+                        "name": rq.ETF_POOL.get(holding, ""),
+                        "dd": acct_dd,
+                        "peak": equity_peak,
+                        "price": cur_price or 0,
+                        "type": "breaker",
+                    }
+                )
                 # 立即卖出切货币
                 if cur_price:
                     cash += holding_shares * cur_price * (1 - rq.FEE - rq.SLIPPAGE)
@@ -129,8 +135,9 @@ def run_with_stop_loss(
                 row = data[holding][data[holding]["trade_date"] == td]
                 if not row.empty:
                     equity += holding_shares * float(row.iloc[0]["close"])
-            equity_history.append({"trade_date": td, "equity": equity,
-                                   "holding": holding or rq.DEFENSE})
+            equity_history.append(
+                {"trade_date": td, "equity": equity, "holding": holding or rq.DEFENSE}
+            )
             continue
 
         # 熔断冷却期刚结束: 重置高点为当前值 (给策略一个新鲜起点)
@@ -140,17 +147,28 @@ def run_with_stop_loss(
 
         # --- 追踪止损检查 ---
         stop_triggered = False
-        if use_trailing_stop and holding and holding != rq.DEFENSE and cur_price and holding_peak > 0:
+        if (
+            use_trailing_stop
+            and holding
+            and holding != rq.DEFENSE
+            and cur_price
+            and holding_peak > 0
+        ):
             stop_pct = TRAILING_STOP.get(holding, DEFAULT_STOP)
             dd_from_peak = (cur_price - holding_peak) / holding_peak
             if dd_from_peak < -stop_pct:
                 stop_triggered = True
-                stop_events.append({
-                    "date": str(td), "code": holding,
-                    "name": rq.ETF_POOL.get(holding, ""),
-                    "dd": dd_from_peak, "peak": holding_peak,
-                    "price": cur_price, "type": "trailing",
-                })
+                stop_events.append(
+                    {
+                        "date": str(td),
+                        "code": holding,
+                        "name": rq.ETF_POOL.get(holding, ""),
+                        "dd": dd_from_peak,
+                        "peak": holding_peak,
+                        "price": cur_price,
+                        "type": "trailing",
+                    }
+                )
 
         # --- MA退出检查 ---
         ma_triggered = False
@@ -161,12 +179,19 @@ def run_with_stop_loss(
                 ma = hist.iloc[-MA_EXIT_PERIOD:].mean()
                 if cur_price < ma:
                     ma_triggered = True
-                    stop_events.append({
-                        "date": str(td), "code": holding,
-                        "name": rq.ETF_POOL.get(holding, ""),
-                        "dd": (cur_price - holding_peak) / holding_peak if holding_peak > 0 else 0,
-                        "peak": holding_peak, "price": cur_price, "type": "ma_exit",
-                    })
+                    stop_events.append(
+                        {
+                            "date": str(td),
+                            "code": holding,
+                            "name": rq.ETF_POOL.get(holding, ""),
+                            "dd": (cur_price - holding_peak) / holding_peak
+                            if holding_peak > 0
+                            else 0,
+                            "peak": holding_peak,
+                            "price": cur_price,
+                            "type": "ma_exit",
+                        }
+                    )
 
         # --- 执行止损/MA退出: 卖出切货币 ---
         if (stop_triggered or ma_triggered) and holding and holding_shares > 0:
@@ -195,7 +220,8 @@ def run_with_stop_loss(
 
             # 选股
             target, candidates, best_score, a_share_weak = rq.select_target(
-                data, etf_data_at_date, holding)
+                data, etf_data_at_date, holding
+            )
 
             # 冷却期过滤: 被止损的ETF在冷却期内不买
             if use_cooldown and target in cooldown_until:
@@ -241,8 +267,9 @@ def run_with_stop_loss(
             row = data[holding][data[holding]["trade_date"] == td]
             if not row.empty:
                 equity += holding_shares * float(row.iloc[0]["close"])
-        equity_history.append({"trade_date": td, "equity": equity,
-                               "holding": holding or rq.DEFENSE})
+        equity_history.append(
+            {"trade_date": td, "equity": equity, "holding": holding or rq.DEFENSE}
+        )
 
     if not equity_history:
         return {"error": "no data"}
@@ -309,9 +336,13 @@ def run_baseline(data: dict, initial_capital: float = 100_000.0) -> dict:
 
 def run_no_stop_daily(data: dict, initial_capital: float = 100_000.0) -> dict:
     """无止损但每日采样 — 公平基准 (与止损版同采样频率)."""
-    return run_with_stop_loss(data, use_trailing_stop=False,
-                              use_ma_exit=False, use_cooldown=False,
-                              initial_capital=initial_capital)
+    return run_with_stop_loss(
+        data,
+        use_trailing_stop=False,
+        use_ma_exit=False,
+        use_cooldown=False,
+        initial_capital=initial_capital,
+    )
 
 
 def print_comparison(baseline: dict, variants: dict[str, dict]) -> None:
@@ -353,8 +384,10 @@ def print_comparison(baseline: dict, variants: dict[str, dict]) -> None:
     print()
     print("  " + "-" * (6 + 8 + 13 * len(variants)))
 
-    all_years = sorted(set(baseline.get("yearly", {}).keys()) |
-                       set().union(*(set(r.get("yearly", {}).keys()) for r in variants.values())))
+    all_years = sorted(
+        set(baseline.get("yearly", {}).keys())
+        | set().union(*(set(r.get("yearly", {}).keys()) for r in variants.values()))
+    )
     for year in all_years:
         row = f"  {year:<6}"
         by = baseline.get("yearly", {}).get(year, {})
@@ -390,8 +423,10 @@ def print_stop_events(events: list, title: str) -> None:
     print(f"  {'日期':<12} {'ETF':<10} {'类型':<10} {'回撤':>8} {'峰值':>8} {'触发价':>8}")
     print("  " + "-" * 60)
     for e in events:
-        print(f"  {e['date']:<12} {e['name']:<10} {e['type']:<10} "
-              f"{e['dd']:>+8.1%} {e['peak']:>8.3f} {e['price']:>8.3f}")
+        print(
+            f"  {e['date']:<12} {e['name']:<10} {e['type']:<10} "
+            f"{e['dd']:>+8.1%} {e['peak']:>8.3f} {e['price']:>8.3f}"
+        )
 
 
 def main():
@@ -415,32 +450,43 @@ def main():
 
     # B) 仅追踪止损
     print("  [B] 运行 V3 + 分层追踪止损...")
-    res_b = run_with_stop_loss(data, use_trailing_stop=True,
-                               use_ma_exit=False, use_cooldown=False)
+    res_b = run_with_stop_loss(data, use_trailing_stop=True, use_ma_exit=False, use_cooldown=False)
 
     # E) 追踪止损 + 账户熔断10%
     print("  [E] 运行 V3 + 追踪止损 + 账户熔断10%...")
-    res_e = run_with_stop_loss(data, use_trailing_stop=True,
-                               use_ma_exit=False, use_cooldown=False,
-                               use_equity_breaker=True,
-                               equity_breaker_pct=0.10,
-                               equity_breaker_cooldown=10)
+    res_e = run_with_stop_loss(
+        data,
+        use_trailing_stop=True,
+        use_ma_exit=False,
+        use_cooldown=False,
+        use_equity_breaker=True,
+        equity_breaker_pct=0.10,
+        equity_breaker_cooldown=10,
+    )
 
     # F) 追踪止损 + 账户熔断15%
     print("  [F] 运行 V3 + 追踪止损 + 账户熔断15%...")
-    res_f = run_with_stop_loss(data, use_trailing_stop=True,
-                               use_ma_exit=False, use_cooldown=False,
-                               use_equity_breaker=True,
-                               equity_breaker_pct=0.15,
-                               equity_breaker_cooldown=10)
+    res_f = run_with_stop_loss(
+        data,
+        use_trailing_stop=True,
+        use_ma_exit=False,
+        use_cooldown=False,
+        use_equity_breaker=True,
+        equity_breaker_pct=0.15,
+        equity_breaker_cooldown=10,
+    )
 
     # G) 追踪止损 + 账户熔断10% + 冷却20天
     print("  [G] 运行 V3 + 追踪止损 + 账户熔断10% + 冷協20天...")
-    res_g = run_with_stop_loss(data, use_trailing_stop=True,
-                               use_ma_exit=False, use_cooldown=False,
-                               use_equity_breaker=True,
-                               equity_breaker_pct=0.10,
-                               equity_breaker_cooldown=20)
+    res_g = run_with_stop_loss(
+        data,
+        use_trailing_stop=True,
+        use_ma_exit=False,
+        use_cooldown=False,
+        use_equity_breaker=True,
+        equity_breaker_pct=0.10,
+        equity_breaker_cooldown=20,
+    )
 
     variants = {
         "A2:无止损": res_a2,
@@ -467,8 +513,10 @@ def main():
         dd_improve = (base_dd - abs(res["max_drawdown"])) / base_dd * 100
         ret_cost = (res_a2["ann_return"] - res["ann_return"]) * 100
         sharpe_diff = res["sharpe"] - res_a2["sharpe"]
-        print(f"  {name}: 回撤改善 {dd_improve:+.0f}% | "
-              f"年化代价 {ret_cost:+.1f}pp | 夏普变化 {sharpe_diff:+.2f}")
+        print(
+            f"  {name}: 回撤改善 {dd_improve:+.0f}% | "
+            f"年化代价 {ret_cost:+.1f}pp | 夏普变化 {sharpe_diff:+.2f}"
+        )
 
 
 if __name__ == "__main__":

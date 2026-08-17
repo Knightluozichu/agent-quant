@@ -12,6 +12,7 @@ H3 层: 对"放行类型"持仓 (ret60<0 且 近5日有单日跌>3%):
 用法: uv run python scripts/exp_drop_gate_h3.py
 输出: data/v9_results/drop_gate_h3.json
 """
+
 from __future__ import annotations
 
 import json
@@ -47,8 +48,8 @@ ORIG_CHECK = rq.check_single_day_drop
 
 # === H3 参数 (由命令行/变体注入) ===
 H3_ENABLED = False
-H3_EXPO = 1.0      # V3-G 关闭降仓层 (1.0=不降)
-EXPO_REDUCE = 1.0      # V3-G 关闭降仓层 (覆盖 import, 1.0=不降)
+H3_EXPO = 1.0  # V3-G 关闭降仓层 (1.0=不降)
+EXPO_REDUCE = 1.0  # V3-G 关闭降仓层 (覆盖 import, 1.0=不降)
 H3_DELTA = 0.03
 H3_ACTION = "reduce"  # reduce(降仓0.5) | exit(退出切防御)
 GATE_STATS: dict = {"passed": 0, "excluded": 0}
@@ -80,12 +81,13 @@ def make_gated(ret60_thr: float = 0.0, mom_guard: bool = True):
                 return False
         GATE_STATS["passed"] += 1
         return True
+
     return gated
 
 
-def run_v3_risk_h3(data: dict,
-                   start_idx: int = 0, end_idx: int | None = None,
-                   cost_multiplier: float = 1.0) -> dict:
+def run_v3_risk_h3(
+    data: dict, start_idx: int = 0, end_idx: int | None = None, cost_multiplier: float = 1.0
+) -> dict:
     """V3 + V32风控 + H3放行止损 (复制自 exp_v32_tail_risk, 零改生产)."""
     common_dates: set = set()
     for code in rq.ETF_POOL:
@@ -199,22 +201,31 @@ def run_v3_risk_h3(data: dict,
             if entry_dd < H1_DD or day_ret < H2_DAY:
                 if USE_IMPROVED:
                     exposure = min(exposure, EXPO_REDUCE)
-                    risk_events.append({"date": str(td), "type": "改进-H1/H2降仓",
-                                        "from": holding,
-                                        "reason": f"entry_dd={entry_dd:.1%} day={day_ret:.1%}"})
+                    risk_events.append(
+                        {
+                            "date": str(td),
+                            "type": "改进-H1/H2降仓",
+                            "from": holding,
+                            "reason": f"entry_dd={entry_dd:.1%} day={day_ret:.1%}",
+                        }
+                    )
                 else:
                     target_d = _pick_defense(td)
                     _trade_to(target_d, td)
                     cooldown_until = td
-                    risk_events.append({"date": str(td), "type": "H1/H2硬触发",
-                                        "from": holding,
-                                        "reason": f"entry_dd={entry_dd:.1%} day={day_ret:.1%}"})
+                    risk_events.append(
+                        {
+                            "date": str(td),
+                            "type": "H1/H2硬触发",
+                            "from": holding,
+                            "reason": f"entry_dd={entry_dd:.1%} day={day_ret:.1%}",
+                        }
+                    )
 
         # === H3 放行止损: 放行类型持仓的缓跌兜底 (门控版新层) ===
         # 基准: 自最近暴跌日收盘以来的持仓高点 (trailing peak) — 避免被暴跌后
         # 的反弹日甩开, 使后续阴跌能正确触发止损
-        if (H3_ENABLED and holding and holding != rq.DEFENSE
-                and cooldown_until is None):
+        if H3_ENABLED and holding and holding != rq.DEFENSE and cooldown_until is None:
             hclose = _close_series(holding, td)
             drop_idx: list[int] = []
             if len(hclose) > rq.DROP_LOOKBACK:
@@ -238,16 +249,24 @@ def run_v3_risk_h3(data: dict,
                             _trade_to(target_d, td)
                             cooldown_until = td
                             h3_holding, h3_peak = None, 0.0
-                            risk_events.append({
-                                "date": str(td), "type": "H3放行止损-退出",
-                                "from": holding,
-                                "reason": f"ret60={ret60:.3f} dd_from_peak={dd_peak:.1%}"})
+                            risk_events.append(
+                                {
+                                    "date": str(td),
+                                    "type": "H3放行止损-退出",
+                                    "from": holding,
+                                    "reason": f"ret60={ret60:.3f} dd_from_peak={dd_peak:.1%}",
+                                }
+                            )
                         else:
                             exposure = min(exposure, H3_EXPO)
-                            risk_events.append({
-                                "date": str(td), "type": "H3放行止损-降仓",
-                                "from": holding,
-                                "reason": f"ret60={ret60:.3f} dd_from_peak={dd_peak:.1%}"})
+                            risk_events.append(
+                                {
+                                    "date": str(td),
+                                    "type": "H3放行止损-降仓",
+                                    "from": holding,
+                                    "reason": f"ret60={ret60:.3f} dd_from_peak={dd_peak:.1%}",
+                                }
+                            )
                 else:
                     h3_holding, h3_peak = None, 0.0
             else:
@@ -260,11 +279,13 @@ def run_v3_risk_h3(data: dict,
                 _trade_to(target_d, td)
                 cooldown_until = td
                 exposure = 1.0
-                risk_events.append({"date": str(td), "type": "熔断-30%清仓",
-                                    "dd": round(float(dd), 4)})
+                risk_events.append(
+                    {"date": str(td), "type": "熔断-30%清仓", "dd": round(float(dd), 4)}
+                )
             elif dd < -0.25:
-                risk_events.append({"date": str(td), "type": "熔断-25%告警",
-                                    "dd": round(float(dd), 4)})
+                risk_events.append(
+                    {"date": str(td), "type": "熔断-25%告警", "dd": round(float(dd), 4)}
+                )
             elif dd < -0.12:
                 exposure = 1.0  # V3-G 关闭降仓层: 仅告警不降仓
 
@@ -290,22 +311,31 @@ def run_v3_risk_h3(data: dict,
                 mom5_prev = _mom(target, all_dates[idx_of[td] - 5], 10) if idx_of[td] >= 5 else 0.0
                 delta_s = _mom_score(target, td) - mom5_prev
                 vol_t = _vol20(target, td)
-                decay_triple = (delta_s < -0.02 and close[-1] < ma10
-                                and s_score < 0.08)
+                decay_triple = delta_s < -0.02 and close[-1] < ma10 and s_score < 0.08
                 if USE_IMPROVED:
                     if vol_t > 0.45 and decay_triple:
                         exposure = min(exposure, EXPO_REDUCE)
-                        risk_events.append({"date": str(td), "type": "改进-高波动衰减降仓",
-                                            "vol": round(float(vol_t), 3),
-                                            "delta_s": round(float(delta_s), 4)})
+                        risk_events.append(
+                            {
+                                "date": str(td),
+                                "type": "改进-高波动衰减降仓",
+                                "vol": round(float(vol_t), 3),
+                                "delta_s": round(float(delta_s), 4),
+                            }
+                        )
                 elif decay_triple:
                     exposure = min(exposure, 0.5)
                     entry_dd = (_price(target, td) / entry_price - 1.0) if entry_price > 0 else 0.0
                     if entry_dd < -0.06:
                         target = _pick_defense(td)
-                        risk_events.append({"date": str(td), "type": "层2衰减退出",
-                                            "target": target,
-                                            "delta_s": round(float(delta_s), 4)})
+                        risk_events.append(
+                            {
+                                "date": str(td),
+                                "type": "层2衰减退出",
+                                "target": target,
+                                "delta_s": round(float(delta_s), 4),
+                            }
+                        )
 
             if target in rq.ETF_POOL:
                 if _price(target, td) <= 0 or not _tradable(target, td):
@@ -315,8 +345,9 @@ def run_v3_risk_h3(data: dict,
                 _trade_to(target, td, expo=exposure)
             exposure = 1.0
 
-        equity_history.append({"trade_date": td, "equity": equity,
-                               "holding": holding or rq.DEFENSE})
+        equity_history.append(
+            {"trade_date": td, "equity": equity, "holding": holding or rq.DEFENSE}
+        )
 
     eq_df = __import__("pandas").DataFrame(equity_history)
     eq_df["trade_date"] = __import__("pandas").to_datetime(eq_df["trade_date"])
@@ -351,8 +382,7 @@ def build_report(eq_df, n_trades: int, risk_events: list) -> dict:
     }
 
 
-KEYS = ("final_value", "total_return", "ann_return", "sharpe",
-        "max_drawdown", "calmar", "n_trades")
+KEYS = ("final_value", "total_return", "ann_return", "sharpe", "max_drawdown", "calmar", "n_trades")
 
 
 def main() -> None:
@@ -370,21 +400,29 @@ def main() -> None:
         b = next(i for i, d in enumerate(dates) if str(d) >= s1)
         return max(a - WARMUP, 0), min(b, n)
 
-    segs = [("全周期", 0, n), ("IS", *seg(IS_START, IS_END)),
-            ("OOS", *seg(OOS_START, OOS_END))]
+    segs = [("全周期", 0, n), ("IS", *seg(IS_START, IS_END)), ("OOS", *seg(OOS_START, OOS_END))]
 
-    variants = [("基线(原版)", None, 0.0, "none", 1.0),
-                ("门控(无H3)", 0.00, 0.0, "none", 1.0)]
-    for delta, act, expo in ((0.02, "reduce", 0.5), (0.03, "reduce", 0.5),
-                             (0.05, "reduce", 0.5),
-                             (0.02, "exit", 1.0), (0.03, "exit", 1.0),
-                             (0.05, "exit", 1.0),
-                             (0.01, "reduce", 0.5),   # 更紧止损
-                             (0.015, "reduce", 0.5),
-                             (0.02, "reduce", 0.3)):  # 更深降仓
-        variants.append((f"门控+H3 δ={delta:.0%} {act}"
-                         + (f" expo={expo:g}" if expo != 0.5 else ""),
-                         0.00, delta, act, expo))
+    variants = [("基线(原版)", None, 0.0, "none", 1.0), ("门控(无H3)", 0.00, 0.0, "none", 1.0)]
+    for delta, act, expo in (
+        (0.02, "reduce", 0.5),
+        (0.03, "reduce", 0.5),
+        (0.05, "reduce", 0.5),
+        (0.02, "exit", 1.0),
+        (0.03, "exit", 1.0),
+        (0.05, "exit", 1.0),
+        (0.01, "reduce", 0.5),  # 更紧止损
+        (0.015, "reduce", 0.5),
+        (0.02, "reduce", 0.3),
+    ):  # 更深降仓
+        variants.append(
+            (
+                f"门控+H3 δ={delta:.0%} {act}" + (f" expo={expo:g}" if expo != 0.5 else ""),
+                0.00,
+                delta,
+                act,
+                expo,
+            )
+        )
 
     results: dict = {"variants": {}}
     for vname, thr, delta, act, expo in variants:
@@ -396,23 +434,27 @@ def main() -> None:
         H3_EXPO = expo
         seg_results = {}
         for name, s0, s1 in segs:
-            seg_results[name] = run_v3_risk_h3(data, start_idx=s0,
-                                               end_idx=max(s1 - WARMUP, 0))
-        results["variants"][vname] = {"segs": seg_results,
-                                      "gate_stats": dict(GATE_STATS)}
+            seg_results[name] = run_v3_risk_h3(data, start_idx=s0, end_idx=max(s1 - WARMUP, 0))
+        results["variants"][vname] = {"segs": seg_results, "gate_stats": dict(GATE_STATS)}
         row = seg_results["全周期"]
         is_row = seg_results["IS"]
         oos_row = seg_results["OOS"]
         print(f"\n  [{vname}]")
-        print(f"    全周期 {row['final_value']:>12,.0f} 年化{row['ann_return']*100:>+6.1f}% "
-              f"夏普{row['sharpe']:>5.2f} 回撤{row['max_drawdown']*100:>6.1f}%")
-        print(f"    IS     {is_row['final_value']:>12,.0f} 年化{is_row['ann_return']*100:>+6.1f}% "
-              f"回撤{is_row['max_drawdown']*100:>6.1f}% | "
-              f"OOS    {oos_row['final_value']:>12,.0f} 年化{oos_row['ann_return']*100:>+6.1f}% "
-              f"回撤{oos_row['max_drawdown']*100:>6.1f}%")
+        print(
+            f"    全周期 {row['final_value']:>12,.0f} 年化{row['ann_return'] * 100:>+6.1f}% "
+            f"夏普{row['sharpe']:>5.2f} 回撤{row['max_drawdown'] * 100:>6.1f}%"
+        )
+        print(
+            f"    IS     {is_row['final_value']:>12,.0f} 年化{is_row['ann_return'] * 100:>+6.1f}% "
+            f"回撤{is_row['max_drawdown'] * 100:>6.1f}% | "
+            f"OOS    {oos_row['final_value']:>12,.0f} 年化{oos_row['ann_return'] * 100:>+6.1f}% "
+            f"回撤{oos_row['max_drawdown'] * 100:>6.1f}%"
+        )
         h3_evts = [e for e in row.get("risk_events", []) if str(e.get("type", "")).startswith("H3")]
-        print(f"    H3事件: {len(h3_evts)}次 | 放行{results['variants'][vname]['gate_stats'].get('passed', 0)} "
-              f"排除{results['variants'][vname]['gate_stats'].get('excluded', 0)}")
+        print(
+            f"    H3事件: {len(h3_evts)}次 | 放行{results['variants'][vname]['gate_stats'].get('passed', 0)} "
+            f"排除{results['variants'][vname]['gate_stats'].get('excluded', 0)}"
+        )
     rq.check_single_day_drop = ORIG_CHECK
 
     # === 判定: 每个变体 vs 基线 ===
@@ -425,7 +467,8 @@ def main() -> None:
             continue
         v = results["variants"][vname]["segs"]
         checks = {
-            "全周期收益>=基线-1%": v["全周期"]["final_value"] >= base["全周期"]["final_value"] * 0.99,
+            "全周期收益>=基线-1%": v["全周期"]["final_value"]
+            >= base["全周期"]["final_value"] * 0.99,
             "全周期回撤不劣化": v["全周期"]["max_drawdown"] >= base["全周期"]["max_drawdown"],
             "IS收益>=基线-1%": v["IS"]["final_value"] >= base["IS"]["final_value"] * 0.99,
             "OOS收益>=基线-1%": v["OOS"]["final_value"] >= base["OOS"]["final_value"] * 0.99,
@@ -433,8 +476,7 @@ def main() -> None:
         passed_all = all(checks.values())
         verdict[vname] = {k: bool(v) for k, v in checks.items()}
         mark = "✅ 全部通过" if passed_all else "❌"
-        print(f"  {vname:<26} {mark} "
-              f"({'/'.join('✓' if c else '✗' for c in checks.values())})")
+        print(f"  {vname:<26} {mark} ({'/'.join('✓' if c else '✗' for c in checks.values())})")
     results["verdict"] = verdict
 
     out = OUTPUT_DIR / "drop_gate_h3.json"

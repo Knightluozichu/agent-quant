@@ -166,6 +166,7 @@ class TestDataValidation:
 
     def test_validate_missing_columns(self) -> None:
         import pandas as pd
+
         df = pd.DataFrame({"symbol": ["510300.SSE"], "close": [100.0]})
         errors = validate_daily_bar_df(df)
         assert any("Missing columns" in e for e in errors)

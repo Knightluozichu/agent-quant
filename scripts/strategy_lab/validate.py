@@ -7,6 +7,7 @@
   4. 滚动一致性   (walk-forward 2年训练+6月验证, 逐窗滚动)
   5. 基准对比     (vs 等权持有 / vs 持有黄金, 需有超额)
 """
+
 from __future__ import annotations
 
 import itertools
@@ -24,9 +25,9 @@ from .engine import WARMUP, backtest, get_common_dates  # noqa: E402
 from .strategies import Strategy  # noqa: E402
 
 OUTPUT_DIR = Path(__file__).parent.parent.parent / "data" / "qixing_results"
-TRAIN_RATIO = 0.70          # 样本外切分: 前70%训练
-MAX_PARAM_COMBOS = 200      # 参数扫描上限
-GOLD = "518880"             # 黄金基准
+TRAIN_RATIO = 0.70  # 样本外切分: 前70%训练
+MAX_PARAM_COMBOS = 200  # 参数扫描上限
+GOLD = "518880"  # 黄金基准
 
 _DATA = None
 
@@ -52,16 +53,20 @@ def check_oos(strategy: Strategy, data: dict) -> dict:
     dates = get_common_dates(data)[WARMUP:]
     split = dates[int(len(dates) * TRAIN_RATIO)]
     is_end = dates[int(len(dates) * TRAIN_RATIO) - 1]
-    is_res = backtest(data, strategy.select, strategy.params,
-                      strategy.rebalance_days, end_date=is_end)
-    oos_res = backtest(data, strategy.select, strategy.params,
-                       strategy.rebalance_days, start_date=split)
+    is_res = backtest(
+        data, strategy.select, strategy.params, strategy.rebalance_days, end_date=is_end
+    )
+    oos_res = backtest(
+        data, strategy.select, strategy.params, strategy.rebalance_days, start_date=split
+    )
     is_ann = is_res["ann_return"] * 100
     oos_ann = oos_res["ann_return"] * 100
-    decay = (oos_ann - is_ann)  # 衰减(百分点)
+    decay = oos_ann - is_ann  # 衰减(百分点)
     return {
-        "is_ann_return": is_ann, "is_sharpe": is_res["sharpe"],
-        "oos_ann_return": oos_ann, "oos_sharpe": oos_res["sharpe"],
+        "is_ann_return": is_ann,
+        "is_sharpe": is_res["sharpe"],
+        "oos_ann_return": oos_ann,
+        "oos_sharpe": oos_res["sharpe"],
         "oos_total_return": oos_res["total_return"] * 100,
         "oos_max_dd": oos_res["max_drawdown"] * 100,
         "decay_pp": decay,
@@ -112,8 +117,9 @@ def check_param_robustness(strategy: Strategy, data: dict) -> dict:
 # --------------------------------------------------------------------------- #
 # 检验 4: 滚动一致性 (walk-forward, 固定参数测各时段)
 # --------------------------------------------------------------------------- #
-def check_walk_forward(strategy: Strategy, data: dict,
-                       train_days: int = 504, test_days: int = 126) -> dict:
+def check_walk_forward(
+    strategy: Strategy, data: dict, train_days: int = 504, test_days: int = 126
+) -> dict:
     dates = get_common_dates(data)[WARMUP:]
     n = len(dates)
     windows = []
@@ -121,12 +127,20 @@ def check_walk_forward(strategy: Strategy, data: dict,
     while start + train_days + test_days <= n:
         test_start = dates[start + train_days]
         test_end = dates[min(start + train_days + test_days - 1, n - 1)]
-        res = backtest(data, strategy.select, strategy.params,
-                       strategy.rebalance_days, start_date=test_start, end_date=test_end)
-        windows.append({
-            "period": f"{str(test_start)[:7]}~{str(test_end)[:7]}",
-            "return": res["total_return"] * 100,
-        })
+        res = backtest(
+            data,
+            strategy.select,
+            strategy.params,
+            strategy.rebalance_days,
+            start_date=test_start,
+            end_date=test_end,
+        )
+        windows.append(
+            {
+                "period": f"{str(test_start)[:7]}~{str(test_end)[:7]}",
+                "return": res["total_return"] * 100,
+            }
+        )
         start += test_days  # 滚动一个测试窗
     if not windows:
         return {"n_windows": 0, "pct_positive": 0.0, "windows": []}
@@ -201,10 +215,7 @@ def check_regime(data: dict, full: dict) -> dict:
         strat = full["yearly"][y]["return"] * 100
         rows.append({"year": y, "market": m * 100, "regime": regime, "strategy": strat})
         buckets[regime].append(strat)
-    summary = {
-        k: {"avg": float(np.mean(v)) if v else 0.0, "n": len(v)}
-        for k, v in buckets.items()
-    }
+    summary = {k: {"avg": float(np.mean(v)) if v else 0.0, "n": len(v)} for k, v in buckets.items()}
     return {"rows": rows, "summary": summary}
 
 
@@ -258,9 +269,14 @@ def run_validation(strategy: Strategy) -> dict:
     regime = check_regime(data, full)
 
     report = {
-        "name": strategy.name, "hypothesis": strategy.hypothesis,
-        "full": full, "oos": oos, "param": param,
-        "walkforward": wf, "benchmark": bench, "regime": regime,
+        "name": strategy.name,
+        "hypothesis": strategy.hypothesis,
+        "full": full,
+        "oos": oos,
+        "param": param,
+        "walkforward": wf,
+        "benchmark": bench,
+        "regime": regime,
     }
     verdict, reasons, risk = compute_verdict(report)
     report["verdict"], report["reasons"], report["risk"] = verdict, reasons, risk
@@ -284,21 +300,27 @@ def render_markdown(r: dict) -> str:
     lines.append("=" * 60)
     lines.append(f"\n【经济逻辑】 {r['hypothesis']}")
     lines.append("\n【1. 全周期回测】")
-    lines.append(f"  年化 {f['ann_return']*100:+.1f}% | 夏普 {f['sharpe']:.2f} | "
-                 f"回撤 {f['max_drawdown']*100:.1f}% | 交易 {f['n_trades']} 次")
-    yr = "  ".join(f"{y}:{v['return']*100:+.0f}%" for y, v in sorted(f["yearly"].items()))
+    lines.append(
+        f"  年化 {f['ann_return'] * 100:+.1f}% | 夏普 {f['sharpe']:.2f} | "
+        f"回撤 {f['max_drawdown'] * 100:.1f}% | 交易 {f['n_trades']} 次"
+    )
+    yr = "  ".join(f"{y}:{v['return'] * 100:+.0f}%" for y, v in sorted(f["yearly"].items()))
     lines.append(f"  逐年: {yr}")
     worst_y, worst_v = min(f["yearly"].items(), key=lambda kv: kv[1]["return"])
-    lines.append(f"  最差年份: {worst_y} ({worst_v['return']*100:+.1f}%)")
+    lines.append(f"  最差年份: {worst_y} ({worst_v['return'] * 100:+.1f}%)")
     lines.append("\n【2. 样本外验证】 (前70%训练 / 后30%验证)")
     lines.append(f"  训练集: 年化 {o['is_ann_return']:+.1f}% (夏普 {o['is_sharpe']:.2f})")
-    lines.append(f"  验证集: 年化 {o['oos_ann_return']:+.1f}% (夏普 {o['oos_sharpe']:.2f}, "
-                 f"回撤 {o['oos_max_dd']:.1f}%)")
+    lines.append(
+        f"  验证集: 年化 {o['oos_ann_return']:+.1f}% (夏普 {o['oos_sharpe']:.2f}, "
+        f"回撤 {o['oos_max_dd']:.1f}%)"
+    )
     lines.append(f"  衰减: {o['decay_pp']:+.1f} 百分点 (切分点 {o['split_date'][:7]})")
     lines.append("\n【3. 参数稳健性】 (扫描 %d 组参数)" % p["n_combos"])
     lines.append(f"  盈利比例: {p['pct_profitable']:.0f}%")
-    lines.append(f"  夏普分布: 中位数 {p['sharpe_median']:.2f} ± {p['sharpe_std']:.2f} "
-                 f"(最优 {p['best_sharpe']:.2f})")
+    lines.append(
+        f"  夏普分布: 中位数 {p['sharpe_median']:.2f} ± {p['sharpe_std']:.2f} "
+        f"(最优 {p['best_sharpe']:.2f})"
+    )
     lines.append(f"  孤立尖峰: {'是 ⚠️' if p['is_isolated_spike'] else '否'}")
     lines.append("\n【4. 滚动一致性】 (walk-forward, %d 个窗口)" % w["n_windows"])
     lines.append(f"  正收益窗口: {w['pct_positive']:.0f}%")
@@ -306,14 +328,18 @@ def render_markdown(r: dict) -> str:
         wr = "  ".join(f"{x['period']}:{x['return']:+.0f}%" for x in w["windows"])
         lines.append(f"  各窗口: {wr}")
     lines.append("\n【5. 基准对比】 (全周期累计)")
-    lines.append(f"  策略 {b['strategy_total']:+.0f}% vs 等权 {b['eqweight_total']:+.0f}% "
-                 f"(超额 {b['excess_eqweight']:+.0f}%) vs 黄金 {b['gold_total']:+.0f}% "
-                 f"(超额 {b['excess_gold']:+.0f}%)")
+    lines.append(
+        f"  策略 {b['strategy_total']:+.0f}% vs 等权 {b['eqweight_total']:+.0f}% "
+        f"(超额 {b['excess_eqweight']:+.0f}%) vs 黄金 {b['gold_total']:+.0f}% "
+        f"(超额 {b['excess_gold']:+.0f}%)"
+    )
     s = rg["summary"]
     lines.append("\n【6. 牛熊震荡分段】 (以等权池年收益划分市场环境)")
-    lines.append(f"  牛市({s['牛市']['n']}年)平均 {s['牛市']['avg']:+.1f}% | "
-                 f"震荡({s['震荡']['n']}年) {s['震荡']['avg']:+.1f}% | "
-                 f"熊市({s['熊市']['n']}年) {s['熊市']['avg']:+.1f}%")
+    lines.append(
+        f"  牛市({s['牛市']['n']}年)平均 {s['牛市']['avg']:+.1f}% | "
+        f"震荡({s['震荡']['n']}年) {s['震荡']['avg']:+.1f}% | "
+        f"熊市({s['熊市']['n']}年) {s['熊市']['avg']:+.1f}%"
+    )
     rg_rows = "  ".join(f"{x['year']}({x['regime']}):{x['strategy']:+.0f}%" for x in rg["rows"])
     lines.append(f"  逐年: {rg_rows}")
     lines.append("\n" + "=" * 60)

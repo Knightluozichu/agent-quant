@@ -47,34 +47,34 @@ A_SHARE_ETF = "159915"  # A股代表
 # 多类别ETF池 (原版核心: 动态切换)
 CATEGORIES = {
     "商品": ["518880", "159985", "501018", "161226"],  # 黄金/豆粕/原油/白银
-    "海外": ["513100"],                                # 纳指
-    "A股": ["159915"],                                 # 创业板
-    "债券": ["511220"],                                # 城投债
+    "海外": ["513100"],  # 纳指
+    "A股": ["159915"],  # 创业板
+    "债券": ["511220"],  # 城投债
 }
 
-FEE = 0.0005   # 万五单边
+FEE = 0.0005  # 万五单边
 SLIPPAGE = 0.001
 REBALANCE_DAYS = 5  # 检查频率(5天)
 SWITCH_THRESHOLD = 0.02  # 参考: 原版换仓阈值 (实际使用自适应阈值, 见 select_target)
 
 # === 原版参数 (参数扫描反推) ===
-MOM_WEIGHTS = (0.5, 0.5)         # 10日+20日动量(扫描最佳)
+MOM_WEIGHTS = (0.5, 0.5)  # 10日+20日动量(扫描最佳)
 MOM_PERIODS = (10, 20)
-SHORT_MOM_DAYS = 10              # 短期动量过滤
-VOL_SPIKE_RATIO = 2.5            # 放量阈值
-DROP_THRESHOLD = -0.03           # 单日跌幅阈值
-DROP_LOOKBACK = 5                # 跌幅检查天数
-PROFIT_PROTECTION_DD = 0.05      # 盈利保护回撤5%(原版参数)
-A_SHARE_MA = 15                  # A股走弱判断MA(保守优化: 更早回避A股走弱)
-USE_SHORT_MOM_FILTER = False     # 关闭短期动量过滤(商品波动大,误杀太多)
-USE_VOL_SPIKE_FILTER = False     # 关闭放量过滤
-USE_DROP_FILTER = True           # 保留单日跌幅过滤(防暴跌)
-USE_LONG_MOM_FILTER = False      # 关闭(过滤掉股票后商品回调被收割,顾此失彼)
-LONG_MOM_PERIOD = 60             # 长周期动量过滤窗口
-USE_PROFIT_PROTECTION = False    # 关闭(创业板波动也>2%被误判,伤2020)
-USE_A_SHARE_FILTER = True        # 保留A股走弱回避
-USE_BEARISH_DAY_FILTER = False   # 关闭(上升趋势中阻止逢低买入,伤2020/2023)
-USE_CATEGORY_SWITCH = False      # 关闭(过度偏向商品,伤2024/2025)
+SHORT_MOM_DAYS = 10  # 短期动量过滤
+VOL_SPIKE_RATIO = 2.5  # 放量阈值
+DROP_THRESHOLD = -0.03  # 单日跌幅阈值
+DROP_LOOKBACK = 5  # 跌幅检查天数
+PROFIT_PROTECTION_DD = 0.05  # 盈利保护回撤5%(原版参数)
+A_SHARE_MA = 15  # A股走弱判断MA(保守优化: 更早回避A股走弱)
+USE_SHORT_MOM_FILTER = False  # 关闭短期动量过滤(商品波动大,误杀太多)
+USE_VOL_SPIKE_FILTER = False  # 关闭放量过滤
+USE_DROP_FILTER = True  # 保留单日跌幅过滤(防暴跌)
+USE_LONG_MOM_FILTER = False  # 关闭(过滤掉股票后商品回调被收割,顾此失彼)
+LONG_MOM_PERIOD = 60  # 长周期动量过滤窗口
+USE_PROFIT_PROTECTION = False  # 关闭(创业板波动也>2%被误判,伤2020)
+USE_A_SHARE_FILTER = True  # 保留A股走弱回避
+USE_BEARISH_DAY_FILTER = False  # 关闭(上升趋势中阻止逢低买入,伤2020/2023)
+USE_CATEGORY_SWITCH = False  # 关闭(过度偏向商品,伤2024/2025)
 
 
 def load_data() -> dict[str, pd.DataFrame]:
@@ -154,7 +154,7 @@ def check_a_share_weak(data: dict, as_of_idx: int) -> bool:
     df = data[A_SHARE_ETF]
     if as_of_idx < A_SHARE_MA:
         return False
-    close = df["close"].values[:as_of_idx + 1].astype(float)
+    close = df["close"].values[: as_of_idx + 1].astype(float)
     if len(close) < A_SHARE_MA:
         return False
     ma = np.mean(close[-A_SHARE_MA:])
@@ -188,8 +188,8 @@ def select_target(data: dict, etf_data_at_date: dict, holding: str | None):
 
         idx = etf_data_at_date[code]
         df = data[code]
-        close = df["close"].values[:idx + 1].astype(float)
-        volume = df["volume"].values[:idx + 1].astype(float)
+        close = df["close"].values[: idx + 1].astype(float)
+        volume = df["volume"].values[: idx + 1].astype(float)
 
         if len(close) < 121:
             continue
@@ -240,11 +240,12 @@ def select_target(data: dict, etf_data_at_date: dict, holding: str | None):
 
     # 缓冲豁免 (V3-G): 放行类型持仓 (ret60<0.01 且近5日暴跌) 不享 0.05 缓冲
     if holding and holding in etf_data_at_date and holding != DEFENSE:
-        hclose = data[holding]["close"].values[:etf_data_at_date[holding] + 1].astype(float)
+        hclose = data[holding]["close"].values[: etf_data_at_date[holding] + 1].astype(float)
         if len(hclose) > DROP_LOOKBACK + 1 and len(hclose) > 61:
             drop = any(
                 (hclose[i] - hclose[i - 1]) / hclose[i - 1] < DROP_THRESHOLD
-                for i in range(-DROP_LOOKBACK, 0))
+                for i in range(-DROP_LOOKBACK, 0)
+            )
             ret60 = (hclose[-1] - hclose[-61]) / hclose[-61]
             if drop and ret60 < 0.01:
                 threshold = 0.0
@@ -326,7 +327,7 @@ def run_qixing_v3(data: dict, initial_capital: float = 100_000.0) -> dict:
             if not row.empty:
                 cur_price = row.iloc[0]["close"]
                 # 检查持仓波动率: 只有高波动(商品)才启用止损
-                hclose = df["close"].values[:etf_data_at_date.get(holding, 0) + 1].astype(float)
+                hclose = df["close"].values[: etf_data_at_date.get(holding, 0) + 1].astype(float)
                 is_high_vol = False
                 if len(hclose) >= 21:
                     hret = np.diff(hclose[-21:]) / hclose[-21:-1]
@@ -387,14 +388,16 @@ def run_qixing_v3(data: dict, initial_capital: float = 100_000.0) -> dict:
         equity_history.append({"trade_date": td, "equity": equity, "holding": holding or DEFENSE})
 
         # 记录决策
-        decision_log.append({
-            "date": str(td),
-            "target": target,
-            "target_name": ETF_POOL.get(target, "货币基金"),
-            "n_candidates": len(candidates),
-            "a_share_weak": a_share_weak,
-            "profit_prot": profit_protection_triggered,
-        })
+        decision_log.append(
+            {
+                "date": str(td),
+                "target": target,
+                "target_name": ETF_POOL.get(target, "货币基金"),
+                "n_candidates": len(candidates),
+                "a_share_weak": a_share_weak,
+                "profit_prot": profit_protection_triggered,
+            }
+        )
 
     if not equity_history:
         return {"error": "no data"}
@@ -430,10 +433,14 @@ def run_qixing_v3(data: dict, initial_capital: float = 100_000.0) -> dict:
         prev_val = end_val
 
     return {
-        "total_return": total_return, "ann_return": ann_ret,
-        "sharpe": sharpe, "max_drawdown": max_dd,
-        "yearly": yearly, "n_trades": n_trades,
-        "equity_curve": eq_df, "decision_log": decision_log,
+        "total_return": total_return,
+        "ann_return": ann_ret,
+        "sharpe": sharpe,
+        "max_drawdown": max_dd,
+        "yearly": yearly,
+        "n_trades": n_trades,
+        "equity_curve": eq_df,
+        "decision_log": decision_log,
     }
 
 
@@ -443,10 +450,14 @@ def run_qixing_v3(data: dict, initial_capital: float = 100_000.0) -> dict:
 def _compute_param_hash() -> str:
     """计算策略参数 hash (审计追溯用)."""
     params = {
-        "MOM_PERIODS": MOM_PERIODS, "MOM_WEIGHTS": MOM_WEIGHTS,
-        "DROP_LOOKBACK": DROP_LOOKBACK, "DROP_THRESHOLD": DROP_THRESHOLD,
-        "A_SHARE_MA": A_SHARE_MA, "REBALANCE_DAYS": REBALANCE_DAYS,
-        "FEE": FEE, "SLIPPAGE": SLIPPAGE,
+        "MOM_PERIODS": MOM_PERIODS,
+        "MOM_WEIGHTS": MOM_WEIGHTS,
+        "DROP_LOOKBACK": DROP_LOOKBACK,
+        "DROP_THRESHOLD": DROP_THRESHOLD,
+        "A_SHARE_MA": A_SHARE_MA,
+        "REBALANCE_DAYS": REBALANCE_DAYS,
+        "FEE": FEE,
+        "SLIPPAGE": SLIPPAGE,
         "USE_SHORT_MOM_FILTER": USE_SHORT_MOM_FILTER,
         "USE_VOL_SPIKE_FILTER": USE_VOL_SPIKE_FILTER,
         "USE_DROP_FILTER": USE_DROP_FILTER,
@@ -456,9 +467,7 @@ def _compute_param_hash() -> str:
         "USE_BEARISH_DAY_FILTER": USE_BEARISH_DAY_FILTER,
         "USE_CATEGORY_SWITCH": USE_CATEGORY_SWITCH,
     }
-    return hashlib.sha256(
-        json.dumps(params, sort_keys=True, default=str).encode()
-    ).hexdigest()[:16]
+    return hashlib.sha256(json.dumps(params, sort_keys=True, default=str).encode()).hexdigest()[:16]
 
 
 def _compute_data_hash(data: dict) -> str:
@@ -568,26 +577,40 @@ def run_qixing_v3_no_lookahead(
                     can_sell, reason = _check_tradable(data, holding, td)
                     if not can_sell:
                         sell_ok = False
-                        trade_log.append({
-                            "signal_id": sig_id, "signal_date": str(sig_date),
-                            "execution_date": str(td), "action": "sell",
-                            "code": holding, "status": "cancelled",
-                            "reason": f"卖出失败: {reason}",
-                            "data_hash": data_hash, "param_hash": param_hash,
-                        })
+                        trade_log.append(
+                            {
+                                "signal_id": sig_id,
+                                "signal_date": str(sig_date),
+                                "execution_date": str(td),
+                                "action": "sell",
+                                "code": holding,
+                                "status": "cancelled",
+                                "reason": f"卖出失败: {reason}",
+                                "data_hash": data_hash,
+                                "param_hash": param_hash,
+                            }
+                        )
                     else:
                         row = data[holding][data[holding]["trade_date"] == td]
                         exec_price = float(row.iloc[0]["open"])
                         amount = holding_shares * exec_price * (1 - fee - slippage)
                         cash += amount
-                        trade_log.append({
-                            "signal_id": sig_id, "signal_date": str(sig_date),
-                            "execution_date": str(td), "action": "sell",
-                            "code": holding, "shares": holding_shares,
-                            "price": exec_price, "amount": round(amount, 2),
-                            "status": "executed", "reason": "",
-                            "data_hash": data_hash, "param_hash": param_hash,
-                        })
+                        trade_log.append(
+                            {
+                                "signal_id": sig_id,
+                                "signal_date": str(sig_date),
+                                "execution_date": str(td),
+                                "action": "sell",
+                                "code": holding,
+                                "shares": holding_shares,
+                                "price": exec_price,
+                                "amount": round(amount, 2),
+                                "status": "executed",
+                                "reason": "",
+                                "data_hash": data_hash,
+                                "param_hash": param_hash,
+                            }
+                        )
                         holding = None
                         holding_shares = 0
                         holding_peak = 0.0
@@ -596,13 +619,19 @@ def run_qixing_v3_no_lookahead(
                 if sell_ok and target and target in data:
                     can_buy, reason = _check_tradable(data, target, td)
                     if not can_buy:
-                        trade_log.append({
-                            "signal_id": sig_id, "signal_date": str(sig_date),
-                            "execution_date": str(td), "action": "buy",
-                            "code": target, "status": "cancelled",
-                            "reason": f"买入失败: {reason}",
-                            "data_hash": data_hash, "param_hash": param_hash,
-                        })
+                        trade_log.append(
+                            {
+                                "signal_id": sig_id,
+                                "signal_date": str(sig_date),
+                                "execution_date": str(td),
+                                "action": "buy",
+                                "code": target,
+                                "status": "cancelled",
+                                "reason": f"买入失败: {reason}",
+                                "data_hash": data_hash,
+                                "param_hash": param_hash,
+                            }
+                        )
                     else:
                         row = data[target][data[target]["trade_date"] == td]
                         exec_price = float(row.iloc[0]["open"])
@@ -613,22 +642,36 @@ def run_qixing_v3_no_lookahead(
                             holding = target
                             holding_shares = shares
                             holding_peak = exec_price
-                            trade_log.append({
-                                "signal_id": sig_id, "signal_date": str(sig_date),
-                                "execution_date": str(td), "action": "buy",
-                                "code": target, "shares": shares,
-                                "price": exec_price, "amount": round(cost, 2),
-                                "status": "executed", "reason": "",
-                                "data_hash": data_hash, "param_hash": param_hash,
-                            })
+                            trade_log.append(
+                                {
+                                    "signal_id": sig_id,
+                                    "signal_date": str(sig_date),
+                                    "execution_date": str(td),
+                                    "action": "buy",
+                                    "code": target,
+                                    "shares": shares,
+                                    "price": exec_price,
+                                    "amount": round(cost, 2),
+                                    "status": "executed",
+                                    "reason": "",
+                                    "data_hash": data_hash,
+                                    "param_hash": param_hash,
+                                }
+                            )
                         else:
-                            trade_log.append({
-                                "signal_id": sig_id, "signal_date": str(sig_date),
-                                "execution_date": str(td), "action": "buy",
-                                "code": target, "status": "cancelled",
-                                "reason": "买入数量为0 (现金不足)",
-                                "data_hash": data_hash, "param_hash": param_hash,
-                            })
+                            trade_log.append(
+                                {
+                                    "signal_id": sig_id,
+                                    "signal_date": str(sig_date),
+                                    "execution_date": str(td),
+                                    "action": "buy",
+                                    "code": target,
+                                    "status": "cancelled",
+                                    "reason": "买入数量为0 (现金不足)",
+                                    "data_hash": data_hash,
+                                    "param_hash": param_hash,
+                                }
+                            )
 
             pending_signal = None
 
@@ -662,7 +705,9 @@ def run_qixing_v3_no_lookahead(
                 row = df[df["trade_date"] == td]
                 if not row.empty:
                     cur_price = float(row.iloc[0]["close"])
-                    hclose = df["close"].values[:etf_data_at_date.get(holding, 0) + 1].astype(float)
+                    hclose = (
+                        df["close"].values[: etf_data_at_date.get(holding, 0) + 1].astype(float)
+                    )
                     is_high_vol = False
                     if len(hclose) >= 21:
                         hret = np.diff(hclose[-21:]) / hclose[-21:-1]
@@ -689,28 +734,34 @@ def run_qixing_v3_no_lookahead(
                 "holding": holding,
             }
 
-            decision_log.append({
-                "date": str(td),
-                "signal_id": pending_signal["signal_id"],
-                "target": target,
-                "target_name": ETF_POOL.get(target, "货币基金"),
-                "n_candidates": len(candidates),
-                "a_share_weak": a_share_weak,
-                "profit_prot": profit_protection_triggered,
-                "execution_date": str(next_td) if next_td else None,
-            })
+            decision_log.append(
+                {
+                    "date": str(td),
+                    "signal_id": pending_signal["signal_id"],
+                    "target": target,
+                    "target_name": ETF_POOL.get(target, "货币基金"),
+                    "n_candidates": len(candidates),
+                    "a_share_weak": a_share_weak,
+                    "profit_prot": profit_protection_triggered,
+                    "execution_date": str(next_td) if next_td else None,
+                }
+            )
 
     # 最后一个 pending 信号未执行 → 不计入成交
     if pending_signal:
-        trade_log.append({
-            "signal_id": pending_signal["signal_id"],
-            "signal_date": str(pending_signal["signal_date"]),
-            "execution_date": None,
-            "action": "none", "code": pending_signal["target"],
-            "status": "unexecuted",
-            "reason": "最后一个交易日, 无 T+1 可执行",
-            "data_hash": data_hash, "param_hash": param_hash,
-        })
+        trade_log.append(
+            {
+                "signal_id": pending_signal["signal_id"],
+                "signal_date": str(pending_signal["signal_date"]),
+                "execution_date": None,
+                "action": "none",
+                "code": pending_signal["target"],
+                "status": "unexecuted",
+                "reason": "最后一个交易日, 无 T+1 可执行",
+                "data_hash": data_hash,
+                "param_hash": param_hash,
+            }
+        )
 
     if not equity_history:
         return {"error": "no data"}
@@ -747,19 +798,26 @@ def run_qixing_v3_no_lookahead(
     n_cancelled = sum(1 for t in trade_log if t.get("status") in ("cancelled", "unexecuted"))
 
     return {
-        "total_return": total_return, "ann_return": ann_ret,
-        "sharpe": sharpe, "max_drawdown": max_dd,
-        "yearly": yearly, "n_trades": n_executed,
+        "total_return": total_return,
+        "ann_return": ann_ret,
+        "sharpe": sharpe,
+        "max_drawdown": max_dd,
+        "yearly": yearly,
+        "n_trades": n_executed,
         "n_cancelled": n_cancelled,
-        "equity_curve": eq_df, "decision_log": decision_log,
+        "equity_curve": eq_df,
+        "decision_log": decision_log,
         "trade_log": trade_log,
-        "param_hash": param_hash, "data_hash": data_hash,
+        "param_hash": param_hash,
+        "data_hash": data_hash,
         "cost_multiplier": cost_multiplier,
     }
 
 
 def run_qixing_v3_same_day(
-    data: dict, initial_capital: float = 100_000.0, cost_multiplier: float = 1.0,
+    data: dict,
+    initial_capital: float = 100_000.0,
+    cost_multiplier: float = 1.0,
     live_mirror: bool = False,
 ) -> dict:
     """同日收盘成交回测 (对齐实盘 14:50 执行口径).
@@ -851,24 +909,30 @@ def run_qixing_v3_same_day(
                         intraday = (close[-1] - close[-2]) / close[-2]
                         if intraday < -0.03:
                             dropped.add(code)
-                            rt_filter_log.append({
-                                "date": str(td), "code": code,
-                                "name": ETF_POOL.get(code, "货币基金"),
-                                "intraday_ret": round(float(intraday), 4),
-                            })
+                            rt_filter_log.append(
+                                {
+                                    "date": str(td),
+                                    "code": code,
+                                    "name": ETF_POOL.get(code, "货币基金"),
+                                    "intraday_ret": round(float(intraday), 4),
+                                }
+                            )
                 if dropped:
                     candidates = [(c, s) for c, s in candidates if c not in dropped]
                     target = candidates[0][0] if candidates else DEFENSE
 
             signal_counter += 1
             sig_id = f"SIG-{signal_counter:06d}"
-            decision_log.append({
-                "date": str(td), "signal_id": sig_id,
-                "target": target,
-                "target_name": ETF_POOL.get(target, "货币基金"),
-                "n_candidates": len(candidates),
-                "a_share_weak": a_share_weak,
-            })
+            decision_log.append(
+                {
+                    "date": str(td),
+                    "signal_id": sig_id,
+                    "target": target,
+                    "target_name": ETF_POOL.get(target, "货币基金"),
+                    "n_candidates": len(candidates),
+                    "a_share_weak": a_share_weak,
+                }
+            )
 
             if target != holding:
                 sell_ok = True
@@ -876,35 +940,51 @@ def run_qixing_v3_same_day(
                     can_sell, reason = _check_close_tradable(holding, td)
                     if not can_sell:
                         sell_ok = False
-                        trade_log.append({
-                            "signal_id": sig_id, "date": str(td),
-                            "action": "sell", "code": holding,
-                            "status": "cancelled", "reason": f"卖出失败: {reason}",
-                        })
+                        trade_log.append(
+                            {
+                                "signal_id": sig_id,
+                                "date": str(td),
+                                "action": "sell",
+                                "code": holding,
+                                "status": "cancelled",
+                                "reason": f"卖出失败: {reason}",
+                            }
+                        )
                     else:
                         price = float(
                             data[holding][data[holding]["trade_date"] == td].iloc[0]["close"]
                         )
                         amount = holding_shares * price * (1 - fee - slippage)
                         cash += amount
-                        trade_log.append({
-                            "signal_id": sig_id, "date": str(td),
-                            "action": "sell", "code": holding,
-                            "shares": holding_shares, "price": price,
-                            "amount": round(amount, 2),
-                            "status": "executed", "reason": "",
-                        })
+                        trade_log.append(
+                            {
+                                "signal_id": sig_id,
+                                "date": str(td),
+                                "action": "sell",
+                                "code": holding,
+                                "shares": holding_shares,
+                                "price": price,
+                                "amount": round(amount, 2),
+                                "status": "executed",
+                                "reason": "",
+                            }
+                        )
                         holding = None
                         holding_shares = 0
 
                 if sell_ok and target and target in data:
                     can_buy, reason = _check_close_tradable(target, td)
                     if not can_buy:
-                        trade_log.append({
-                            "signal_id": sig_id, "date": str(td),
-                            "action": "buy", "code": target,
-                            "status": "cancelled", "reason": f"买入失败: {reason}",
-                        })
+                        trade_log.append(
+                            {
+                                "signal_id": sig_id,
+                                "date": str(td),
+                                "action": "buy",
+                                "code": target,
+                                "status": "cancelled",
+                                "reason": f"买入失败: {reason}",
+                            }
+                        )
                     else:
                         price = float(
                             data[target][data[target]["trade_date"] == td].iloc[0]["close"]
@@ -915,13 +995,19 @@ def run_qixing_v3_same_day(
                             cash -= cost
                             holding = target
                             holding_shares = shares
-                            trade_log.append({
-                                "signal_id": sig_id, "date": str(td),
-                                "action": "buy", "code": target,
-                                "shares": shares, "price": price,
-                                "amount": round(cost, 2),
-                                "status": "executed", "reason": "",
-                            })
+                            trade_log.append(
+                                {
+                                    "signal_id": sig_id,
+                                    "date": str(td),
+                                    "action": "buy",
+                                    "code": target,
+                                    "shares": shares,
+                                    "price": price,
+                                    "amount": round(cost, 2),
+                                    "status": "executed",
+                                    "reason": "",
+                                }
+                            )
 
         # === 每日净值 ===
         equity = cash
@@ -965,11 +1051,15 @@ def run_qixing_v3_same_day(
     n_cancelled = sum(1 for t in trade_log if t.get("status") == "cancelled")
 
     return {
-        "total_return": total_return, "ann_return": ann_ret,
-        "sharpe": sharpe, "max_drawdown": max_dd,
-        "yearly": yearly, "n_trades": n_executed,
+        "total_return": total_return,
+        "ann_return": ann_ret,
+        "sharpe": sharpe,
+        "max_drawdown": max_dd,
+        "yearly": yearly,
+        "n_trades": n_executed,
         "n_cancelled": n_cancelled,
-        "equity_curve": eq_df, "decision_log": decision_log,
+        "equity_curve": eq_df,
+        "decision_log": decision_log,
         "trade_log": trade_log,
         "rt_filter_log": rt_filter_log,
     }
@@ -1003,8 +1093,7 @@ def main():  # pragma: no cover
     for code, df in data.items():
         name = ETF_POOL.get(code, "货币基金")
         print(
-            f"    {code} {name}: {len(df)}天 "
-            f"({df['trade_date'].min()} ~ {df['trade_date'].max()})"
+            f"    {code} {name}: {len(df)}天 ({df['trade_date'].min()} ~ {df['trade_date'].max()})"
         )
 
     # === 无未来函数回测 (R1 修复版) ===
@@ -1036,21 +1125,24 @@ def main():  # pragma: no cover
     total_ret = (final / 100_000) - 1
     print(f"  {'-' * 46}")
     print(f"\n  10万 → {final:,.0f} ({total_ret:+.1%})")
-    print(f"  年化: {result['ann_return']:+.1%} | 夏普: {result['sharpe']:.2f} | "
-          f"回撤: {result['max_drawdown']:.1%} | 交易: {result['n_trades']}次 "
-          f"(取消: {result['n_cancelled']}次)")
+    print(
+        f"  年化: {result['ann_return']:+.1%} | 夏普: {result['sharpe']:.2f} | "
+        f"回撤: {result['max_drawdown']:.1%} | 交易: {result['n_trades']}次 "
+        f"(取消: {result['n_cancelled']}次)"
+    )
 
     # 审计信息
     print(f"\n  审计: param_hash={result['param_hash']} data_hash={result['data_hash']}")
 
     # 持仓分布
     from collections import Counter
+
     holding_counts = Counter(eq["holding"].tolist())
     total_days = len(eq)
     print(f"\n  持仓分布 (共{total_days}天):")
     for code, count in holding_counts.most_common():
         name = ETF_POOL.get(code, "货币基金")
-        print(f"    {name:<10} {count}天 ({count/total_days:.0%})")
+        print(f"    {name:<10} {count}天 ({count / total_days:.0%})")
 
     # === 对比旧版 (lookahead bias 诊断基线) ===
     print(f"\n  {'=' * 50}")
@@ -1059,16 +1151,26 @@ def main():  # pragma: no cover
     old_result = run_qixing_v3(data)
     print(f"  {'指标':<12} {'无未来函数':>12} {'旧版(有bias)':>12} {'差异':>12}")
     print(f"  {'-' * 50}")
-    print(f"  {'总收益':<12} {result['total_return']:>+12.1%} {old_result['total_return']:>+12.1%} "
-          f"{result['total_return'] - old_result['total_return']:>+12.1%}")
-    print(f"  {'年化':<12} {result['ann_return']:>+12.1%} {old_result['ann_return']:>+12.1%} "
-          f"{result['ann_return'] - old_result['ann_return']:>+12.1%}")
-    print(f"  {'夏普':<12} {result['sharpe']:>12.2f} {old_result['sharpe']:>12.2f} "
-          f"{result['sharpe'] - old_result['sharpe']:>+12.2f}")
-    print(f"  {'最大回撤':<12} {result['max_drawdown']:>12.1%} {old_result['max_drawdown']:>12.1%} "
-          f"{result['max_drawdown'] - old_result['max_drawdown']:>+12.1%}")
-    print(f"  {'交易次数':<12} {result['n_trades']:>12} {old_result['n_trades']:>12} "
-          f"{result['n_trades'] - old_result['n_trades']:>+12}")
+    print(
+        f"  {'总收益':<12} {result['total_return']:>+12.1%} {old_result['total_return']:>+12.1%} "
+        f"{result['total_return'] - old_result['total_return']:>+12.1%}"
+    )
+    print(
+        f"  {'年化':<12} {result['ann_return']:>+12.1%} {old_result['ann_return']:>+12.1%} "
+        f"{result['ann_return'] - old_result['ann_return']:>+12.1%}"
+    )
+    print(
+        f"  {'夏普':<12} {result['sharpe']:>12.2f} {old_result['sharpe']:>12.2f} "
+        f"{result['sharpe'] - old_result['sharpe']:>+12.2f}"
+    )
+    print(
+        f"  {'最大回撤':<12} {result['max_drawdown']:>12.1%} {old_result['max_drawdown']:>12.1%} "
+        f"{result['max_drawdown'] - old_result['max_drawdown']:>+12.1%}"
+    )
+    print(
+        f"  {'交易次数':<12} {result['n_trades']:>12} {old_result['n_trades']:>12} "
+        f"{result['n_trades'] - old_result['n_trades']:>+12}"
+    )
 
     # === 成本压力测试 ===
     print(f"\n  {'=' * 50}")
@@ -1078,8 +1180,10 @@ def main():  # pragma: no cover
     print(f"  {'成本倍数':<10} {'总收益':>10} {'年化':>10} {'夏普':>8} {'回撤':>8} {'交易':>6}")
     print(f"  {'-' * 56}")
     for label, r in stress.items():
-        print(f"  {label:<10} {r['total_return']:>+10.1%} {r['ann_return']:>+10.1%} "
-              f"{r['sharpe']:>8.2f} {r['max_drawdown']:>8.1%} {r['n_trades']:>6}")
+        print(
+            f"  {label:<10} {r['total_return']:>+10.1%} {r['ann_return']:>+10.1%} "
+            f"{r['sharpe']:>8.2f} {r['max_drawdown']:>8.1%} {r['n_trades']:>6}"
+        )
 
     # === 成交记录摘要 ===
     trade_log = result.get("trade_log", [])
@@ -1093,8 +1197,10 @@ def main():  # pragma: no cover
         if cancelled:
             print("\n  取消记录 (前5条):")
             for t in cancelled[:5]:
-                print(f"    {t.get('signal_id')} {t.get('action')} {t.get('code')} "
-                      f"{t.get('status')} - {t.get('reason', '')}")
+                print(
+                    f"    {t.get('signal_id')} {t.get('action')} {t.get('code')} "
+                    f"{t.get('status')} - {t.get('reason', '')}"
+                )
 
     # 保存
     summary = {
