@@ -5,7 +5,7 @@
 # 检查项:
 #   1. trade-web 服务状态 (systemd)
 #   2. /api/health 端点响应
-#   3. 数据新鲜度 (parquet 最新日期 vs 今天)
+#   3. 数据新鲜度 (parquet 最新日期 vs 上一已完成交易日)
 #   4. 持仓一致性 (state.json 非空且字段完整)
 #   5. cron 日志最近一次 SUMMARY 行 (exit code)
 #   7. crontab 三任务完整性 (run_daily/run_calibrate/run_data_sync, 缺失时自动恢复)
@@ -84,7 +84,8 @@ from pathlib import Path
 
 results = {}
 
-# 数据新鲜度
+# 数据新鲜度 (阈值 = 上一个已完成交易日, 与 live_signal.check_data_freshness 同口径;
+# 日历日"昨天"会在周一/长假后误报)
 dates = []
 for f in glob.glob('data/cross_asset/*.parquet'):
     try:
@@ -93,10 +94,23 @@ for f in glob.glob('data/cross_asset/*.parquet'):
     except: pass
 latest = max(dates) if dates else 'unknown'
 today = date.today().isoformat()
-# 允许数据滞后1天 (盘后更新)
-yesterday = (date.today() - timedelta(days=1)).isoformat()
+expected = None
+try:
+    import akshare as ak
+    cal = ak.tool_trade_date_hist_sina()
+    cal_dates = sorted(pd.to_datetime(cal['trade_date']).dt.date)
+    past = [d for d in cal_dates if d < date.today()]
+    if past:
+        expected = past[-1].isoformat()  # 上一个已完成交易日
+except Exception:
+    # 兜底: 无交易日历时取上一个工作日 (周一→上周五)
+    d = date.today() - timedelta(days=1)
+    while d.weekday() >= 5:
+        d -= timedelta(days=1)
+    expected = d.isoformat()
 results['data_date'] = latest
-results['data_fresh'] = latest >= yesterday
+results['data_fresh'] = latest >= expected if expected else False
+results['expected'] = expected
 results['today'] = today
 
 # 持仓一致性
@@ -118,12 +132,13 @@ print(json.dumps(results, ensure_ascii=False))
 
 DATA_DATE=$(echo "$HEALTH_JSON" | $PYTHON -c "import sys,json; d=json.load(sys.stdin); print(d.get('data_date','unknown'))" 2>/dev/null || echo "unknown")
 DATA_FRESH=$(echo "$HEALTH_JSON" | $PYTHON -c "import sys,json; d=json.load(sys.stdin); print('ok' if d.get('data_fresh') else 'fail')" 2>/dev/null || echo "fail")
+DATA_EXPECTED=$(echo "$HEALTH_JSON" | $PYTHON -c "import sys,json; d=json.load(sys.stdin); print(d.get('expected') or 'unknown')" 2>/dev/null || echo "unknown")
 STATE_OK=$(echo "$HEALTH_JSON" | $PYTHON -c "import sys,json; d=json.load(sys.stdin); print('ok' if d.get('state_ok') else 'fail')" 2>/dev/null || echo "fail")
 
 if [ "$DATA_FRESH" = "ok" ]; then
     check "数据新鲜度" "ok" "最新数据=${DATA_DATE}"
 else
-    check "数据新鲜度" "fail" "最新数据=${DATA_DATE} (期望≥昨天)"
+    check "数据新鲜度" "fail" "最新数据=${DATA_DATE} (期望≥上一交易日 ${DATA_EXPECTED})"
 fi
 
 if [ "$STATE_OK" = "ok" ]; then
