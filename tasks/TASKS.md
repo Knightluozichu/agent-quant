@@ -267,3 +267,32 @@
 **验证**: 置换测试 92% 分位, 扰动 6/6 ✅, 成本 2x/3x ✅, 滚动窗口 3/4 收益段 ✅
 **改动**: run_qixing_v3.py (check_single_day_drop + select_target), risk_overrides.py (H3层), live_signal.py (实时急跌同步 + H3状态)
 **实验脚本**: 13 个 exp_*.py, 12 个结果 JSON
+
+## 2026-08-17: 3a20ac2 专家团审核与 P0-P2 全量修复
+
+- [x] FIX-001 部署脚本返工: PROJECT_DIR 加 `/..`; 全程 systemctl(删 kill/nohup);
+      删 `--host 0.0.0.0`; 禁 `uv run` 改 `.venv/bin/python`; staging+带时间戳备份
+      在替换之前; EXIT trap 自动回滚; 服务器护栏(--server); .DEPLOYED_MANIFEST 写入;
+      时间窗口修八进制/15:00 边界/TZ 死逻辑; token 走 mktemp 0600 curl -K 不上命令行
+- [x] FIX-002 DEPLOY_CHECKLIST_20260817.md 按新流程重写 (sha256 双向校验替代行数,
+      回滚路径通配, 删除生产触发确认教唆, scp 用户对齐 SERVER_OPERATIONS.md)
+- [x] FIX-003 health_check.sh 适配 /api/health 鉴权 (config.json 取未过期 dict token,
+      取不到则跳过不误报)
+- [x] FIX-004 live_signal: 删卖出腿 %100 校验(零股可一次性清仓, 消除死锁);
+      record_manual_trade 改 _today_sh; 停牌回退按 td 截断(防未来函数);
+      inject_realtime 空集守卫; _SH_TZ 改 ZoneInfo+回退; 审计时间戳显式时区
+- [x] FIX-005 trade_server: 幂等持久化原子写(tmp+fsync+replace)+idempotency.lock
+      包住检查→执行→记录(锁顺序: idempotency→state); 损坏文件备份 .corrupt 重建;
+      /api/refresh 真注入缓存; 关 /docs//redoc//openapi.json; 两处 date.today()
+      改 _today_sh; _file_count 函数属性 hack 改模块级全局; token 校验 compare_digest
+- [x] FIX-006 notify: 退避语义定版 timeout 固定 10s + sleep 2s→4s (最坏 36s);
+      4xx/业务失败不重试; 5xx/网络重试; 三次耗尽写 data/live/notify_failures.log;
+      import time 上移
+- [x] FIX-007 测试补齐: test_live_signal +5 (零股卖出/停牌无未来函数/空集守卫/时区);
+      test_trade_server 新建 12 用例 (幂等并发 4 线程/损坏文件/health 鉴权/docs 404);
+      test_notify +5 (退避序列/4xx 不重试/5xx 重试/失败落盘无 key 泄漏)
+- [x] FIX-008 验收: ruff check 变更文件全绿; pytest 全量 exit=0 (约 300+ 通过);
+      mypy 对 live_signal/trade_server/notify 零新增错误 (消掉 _file_count 旧错误);
+      bash -n 部署脚本语法通过; CI 门禁 (notify.py mypy) 通过
+- [ ] FIX-009 服务器首演: 非交易时段按新 CHECKLIST 执行 deploy_20260817.sh,
+      先单独跑 health_check.sh 验证检查项 2 (token 提取仅代码级核对, 未实测)

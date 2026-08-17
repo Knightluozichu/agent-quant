@@ -15,12 +15,16 @@ import json
 import os
 import stat
 import tempfile
+import time
+import urllib.error
 import urllib.request
+from datetime import datetime
 from pathlib import Path
 from typing import Any, cast
 
 LIVE_DIR = Path(__file__).parent.parent / "data" / "live"
 CONFIG_FILE = LIVE_DIR / "config.json"
+FAILURE_LOG = LIVE_DIR / "notify_failures.log"
 
 BARK_API = "https://api.day.app"
 DEFAULT_SOUND = "minuet"
@@ -96,6 +100,21 @@ def set_bark_key(key: str) -> None:
     save_config(cfg)
 
 
+def _record_failure(title: str, error: Exception) -> None:
+    """推送最终失败后落盘一行 (时间戳+标题+错误摘要), 供 health_check 巡检.
+
+    不含 Bark key / 完整 URL; 任何写失败都静默, 不影响调用方.
+    """
+    try:
+        LIVE_DIR.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        summary = f"{type(error).__name__}: {error}"[:200]
+        with open(FAILURE_LOG, "a", encoding="utf-8") as f:
+            f.write(f"{ts}\t{title}\t{summary}\n")
+    except OSError:
+        pass
+
+
 def push_bark(
     title: str,
     body: str,
@@ -141,26 +160,39 @@ def push_bark(
         headers={"Content-Type": "application/json; charset=utf-8"},
         method="POST",
     )
-    # 指数退避重试: 最多3次, 超时15s → 30s → 60s
+    # 重试策略: 最多 max_retries 次, 每次固定超时 10s; 网络类错误重试间隔指数退避 2s → 4s
+    # (最坏阻塞 10+2+10+4+10 = 36s); 4xx / Bark 业务失败 (key/参数错误) 不重试
     max_retries = 3
     for attempt in range(1, max_retries + 1):
+        last_error: Exception
         try:
-            with urllib.request.urlopen(req, timeout=15 * attempt) as resp:
+            with urllib.request.urlopen(req, timeout=10) as resp:
                 result = json.loads(resp.read().decode("utf-8"))
                 if result.get("code") == 200:
                     return True
+                # Bark 业务失败 (多为 key/参数错误), 重试无意义
                 print(f"  ⚠️  Bark 返回异常: {result}")
                 return False
-        except Exception as e:
-            if attempt < max_retries:
-                wait = 2 ** attempt
-                print(f"  ⚠️  Bark 推送失败 (尝试 {attempt}/{max_retries}): {e}, {wait}s 后重试...")
-                import time
-                time.sleep(wait)
-            else:
-                print(f"  ⚠️  Bark 推送最终失败 (已重试 {max_retries} 次): {e}")
+        except urllib.error.HTTPError as e:
+            if 400 <= e.code < 500:
+                # 配置错误, 重试无意义
+                print(f"  ⚠️  Bark 推送被拒 (HTTP {e.code}, 请检查 Bark Key 配置)")
                 return False
-    return False
+            last_error = e  # 5xx 等服务端错误, 退避重试
+        except Exception as e:
+            last_error = e  # 网络错误/超时/响应非 JSON, 退避重试
+        if attempt < max_retries:
+            wait = 2 ** attempt
+            print(
+                f"  ⚠️  Bark 推送失败 (尝试 {attempt}/{max_retries}): "
+                f"{last_error}, {wait}s 后重试"
+            )
+            time.sleep(wait)
+        else:
+            print(f"  ⚠️  Bark 推送最终失败 (已重试 {max_retries} 次): {last_error}")
+            _record_failure(title, last_error)
+            return False
+    return False  # 不可达 (循环内必然 return), 仅为满足 mypy return 检查
 
 
 def test_push() -> bool:

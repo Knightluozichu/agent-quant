@@ -48,12 +48,32 @@ else
     check "trade-web服务" "fail" "inactive或未安装"
 fi
 
-# 2. /api/health 端点
-HEALTH_RESP=$(curl -sf http://127.0.0.1:8090/api/health 2>/dev/null || echo "")
-if echo "$HEALTH_RESP" | grep -q '"status":"ok"' 2>/dev/null; then
-    check "API健康" "ok" "status=ok"
+# 2. /api/health 端点 (2026-08-17 起需鉴权: 从 config.json 取未过期 token;
+#    取不到有效 token 时标记跳过, 不误报 fail)
+TOKEN=$($PYTHON -c "
+import json, time
+try:
+    cfg = json.load(open('data/live/config.json'))
+except Exception:
+    cfg = {}
+now = time.time()
+for t in cfg.get('web_tokens', []):
+    if isinstance(t, dict) and t.get('expires', 0) > now:
+        print(t['token']); break
+    elif isinstance(t, str):  # 兼容旧格式
+        print(t); break
+" 2>/dev/null || echo "")
+
+if [ -z "$TOKEN" ]; then
+    REPORT="${REPORT}⚠️ API健康: config.json 无未过期 web_token, 跳过端点检查\n"
 else
-    check "API健康" "fail" "无响应或status≠ok"
+    # token 经 stdin 传给 curl (-K -), 不出现在命令行
+    HEALTH_RESP=$(printf 'header = "Cookie: qx_token=%s"\n' "$TOKEN" | curl -sf -K - http://127.0.0.1:8090/api/health 2>/dev/null || echo "")
+    if echo "$HEALTH_RESP" | grep -q '"status":"ok"' 2>/dev/null; then
+        check "API健康" "ok" "status=ok"
+    else
+        check "API健康" "fail" "无响应或status≠ok"
+    fi
 fi
 
 # 3. 数据新鲜度 + 4. 持仓一致性 (Python 脚本)

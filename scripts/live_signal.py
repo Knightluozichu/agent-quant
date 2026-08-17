@@ -31,18 +31,20 @@ import stat
 import sys
 import time
 from dataclasses import replace
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone, tzinfo
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pandas as pd
 
 # --------------------------------------------------------------------------- #
-# 时区辅助: 服务器已确认 Asia/Shanghai, 代码显式指定避免迁移时失效
+# 时区辅助: 显式 Asia/Shanghai, 不依赖服务器本地时区 (避免迁移失效)
 # --------------------------------------------------------------------------- #
-_UTC8 = __import__("datetime").timedelta(hours=8)
-_SH_TZ = timezone(
-    offset=datetime.strptime("+0800", "%z").utcoffset() or _UTC8
-)
+_SH_TZ: tzinfo
+try:
+    _SH_TZ = ZoneInfo("Asia/Shanghai")
+except Exception:  # 极简环境缺 tzdata 时回退固定 +08:00 (1991 年后上海无夏令时)
+    _SH_TZ = timezone(timedelta(hours=8), name="Asia/Shanghai")
 
 
 def _today_sh() -> date:
@@ -578,15 +580,21 @@ def get_realtime_price(code: str) -> float | None:
 
 
 def account_value(state: dict, data: dict, td) -> float:
-    """账户总值 = 现金 + 持仓市值 (停牌用最后已知价格回退)."""
+    """账户总值 = 现金 + 持仓市值.
+
+    停牌回退: td 当日无价时, 用 td 当天或之前的最后已知收盘价估值
+    (仅服务估值/推送, 不用于成交; 严格按 td 截断, 绝不使用未来数据).
+    """
     total = state["cash"]
     if state["holding"]:
         p = price_on(data, state["holding"], td)
         if not p:
-            # 停牌回退: 使用最后已知收盘价
+            # 停牌回退: td 当天或之前的最后已知收盘价
             df = data.get(state["holding"])
-            if df is not None and not df.empty:
-                p = float(df["close"].iloc[-1])
+            if df is not None:
+                hist = df[df["trade_date"] <= td]
+                if not hist.empty:
+                    p = float(hist["close"].iloc[-1])
         if p:
             total += state["shares"] * p
     return total
@@ -906,11 +914,14 @@ def inject_realtime(data: dict, spot_map: dict | None = None) -> dict:
     """
     today = _today_sh()
 
+    # 空集合守卫: data 为空或不含交易池标的时 all() 恒真, 会静默跳过注入
+    pool_codes = [c for c in ALL_CODES if c in data]
+    if not pool_codes:
+        print("  ⚠️  无交易池行情数据, 无法注入实时数据 (fail-closed)")
+        return data
+
     # 检查是否已有今天数据 (需全部 ETF 都有今天数据才跳过)
-    has_today = all(
-        data[c]["trade_date"].max() >= today
-        for c in data if c in ALL_CODES
-    )
+    has_today = all(data[c]["trade_date"].max() >= today for c in pool_codes)
     if has_today:
         return data  # 已有今天数据, 无需注入
 
@@ -1073,7 +1084,7 @@ def _decision_snapshot(
         "config_hash": v4.CONFIG_HASH,
         "mode": overlay["mode"],
         "trade_date": str(td),
-        "created_at": datetime.now().isoformat(timespec="seconds"),
+        "created_at": datetime.now(_SH_TZ).isoformat(timespec="seconds"),
         "holding": holding,
         "v3g_target": overlay["base_target"],
         "raw_v4_target": overlay["raw_target"],
@@ -1495,7 +1506,7 @@ def run(dry_run: bool = False) -> int:
                 } if buy_order else None,
                 "reason": reason,
                 "status": "pending",
-                "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "created_at": datetime.now(_SH_TZ).strftime("%Y-%m-%d %H:%M:%S"),
             }
             st["last_rebalance_date"] = str(td)
             st["last_run_date"] = str(td)
@@ -1616,8 +1627,8 @@ def confirm_order(
                 raise ValueError(
                     f"卖出数量 {shares} 超过持仓 {state['shares']}"
                 )
-            if shares % 100 != 0:
-                raise ValueError(f"卖出股数必须是100的整数倍: {shares}")
+            # 注: A股卖出允许零股一次性清仓, 不做整百校验;
+            # 下一行的完整成交校验 (shares == 待确认数量) 已兜底
             if shares != int(expected_sell.get("shares", state["shares"])):
                 raise ValueError("换仓卖出必须按待确认订单数量完整成交")
             amount = shares * price * (1 - FEE - SLIPPAGE)
@@ -1668,7 +1679,7 @@ def confirm_order(
             })
 
         pending["status"] = "confirmed"
-        pending["confirmed_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        pending["confirmed_at"] = datetime.now(_SH_TZ).strftime("%Y-%m-%d %H:%M:%S")
         if pending.get("decision_kind") == "v4_early_rotation" and real_buy:
             state["v4_state"]["last_early_rotation_date"] = td
         if idempotency_key:
@@ -1691,7 +1702,7 @@ def skip_pending() -> dict:
         if pending.get("status") != "pending":
             raise ValueError(f"订单状态非 pending: {pending.get('status')}")
         pending["status"] = "skipped"
-        pending["skipped_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        pending["skipped_at"] = datetime.now(_SH_TZ).strftime("%Y-%m-%d %H:%M:%S")
     return state
 
 
@@ -1704,7 +1715,7 @@ def record_manual_trade(action: str, code: str, shares: int, price: float,
       - 买入: shares > 0, price > 0, 现金充足
     """
     with state_transaction() as state:
-        td = td or str(date.today())
+        td = td or str(_today_sh())
         shares = int(shares)
         price = float(price)
         if price <= 0:

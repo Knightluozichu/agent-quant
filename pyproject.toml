@@ -36,6 +36,7 @@ dependencies = [
     "lightgbm>=4.7.0",
     "torch>=2.13.0",
     "torchvision>=0.28.0",
+    "fastapi>=0.139.2",
 ]
 
 [project.optional-dependencies]
@@ -53,7 +54,7 @@ viz = [
     "dash-bootstrap-components>=1.6",
 ]
 server = [
-    "fastapi>=0.111",
+    # fastapi 已在主依赖 (trade_server 生产运行必需)
     "uvicorn[standard]>=0.30",
 ]
 
@@ -67,6 +68,7 @@ dev = [
     "ruff>=0.5",
     "mypy>=1.10",
     "pandas-stubs>=2.2",
+    "httpx>=0.28.1",
 ]
 
 [project.scripts]

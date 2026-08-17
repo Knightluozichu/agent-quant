@@ -137,3 +137,20 @@
   校验本地状态哈希未变化。14:50 之前的盘中结果不属于官方交易信号。
 - **理由**: V4 提前轮动、2/2 确认和三交易日锁依赖真实持仓、现金与状态历史；仅同步
   策略模式会导致空仓口径与服务器实盘口径分裂。
+
+## 2026-08-17: 部署体系与实盘外围修复的关键决策
+
+- **部署只走 systemd**: trade-web.service (quant 用户/127.0.0.1/venv/journalctl)
+  是唯一服务管理入口; 部署脚本不得 nohup/kill 绕过, 不得传 --host。
+  新流程: scp → deploy/staging/ → 脚本备份(时间戳)→校验→安装→is-active+401 探测
+  →失败 EXIT trap 自动回滚。理由: 3a20ac2 的 kill+nohup+0.0.0.0 与既有体系冲突,
+  会产生 systemd 复活抢端口的"假性部署成功"。
+- **服务器禁止 uv run**: 生产一律 /opt/quant/.venv/bin/python (SERVER_OPERATIONS.md
+  既有红线, 本次写入部署脚本硬性检查)。
+- **幂等锁顺序**: 先 idempotency.lock 后 state lock (quant_state.lock), 全仓库
+  唯一同时持两把锁的路径是 /api/confirm 与 /api/trade, 顺序固定防死锁。
+- **notify 退避语义定版**: timeout 固定 10s × 3 次 + sleep 2s→4s (最坏 36s);
+  4xx 与 Bark 业务失败不重试; 重试耗尽落盘 notify_failures.log 供巡检。
+  理由: 14:50 调仓窗口仅 10 分钟, 96s 级阻塞不可接受; 配置错误重试无意义。
+- **A 股零股规则口径**: 买入必须 100 股整数倍, 卖出允许零股一次性清仓;
+  confirm_order 与 record_manual_trade 统一为该口径 (卖出腿不再做 %100 校验)。

@@ -17,16 +17,23 @@
 from __future__ import annotations
 
 import argparse
+import contextlib
 import copy
+import fcntl
 import hashlib
 import hmac
 import json
 import math
+import os
 import secrets
 import sys
 import time
-from datetime import date, datetime
+from datetime import datetime
 from pathlib import Path
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -39,11 +46,17 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 WEB_DIR = Path(__file__).parent / "web"
 
-app = FastAPI(title="七星V4 实盘记账")
+app = FastAPI(
+    title="七星V4 实盘记账",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
+)
 
-# 行情数据内存缓存 (带 mtime 失效: cron 14:50 更新数据后自动重载)
+# 行情数据内存缓存 (带 mtime + 文件数失效: cron 14:50 更新数据后自动重载)
 _DATA_CACHE: dict | None = None
 _DATA_CACHE_TIME: float = 0.0
+_DATA_CACHE_FILES: int = 0
 
 # Token 过期时间 (秒): 24 小时
 TOKEN_TTL = 86400
@@ -55,56 +68,119 @@ _LOGIN_WINDOW = 60.0
 
 # 幂等去重: 已处理的 idempotency_key (持久化到文件, 保留 1 小时)
 _IDEMPOTENCY_FILE = ls.LIVE_DIR / "idempotency.json"
+_IDEMPOTENCY_LOCK_FILE = ls.LIVE_DIR / "idempotency.lock"
 _IDEMPOTENCY_TTL = 3600.0
 
+
 def _load_idempotency() -> dict[str, float]:
-    if _IDEMPOTENCY_FILE.exists():
-        try:
-            with open(_IDEMPOTENCY_FILE) as f:
-                data = json.load(f)
-            if isinstance(data, dict):
-                now = time.time()
-                return {k: v for k, v in data.items() if now - v <= _IDEMPOTENCY_TTL}
-        except (json.JSONDecodeError, OSError):
-            pass
-    return {}
+    """读取幂等表. 文件损坏时备份为 .corrupt 并重建, 不让写接口 500."""
+    if not _IDEMPOTENCY_FILE.exists():
+        return {}
+    try:
+        with open(_IDEMPOTENCY_FILE) as f:
+            data = json.load(f)
+    except (json.JSONDecodeError, OSError, ValueError) as e:
+        print(f"  ⚠️  幂等文件损坏, 备份后重建: {e}")
+        with contextlib.suppress(OSError):
+            _IDEMPOTENCY_FILE.replace(
+                _IDEMPOTENCY_FILE.with_suffix(".corrupt")
+            )
+        return {}
+    if not isinstance(data, dict):
+        print("  ⚠️  幂等文件内容非 dict, 备份后重建")
+        with contextlib.suppress(OSError):
+            _IDEMPOTENCY_FILE.replace(
+                _IDEMPOTENCY_FILE.with_suffix(".corrupt")
+            )
+        return {}
+    now = time.time()
+    store: dict[str, float] = {}
+    for k, v in data.items():
+        # 逐条校验: 非法条目丢弃, 不拖垮整个文件
+        if (
+            isinstance(k, str)
+            and isinstance(v, (int, float))
+            and not isinstance(v, bool)
+            and now - float(v) <= _IDEMPOTENCY_TTL
+        ):
+            store[k] = float(v)
+    return store
+
 
 def _save_idempotency(store: dict[str, float]) -> None:
+    """原子写幂等表 (临时文件 + fsync + os.replace), 失败时告警不静默."""
+    tmp = _IDEMPOTENCY_FILE.with_suffix(".tmp")
     try:
-        with open(_IDEMPOTENCY_FILE, "w") as f:
+        with open(tmp, "w") as f:
             json.dump(store, f)
-    except OSError:
-        pass
+            f.flush()
+            os.fsync(f.fileno())
+        tmp.replace(_IDEMPOTENCY_FILE)
+        ls._fsync_dir(_IDEMPOTENCY_FILE.parent)
+    except OSError as e:
+        print(f"  ⚠️  幂等记录写盘失败 (重启后可能重复放行): {e}")
+
+
+@contextlib.contextmanager
+def _idempotency_guard(key: str | None) -> Iterator[None]:
+    """幂等占位: 持锁完成 检查→执行→记录, 消除并发同 key 双成交窗口.
+
+    锁顺序约定: 先 idempotency.lock, 后 state lock (state_transaction).
+    任何同时需要两把锁的路径都必须按此顺序获取, 防止死锁.
+    """
+    _IDEMPOTENCY_LOCK_FILE.parent.mkdir(parents=True, exist_ok=True)
+    lock_fd = os.open(str(_IDEMPOTENCY_LOCK_FILE), os.O_CREAT | os.O_RDWR, 0o644)
+    try:
+        fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        store = _load_idempotency()
+        if key and key in store:
+            raise HTTPException(
+                status_code=409, detail="重复提交 (idempotency_key 已处理)"
+            )
+        yield
+        # 执行成功才记录; 失败 (如 400) 不记录, 允许客户端修正后重试
+        if key:
+            store[key] = time.time()
+        _save_idempotency(store)
+    finally:
+        fcntl.flock(lock_fd, fcntl.LOCK_UN)
+        os.close(lock_fd)
 # 金额/数量安全上限 (拒绝超大值, 防输入错误/注入)
 MAX_TRADE_AMOUNT = 1e9
 
 
 def get_data() -> dict:
-    global _DATA_CACHE, _DATA_CACHE_TIME
+    global _DATA_CACHE, _DATA_CACHE_TIME, _DATA_CACHE_FILES
     files = list(ls.DATA_DIR.glob("*.parquet"))
     if not files:
-        if _DATA_CACHE is not None:
-            _DATA_CACHE = None
-            _DATA_CACHE_TIME = 0.0
+        _DATA_CACHE = None
+        _DATA_CACHE_TIME = 0.0
+        _DATA_CACHE_FILES = 0
         return ls.load_data()
     mtime = max(f.stat().st_mtime for f in files)
     # 同时检查文件数量变化 (删除/新增)
-    cache_file_count = getattr(get_data, "_file_count", 0)
     if (
         _DATA_CACHE is None
         or mtime > _DATA_CACHE_TIME
-        or len(files) != cache_file_count
+        or len(files) != _DATA_CACHE_FILES
     ):
         _DATA_CACHE = ls.load_data()
         _DATA_CACHE_TIME = time.time()
-        get_data._file_count = len(files)
+        _DATA_CACHE_FILES = len(files)
     # 返回副本防止 inject_realtime 污染全局缓存
     return copy.deepcopy(_DATA_CACHE)
 
 
 def refresh_data() -> None:
-    global _DATA_CACHE
-    _DATA_CACHE = ls.load_data()
+    """强制重载缓存, 并同步注入当日实时行情 (与 status/signal 惰性注入同源).
+
+    inject_realtime 内部 fail-closed: 行情缺失/过期/冲突时不注入, 缓存保持历史数据.
+    """
+    global _DATA_CACHE, _DATA_CACHE_TIME, _DATA_CACHE_FILES
+    files = list(ls.DATA_DIR.glob("*.parquet"))
+    _DATA_CACHE = ls.inject_realtime(ls.load_data())
+    _DATA_CACHE_TIME = time.time()
+    _DATA_CACHE_FILES = len(files)
 
 
 # --------------------------------------------------------------------------- #
@@ -161,9 +237,9 @@ def require_token(request: Request) -> None:
     cfg = load_config()
     cfg = _cleanup_expired_tokens(cfg)
     save_config(cfg)
-    tokens = {t["token"] for t in cfg.get("web_tokens", [])}
+    tokens = [t["token"] for t in cfg.get("web_tokens", [])]
     token = _extract_token(request)
-    if not token or token not in tokens:
+    if not token or not any(hmac.compare_digest(token, t) for t in tokens):
         raise HTTPException(status_code=401, detail="未授权或 token 已过期")
 
 
@@ -366,7 +442,7 @@ def api_signal(_: None = Depends(require_token)) -> dict:
             "status": "OK",
             "official": True,
             "trade_date": td,
-            "is_trading_day": ls.is_trading_day(date.today()),
+            "is_trading_day": ls.is_trading_day(ls._today_sh()),
             "strategy_mode": decision.get("mode", ls.get_strategy_mode()),
             "strategy_id": decision.get("strategy_id", ls.v4.STRATEGY_ID),
             "config_hash": decision.get("config_hash", ls.v4.CONFIG_HASH),
@@ -387,7 +463,7 @@ def api_signal(_: None = Depends(require_token)) -> dict:
     # 注入当日实时行情 (解决parquet没有今天数据的问题)
     data = ls.inject_realtime(data)
     td = ls.get_trading_dates(data)[-1]
-    today = date.today()
+    today = ls._today_sh()
 
     # fail-closed: 非交易日标记但不阻断展示
     is_trading = ls.is_trading_day(today)
@@ -610,56 +686,33 @@ class TradeRequest(BaseModel):
         return v
 
 
-def _check_idempotency(key: str | None) -> None:
-    """幂等去重: 相同 idempotency_key 在 TTL 内重复提交 → 409."""
-    now = time.time()
-    store = _load_idempotency()
-    # 清理过期记录
-    for k in [k for k, t in store.items() if now - t > _IDEMPOTENCY_TTL]:
-        store.pop(k, None)
-    _save_idempotency(store)
-    if key is None:
-        return
-    if key in store:
-        raise HTTPException(
-            status_code=409, detail="重复提交 (idempotency_key 已处理)"
-        )
-
-
-def _record_idempotency(key: str | None) -> None:
-    if key:
-        store = _load_idempotency()
-        store[key] = time.time()
-        _save_idempotency(store)
-
-
 @app.post("/api/confirm")
 def api_confirm(payload: ConfirmRequest, _: None = Depends(require_token)) -> dict:
-    _check_idempotency(payload.idempotency_key)
-    state = ls.load_state()
-    if state is None:
-        raise HTTPException(status_code=400, detail="账户未初始化")
-    pending = state.get("pending_order")
-    if not pending:
-        raise HTTPException(status_code=400, detail="无待确认订单")
-    # 订单必须处于 pending 状态, 拒绝重复确认
-    if pending.get("status") != "pending":
-        raise HTTPException(
-            status_code=409,
-            detail=f"订单已处理 (状态: {pending.get('status')}), 不可重复确认",
-        )
-    try:
-        state = ls.confirm_order(
-            payload.sell.model_dump() if payload.sell else None,
-            payload.buy.model_dump() if payload.buy else None,
-            order_id=payload.order_id,
-            expected_state_version=payload.expected_state_version,
-            idempotency_key=payload.idempotency_key,
-        )
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
-    _record_idempotency(payload.idempotency_key)
-    return {"ok": True, "cash": round(state["cash"], 2), "holding": state["holding"]}
+    # 幂等占位持锁覆盖 检查→执行→记录 全程 (锁顺序: idempotency.lock → state lock)
+    with _idempotency_guard(payload.idempotency_key):
+        state = ls.load_state()
+        if state is None:
+            raise HTTPException(status_code=400, detail="账户未初始化")
+        pending = state.get("pending_order")
+        if not pending:
+            raise HTTPException(status_code=400, detail="无待确认订单")
+        # 订单必须处于 pending 状态, 拒绝重复确认
+        if pending.get("status") != "pending":
+            raise HTTPException(
+                status_code=409,
+                detail=f"订单已处理 (状态: {pending.get('status')}), 不可重复确认",
+            )
+        try:
+            state = ls.confirm_order(
+                payload.sell.model_dump() if payload.sell else None,
+                payload.buy.model_dump() if payload.buy else None,
+                order_id=payload.order_id,
+                expected_state_version=payload.expected_state_version,
+                idempotency_key=payload.idempotency_key,
+            )
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
+        return {"ok": True, "cash": round(state["cash"], 2), "holding": state["holding"]}
 
 
 @app.post("/api/skip")
@@ -673,75 +726,81 @@ def api_skip(_: None = Depends(require_token)) -> dict:
 
 @app.post("/api/trade")
 def api_trade(payload: TradeRequest, _: None = Depends(require_token)) -> dict:
-    _check_idempotency(payload.idempotency_key)
-    state = ls.load_state()
-    if state is None:
-        raise HTTPException(status_code=400, detail="账户未初始化")
+    # 幂等占位持锁覆盖 检查→执行→记录 全程 (锁顺序: idempotency.lock → state lock)
+    with _idempotency_guard(payload.idempotency_key):
+        state = ls.load_state()
+        if state is None:
+            raise HTTPException(status_code=400, detail="账户未初始化")
 
-    # 代码必须在交易池内 (ETF_POOL + DEFENSE)
-    allowed_codes = set(ls.ETF_POOL.keys()) | {ls.DEFENSE}
-    if payload.code not in allowed_codes:
-        raise HTTPException(
-            status_code=400, detail=f"非法代码 {payload.code}, 不在交易池"
-        )
-
-    if payload.action == "buy":
-        # 数量须为 100 的整数倍
-        if payload.shares % 100 != 0:
+        # 代码必须在交易池内 (ETF_POOL + DEFENSE)
+        allowed_codes = set(ls.ETF_POOL.keys()) | {ls.DEFENSE}
+        if payload.code not in allowed_codes:
             raise HTTPException(
-                status_code=400, detail="买入数量必须为 100 的整数倍"
-            )
-        # 现金充足 (含手续费+滑点)
-        cost = payload.shares * payload.price * (1 + ls.FEE + ls.SLIPPAGE)
-        if cost > state["cash"]:
-            raise HTTPException(
-                status_code=400,
-                detail=f"现金不足 (需 {cost:.2f}, 可用 {state['cash']:.2f})",
-            )
-        # 买入前必须空仓
-        if state["holding"]:
-            raise HTTPException(
-                status_code=400,
-                detail=f"已有持仓 {state['holding']}, 请先卖出再买入",
-            )
-    else:  # sell
-        # 空仓不可卖出
-        if not state["holding"]:
-            raise HTTPException(status_code=400, detail="当前空仓, 无法卖出")
-        # 卖出代码必须匹配当前持仓
-        if payload.code != state["holding"]:
-            raise HTTPException(
-                status_code=400,
-                detail=f"卖出代码 {payload.code} 与当前持仓 {state['holding']} 不匹配",
-            )
-        # 卖出数量不得超过持仓
-        if payload.shares > state["shares"]:
-            raise HTTPException(
-                status_code=400,
-                detail=f"卖出数量 {payload.shares} 超过持仓 {state['shares']}",
+                status_code=400, detail=f"非法代码 {payload.code}, 不在交易池"
             )
 
-    try:
-        state = ls.record_manual_trade(
-            payload.action, payload.code, payload.shares,
-            payload.price, payload.date,
-        )
-    except (ValueError, KeyError) as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
-    _record_idempotency(payload.idempotency_key)
-    return {"ok": True, "cash": round(state["cash"], 2), "holding": state["holding"]}
+        if payload.action == "buy":
+            # 数量须为 100 的整数倍
+            if payload.shares % 100 != 0:
+                raise HTTPException(
+                    status_code=400, detail="买入数量必须为 100 的整数倍"
+                )
+            # 现金充足 (含手续费+滑点)
+            cost = payload.shares * payload.price * (1 + ls.FEE + ls.SLIPPAGE)
+            if cost > state["cash"]:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"现金不足 (需 {cost:.2f}, 可用 {state['cash']:.2f})",
+                )
+            # 买入前必须空仓
+            if state["holding"]:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"已有持仓 {state['holding']}, 请先卖出再买入",
+                )
+        else:  # sell
+            # 空仓不可卖出
+            if not state["holding"]:
+                raise HTTPException(status_code=400, detail="当前空仓, 无法卖出")
+            # 卖出代码必须匹配当前持仓
+            if payload.code != state["holding"]:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"卖出代码 {payload.code} 与当前持仓 {state['holding']} 不匹配",
+                )
+            # 卖出数量不得超过持仓
+            if payload.shares > state["shares"]:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"卖出数量 {payload.shares} 超过持仓 {state['shares']}",
+                )
+
+        try:
+            state = ls.record_manual_trade(
+                payload.action, payload.code, payload.shares,
+                payload.price, payload.date,
+            )
+        except (ValueError, KeyError) as e:
+            raise HTTPException(status_code=400, detail=str(e)) from e
+        return {"ok": True, "cash": round(state["cash"], 2), "holding": state["holding"]}
 
 
 @app.post("/api/refresh")
 def api_refresh(_: None = Depends(require_token)) -> dict:
-    refresh_data()
-    # 刷新后尝试获取实时行情, 提示前端数据新鲜度
-    spot = ls._fetch_tencent_spot()
-    ok, reason = ls.validate_realtime_data(spot) if spot else (False, "无实时数据")
+    refresh_data()  # 重载缓存并注入当日实时行情 (fail-closed 在 inject_realtime 内部)
+    # 校验注入结果: 缓存最新交易日是否已推进到今天 (Asia/Shanghai)
+    today = ls._today_sh()
+    dates = ls.get_trading_dates(_DATA_CACHE) if _DATA_CACHE else []
+    ok = bool(dates) and dates[-1] >= today
+    reason: str | None = None
+    if not ok:
+        # 补充诊断信息 (哪只 ETF 缺失/过期)
+        spot = ls._fetch_tencent_spot()
+        reason = ls.validate_realtime_data(spot)[1] if spot else "无实时数据"
     return {
         "ok": True,
         "realtime_ok": ok,
-        "realtime_reason": reason if not ok else None,
+        "realtime_reason": reason,
     }
 
 

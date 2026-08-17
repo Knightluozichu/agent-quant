@@ -134,3 +134,18 @@
 - [ ] I-V4RG-03 真正样本外为0且3x成本路径崩溃：20日块5,000次自助法满足联合条件
       的概率仅1.08%，MDD改善95%区间为-14.49%至+16.38%；3x成本受既有风控状态机
       路径影响，期末12,950、MDD -94.62%。不得修改生产V4，只能冻结影子前推。
+
+## 2026-08-17: 3a20ac2 修复批次遗留项 (非阻断)
+
+- [ ] I-FIX-01 require_token 的 config.json 读-改-写竞态 (预存在): 每个鉴权请求
+      load→cleanup→save, 与并发 login 的 token 追加存在丢 token 窗口。建议 token
+      存储迁出 config.json 或加锁。本次未修 (超出 3a20ac2 范围)。
+- [ ] I-FIX-02 scripts/ 下 exp_* 研究脚本存在大量预存在 lint/format 违规
+      (ruff format --check 对 live_signal/trade_server/notify 等也会重排,
+      属仓库历史存量; CI format 门禁实际未生效)。未在本次修复中整体重排,
+      避免淹没真实 diff; 如需启用 format 门禁应单独做一次性格式化提交。
+- [ ] I-FIX-03 /api/refresh 后 /api/equity 权益曲线末端改用实时注入价 (行为变化,
+      方向符合修复意图, 前端口径知悉即可)。
+- [ ] I-FIX-04 trade_server 无请求体大小限制/全局超时; 绑定 127.0.0.1 前提下风险低,
+      若未来暴露公网 (反代+TLS) 需一并处理。
+- [ ] I-FIX-05 get_data() 每请求 deepcopy 全量 ETF 日线, 数据量增长后关注接口延迟。
