@@ -102,11 +102,12 @@ if [[ "$SYS_TZ" != "Asia/Shanghai" ]]; then
     echo "  ⚠️  警告: 系统时区非 Asia/Shanghai (脚本内时间判断已强制 Asia/Shanghai)"
 fi
 
-# pending_order 阻塞
+# pending_order 阻塞 (仅活跃状态; confirmed/skipped/superseded 为终态审计记录, 不阻塞)
 PENDING=$("$PYTHON" -c "
 import json
 s = json.load(open('data/live/state.json'))
-print('YES' if s.get('pending_order') else 'NO')
+p = s.get('pending_order')
+print('YES' if p and p.get('status') == 'pending' else 'NO')
 " 2>/dev/null || echo "UNKNOWN")
 if [[ "$PENDING" == "YES" ]]; then
     echo "  ❌ 阻塞: 有 pending_order 待确认, 请先处理后再部署"
@@ -190,7 +191,10 @@ echo "[4/6] 安装新文件..."
 for f in "${FILES[@]}"; do
     # cp 覆盖已存在文件时保留原 inode, 属主/权限不变 (quant)
     cp "$STAGING_DIR/$f" "scripts/$f"
-    echo "  ✓ 已安装 scripts/$f"
+    # 归一化属主: cp 保留的是旧 inode 属主, 历史遗留 root 属主文件需纠正回 quant
+    chown quant:quant "scripts/$f"
+    chmod 0644 "scripts/$f"
+    echo "  ✓ 已安装 scripts/$f (属主 quant:quant)"
 done
 
 # 冷启动校验 1: trade_server 可导入 (生产 venv, 禁止 uv run)

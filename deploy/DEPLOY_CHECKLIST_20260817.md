@@ -24,16 +24,17 @@
 
 - [ ] **1. 服务器时区确认**: `timedatectl | grep "Time zone"` 输出应为 `Asia/Shanghai`
   - 如不是, 本次修复的 `_SH_TZ` 仍会正确工作 (脚本内时间判断也已强制 Asia/Shanghai), 但需知会
-- [ ] **2. 确认无待确认订单**: `uv run python scripts/live_signal.py --status` (本地) 或服务器上
-  `/opt/quant/.venv/bin/python scripts/live_signal.py --status`, 输出中 `pending_order` 应为 `null`
-  - 如有 pending, 先确认或取消, 避免新旧代码对 confirm_order 校验口径差异
-  - **脚本 [0/6] 会自动检查并阻塞**, 此项为人工双保险
+- [ ] **2. 确认无活跃待确认订单**: 服务器上
+  `/opt/quant/.venv/bin/python -c "import json; print(json.load(open('data/live/state.json')).get('pending_order', {}).get('status'))"`,
+  仅活跃状态 `pending` 阻塞; `confirmed`/`skipped`/`superseded` 为终态审计记录, 不影响部署
+  - 如有活跃 pending, 先确认或取消, 避免新旧代码对 confirm_order 校验口径差异
+  - **脚本 [0/6] 会自动检查并阻塞活跃 pending**, 此项为人工双保险
 - [ ] **3. 确认非 14:30-15:00 窗口期**: 此期间 cron 可能自动运行 `live_signal.py` 生成信号
   - **脚本 [0/6] 会自动检查并阻塞** (含 15:00 整点)
 - [ ] **4. 检查磁盘空间**: `df -h /opt/quant` 确保 > 100MB 可用
   - 新增 `idempotency.json` 文件, deepcopy 临时占用内存
 - [ ] **5. 检查文件属主**: `scripts/*.py` 与 `data/live/` 应为 `quant:quant`
-  - 脚本以 root 运行, `cp` 覆盖已存在文件时保留原属主
+  - 脚本 [4/6] 安装时会自动 `chown quant:quant` 归一化属主 (含历史遗留 root 属主文件)
 - [ ] **6. 确认服务现状**: `systemctl is-active trade-web` 应为 `active`;
   `ss -tln | grep 8090` 应只有 127.0.0.1:8090 (无 0.0.0.0:8090, 无游离 nohup 进程)
 
