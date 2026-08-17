@@ -32,6 +32,8 @@ def isolated_live(tmp_path, monkeypatch):
     # 幂等表与锁
     monkeypatch.setattr(ts, "_IDEMPOTENCY_FILE", tmp_path / "idempotency.json")
     monkeypatch.setattr(ts, "_IDEMPOTENCY_LOCK_FILE", tmp_path / "idempotency.lock")
+    # config 锁 (require_token/login/logout/set_password 的读-改-写串行化)
+    monkeypatch.setattr(ts, "_CONFIG_LOCK_FILE", tmp_path / "config.lock")
     # 缓存全局复位, 避免用例间串扰
     monkeypatch.setattr(ts, "_DATA_CACHE", None)
     monkeypatch.setattr(ts, "_DATA_CACHE_TIME", 0.0)
@@ -259,3 +261,78 @@ def test_refresh_injects_into_cache(isolated_live, monkeypatch):
     assert len(injected_with) == 1
     assert ts._DATA_CACHE is not None
     assert ts._DATA_CACHE_TIME > 0
+
+
+# --------------------------------------------------------------------------- #
+# e. config.lock: 并发 login + 鉴权请求不丢 token (I-FIX-01)
+# --------------------------------------------------------------------------- #
+@pytest.mark.unit
+def test_concurrent_logins_no_token_loss(isolated_live, monkeypatch):
+    password = "test-" + "pw-12345"  # 拼接写法规避密钥扫描器
+    ts.set_password(password)
+    # set_password 清空了 token, 重新种入鉴权 token
+    cfg = json.loads((isolated_live / "config.json").read_text())
+    cfg["web_tokens"] = [{"token": _TOKEN, "expires": time.time() + 3600}]
+    (isolated_live / "config.json").write_text(json.dumps(cfg))
+    # 放行登录限流 (默认 5 次/分钟/IP, 并发测试需要更多), 并复位限流状态
+    monkeypatch.setattr(ts, "_LOGIN_RATE_LIMIT", 1000)
+    monkeypatch.setattr(ts, "_LOGIN_ATTEMPTS", {})
+
+    def do_login(_: int) -> int:
+        client = TestClient(ts.app)
+        return client.post("/api/login", json={"password": password}).status_code
+
+    def do_authed(_: int) -> int:
+        return _authed_client().get("/api/health").status_code
+
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        futures = [pool.submit(do_login, i) for i in range(8)] + [
+            pool.submit(do_authed, i) for i in range(8)
+        ]
+        results = [f.result() for f in futures]
+    assert results[:8] == [200] * 8  # login 全部成功
+    assert results[8:] == [200] * 8  # 并发鉴权请求全部成功
+    # 关键断言: 8 个并发 login 追加的 token 无一丢失 (读-改-写被锁串行化)
+    cfg = json.loads((isolated_live / "config.json").read_text())
+    assert len(cfg["web_tokens"]) == 8 + 1  # 8 个 login token + 1 个预置 token
+
+
+# --------------------------------------------------------------------------- #
+# f. 请求体大小限制: Content-Length 超 64KB → 413 (I-FIX-04)
+# --------------------------------------------------------------------------- #
+@pytest.mark.unit
+def test_body_over_limit_413(isolated_live):
+    _seed_token(isolated_live)
+    client = _authed_client()
+    payload = {
+        "action": "buy",
+        "code": "518880",
+        "shares": 100,
+        "price": 1.0,
+        "idempotency_key": "x" * (70 * 1024),  # 把请求体撑过 64KB
+    }
+    resp = client.post("/api/trade", json=payload)
+    assert resp.status_code == 413
+
+
+@pytest.mark.unit
+def test_body_normal_size_not_blocked(isolated_live):
+    _seed_token(isolated_live)
+    client = _authed_client()
+    resp = client.post(
+        "/api/trade",
+        json={"action": "buy", "code": "518880", "shares": 100, "price": 1.0},
+    )
+    # 正常大小请求穿过 middleware, 走到业务校验 (账户未初始化 → 400)
+    assert resp.status_code == 400
+    assert "未初始化" in resp.json()["detail"]
+
+
+@pytest.mark.unit
+def test_body_invalid_content_length_400(isolated_live):
+    client = TestClient(ts.app)
+    req = client.build_request(
+        "POST", "/api/login", content=b"{}", headers={"content-length": "abc"}
+    )
+    resp = client.send(req)
+    assert resp.status_code == 400

@@ -35,6 +35,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from collections.abc import Iterator
 
+    from starlette.types import ASGIApp, Receive, Scope, Send
+
 sys.path.insert(0, str(Path(__file__).parent))
 
 import live_signal as ls
@@ -43,6 +45,7 @@ from fastapi import Depends, FastAPI, HTTPException, Request, Response
 from fastapi.responses import FileResponse
 from notify import load_config, save_config
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from starlette.responses import PlainTextResponse
 
 WEB_DIR = Path(__file__).parent / "web"
 
@@ -52,6 +55,42 @@ app = FastAPI(
     redoc_url=None,
     openapi_url=None,
 )
+
+# 请求体大小上限: 合法请求体只有几百字节 (登录密码/确认成交表单), 64KB 绰绰有余
+MAX_BODY_BYTES = 64 * 1024
+
+
+class _BodySizeLimitMiddleware:
+    """Content-Length 超上限直接 413, 不读 body.
+
+    只检查 Content-Length 头; 无 Content-Length 的 chunked 请求不强行 buffer
+    全量 (会把带宽 DoS 变成内存 DoS, 更糟), 由 pydantic 字段级长度限制兜底.
+    """
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        headers = dict(scope.get("headers") or [])
+        raw = headers.get(b"content-length")
+        if raw is not None:
+            try:
+                size = int(raw)
+            except ValueError:
+                resp = PlainTextResponse("非法 Content-Length", status_code=400)
+                await resp(scope, receive, send)
+                return
+            if size > MAX_BODY_BYTES:
+                resp = PlainTextResponse("请求体超过 64KB 上限", status_code=413)
+                await resp(scope, receive, send)
+                return
+        await self.app(scope, receive, send)
+
+
+app.add_middleware(_BodySizeLimitMiddleware)
 
 # 行情数据内存缓存 (带 mtime + 文件数失效: cron 14:50 更新数据后自动重载)
 _DATA_CACHE: dict | None = None
@@ -121,8 +160,10 @@ def _save_idempotency(store: dict[str, float]) -> None:
 def _idempotency_guard(key: str | None) -> Iterator[None]:
     """幂等占位: 持锁完成 检查→执行→记录, 消除并发同 key 双成交窗口.
 
-    锁顺序约定: 先 idempotency.lock, 后 state lock (state_transaction).
-    任何同时需要两把锁的路径都必须按此顺序获取, 防止死锁.
+    锁顺序约定 (固定, 防死锁):
+      config.lock → idempotency.lock → state lock (quant_state.lock)
+    config.lock 只由 require_token/login/logout/set_password 持有且在端点体
+    之前释放, 不会与本锁同持; 本锁内只允许再取 state lock, 禁止反向获取.
     """
     _IDEMPOTENCY_LOCK_FILE.parent.mkdir(parents=True, exist_ok=True)
     lock_fd = os.open(str(_IDEMPOTENCY_LOCK_FILE), os.O_CREAT | os.O_RDWR, 0o644)
@@ -178,18 +219,48 @@ def refresh_data() -> None:
 # --------------------------------------------------------------------------- #
 # 鉴权: 密码哈希 + token (带过期 + 限流)
 # --------------------------------------------------------------------------- #
+# config.json 读-改-写串行化锁 (跨线程/跨进程, 防并发 login 与 token 清理互相覆盖)
+_CONFIG_LOCK_FILE = ls.LIVE_DIR / "config.lock"
+
+
+@contextlib.contextmanager
+def _config_lock() -> Iterator[None]:
+    """config.json 读-改-写串行化. 锁文件打不开时降级为无锁 + 告警 (不 500).
+
+    锁顺序约定 (固定, 防死锁):
+      config.lock → idempotency.lock → state lock (quant_state.lock)
+    require_token 在端点体之前执行且锁随函数返回释放, login/logout/set_password
+    只持 config.lock, 因此不存在持 config.lock 再取后两把锁之外的反向路径.
+    """
+    lock_fd: int | None = None
+    try:
+        _CONFIG_LOCK_FILE.parent.mkdir(parents=True, exist_ok=True)
+        lock_fd = os.open(str(_CONFIG_LOCK_FILE), os.O_CREAT | os.O_RDWR, 0o644)
+        fcntl.flock(lock_fd, fcntl.LOCK_EX)
+    except OSError as e:
+        print(f"  ⚠️  config 锁不可用, 降级为无锁: {e}")
+        lock_fd = None
+    try:
+        yield
+    finally:
+        if lock_fd is not None:
+            fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            os.close(lock_fd)
+
+
 def _hash_password(pwd: str, salt: str) -> str:
     return hashlib.pbkdf2_hmac("sha256", pwd.encode(), salt.encode(), 100_000).hex()
 
 
 def set_password(pwd: str) -> None:
-    cfg = load_config()
-    salt = secrets.token_hex(8)
-    cfg["web_salt"] = salt
-    cfg["web_password"] = _hash_password(pwd, salt)
-    # 密码修改后全部 token 失效
-    cfg["web_tokens"] = []
-    save_config(cfg)
+    with _config_lock():
+        cfg = load_config()
+        salt = secrets.token_hex(8)
+        cfg["web_salt"] = salt
+        cfg["web_password"] = _hash_password(pwd, salt)
+        # 密码修改后全部 token 失效
+        cfg["web_tokens"] = []
+        save_config(cfg)
 
 
 def verify_password(pwd: str) -> bool:
@@ -226,9 +297,11 @@ def _extract_token(request: Request) -> str:
 
 
 def require_token(request: Request) -> None:
-    cfg = load_config()
-    cfg = _cleanup_expired_tokens(cfg)
-    save_config(cfg)
+    # 读-改-写 (清理过期 token + 保存) 全程持锁, 防与并发 login/logout 互相覆盖
+    with _config_lock():
+        cfg = load_config()
+        cfg = _cleanup_expired_tokens(cfg)
+        save_config(cfg)
     tokens = [t["token"] for t in cfg.get("web_tokens", [])]
     token = _extract_token(request)
     if not token or not any(hmac.compare_digest(token, t) for t in tokens):
@@ -293,16 +366,18 @@ def login(payload: LoginRequest, request: Request, response: Response) -> dict:
     _LOGIN_ATTEMPTS.pop(client_ip, None)
 
     token = secrets.token_hex(16)
-    cfg = load_config()
-    cfg = _cleanup_expired_tokens(cfg)
-    cfg.setdefault("web_tokens", []).append(
-        {
-            "token": token,
-            "expires": time.time() + TOKEN_TTL,
-            "created": time.time(),
-        }
-    )
-    save_config(cfg)
+    # token 追加是读-改-写, 持锁防与并发 require_token 清理/logout 互相覆盖
+    with _config_lock():
+        cfg = load_config()
+        cfg = _cleanup_expired_tokens(cfg)
+        cfg.setdefault("web_tokens", []).append(
+            {
+                "token": token,
+                "expires": time.time() + TOKEN_TTL,
+                "created": time.time(),
+            }
+        )
+        save_config(cfg)
 
     # 设置 HttpOnly cookie (浏览器自动管理, JS 无法读取, 防 XSS 窃取)
     is_https = request.url.scheme == "https" or request.headers.get("x-forwarded-proto") == "https"
@@ -323,11 +398,14 @@ def logout(request: Request, response: Response) -> dict:
     """注销当前 token (同时清除 cookie 和服务端记录)."""
     token = _extract_token(request)
     if token:
-        cfg = load_config()
-        cfg["web_tokens"] = [
-            t for t in cfg.get("web_tokens", []) if isinstance(t, dict) and t.get("token") != token
-        ]
-        save_config(cfg)
+        with _config_lock():
+            cfg = load_config()
+            cfg["web_tokens"] = [
+                t
+                for t in cfg.get("web_tokens", [])
+                if isinstance(t, dict) and t.get("token") != token
+            ]
+            save_config(cfg)
     response.delete_cookie(key="qx_token", path="/")
     return {"ok": True}
 
@@ -681,7 +759,7 @@ class TradeRequest(BaseModel):
 
 @app.post("/api/confirm")
 def api_confirm(payload: ConfirmRequest, _: None = Depends(require_token)) -> dict:
-    # 幂等占位持锁覆盖 检查→执行→记录 全程 (锁顺序: idempotency.lock → state lock)
+    # 幂等占位持锁覆盖 检查→执行→记录 全程 (锁顺序: config.lock → idempotency.lock → state lock)
     with _idempotency_guard(payload.idempotency_key):
         state = ls.load_state()
         if state is None:
@@ -719,7 +797,7 @@ def api_skip(_: None = Depends(require_token)) -> dict:
 
 @app.post("/api/trade")
 def api_trade(payload: TradeRequest, _: None = Depends(require_token)) -> dict:
-    # 幂等占位持锁覆盖 检查→执行→记录 全程 (锁顺序: idempotency.lock → state lock)
+    # 幂等占位持锁覆盖 检查→执行→记录 全程 (锁顺序: config.lock → idempotency.lock → state lock)
     with _idempotency_guard(payload.idempotency_key):
         state = ls.load_state()
         if state is None:
