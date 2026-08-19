@@ -1152,11 +1152,14 @@ def run(dry_run: bool = False) -> int:
         print("     uv run python scripts/live_signal.py --init 100000")
         return 1
 
+    # I-V4A-01: 待确认订单只抑制【新交易信号】, 不得阻塞风控监控与熔断告警。
+    # 历史教训: 旧版在此直接 return, 用户不点确认期间 -30% 组合熔断发不出去。
     pending = state.get("pending_order")
-    if pending and pending.get("status") == "pending":
-        print(f"  ❌ 尚有 {pending.get('date')} 待确认订单, 拒绝生成新信号")
-        print("     请先在网页确认成交或明确跳过")
-        return 1
+    has_pending = bool(pending and pending.get("status") == "pending")
+    if has_pending:
+        assert pending is not None  # has_pending 蕴含 pending 非空 (类型收窄)
+        print(f"  ⚠️ 尚有 {pending.get('date')} 待确认订单: 新交易信号将被抑制")
+        print("     风控监控照常运行; 请尽快在网页确认成交或明确跳过")
 
     mode = get_strategy_mode()
     runtime = state.get("v4_state", default_v4_state())
@@ -1436,6 +1439,35 @@ def run(dry_run: bool = False) -> int:
 
     if dry_run:
         print("\n  [预演模式] 以上为模拟信号, 未改动账户状态")
+        return 0
+
+    # === I-V4A-01: 有待确认订单 → 抑制新订单, 但风控结论必须落盘并告警 ===
+    # 故意不写 last_run_date: 用户在网页处理完 pending 后, 当日重跑可补生成信号.
+    # 代价是重复运行会重复推送抑制告警 (cron 每日只跑一次, 可接受).
+    if has_pending:
+        assert pending is not None  # has_pending 蕴含 pending 非空
+        msg = (
+            f"{td} 本日信号 ({reason}) 被 {pending.get('date')} 的待确认订单抑制。\n"
+            "请先在网页确认/跳过旧订单; 处理后重新运行即可生成今日信号。"
+        )
+        print(f"\n  ⛔ {msg}")
+        with state_transaction() as st:
+            st["peak_equity"] = state.get("peak_equity", st["initial_capital"])
+            st["risk_exposure"] = risk.exposure
+            st["cooldown_until"] = str(risk.cooldown_until) if risk.cooldown_until else None
+            if risk.events:
+                _append_risk_log(st, risk.events)
+            _record_v4_state(st, overlay, snapshot)
+        _save_decision_snapshot(snapshot)
+        if risk.action == ACTION_EMERGENCY:
+            push_bark(
+                "🚨 组合熔断触发, 但被待确认订单阻塞",
+                msg + "\n请立即人工处理持仓!",
+                level="timeSensitive",
+                sound="alarm",
+            )
+            return 1  # 熔断未执行 = 未解决的关键状态, 让 cron 日志与非零退出可见
+        push_bark("⚠️ 新调仓信号被待确认订单抑制", msg)
         return 0
 
     # === 模拟记账模式: 信号按理论价自动成交 (尚无法真实下单的阶段) ===

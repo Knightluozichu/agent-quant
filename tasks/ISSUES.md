@@ -135,6 +135,57 @@
       的概率仅1.08%，MDD改善95%区间为-14.49%至+16.38%；3x成本受既有风控状态机
       路径影响，期末12,950、MDD -94.62%。不得修改生产V4，只能冻结影子前推。
 
+## I-V4A 实盘深度审查 (2026-08-19, best-of-5 独立审查 + 人工复核)
+
+> 来源: 5 路独立代码审查合并, 关键论断已逐条对照源文件与归档 JSON 复核。
+> 总判断: 工程质量 A-, 但 V4 在自带审计判定 high_overfit_risk 的情况下上线,
+> 真实 OOS=0 天, 超额收益 99.1% 来自参与过选型的 2024-2026 段。
+
+- [x] I-V4A-01 (P0) pending 订单阻塞熔断: `live_signal.py:1155-1159` 存在
+      status=pending 订单时 run() 直接 return, 发生在 risk_assess (:1318) 之前。
+      用户不点确认期间, -30% 组合熔断与全部风控告警发不出。修复: pending 只阻塞
+      新交易信号, 风控评估与紧急推送必须绕行; 另加 pending 超 N 日自动 expired+Bark。
+      → 已于 2026-08-19 修复: pending 不再提前 return; 调仓/熔断信号被抑制时风控
+      结论 (peak_equity/exposure/cooldown/risk_log/v4_state) 照常落盘 + 快照保存 +
+      Bark 抑制告警; 熔断被阻塞时升级 timeSensitive 告警且 return 1 (cron 日志可见);
+      抑制日故意不写 last_run_date, 处理 pending 后当日可重跑补信号。测试 3 例
+      (抑制但风控落盘/熔断升级告警/非调仓日照常), mypy 零新增错误。
+      pending 超期自动 expired 仍未做, 拆为后续独立条目。
+- [ ] I-V4A-02 (P0) 252 日冻结复审缺硬门禁: I-V4-05 纪律 (冻结参数+影子前推) 仅是
+      文字约定, 上线决策未等审计通过。修复: scripts/gate_check.py 上线闸门
+      (audit fail 只允许 shadow), 并接入部署 checklist 硬性阻断。
+- [ ] I-V4A-03 (P1) 公共日历交集空集重置 bug: `live_signal.py:493-501` 及
+      run_qixing_v3.py 三处同模式 `common = dates if not common else common & dates`,
+      交集一旦变空会被下一标的重置为全集, 日历静默错乱。修复: 一律 `&=`, 空集 fail-closed。
+- [ ] I-V4A-04 (P1) H3 状态实盘不持久化: `risk_overrides.py:201-221` assess 原地改
+      state["h3_holding"]/["h3_peak"], 但 live_signal 四条 state_transaction 路径
+      重新读盘且从不拷贝 h3 字段 → 实盘每日重置, 与回测语义分裂。当前 EXPO=1.0 无实际
+      后果, 重启降仓层即成分叉 bug。修复: 拷贝 h3 字段或 assess 纯函数化返回状态增量。
+- [ ] I-V4A-05 (P1) 真实成交确认双重扣费: `live_signal.py:1653,1690` 对用户填入的
+      实际成交价再乘 (1-FEE-SLIPPAGE), 账面每笔系统性低估 ~0.15%, 熔断基准漂移。
+- [ ] I-V4A-06 (P1) 调仓网格锚定动态索引: `live_signal.py:1228-1246` 每次用全量数据
+      重算 all_trading[130:][::5], 历史修订/补洞平移全部未来调仓日且与归档回测错位。
+      修复: 锚定固定日期写入 config; 另 :1241 ValueError 分支 fail-open 需改 fail-closed。
+- [ ] I-V4A-07 (P2) skip 订单不更新 last_early_rotation_date (:1725-1735),
+      人工跳过后 3 日轮动锁失效, 回测无此路径。
+- [ ] I-V4A-08 (P2) config_hash 护栏不覆盖 V3-G 基座参数 (MOM_PERIODS/MOM_WEIGHTS/
+      FEE/SLIPPAGE 等), 改基座不触发 `live_signal.py:1163-1169` 护栏。
+- [ ] I-V4A-09 (P2) 份额拆分检测阈值 40% 且仅 print 不发 Bark (:131-140);
+      现金分红完全未复权, 除息缺口污染动量并可能误触 -3% 暴跌过滤。
+- [ ] I-V4A-10 (P2) 涨跌停一刀切 9.9% (run_qixing_v3.py:503, risk_overrides.py:156),
+      159915 创业板 ETF 实为 20%, 且未区分买/卖方向。
+- [ ] I-V4A-11 (P2) 统一 0.1% 滑点对 QDII(513100 溢价)/LOF(501018/161226 价差
+      0.3-0.5%) 系统性偏低; 修复: 分品种滑点表 + QDII 溢价过滤。
+- [ ] I-V4A-12 (P2) 3x 成本路径悬崖 (MDD -94.5%, 关联 I-V35-02/I-V4F-03/I-V4RG-03)
+      三次复现未定位根因, 疑似 cooldown 怪癖+exposure 折算+全仓单标的共振。
+      应当 bug 定位, 而非归档为怪癖。
+- [ ] I-V4A-13 (P1) 决策快照写在 state commit 之后且 decision_id 冲突即 raise,
+      快照失败 → 状态已推进+无推送+当日无法重跑 (last_run_date 幂等拦截),
+      用户收不到调仓指令; Bark 失败无信号级重放入口。修复: 快照先写或同事务,
+      加 --resend-notify。
+- [ ] I-V4A-14 (P2) parquet 缓存非原子写入 (:150); 腾讯实时行情单点无重试 (:531-536);
+      inject_realtime 同日双行去重依赖不稳定排序 (:978-980)。
+
 ## 2026-08-17: 3a20ac2 修复批次遗留项 (非阻断)
 
 - [x] I-FIX-01 require_token 的 config.json 读-改-写竞态 (预存在): 每个鉴权请求

@@ -312,3 +312,23 @@
       研究脚本 per-file-ignores 放宽纯风格规则, 正确性规则 36 个逐个修复;
       tests/ 19 个修复; 全仓 ruff check = 0 errors, format --check 通过
 - [x] FIX-013 I-FIX-03 确认符合设计意图, 关闭; I-FIX-05 实测 deepcopy 0.2ms, 关闭
+
+## 2026-08-19: V4 实盘深度审查 (best-of-5 独立审查 + Verifier 合并)
+
+- [x] REVIEW-001 5 路独立审查 qixing_v4/run_qixing_v3/live_signal/risk_overrides +
+      审计 JSON + 账本, 关键论断逐条对照源文件复核 (White p=0.755 / CI 跨 0 /
+      post-2024 集中度 99.1% / OOS=0 / pending 阻塞熔断 / H3 不持久化, 全部属实)
+- [x] REVIEW-002 审查结论落账: ISSUES.md 新增 I-V4A-01~14
+      (P0: pending 阻塞熔断、252 日冻结缺硬门禁; P1: 日历空集重置 bug、H3 持久化、
+      双重扣费、网格锚定、快照三缺状态; P2: skip 锁失效/config_hash 覆盖缺口/
+      拆分与分红复权/涨跌停 20cm/分品种滑点/3x 悬崖根因/数据工程)
+- [x] REVIEW-003 上线闸门 scripts/gate_check.py (I-V4A-02): 纯标准库, 5 条阻断规则
+      (statistical_increment_pass / classification / White p<0.05 / bootstrap CI 下界>0 /
+      live OOS>=252) + 2 条告警 (试验数下界 / regime 集中度); exit 0=allow 1=block
+      2=输入无效(fail-closed); 对归档 v4_overfit_audit.json 实测裁决 BLOCK
+- [x] REVIEW-004 测试 tests/unit/test_gate_check.py 11 例全过 (含真实归档 JSON
+      必须 block 的回归); ruff check/format 两文件全绿
+- [x] REVIEW-005a 修复 I-V4A-01 (P0): pending 只抑制新交易信号不阻塞风控/熔断;
+      熔断被阻塞时 timeSensitive 告警+非零退出; 抑制日不写 last_run_date 可重跑;
+      新增测试 3 例, 全量回归绿, mypy 零新增 (基线 69)
+- [ ] REVIEW-005b 待办: gate_check 接入部署 checklist 硬性阻断; pending 超期自动 expired
