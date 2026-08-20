@@ -336,3 +336,64 @@ def test_body_invalid_content_length_400(isolated_live):
     )
     resp = client.send(req)
     assert resp.status_code == 400
+
+
+# --------------------------------------------------------------------------- #
+# I-FIX-04 遗留: 公网暴露前的全局请求超时
+# --------------------------------------------------------------------------- #
+@pytest.mark.unit
+def test_global_timeout_returns_504(monkeypatch):
+    import asyncio
+
+    monkeypatch.setattr(ts, "REQUEST_TIMEOUT_S", 0.05)
+
+    async def slow_app(scope, receive, send):
+        await asyncio.sleep(5)
+
+    sent: list[dict] = []
+
+    async def send(msg):
+        sent.append(msg)
+
+    async def receive():
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    mw = ts._TimeoutMiddleware(slow_app)
+    asyncio.run(mw({"type": "http", "headers": []}, receive, send))
+    assert any(m.get("status") == 504 for m in sent)
+
+
+@pytest.mark.unit
+def test_global_timeout_fast_request_passthrough():
+    import asyncio
+
+    from fastapi.responses import PlainTextResponse
+
+    async def fast_app(scope, receive, send):
+        await PlainTextResponse("ok")(scope, receive, send)
+
+    sent: list[dict] = []
+
+    async def send(msg):
+        sent.append(msg)
+
+    async def receive():
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    mw = ts._TimeoutMiddleware(fast_app)
+    asyncio.run(mw({"type": "http", "headers": []}, receive, send))
+    assert any(m.get("status") == 200 for m in sent)
+
+
+@pytest.mark.unit
+def test_global_timeout_skips_non_http_scope():
+    import asyncio
+
+    called = []
+
+    async def lifespan_app(scope, receive, send):
+        called.append(scope["type"])
+
+    mw = ts._TimeoutMiddleware(lifespan_app)
+    asyncio.run(mw({"type": "lifespan"}, None, None))
+    assert called == ["lifespan"]

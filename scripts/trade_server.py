@@ -17,6 +17,7 @@
 from __future__ import annotations
 
 import argparse
+import asyncio
 import contextlib
 import copy
 import fcntl
@@ -91,6 +92,31 @@ class _BodySizeLimitMiddleware:
 
 
 app.add_middleware(_BodySizeLimitMiddleware)
+
+
+# 全局请求超时 (I-FIX-04 遗留): 公网暴露后防慢连接/慢请求长期占用 worker。
+# 纯 ASGI 中间件, 超时被取消的 inner task 由 wait_for 负责清理。
+REQUEST_TIMEOUT_S = 15.0
+
+
+class _TimeoutMiddleware:
+    """超过 REQUEST_TIMEOUT_S 的 HTTP 请求返回 504, 非 HTTP scope 直接放行."""
+
+    def __init__(self, app: ASGIApp) -> None:
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        try:
+            await asyncio.wait_for(self.app(scope, receive, send), timeout=REQUEST_TIMEOUT_S)
+        except TimeoutError:
+            resp = PlainTextResponse("请求超时", status_code=504)
+            await resp(scope, receive, send)
+
+
+app.add_middleware(_TimeoutMiddleware)
 
 # 行情数据内存缓存 (带 mtime + 文件数失效: cron 14:50 更新数据后自动重载)
 _DATA_CACHE: dict | None = None
