@@ -30,3 +30,9 @@
 - state.json: peak_equity/risk_exposure/cooldown_until/risk_log (risk_log 保留最近500条)
 - risk_exposure 合法值 {0.7, 0.8, 1.0}; health_check 第8项校验
 - 误杀审计: audit_risk.py (月度 cron 自动 + Bark)
+
+## 公网访问 (2026-08-20 起)
+
+- 记账网页: https://dj.luozichu.ink (nginx → 127.0.0.1:8090, 证书 certbot 自动续期)
+- nginx 站点: /etc/nginx/sites-available/qixing (独立 vhost, 勿动 gfx 等既有站点)
+- 公网前置安全项已全部就位: 密码+token 24h / 64KB 请求体上限 / 15s 全局超时

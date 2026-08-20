@@ -332,3 +332,13 @@
       熔断被阻塞时 timeSensitive 告警+非零退出; 抑制日不写 last_run_date 可重跑;
       新增测试 3 例, 全量回归绿, mypy 零新增 (基线 69)
 - [ ] REVIEW-005b 待办: gate_check 接入部署 checklist 硬性阻断; pending 超期自动 expired
+
+## 2026-08-20: dj.luozichu.ink 公网暴露
+
+- [x] WEB-001 I-FIX-04 全局超时中间件 (15s→504, 纯 ASGI, 测试 +3, mypy 零新增),
+      b9672e9 部署完成 (sha256 双向校验, trade-web 重启, 本地 401 正常)
+- [x] WEB-002 nginx vhost dj.luozichu.ink → 127.0.0.1:8090
+      (/etc/nginx/sites-available/qixing, 独立站点不动既有 vhost)
+- [x] WEB-003 certbot --nginx 签发 Let's Encrypt 证书 (有效期至 2026-11-18,
+      certbot.timer 自动续期 active), 80→443 跳转, 公网验证:
+      https 根路径 200 / api 无 token 401 / http 301
