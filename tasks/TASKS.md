@@ -342,3 +342,11 @@
 - [x] WEB-003 certbot --nginx 签发 Let's Encrypt 证书 (有效期至 2026-11-18,
       certbot.timer 自动续期 active), 80→443 跳转, 公网验证:
       https 根路径 200 / api 无 token 401 / http 301
+
+## 2026-08-20 (午): 记账网页卡片式重构
+
+- [x] WEB-004 scripts/web/index.html 重构: 标签页改 12 栅格卡片单页 (桌面双列/
+      移动单列), 策略全景改 IntersectionObserver 滚动懒加载, 浅/深色双主题
+      (prefers-color-scheme), 去 emoji 标题, 统一圆角体系; API 调用与确认/幂等
+      逻辑零改动; JS 语法校验 + 真实 API 打桩截图验证 (桌面 1100px/移动 390px);
+      已部署 dj.luozichu.ink (FileResponse 逐请求读盘, 免重启)

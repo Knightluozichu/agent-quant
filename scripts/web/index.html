@@ -7,71 +7,89 @@
 <title>七星V4 实盘记账</title>
 <style>
   :root{
-    --bg:#f5f6f8; --card:#fff; --line:#eceef1; --txt:#1c2128; --muted:#8a919e;
-    --accent:#2f6bff; --up:#e5484d; --down:#18a058; --warn:#ff9500;
+    --bg:#f4f5f7; --card:#fdfdfd; --line:#e6e8ec; --txt:#1b1f26; --muted:#7d8590;
+    --accent:#3461d6; --up:#d6453d; --down:#1a9e56; --warn:#c77400;
+    --warn-bg:rgba(199,116,0,.08);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#131519; --card:#1b1e24; --line:#2b2f37; --txt:#e8eaee; --muted:#8b929d;
+      --accent:#6b8af0; --up:#ec6560; --down:#3fbf7f; --warn:#e09b3c;
+      --warn-bg:rgba(224,155,60,.12);
+    }
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   body{margin:0;font-family:-apple-system,"PingFang SC","Helvetica Neue",sans-serif;
     background:var(--bg);color:var(--txt);font-size:15px;line-height:1.5}
-  .wrap{max-width:520px;margin:0 auto;padding:14px 14px 80px}
-  h1{font-size:19px;margin:6px 0 2px}
-  .sub{color:var(--muted);font-size:12px;margin-bottom:14px}
-  .card{background:var(--card);border-radius:14px;padding:16px;margin-bottom:14px;
-    box-shadow:0 1px 3px rgba(0,0,0,.04)}
-  .card h2{font-size:15px;margin:0 0 12px;display:flex;align-items:center;gap:6px}
-  .row{display:flex;justify-content:space-between;align-items:center;padding:5px 0}
+  .wrap{max-width:1060px;margin:0 auto;padding:14px 14px 32px}
+  h1{font-size:17px;margin:0;font-weight:600}
+  .sub{color:var(--muted);font-size:12px}
+  .grid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px;margin-top:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;
+    padding:14px 16px;min-width:0}
+  .c5{grid-column:span 5}.c7{grid-column:span 7}.c12{grid-column:span 12}
+  .card h2{font-size:13px;margin:0 0 10px;color:var(--muted);font-weight:500;
+    letter-spacing:.02em;display:flex;align-items:center;gap:8px}
+  .row{display:flex;justify-content:space-between;align-items:center;padding:4px 0}
   .muted{color:var(--muted)}
-  .big{font-size:26px;font-weight:700}
+  .big{font-size:30px;font-weight:600;font-variant-numeric:tabular-nums;
+    font-feature-settings:"tnum" 1;line-height:1.15}
   .up{color:var(--up)} .down{color:var(--down)}
-  .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;background:#eef2ff;color:var(--accent)}
-  .tag.pending{background:#fff3e0;color:var(--warn)}
-  .tag.hold{background:#e8f5ee;color:var(--down)}
-  label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
-  input,select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;
-    font-size:16px;background:#fafbfc;color:var(--txt)}
-  input:focus,select:focus{outline:none;border-color:var(--accent);background:#fff}
+  .tag{display:inline-block;font-size:11px;padding:2px 8px;border-radius:999px;
+    background:rgba(52,97,214,.1);color:var(--accent)}
+  .tag.pending{background:var(--warn-bg);color:var(--warn)}
+  .tag.hold{background:rgba(26,158,86,.12);color:var(--down)}
+  label{display:block;font-size:12px;color:var(--muted);margin:8px 0 3px}
+  input,select{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:10px;
+    font-size:16px;background:var(--bg);color:var(--txt)}
+  input:focus,select:focus{outline:none;border-color:var(--accent);background:var(--card)}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  button{width:100%;padding:13px;border:none;border-radius:11px;font-size:16px;font-weight:600;
-    background:var(--accent);color:#fff;margin-top:14px;cursor:pointer}
+  button{width:100%;padding:11px;border:none;border-radius:10px;font-size:15px;font-weight:600;
+    background:var(--accent);color:#fff;margin-top:12px;cursor:pointer;transition:opacity .15s}
   button:active{opacity:.85}
-  button.ghost{background:#f0f2f5;color:var(--txt)}
-  button.sm{width:auto;padding:7px 14px;font-size:13px;margin:0}
-  .tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:6px}
-  .tab{flex:0 0 auto;padding:8px 16px;border-radius:20px;background:#fff;color:var(--muted);
-    font-size:14px;border:1px solid var(--line);cursor:pointer;white-space:nowrap}
-  .tab.active{background:var(--accent);color:#fff;border-color:var(--accent)}
-  .board-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line)}
+  button:disabled{opacity:.5}
+  button.ghost{background:var(--bg);color:var(--muted);border:1px solid var(--line)}
+  button.sm{width:auto;padding:6px 14px;font-size:13px;margin:0}
+  .card.pending-live{border:1px solid var(--warn);background:var(--warn-bg)}
+  .board-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
   .board-row:last-child{border-bottom:none}
-  .board-rank{width:22px;height:22px;border-radius:50%;background:#f0f2f5;color:var(--muted);
-    display:flex;align-items:center;justify-content:center;font-size:12px;flex:0 0 auto}
+  .board-rank{width:20px;height:20px;border-radius:50%;background:var(--bg);color:var(--muted);
+    display:flex;align-items:center;justify-content:center;font-size:11px;flex:0 0 auto}
   .board-rank.top{background:var(--up);color:#fff}
   .board-name{flex:1}
   .board-score{font-weight:600;font-variant-numeric:tabular-nums}
+  .scrollbox{max-height:320px;overflow-y:auto}
+  #board{max-height:none;overflow:visible}
   table{width:100%;border-collapse:collapse;font-size:13px}
-  th,td{text-align:left;padding:8px 4px;border-bottom:1px solid var(--line)}
+  th,td{text-align:left;padding:7px 4px;border-bottom:1px solid var(--line)}
   th{color:var(--muted);font-weight:500;font-size:12px}
   td.num{text-align:right;font-variant-numeric:tabular-nums}
   .hidden{display:none}
-  .login-box{margin-top:60px}
-  .alert{padding:10px 12px;border-radius:10px;font-size:13px;margin-bottom:12px}
-  .alert.warn{background:#fff3e0;color:#b26a00}
-  .alert.ok{background:#e8f5ee;color:#0a7d43}
-  .chk{display:flex;align-items:center;gap:8px;margin:12px 0 4px;font-size:14px;color:var(--txt)}
+  .alert{padding:9px 12px;border-radius:10px;font-size:13px;margin-bottom:10px}
+  .alert.warn{background:var(--warn-bg);color:var(--warn)}
+  .alert.ok{background:rgba(26,158,86,.1);color:var(--down)}
+  .chk{display:flex;align-items:center;gap:8px;margin:10px 0 2px;font-size:14px;color:var(--txt)}
   .chk input{width:auto}
   .chart-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-top:6px}
-  .toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:#1c2128;color:#fff;
-    padding:11px 20px;border-radius:22px;font-size:14px;opacity:0;transition:.3s;pointer-events:none;z-index:99}
+  .toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%);background:var(--txt);
+    color:var(--bg);padding:10px 18px;border-radius:999px;font-size:14px;opacity:0;
+    transition:opacity .25s;pointer-events:none;z-index:99}
   .toast.show{opacity:.95}
-  .pill{font-size:11px;padding:1px 7px;border-radius:6px;background:#f0f2f5;color:var(--muted);margin-left:6px}
+  .pill{font-size:11px;padding:1px 7px;border-radius:6px;background:var(--bg);color:var(--muted)}
+  .login-wrap{max-width:400px;margin:0 auto;padding-top:18vh}
+  @media (max-width:820px){
+    .c5,.c7{grid-column:span 12}
+    .big{font-size:26px}
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
 
   <!-- 登录 -->
-  <div id="login" class="login-box hidden">
+  <div id="login" class="login-wrap hidden">
     <h1>七星V4 实盘记账</h1>
-    <div class="sub">填入真实成交, 让持仓状态等于现实</div>
+    <div class="sub" style="margin:4px 0 14px">填入真实成交, 让持仓状态等于现实</div>
     <div class="card">
       <label>访问密码</label>
       <input id="pwd" type="password" placeholder="请输入密码" autocomplete="current-password">
@@ -82,108 +100,105 @@
 
   <!-- 主界面 -->
   <div id="app" class="hidden">
-    <h1>七星V4 实盘记账</h1>
-    <div class="sub" id="dateLine">—</div>
+    <div class="row">
+      <div>
+        <h1>七星V4 实盘记账</h1>
+        <div class="sub" id="dateLine">—</div>
+      </div>
+      <button class="ghost sm" onclick="doLogout()">退出</button>
+    </div>
 
-    <!-- 待确认信号 (置顶) -->
-    <div id="pendingCard" class="card hidden" style="border:2px solid var(--warn)">
-      <h2>🔔 待确认信号 <span class="tag pending" id="pendingDate"></span></h2>
-      <div id="pendingReason" class="muted" style="margin-bottom:10px"></div>
+    <div class="grid">
 
-      <div id="sellBlock" class="hidden">
-        <div class="chk"><input type="checkbox" id="sellOn" checked><b>① 卖出 <span id="sellName"></span></b></div>
-        <div class="grid2">
-          <div><label>数量(股)</label><input id="sellShares" type="number" inputmode="numeric"></div>
-          <div><label>成交价</label><input id="sellPrice" type="number" inputmode="decimal" step="0.001"></div>
+      <!-- 待确认信号 (置顶, 全宽) -->
+      <div id="pendingCard" class="card c12 pending-live hidden">
+        <h2>待确认信号 <span class="tag pending" id="pendingDate"></span></h2>
+        <div id="pendingReason" class="muted" style="margin-bottom:8px"></div>
+
+        <div id="sellBlock" class="hidden">
+          <div class="chk"><input type="checkbox" id="sellOn" checked><b>① 卖出 <span id="sellName"></span></b></div>
+          <div class="grid2">
+            <div><label>数量(股)</label><input id="sellShares" type="number" inputmode="numeric"></div>
+            <div><label>成交价</label><input id="sellPrice" type="number" inputmode="decimal" step="0.001"></div>
+          </div>
         </div>
-      </div>
 
-      <div id="buyBlock" class="hidden">
-        <div class="chk"><input type="checkbox" id="buyOn" checked><b>② 买入</b></div>
-        <label>标的</label><select id="buyCode"></select>
-        <div class="grid2">
-          <div><label>数量(股)</label><input id="buyShares" type="number" inputmode="numeric"></div>
-          <div><label>成交价</label><input id="buyPrice" type="number" inputmode="decimal" step="0.001"></div>
+        <div id="buyBlock" class="hidden">
+          <div class="chk"><input type="checkbox" id="buyOn" checked><b>② 买入</b></div>
+          <label>标的</label><select id="buyCode"></select>
+          <div class="grid2">
+            <div><label>数量(股)</label><input id="buyShares" type="number" inputmode="numeric"></div>
+            <div><label>成交价</label><input id="buyPrice" type="number" inputmode="decimal" step="0.001"></div>
+          </div>
         </div>
+
+        <button id="confirmButton" onclick="doConfirm()">确认成交 (填入真实数据)</button>
+        <button class="ghost" onclick="doSkip()">本次不操作</button>
       </div>
 
-      <button id="confirmButton" onclick="doConfirm()">✅ 确认成交 (填入真实数据)</button>
-      <button class="ghost" onclick="doSkip()">本次不操作</button>
-    </div>
-
-    <!-- 账户概览 -->
-    <div class="card">
-      <div class="row"><span class="muted">账户总值</span><span class="tag" id="retTag"></span></div>
-      <div class="big" id="totalVal">—</div>
-      <div class="row" style="margin-top:10px"><span class="muted">可用现金</span><span id="cashVal">—</span></div>
-      <div class="row"><span class="muted">当前持仓</span><span id="holdVal">—</span></div>
-      <div id="feeSummary" class="alert warn hidden" style="margin-top:12px;margin-bottom:0"></div>
-    </div>
-
-    <!-- 标签页 -->
-    <div class="tabs">
-      <div class="tab active" data-t="signal" onclick="switchTab('signal')">最新信号</div>
-      <div class="tab" data-t="manual" onclick="switchTab('manual')">手动记账</div>
-      <div class="tab" data-t="history" onclick="switchTab('history')">历史成交</div>
-      <div class="tab" data-t="equity" onclick="switchTab('equity')">收益曲线</div>
-      <div class="tab" data-t="overview" onclick="switchTab('overview')">策略全景</div>
-    </div>
-
-    <!-- 信号 -->
-    <div id="tab-signal" class="card">
-      <h2>📊 V4 官方决策 <span class="pill">14:50快照</span></h2>
-      <div id="targetLine" class="alert ok"></div>
-      <div id="board"></div>
-    </div>
-
-    <!-- 手动记账 -->
-    <div id="tab-manual" class="card hidden">
-      <h2>✍️ 手动记账</h2>
-      <div class="muted" style="font-size:12px;margin-bottom:8px">用于修正或非信号交易</div>
-      <label>操作</label>
-      <select id="mAction"><option value="buy">买入</option><option value="sell">卖出</option></select>
-      <label>标的</label><select id="mCode"></select>
-      <div class="grid2">
-        <div><label>数量(股)</label><input id="mShares" type="number" inputmode="numeric"></div>
-        <div><label>成交价</label><input id="mPrice" type="number" inputmode="decimal" step="0.001"></div>
+      <!-- 账户概览 -->
+      <div class="card c5">
+        <h2>账户 <span class="tag" id="retTag"></span></h2>
+        <div class="big" id="totalVal">—</div>
+        <div class="row" style="margin-top:8px"><span class="muted">可用现金</span><span id="cashVal" class="kimi-number">—</span></div>
+        <div class="row"><span class="muted">当前持仓</span><span id="holdVal">—</span></div>
+        <div id="feeSummary" class="alert warn hidden" style="margin-top:10px;margin-bottom:0"></div>
       </div>
-      <label>日期 (留空=今天)</label><input id="mDate" type="date">
-      <button onclick="doManual()">记 录</button>
-    </div>
 
-    <!-- 历史 -->
-    <div id="tab-history" class="card hidden">
-      <h2>📜 历史成交</h2>
-      <div id="historyBox"></div>
-    </div>
+      <!-- 信号 -->
+      <div class="card c7">
+        <h2>V4 官方决策 <span class="pill">14:50 快照</span></h2>
+        <div id="targetLine" class="alert ok"></div>
+        <div id="board" class="scrollbox"></div>
+      </div>
 
-    <!-- 收益曲线 -->
-    <div id="tab-equity" class="card hidden">
-      <h2>📈 账户净值曲线</h2>
-      <div id="chart"></div>
-    </div>
+      <!-- 收益曲线 -->
+      <div class="card c7">
+        <h2>账户净值</h2>
+        <div id="chart"></div>
+      </div>
 
-    <!-- 策略全景 -->
-    <div id="tab-overview" class="card hidden">
-      <h2>🗺️ 策略全景 <span class="pill" id="ovPeriod"></span></h2>
-      <div id="ovScope" class="alert warn"></div>
-      <div id="ovMetrics"></div>
-      <div style="font-size:13px;color:var(--muted);margin:14px 0 6px">净值曲线(对数) 与 回撤</div>
-      <div id="ovEquity"></div>
-      <div style="font-size:13px;color:var(--muted);margin:14px 0 6px">逐年收益</div>
-      <div id="ovYearly"></div>
-      <div style="font-size:13px;color:var(--muted);margin:14px 0 6px">持仓时间线</div>
-      <div id="ovHoldings"></div>
-    </div>
+      <!-- 历史 -->
+      <div class="card c5">
+        <h2>历史成交</h2>
+        <div id="historyBox" class="scrollbox"></div>
+      </div>
 
-    <button class="ghost" style="margin-top:6px" onclick="doLogout()">退出登录</button>
+      <!-- 手动记账 -->
+      <div class="card c5">
+        <h2>手动记账 <span class="pill">修正或非信号交易</span></h2>
+        <label>操作</label>
+        <select id="mAction"><option value="buy">买入</option><option value="sell">卖出</option></select>
+        <label>标的</label><select id="mCode"></select>
+        <div class="grid2">
+          <div><label>数量(股)</label><input id="mShares" type="number" inputmode="numeric"></div>
+          <div><label>成交价</label><input id="mPrice" type="number" inputmode="decimal" step="0.001"></div>
+        </div>
+        <label>日期 (留空=今天)</label><input id="mDate" type="date">
+        <button onclick="doManual()">记 录</button>
+      </div>
+
+      <!-- 策略全景 (滚到才加载, 回测计算重) -->
+      <div class="card c7" id="overviewCard">
+        <h2>策略全景 <span class="pill" id="ovPeriod"></span></h2>
+        <div id="ovScope" class="alert warn hidden"></div>
+        <div id="ovMetrics"><div class="muted">滚动到此处自动计算回测…</div></div>
+        <div class="muted" style="font-size:12px;margin:12px 0 6px">净值曲线 (对数) 与回撤</div>
+        <div id="ovEquity"></div>
+        <div class="muted" style="font-size:12px;margin:12px 0 6px">逐年收益</div>
+        <div id="ovYearly"></div>
+        <div class="muted" style="font-size:12px;margin:12px 0 6px">持仓时间线</div>
+        <div id="ovHoldings"></div>
+      </div>
+
+    </div>
   </div>
 </div>
 
 <div id="toast" class="toast"></div>
 
 <script>
-const RED='#e5484d', GREEN='#18a058';
+const RED='#d6453d', GREEN='#1a9e56';
 const ETF_COLORS={"518880":"#E6B800","159985":"#A0522D","501018":"#2F4F4F","161226":"#9099A0","513100":"#3B6FE0","159915":"#FF6347","511220":"#2E9E5B","511880":"#C8CDD3"};
 let ETFS = [];
 let latestStatus = null;
@@ -224,6 +239,7 @@ async function enterApp(){
   try{
     const etfData=await api('/api/etfs'); ETFS=etfData.etfs; fillEtfSelects();
     await loadAll();
+    watchOverview();
   }catch(e){ toast(e.message); }
 }
 
@@ -258,7 +274,7 @@ function renderFeeSummary(trades){
     String(t.execution_time).replace('T',' ').slice(0,16):String(t.date||'');
   const grossLine=gross!=null?`成交额 ¥${fmt(gross)} · `:'';
   const cashLabel=t.action==='sell'?'现金到账':'现金扣减';
-  el.innerHTML=`💳 <b>最近成交费用 ¥${fmt(fee)}</b><br>
+  el.innerHTML=`<b>最近成交费用 ¥${fmt(fee)}</b><br>
     <span class="muted">${time} ${action}${t.name||t.code} ${Number(t.shares).toLocaleString('zh-CN')}份 @ ${Number(t.price).toFixed(3)} · ${grossLine}${cashLabel} ¥${fmt(cashImpact)}<br>
     手续费已计入现金口径，持仓成本仍按 ¥${Number(t.price).toFixed(3)} 展示</span>`;
   el.classList.remove('hidden');
@@ -292,7 +308,7 @@ function renderPending(p){
   if(!p || p.status!=='pending'){ card.classList.add('hidden'); return; }
   card.classList.remove('hidden');
   document.getElementById('pendingDate').textContent=p.date;
-  document.getElementById('pendingReason').textContent='💡 '+(p.reason||'');
+  document.getElementById('pendingReason').textContent=(p.reason||'');
   // 卖出
   const sb=document.getElementById('sellBlock');
   if(p.sell){
@@ -320,7 +336,7 @@ function renderSignal(sig){
   const source=sig.official?' · 官方快照':' · 实时预览';
   document.getElementById('targetLine').innerHTML =
     `V4目标: <b>${t.name} (${t.code})</b>${confirms}${source}` + (sig.a_share_weak?' · A股走弱防御':'');
-  const html=`<div class="board-row" style="border-bottom:1px solid var(--line);padding:4px 0 6px"><div style="width:22px"></div><div class="board-name muted" style="font-size:11px">ETF (代码)</div><div class="board-score muted" style="font-size:11px;font-weight:400">动量(10+20日)</div></div>`+
+  const html=`<div class="board-row" style="padding:4px 0 6px"><div style="width:20px"></div><div class="board-name muted" style="font-size:11px">ETF (代码)</div><div class="board-score muted" style="font-size:11px;font-weight:400">动量(10+20日)</div></div>`+
   board.map((b,i)=>{
     const cls=b.score>=0?'up':'down';
     const rank=i===0&&b.eligible?'board-rank top':'board-rank';
@@ -382,19 +398,24 @@ let ovLoaded=false;
 async function loadOverview(){
   const box=document.getElementById('ovMetrics');
   box.innerHTML='<div class="muted">正在计算回测…</div>';
-  try{ const d=await api('/api/backtest'); renderOverview(d); ovLoaded=true; }
+  try{
+    const d=await api('/api/backtest');
+    renderOverview(d); ovLoaded=true;
+  }
   catch(e){ box.innerHTML='<div class="muted">加载失败: '+e.message+'</div>'; }
 }
 function renderOverview(d){
   const m=d.metrics;
   const liveMode=latestStatus&&latestStatus.strategy_mode?latestStatus.strategy_mode:'未知';
   const liveId=latestStatus&&latestStatus.strategy_id?latestStatus.strategy_id:'';
-  document.getElementById('ovScope').innerHTML=
+  const scope=document.getElementById('ovScope');
+  scope.innerHTML=
     `当前实盘：<b>${liveMode}</b>${liveId?` <span class="muted">(${liveId})</span>`:''}<br>`+
     `下方历史图：<b>V3-G 基线回测</b>，仅作基准对照，不代表 V4 的历史绩效。`;
+  scope.classList.remove('hidden');
   document.getElementById('ovPeriod').textContent=m.start+' ~ '+m.end+' · '+m.years+'年';
   document.getElementById('ovMetrics').innerHTML=
-    '<div class="grid2" style="grid-template-columns:1fr 1fr 1fr">'+
+    '<div class="grid2" style="grid-template-columns:repeat(3,1fr)">'+
     cell('累计收益','+'+m.total_return+'%','up')+cell('年化收益','+'+m.ann_return+'%','up')+
     cell('夏普比率',m.sharpe,'')+cell('最大回撤',m.max_drawdown+'%','down')+
     cell('交易次数',m.n_trades,'')+cell('回测年限',m.years+'年','')+'</div>';
@@ -467,37 +488,39 @@ async function doConfirm(){
   }
   if(!payload.sell && !payload.buy){ toast('请至少勾选一笔成交'); return; }
   const btn=document.getElementById('confirmButton'); btn.disabled=true;
-  try{ await api('/api/confirm',{method:'POST',body:JSON.stringify(payload)}); toast('✅ 已确认成交'); await loadAll(); }
-  catch(e){ toast('❌ '+e.message); }
+  try{ await api('/api/confirm',{method:'POST',body:JSON.stringify(payload)}); toast('已确认成交'); await loadAll(); }
+  catch(e){ toast(e.message); }
   finally{ btn.disabled=false; }
 }
 async function doSkip(){
   if(!confirm('确认本次不操作? 信号将标记为已跳过。')) return;
   try{ await api('/api/skip',{method:'POST'}); toast('已标记为不操作'); await loadAll(); }
-  catch(e){ toast('❌ '+e.message); }
+  catch(e){ toast(e.message); }
 }
 async function doManual(){
   const payload={action:document.getElementById('mAction').value, code:document.getElementById('mCode').value,
     shares:+document.getElementById('mShares').value, price:+document.getElementById('mPrice').value,
     date:document.getElementById('mDate').value||null};
   if(!payload.shares||!payload.price){ toast('请填写数量和价格'); return; }
-  try{ await api('/api/trade',{method:'POST',body:JSON.stringify(payload)}); toast('✅ 已记录'); 
+  try{ await api('/api/trade',{method:'POST',body:JSON.stringify(payload)}); toast('已记录');
     document.getElementById('mShares').value=''; document.getElementById('mPrice').value=''; await loadAll(); }
-  catch(e){ toast('❌ '+e.message); }
-}
-
-function switchTab(t){
-  document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.t===t));
-  ['signal','manual','history','equity','overview'].forEach(k=>{
-    document.getElementById('tab-'+k).classList.toggle('hidden',k!==t);
-  });
-  if(t==='overview' && !ovLoaded){ loadOverview(); }
+  catch(e){ toast(e.message); }
 }
 
 // 保存当前 pending 供确认时使用
 let curPending=null;
 const _renderPending=renderPending;
 renderPending=function(p){ curPending=p; _renderPending(p); };
+
+// 策略全景: 滚到卡片附近才触发回测计算 (替代原来的点击 Tab 加载)
+function watchOverview(){
+  const card=document.getElementById('overviewCard');
+  if(!('IntersectionObserver' in window)){ return; }
+  const io=new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting && !ovLoaded){ loadOverview(); io.disconnect(); } });
+  },{rootMargin:'240px'});
+  io.observe(card);
+}
 
 // 启动: 检查 cookie 是否仍有效 (已登录则直接进入主界面)
 (async()=>{
