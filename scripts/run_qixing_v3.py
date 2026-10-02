@@ -161,7 +161,13 @@ def check_a_share_weak(data: dict, as_of_idx: int) -> bool:
     return bool(close[-1] < ma)
 
 
-def select_target(data: dict, etf_data_at_date: dict, holding: str | None):
+def select_target(
+    data: dict,
+    etf_data_at_date: dict,
+    holding: str | None,
+    *,
+    pool: dict[str, str] | None = None,
+):
     """核心选股逻辑 (回测与实盘共享, 保证一致性).
 
     Args:
@@ -179,7 +185,7 @@ def select_target(data: dict, etf_data_at_date: dict, holding: str | None):
     )
 
     candidates = []
-    for code in ETF_POOL:
+    for code in ETF_POOL if pool is None else pool:
         if code not in etf_data_at_date:
             continue
         # A股走弱时排除创业板

@@ -363,7 +363,7 @@ class LoginRequest(BaseModel):
 # --------------------------------------------------------------------------- #
 @app.get("/")
 def index() -> FileResponse:
-    return FileResponse(WEB_DIR / "index.html")
+    return FileResponse(WEB_DIR / "index.html", headers={"Cache-Control": "no-store"})
 
 
 # --------------------------------------------------------------------------- #
@@ -462,7 +462,8 @@ def api_status(_: None = Depends(require_token)) -> dict:
         return {"initialized": False}
     data = get_data()
     data = ls.inject_realtime(data)  # 注入当日实时行情, 盘中也能显示今天
-    td = ls.get_trading_dates(data)[-1]
+    dates = ls.get_trading_dates(data)
+    td = dates[-1] if dates else ls._today_sh()
     holding = state["holding"]
     holding_info = None
     used_realtime = False
@@ -509,7 +510,7 @@ def api_status(_: None = Depends(require_token)) -> dict:
         "total": round(total, 2),
         "initial_capital": state["initial_capital"],
         "return_pct": round(ret, 2),
-        "pending_order": state.get("pending_order"),
+        "pending_order": _pending_view(state.get("pending_order")),
         "strategy_mode": ls.get_strategy_mode(),
         "strategy_id": ls.v4.STRATEGY_ID,
         "config_hash": ls.v4.CONFIG_HASH,
@@ -517,96 +518,145 @@ def api_status(_: None = Depends(require_token)) -> dict:
     }
 
 
+def _pending_view(pending: dict | None) -> dict | None:
+    if not pending:
+        return None
+    reason = ls.pending_block_reason(pending) if pending.get("status") == "pending" else ""
+    return {
+        **pending,
+        "confirmable": pending.get("status") == "pending" and not reason,
+        "blocked_reason": reason,
+    }
+
+
+def _market_context() -> dict:
+    now = datetime.now(ls._SH_TZ)
+    trading = ls.is_trading_day(ls._today_sh())
+    clock = now.strftime("%H:%M")
+    opened = trading and ("09:30" <= clock < "11:30" or "13:00" <= clock < "15:00")
+    label = (
+        "交易时段"
+        if opened
+        else ("非交易日" if not trading else "已收盘" if clock >= "15:00" else "非交易时段")
+    )
+    return {
+        "market_open": opened,
+        "market_status": label,
+        "is_trading_day": trading,
+        "server_time": now.isoformat(timespec="seconds"),
+    }
+
+
 @app.get("/api/signal")
 def api_signal(_: None = Depends(require_token)) -> dict:
-    state = ls.load_state()
-    if state and state.get("last_decision"):
-        decision = state["last_decision"]
-        data = get_data()
-        td = decision["trade_date"]
-        target = decision["final_target"]
-        try:
-            board_date = datetime.strptime(td, "%Y-%m-%d").date()
-            board = ls.momentum_board_data(data, board_date, state.get("holding"), target)
-        except (KeyError, IndexError, ValueError):
-            board = []
-        return {
-            "status": "OK",
-            "official": True,
-            "trade_date": td,
-            "is_trading_day": ls.is_trading_day(ls._today_sh()),
-            "strategy_mode": decision.get("mode", ls.get_strategy_mode()),
-            "strategy_id": decision.get("strategy_id", ls.v4.STRATEGY_ID),
-            "config_hash": decision.get("config_hash", ls.v4.CONFIG_HASH),
-            "decision_id": decision.get("decision_id"),
-            "target": {"code": target, "name": ls.name_of(target)},
-            "holding": state.get("holding"),
-            "v3g_target": decision.get("v3g_target"),
-            "raw_v4_target": decision.get("raw_v4_target"),
-            "confirmation_hits": decision.get("confirmation_hits", 0),
-            "confirmation_required": decision.get("confirmation_required", 2),
-            "v4_triggered": decision.get("v4_triggered", False),
-            "v4_blocked_by": decision.get("v4_blocked_by", ""),
-            "scheduled_lock": decision.get("scheduled_lock", False),
-            "board": board,
-            "pending_order": state.get("pending_order"),
-        }
-    data = get_data()
-    # 注入当日实时行情 (解决parquet没有今天数据的问题)
-    data = ls.inject_realtime(data)
-    td = ls.get_trading_dates(data)[-1]
-    today = ls._today_sh()
-
-    # fail-closed: 非交易日标记但不阻断展示
-    is_trading = ls.is_trading_day(today)
-
-    # fail-closed: 实时行情注入失败 (数据停在昨日)
-    if td < today:
-        return {
-            "status": "DATA_UNAVAILABLE",
-            "reason": f"实时行情注入失败 (数据停在 {td}), 信号不可用",
-            "trade_date": str(td),
-            "is_trading_day": is_trading,
-            "holding": state["holding"] if state else None,
-            "pending_order": state.get("pending_order") if state else None,
-        }
-
-    # fail-closed: 数据完整性检查 (所有ETF必须有当日数据)
-    ok, missing = ls.check_data_availability(data, td)
-    if not ok:
-        return {
-            "status": "DATA_UNAVAILABLE",
-            "reason": f"数据缺失: {', '.join(missing)}",
-            "trade_date": str(td),
-            "is_trading_day": is_trading,
-            "holding": state["holding"] if state else None,
-            "pending_order": state.get("pending_order") if state else None,
-        }
-
-    holding = state["holding"] if state else None
-    idx_map = ls.build_etf_data_at_date(data, td)
-    target, _candidates, _best, a_share_weak = ls.select_target(data, idx_map, holding)
-    board = ls.momentum_board_data(data, td, holding, target)
-    return {
-        "status": "OK",
-        "official": False,
+    # Reading this endpoint never generates orders or re-labels a V3 preview as V4.
+    state = ls.load_state() or {}
+    decision = state.get("last_decision") or {}
+    context = _market_context()
+    target = decision.get("final_target")
+    valid = (
+        decision.get("trade_date") == str(ls._today_sh())
+        and decision.get("pool_version") == ls.POOL_VERSION
+        and target in {*ls.ETF_POOL, ls.DEFENSE}
+        and decision.get("config_hash") == ls.v4.CONFIG_HASH
+        and decision.get("mode") == ls.get_strategy_mode()
+    )
+    common = {
+        **context,
+        "official": valid,
+        "actionable": False,
         "strategy_mode": ls.get_strategy_mode(),
         "strategy_id": ls.v4.STRATEGY_ID,
-        "trade_date": str(td),
-        "is_trading_day": is_trading,
-        "target": {"code": target, "name": ls.name_of(target)},
-        "holding": holding,
-        "a_share_weak": bool(a_share_weak),
+        "pool_version": ls.POOL_VERSION,
+        "holding": state.get("holding"),
+        "pending_order": _pending_view(state.get("pending_order")),
+        "snapshot_date": decision.get("trade_date"),
+        "created_at": decision.get("created_at"),
+        "notice": (
+            "已移除不可买原油；其余品种准入及溢价仍需在广发易淘金核实。"
+            "研究门禁未通过，不构成买入指令。"
+        ),
+    }
+    if valid:
+        assert isinstance(target, str)
+        # Persisted decision-time factors, NOT today's closing prices under a 14:50 label.
+        board = [
+            {
+                "code": code,
+                "name": ls.name_of(code),
+                "score": round(factor["slow_momentum"] * 100, 2),
+                "eligible": factor["eligible"],
+                "dropped": False,
+                "is_holding": code == state.get("holding"),
+                "is_target": code == target,
+            }
+            for code, factor in decision.get("factors", {}).items()
+            if code in ls.ETF_POOL
+        ]
+        board.sort(key=lambda row: -row["score"])
+        return {
+            **common,
+            "status": "OK",
+            "trade_date": decision["trade_date"],
+            "board_source": "正式快照因子",
+            "board": board,
+            "target": {"code": target, "name": ls.name_of(target)},
+            "confirmation_hits": decision.get("confirmation_hits", 0),
+            "confirmation_required": decision.get("confirmation_required", 2),
+            "is_rebalance": decision.get("is_rebalance", False),
+            "decision_id": decision.get("decision_id"),
+            "reason": "仅供复核；已收盘则不追单，等待下一有效信号",
+        }
+    data = get_data()
+    dates = [day for day in ls.get_trading_dates(data) if day <= ls._today_sh()]
+    td = dates[-1] if dates else None
+    board = ls.momentum_board_data(data, td, state.get("holding"), "") if td else []
+    return {
+        **common,
+        "status": "SNAPSHOT_INVALID" if decision else "AWAITING_SNAPSHOT",
+        "trade_date": str(td) if td else None,
+        "target": None,
         "board": board,
-        "pending_order": state.get("pending_order") if state else None,
+        "board_source": "缓存行情参考（不是正式信号）",
+        "reason": "旧快照已过期或不适用于当前资产池，等待新的正式快照；不要按旧目标追单"
+        if decision
+        else "尚无有效正式快照；排行榜不是买入指令",
     }
 
 
 @app.get("/api/etfs")
 def api_etfs(_: None = Depends(require_token)) -> dict:
-    pool = [{"code": c, "name": n} for c, n in ls.ETF_POOL.items()]
-    pool.append({"code": ls.DEFENSE, "name": ls.name_of(ls.DEFENSE)})
-    return {"etfs": pool}
+    pool = [{"code": c, "name": n, "eligibility": "unverified"} for c, n in ls.ETF_POOL.items()]
+    pool.append({"code": ls.DEFENSE, "name": ls.name_of(ls.DEFENSE), "eligibility": "unverified"})
+    profile = {"risk_grade": None, "source": "unknown"}
+    profile_path = Path(__file__).resolve().parents[1] / "docs" / "account_profile.json"
+    try:
+        saved = json.loads(profile_path.read_text())
+        profile = {
+            k: saved.get(k)
+            for k in (
+                "broker",
+                "app",
+                "risk_grade",
+                "risk_label",
+                "source",
+                "confirmed_on",
+                "product_eligibility_verified",
+                "loss_budget",
+                "investment_horizon",
+            )
+        }
+    except (OSError, ValueError, AttributeError):
+        pass  # 缺资料时显示未知，绝不推定准入。
+    return {
+        "etfs": pool,
+        "recordable_etfs": [
+            {"code": c, "name": ls.name_of(c)} for c in [*ls.ETF_CATALOG, ls.DEFENSE]
+        ],
+        "account_profile": profile,
+        "pool_version": ls.POOL_VERSION,
+        "notice": "6只候选 + 货币防御；C5不代表单品准入，原油仍排除；历史事实登记不改变可买池",
+    }
 
 
 @app.get("/api/history")
@@ -622,7 +672,27 @@ def api_equity(_: None = Depends(require_token)) -> dict:
     if not state:
         return {"curve": [], "initial_capital": 0}
     curve = ls.build_equity_curve(state, get_data())
-    return {"curve": curve, "initial_capital": state["initial_capital"]}
+    trades = state.get("trade_log", [])
+    ledger_cash = state["initial_capital"] + sum(
+        t["amount"] * (1 if t["action"] == "sell" else -1)
+        for t in trades
+        if t["action"] in ("buy", "sell")
+    )
+    ledger_shares = sum(
+        t["shares"] * (1 if t["action"] == "buy" else -1)
+        for t in trades
+        if t["action"] in ("buy", "sell")
+    )
+    cash_gap = round(state["cash"] - ledger_cash, 2)
+    shares_gap = state["shares"] - ledger_shares
+    return {
+        "curve": curve,
+        "initial_capital": state["initial_capital"],
+        "ledger_cash": round(ledger_cash, 2),
+        "cash_gap": cash_gap,
+        "shares_gap": shares_gap,
+        "needs_reconciliation": cash_gap != 0 or shares_gap != 0,
+    }
 
 
 # 回测结果缓存 (数据更新后自动重算)
@@ -677,7 +747,11 @@ def api_backtest(_: None = Depends(require_token)) -> dict:
 # --------------------------------------------------------------------------- #
 # 写接口 (记账)
 # --------------------------------------------------------------------------- #
-class _SellLeg(BaseModel):
+class _ActualFees(BaseModel):
+    fees: float | None = Field(default=None, ge=0, le=MAX_TRADE_AMOUNT, allow_inf_nan=False)
+
+
+class _SellLeg(_ActualFees):
     """卖出腿 (确认成交用)."""
 
     model_config = ConfigDict(extra="forbid")
@@ -699,7 +773,7 @@ class _SellLeg(BaseModel):
         return v
 
 
-class _BuyLeg(BaseModel):
+class _BuyLeg(_ActualFees):
     """买入腿 (确认成交用)."""
 
     model_config = ConfigDict(extra="forbid")
@@ -739,10 +813,12 @@ class ConfirmRequest(BaseModel):
         return self
 
 
-class TradeRequest(BaseModel):
+class TradeRequest(_ActualFees):
     """手动记账 (买入/卖出)."""
 
     model_config = ConfigDict(extra="forbid")
+    historical_fill: bool = False
+    evidence_confirmed: bool = False
     action: str
     code: str = Field(min_length=6, max_length=6)
     shares: int = Field(gt=0)
@@ -806,6 +882,7 @@ def api_confirm(payload: ConfirmRequest, _: None = Depends(require_token)) -> di
                 order_id=payload.order_id,
                 expected_state_version=payload.expected_state_version,
                 idempotency_key=payload.idempotency_key,
+                require_current_policy=True,
             )
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e)) from e
@@ -829,45 +906,7 @@ def api_trade(payload: TradeRequest, _: None = Depends(require_token)) -> dict:
         if state is None:
             raise HTTPException(status_code=400, detail="账户未初始化")
 
-        # 代码必须在交易池内 (ETF_POOL + DEFENSE)
-        allowed_codes = set(ls.ETF_POOL.keys()) | {ls.DEFENSE}
-        if payload.code not in allowed_codes:
-            raise HTTPException(status_code=400, detail=f"非法代码 {payload.code}, 不在交易池")
-
-        if payload.action == "buy":
-            # 数量须为 100 的整数倍
-            if payload.shares % 100 != 0:
-                raise HTTPException(status_code=400, detail="买入数量必须为 100 的整数倍")
-            # 现金充足 (含手续费+滑点)
-            cost = payload.shares * payload.price * (1 + ls.FEE + ls.SLIPPAGE)
-            if cost > state["cash"]:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"现金不足 (需 {cost:.2f}, 可用 {state['cash']:.2f})",
-                )
-            # 买入前必须空仓
-            if state["holding"]:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"已有持仓 {state['holding']}, 请先卖出再买入",
-                )
-        else:  # sell
-            # 空仓不可卖出
-            if not state["holding"]:
-                raise HTTPException(status_code=400, detail="当前空仓, 无法卖出")
-            # 卖出代码必须匹配当前持仓
-            if payload.code != state["holding"]:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"卖出代码 {payload.code} 与当前持仓 {state['holding']} 不匹配",
-                )
-            # 卖出数量不得超过持仓
-            if payload.shares > state["shares"]:
-                raise HTTPException(
-                    status_code=400,
-                    detail=f"卖出数量 {payload.shares} 超过持仓 {state['shares']}",
-                )
-
+        # 所有资金/仓位/准入验证由核心状态锁内统一执行，避免重复规则与竞态。
         try:
             state = ls.record_manual_trade(
                 payload.action,
@@ -875,6 +914,10 @@ def api_trade(payload: TradeRequest, _: None = Depends(require_token)) -> dict:
                 payload.shares,
                 payload.price,
                 payload.date,
+                fees=payload.fees,
+                historical_fill=payload.historical_fill,
+                evidence_confirmed=payload.evidence_confirmed,
+                idempotency_key=payload.idempotency_key,
             )
         except (ValueError, KeyError) as e:
             raise HTTPException(status_code=400, detail=str(e)) from e

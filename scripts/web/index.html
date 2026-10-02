@@ -105,34 +105,39 @@
         <h1>七星V4 实盘记账</h1>
         <div class="sub" id="dateLine">—</div>
       </div>
-      <button class="ghost sm" onclick="doLogout()">退出</button>
+      <div><button class="ghost sm" onclick="loadAll().catch(e=>toast(e.message))">刷新</button> <button class="ghost sm" onclick="doLogout()">退出</button></div>
     </div>
 
     <div class="grid">
 
       <!-- 待确认信号 (置顶, 全宽) -->
       <div id="pendingCard" class="card c12 pending-live hidden">
-        <h2>待确认信号 <span class="tag pending" id="pendingDate"></span></h2>
+        <h2>计划对应成交核对 <span class="tag pending" id="pendingDate"></span></h2>
         <div id="pendingReason" class="muted" style="margin-bottom:8px"></div>
 
         <div id="sellBlock" class="hidden">
-          <div class="chk"><input type="checkbox" id="sellOn" checked><b>① 卖出 <span id="sellName"></span></b></div>
+          <label class="chk"><input type="checkbox" id="sellOn"><b>① 已完成卖出 <span id="sellName"></span></b></label>
           <div class="grid2">
-            <div><label>数量(股)</label><input id="sellShares" type="number" inputmode="numeric"></div>
-            <div><label>成交价</label><input id="sellPrice" type="number" inputmode="decimal" step="0.001"></div>
+            <div><label for="sellShares">实际成交数量(股/份)</label><input id="sellShares" type="number" inputmode="numeric" min="1" step="1" required></div>
+            <div><label for="sellPrice">实际成交均价</label><input id="sellPrice" type="number" inputmode="decimal" min="0" step="any" required></div>
           </div>
+          <label for="sellFees">实际费用合计(元，无费用请明确填 0)</label><input id="sellFees" type="number" inputmode="decimal" min="0" step="any" required>
         </div>
 
         <div id="buyBlock" class="hidden">
-          <div class="chk"><input type="checkbox" id="buyOn" checked><b>② 买入</b></div>
-          <label>标的</label><select id="buyCode"></select>
+          <label class="chk"><input type="checkbox" id="buyOn"><b>② 已完成买入</b></label>
+          <label for="buyCode">计划标的（只读，非买入建议）</label><select id="buyCode" disabled></select>
           <div class="grid2">
-            <div><label>数量(股)</label><input id="buyShares" type="number" inputmode="numeric"></div>
-            <div><label>成交价</label><input id="buyPrice" type="number" inputmode="decimal" step="0.001"></div>
+            <div><label for="buyShares">实际成交数量(股/份)</label><input id="buyShares" type="number" inputmode="numeric" min="1" step="1" required></div>
+            <div><label for="buyPrice">实际成交均价</label><input id="buyPrice" type="number" inputmode="decimal" min="0" step="any" required></div>
           </div>
+          <label for="buyFees">实际费用合计(元，无费用请明确填 0)</label><input id="buyFees" type="number" inputmode="decimal" min="0" step="any" required>
         </div>
 
-        <button id="confirmButton" onclick="doConfirm()">确认成交 (填入真实数据)</button>
+        <div class="alert warn" style="margin-top:10px">模型计划不是交易授权。这里只登记已发生事实，不连接券商下单。须核对计划全部成交腿；部分成交请用下方独立事实入口逐笔记录，不在此部分确认。</div>
+        <label class="chk"><input type="checkbox" id="pendingEvidence">我已核对交割单，计划各腿均已完整成交</label>
+        <div id="pendingError" class="alert warn hidden" role="alert"></div>
+        <button id="confirmButton" onclick="doConfirm()" disabled>登记已成交（不下单）</button>
         <button class="ghost" onclick="doSkip()">本次不操作</button>
       </div>
 
@@ -142,13 +147,26 @@
         <div class="big" id="totalVal">—</div>
         <div class="row" style="margin-top:8px"><span class="muted">可用现金</span><span id="cashVal" class="kimi-number">—</span></div>
         <div class="row"><span class="muted">当前持仓</span><span id="holdVal">—</span></div>
+        <div id="accountProfile" class="muted" style="margin-top:10px"></div>
+        <div class="alert warn" style="margin-top:8px">自报 C5 进取型不等于 501018 已解禁，也不等于其余产品全部可买；逐产品准入仍须在广发易淘金核实，不据此自动填写仓位。</div>
+        <details>
+          <summary class="muted">金额情景算式（非风险预算）</summary>
+          <div class="grid2">
+            <div><label for="scenarioAmount">假设投入金额(元)</label><input id="scenarioAmount" type="number" min="0" step="any" oninput="renderScenario()"></div>
+            <div><label for="scenarioDrop">假设下跌幅度(%)</label><input id="scenarioDrop" type="number" min="0" max="100" step="any" oninput="renderScenario()"></div>
+          </div>
+          <div id="scenarioResult" class="muted">损失金额 = 假设投入金额 × 假设跌幅。不代表用户风险预算或未来损失上限，未计费用。</div>
+        </details>
         <div id="feeSummary" class="alert warn hidden" style="margin-top:10px;margin-bottom:0"></div>
       </div>
 
       <!-- 信号 -->
       <div class="card c7">
-        <h2>V4 官方决策 <span class="pill">14:50 快照</span></h2>
+        <h2>策略信号 <span class="pill" id="signalSource">等待核验</span></h2>
+        <div id="signalMeta" class="muted" style="margin-bottom:8px"></div>
+        <div id="executionBlock" class="alert warn">未获可执行授权：研究门禁未通过，券商逐产品准入未核实；不能据模型目标买入。</div>
         <div id="targetLine" class="alert ok"></div>
+        <div id="poolNotice" class="muted" style="margin:8px 0"></div>
         <div id="board" class="scrollbox"></div>
       </div>
 
@@ -166,16 +184,22 @@
 
       <!-- 手动记账 -->
       <div class="card c5">
-        <h2>手动记账 <span class="pill">修正或非信号交易</span></h2>
-        <label>操作</label>
-        <select id="mAction"><option value="buy">买入</option><option value="sell">卖出</option></select>
-        <label>标的</label><select id="mCode"></select>
+        <h2>成交事实记录 <span class="pill">非买入建议</span></h2>
+        <div class="muted">仅顺序追加已发生成交，不下单、不支持任意历史重放。早于账本最新交易日的补录将被拒绝，须专项重建；请勿用改日期绕过。支持同标的分批加仓、部分卖出；单资产账本不能并行持有不同标的。</div>
+        <label class="chk"><input id="mHistorical" type="checkbox" onchange="fillEtfSelects()">按交割单核对已发生成交（历史目录补录）</label>
+        <div class="muted">主动勾选后可选择历史目录（含 501018 和防御品种），只用于事实核对，不改变买入准入。</div>
+        <label for="mAction">实际成交方向</label>
+        <select id="mAction" onchange="fillEtfSelects()"><option value="">请选择</option><option value="buy">买入</option><option value="sell">卖出</option></select>
+        <label for="mCode">实际成交标的</label><select id="mCode"></select>
         <div class="grid2">
-          <div><label>数量(股)</label><input id="mShares" type="number" inputmode="numeric"></div>
-          <div><label>成交价</label><input id="mPrice" type="number" inputmode="decimal" step="0.001"></div>
+          <div><label for="mShares">实际成交数量(股/份)</label><input id="mShares" type="number" inputmode="numeric" min="1" step="1" required></div>
+          <div><label for="mPrice">实际成交均价</label><input id="mPrice" type="number" inputmode="decimal" min="0" step="any" required></div>
         </div>
-        <label>日期 (留空=今天)</label><input id="mDate" type="date">
-        <button onclick="doManual()">记 录</button>
+        <label for="mFees">实际费用合计(元，无费用请明确填 0)</label><input id="mFees" type="number" inputmode="decimal" min="0" step="any" required>
+        <label for="mDate">实际成交日期（必填，不可未来）</label><input id="mDate" type="date" required>
+        <label class="chk"><input id="mEvidence" type="checkbox">我已核对交割单上的方向、标的、数量、均价、费用及日期</label>
+        <div id="manualError" class="alert warn hidden" role="alert"></div>
+        <button id="manualButton" onclick="doManual()">登记已成交（不下单）</button>
       </div>
 
       <!-- 策略全景 (滚到才加载, 回测计算重) -->
@@ -201,6 +225,7 @@
 const RED='#d6453d', GREEN='#1a9e56';
 const ETF_COLORS={"518880":"#E6B800","159985":"#A0522D","501018":"#2F4F4F","161226":"#9099A0","513100":"#3B6FE0","159915":"#FF6347","511220":"#2E9E5B","511880":"#C8CDD3"};
 let ETFS = [];
+let RECORDABLE_ETFS = [];
 let latestStatus = null;
 
 function fmt(x){ return (x==null?'—':Number(x).toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2})); }
@@ -237,29 +262,64 @@ async function enterApp(){
   document.getElementById('login').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
   try{
-    const etfData=await api('/api/etfs'); ETFS=etfData.etfs; fillEtfSelects();
+    const etfData=await api('/api/etfs');
+    ETFS=etfData.etfs||[]; RECORDABLE_ETFS=etfData.recordable_etfs||ETFS;
+    renderAccountProfile(etfData.account_profile); fillEtfSelects();
+    document.getElementById('mDate').max=shanghaiToday();
     await loadAll();
     watchOverview();
   }catch(e){ toast(e.message); }
 }
 
 function fillEtfSelects(){
-  const opts=ETFS.map(e=>`<option value="${e.code}">${e.name} (${e.code})</option>`).join('');
-  document.getElementById('buyCode').innerHTML=opts;
-  document.getElementById('mCode').innerHTML=opts;
+  const options=list=>'<option value="">请选择实际成交标的</option>'+list.map(e=>
+    `<option value="${e.code}">${e.name} (${e.code}) · 准入未核实</option>`).join('');
+  const buy=document.getElementById('buyCode');
+  buy.innerHTML=options(ETFS); buy.value=curPending&&curPending.buy?curPending.buy.code:'';
+  const manual=document.getElementById('mCode'), previous=manual.value;
+  const sell=document.getElementById('mAction').value==='sell';
+  const held=latestStatus&&latestStatus.holding;
+  const list=document.getElementById('mHistorical').checked?RECORDABLE_ETFS:
+    (sell?(held?[held]:[]):ETFS);
+  manual.innerHTML=options(list);
+  manual.value=list.some(e=>e.code===previous)?previous:'';
+}
+
+function renderAccountProfile(profile){
+  document.getElementById('accountProfile').textContent=profile?
+    `${profile.broker||'广发证券'} / ${profile.app||'易淘金'} · ${profile.risk_grade||'未提供'} ${profile.risk_label||''} · ${profile.source==='user_reported'?'用户自报，非券商核验':'来源待核验'} · ${profile.confirmed_on||'日期待核验'}`:
+    '广发证券 / 易淘金 · C5 进取型 · 用户自报（2026-09-16），接口档案待同步';
+}
+
+function renderScenario(){
+  const amount=document.getElementById('scenarioAmount').value;
+  const drop=document.getElementById('scenarioDrop').value;
+  const valid=amount.trim()!==''&&drop.trim()!==''&&Number.isFinite(+amount)&&Number.isFinite(+drop)&&+amount>=0&&+drop>=0&&+drop<=100;
+  document.getElementById('scenarioResult').textContent=(valid?
+    `假设损失 = ¥${fmt(+amount)} × ${+drop}% = ¥${fmt(+amount*+drop/100)}。`:
+    '损失金额 = 假设投入金额 × 假设跌幅（金额非负，跌幅 0–100%）。')+
+    '不代表用户风险预算或未来损失上限，未计费用。';
 }
 
 async function loadAll(){
+  try{
   const [status, signal, history, equity] = await Promise.all([
     api('/api/status'), api('/api/signal'), api('/api/history'), api('/api/equity')
   ]);
   latestStatus = status;
+  fillEtfSelects();
   renderStatus(status); renderPending(status.pending_order);
   renderFeeSummary(history.trades);
   renderSignal(signal); renderHistory(history.trades); renderEquity(equity);
   let dateTxt=(status.strategy_mode||'V4')+' · 数据截至 '+status.trade_date;
   if(status.holding){ dateTxt += status.realtime?' · 市值实时估算':' · 市值按收盘估算'; }
   document.getElementById('dateLine').textContent=dateTxt;
+  }catch(e){
+    renderSignal({reason:'加载失败，旧信号已隐藏；请刷新重试',board:[]});
+    document.getElementById('confirmButton').disabled=true;
+    curPending=null;
+    throw e;
+  }
 }
 
 function renderFeeSummary(trades){
@@ -299,51 +359,73 @@ function renderStatus(s){
         `${h.name} ${h.shares}股 <span style="color:${hu?RED:GREEN}">${hu?'+':''}${h.pnl_pct}%</span>`;
     }
   }else{
-    document.getElementById('holdVal').innerHTML='<span class="muted">空仓 (货币基金)</span>';
+    document.getElementById('holdVal').innerHTML='<span class="muted">空仓（现金，未持有货币基金）</span>';
   }
 }
 
+function clearPendingFacts(){
+  for(const side of ['sell','buy']){
+    document.getElementById(side+'On').checked=false;
+    for(const field of ['Shares','Price','Fees']) document.getElementById(side+field).value='';
+  }
+  document.getElementById('pendingEvidence').checked=false;
+}
 function renderPending(p){
+  const identity=p?(p.order_id||`${p.date}:${p.expected_state_version}`):null;
+  if(identity!==pendingIdentity){
+    clearPendingFacts(); pendingIdentity=identity; confirmKey=null;
+    document.getElementById('pendingError').classList.add('hidden');
+  }
   const card=document.getElementById('pendingCard');
   if(!p || p.status!=='pending'){ card.classList.add('hidden'); return; }
   card.classList.remove('hidden');
   document.getElementById('pendingDate').textContent=p.date;
-  document.getElementById('pendingReason').textContent=(p.reason||'');
-  // 卖出
+  document.getElementById('pendingReason').textContent=
+    (p.blocked_reason||p.reason||'')+' · 只核对已成交事实，不代表允许买入，不下单。';
+  document.getElementById('confirmButton').disabled=!p.confirmable||confirmBusy;
   const sb=document.getElementById('sellBlock');
   if(p.sell){
     sb.classList.remove('hidden');
     document.getElementById('sellName').textContent=`${p.sell.name} (${p.sell.code})`;
-    document.getElementById('sellShares').value=p.sell.shares;
-    document.getElementById('sellPrice').value=p.sell.price;
   }else sb.classList.add('hidden');
-  // 买入
   const bb=document.getElementById('buyBlock');
   if(p.buy){
     bb.classList.remove('hidden');
     document.getElementById('buyCode').value=p.buy.code;
-    document.getElementById('buyShares').value=p.buy.shares;
-    document.getElementById('buyPrice').value=p.buy.price;
   }else bb.classList.add('hidden');
 }
 
 function renderSignal(sig){
-  if(!sig.target){ document.getElementById('targetLine').textContent=sig.reason||'暂无官方信号'; return; }
-  const t=sig.target;
+  document.getElementById('executionBlock').textContent='未获可执行授权：研究门禁未通过、券商逐产品准入未核实。模型目标不是买入指令；下方仅登记已发生成交。';
+  const line=document.getElementById('targetLine');
+  line.className='alert warn';
+  document.getElementById('board').innerHTML=''; // never retain a prior successful ranking
+  document.getElementById('signalSource').textContent=sig.official?'正式快照 · 只读复核':'暂无有效正式信号';
+  document.getElementById('signalMeta').textContent=
+    `${sig.market_status||'市场状态未知'} · 行情日期 ${sig.trade_date||'暂无'} · ${sig.board_source||'无数据'}`+
+    (sig.created_at?` · 快照生成 ${sig.created_at.replace('T',' ')}`:
+     sig.snapshot_date?` · 旧快照 ${sig.snapshot_date}`:'');
+  document.getElementById('poolNotice').textContent=
+    `候选池 6只 + 货币防御。${sig.notice||'券商准入未全部核实。'}`;
   const board=sig.board||[];
-  const confirms=sig.confirmation_required?
-    ` · 共振确认 ${sig.confirmation_hits||0}/${sig.confirmation_required}`:'';
-  const source=sig.official?' · 官方快照':' · 实时预览';
-  document.getElementById('targetLine').innerHTML =
-    `V4目标: <b>${t.name} (${t.code})</b>${confirms}${source}` + (sig.a_share_weak?' · A股走弱防御':'');
+  if(sig.target){
+    const t=sig.target;
+    const confirms=sig.confirmation_required?
+      ` · 共振 ${sig.confirmation_hits||0}/${sig.confirmation_required}`:'';
+    line.textContent=`模型目标：${t.name} (${t.code})${confirms} · ${sig.is_rebalance?'调仓日':'非调仓日'}`+
+      `。${sig.reason||'仅供复核，不构成买入指令'}`;
+  }else{
+    line.textContent=sig.reason||'暂无正式信号，请勿按排行榜追单';
+  }
   const html=`<div class="board-row" style="padding:4px 0 6px"><div style="width:20px"></div><div class="board-name muted" style="font-size:11px">ETF (代码)</div><div class="board-score muted" style="font-size:11px;font-weight:400">动量(10+20日)</div></div>`+
   board.map((b,i)=>{
     const cls=b.score>=0?'up':'down';
     const rank=i===0&&b.eligible?'board-rank top':'board-rank';
-    let mark='';
+    let mark='<span class="pill">准入未核实</span>';
     if(b.is_holding) mark+='<span class="tag hold">持仓</span>';
     if(b.is_target) mark+='<span class="tag">目标</span>';
     if(b.dropped) mark+='<span class="pill">急跌过滤</span>';
+    else if(!b.eligible) mark+='<span class="pill">不符合筛选</span>';
     return `<div class="board-row">
       <div class="${rank}">${i+1}</div>
       <div class="board-name">${b.name}<br><span class="muted" style="font-size:11px">${b.code} ${mark}</span></div>
@@ -358,18 +440,25 @@ function renderHistory(trades){
   if(!trades.length){ box.innerHTML='<div class="muted">暂无成交记录</div>'; return; }
   let rows=trades.map(t=>{
     const sell=t.action==='sell';
-    const feeLine=t.commission!=null?`<span class="muted">手续费 ¥${fmt(t.commission)}</span>`:'';
+    const actualFees=t.fees??t.commission;
+    const feeLine=actualFees!=null?`<span class="muted">实际费用 ¥${fmt(actualFees)}</span>`:'<span class="muted">费用未核实（非券商已对账）</span>';
+    const adjustment=t.unclassified_cash_adjustment!=null?`<span class="muted">未分类现金差额 ¥${fmt(t.unclassified_cash_adjustment)}</span>`:'';
     const grossLine=t.gross_amount!=null?`<span class="muted">成交额 ¥${fmt(t.gross_amount)}</span>`:'';
     return `<tr><td>${t.date.slice(5)}<br><span class="muted">${sell?'卖出':'买入'}</span></td>
-      <td>${t.name}</td>
+      <td>${t.name||t.code}</td>
       <td class="num">${t.shares}股<br><span class="muted">@${t.price.toFixed(3)}</span></td>
-      <td class="num">${sell?'+':'-'}${fmt(t.amount)}<br>${grossLine}${feeLine}</td></tr>`;
+      <td class="num">${sell?'+':'-'}${fmt(t.amount)}<br>${grossLine}${feeLine}${adjustment}</td></tr>`;
   }).join('');
   box.innerHTML=`<table><tr><th>日期</th><th>标的</th><th style="text-align:right">数量</th><th style="text-align:right">现金影响</th></tr>${rows}</table>`;
 }
 
 function renderEquity(eq){
   const el=document.getElementById('chart');
+  if(eq.needs_reconciliation){
+    el.innerHTML=`<div class="muted">历史账本待对账：账户记录与流水推算的现金差额 ¥${fmt(eq.cash_gap)}，份额差额 ${eq.shares_gap}。
+      暂不展示为真实收益曲线；上方显示的是账户记录余额，并不代表历史流水已核对闭合。需核对历史交割单/资金流水，不自动补造调整。</div>`;
+    return;
+  }
   const curve=eq.curve, init=eq.initial_capital;
   if(!curve.length){ el.innerHTML='<div class="muted">暂无成交记录, 确认第一笔交易后显示</div>'; return; }
   const w=340,h=180,pad=10;
@@ -411,12 +500,12 @@ function renderOverview(d){
   const scope=document.getElementById('ovScope');
   scope.innerHTML=
     `当前实盘：<b>${liveMode}</b>${liveId?` <span class="muted">(${liveId})</span>`:''}<br>`+
-    `下方历史图：<b>V3-G 基线回测</b>，仅作基准对照，不代表 V4 的历史绩效。`;
+    `下方历史图：<b>V3-G 基线回测</b>，包含已移除原油的原始研究池，仅作历史对照，不代表当前可买池或 V4 的收益；研究门禁未通过。`;
   scope.classList.remove('hidden');
   document.getElementById('ovPeriod').textContent=m.start+' ~ '+m.end+' · '+m.years+'年';
   document.getElementById('ovMetrics').innerHTML=
     '<div class="grid2" style="grid-template-columns:repeat(3,1fr)">'+
-    cell('累计收益','+'+m.total_return+'%','up')+cell('年化收益','+'+m.ann_return+'%','up')+
+    cell('累计收益',(m.total_return>=0?'+':'')+m.total_return+'%',m.total_return>=0?'up':'down')+cell('年化收益',(m.ann_return>=0?'+':'')+m.ann_return+'%',m.ann_return>=0?'up':'down')+
     cell('夏普比率',m.sharpe,'')+cell('最大回撤',m.max_drawdown+'%','down')+
     cell('交易次数',m.n_trades,'')+cell('回测年限',m.years+'年','')+'</div>';
   drawOvEquity(d.dates,d.values,d.drawdown);
@@ -475,36 +564,80 @@ function drawOvHoldings(dates,holdings,names){
 }
 
 // ---------- 操作 ----------
-async function doConfirm(){
-  const p=curPending; if(!p) return;
-  const payload={sell:null,buy:null,order_id:p.order_id||null,
-    expected_state_version:p.expected_state_version??null,
-    idempotency_key:(crypto.randomUUID?crypto.randomUUID():String(Date.now()))};
-  if(p.sell && document.getElementById('sellOn').checked){
-    payload.sell={shares:+document.getElementById('sellShares').value, price:+document.getElementById('sellPrice').value};
-  }
-  if(p.buy && document.getElementById('buyOn').checked){
-    payload.buy={code:document.getElementById('buyCode').value, shares:+document.getElementById('buyShares').value, price:+document.getElementById('buyPrice').value};
-  }
-  if(!payload.sell && !payload.buy){ toast('请至少勾选一笔成交'); return; }
-  const btn=document.getElementById('confirmButton'); btn.disabled=true;
-  try{ await api('/api/confirm',{method:'POST',body:JSON.stringify(payload)}); toast('已确认成交'); await loadAll(); }
-  catch(e){ toast(e.message); }
-  finally{ btn.disabled=false; }
+function shanghaiToday(){
+  return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 }
+function actualFill(prefix){
+  const raw=field=>document.getElementById(prefix+field).value.trim();
+  if(['Shares','Price','Fees'].some(field=>raw(field)==='')) throw new Error('请填写实际数量、均价和费用；无费用必须明确填 0');
+  const shares=Number(raw('Shares')), price=Number(raw('Price')), fees=Number(raw('Fees'));
+  if(!Number.isSafeInteger(shares)||shares<=0||!Number.isFinite(price)||price<=0||!Number.isFinite(fees)||fees<0)
+    throw new Error('数量须为正整数，均价须为正数，费用须为非负有限数');
+  return {shares,price,fees};
+}
+function formError(id,message){
+  const el=document.getElementById(id); el.textContent=message; el.classList.remove('hidden');
+}
+let pendingIdentity=null, confirmKey=null, manualKey=null;
+let confirmBusy=false, manualBusy=false;
+async function doConfirm(){
+  if(confirmBusy) return;
+  const p=curPending; if(!p) return;
+  const btn=document.getElementById('confirmButton');
+  document.getElementById('pendingError').classList.add('hidden');
+  try{
+    if(!p.confirmable) throw new Error(p.blocked_reason||'计划已过期或池版本失效，请刷新；事实补录请用独立入口');
+    if(!document.getElementById('pendingEvidence').checked) throw new Error('请先核对交割单并确认计划各腿均已完整成交；部分成交请用独立事实入口');
+    const payload={sell:null,buy:null,order_id:p.order_id||null,
+      expected_state_version:p.expected_state_version??null};
+    for(const side of ['sell','buy']){
+      if(!p[side]) continue;
+      if(!document.getElementById(side+'On').checked) throw new Error('不能部分确认计划：请逐腿核对；部分成交用下方独立事实入口');
+      payload[side]=actualFill(side);
+      if(side==='buy') payload.buy.code=p.buy.code;
+    }
+    if(!payload.sell&&!payload.buy) throw new Error('没有可核对的计划成交腿');
+    confirmKey=confirmKey||crypto.randomUUID(); payload.idempotency_key=confirmKey;
+    confirmBusy=true; btn.disabled=true;
+    await api('/api/confirm',{method:'POST',body:JSON.stringify(payload)});
+    clearPendingFacts(); confirmKey=null; curPending=null;
+    document.getElementById('pendingCard').classList.add('hidden');
+    toast('已登记事实，未下单');
+    try{ await loadAll(); }catch(e){ toast('已登记，但刷新失败，请刷新核对账本，勿重复登记'); }
+  }catch(e){ formError('pendingError',e.message); }
+  finally{ confirmBusy=false; btn.disabled=!(curPending&&curPending.confirmable); }
+}
+
 async function doSkip(){
   if(!confirm('确认本次不操作? 信号将标记为已跳过。')) return;
   try{ await api('/api/skip',{method:'POST'}); toast('已标记为不操作'); await loadAll(); }
   catch(e){ toast(e.message); }
 }
 async function doManual(){
-  const payload={action:document.getElementById('mAction').value, code:document.getElementById('mCode').value,
-    shares:+document.getElementById('mShares').value, price:+document.getElementById('mPrice').value,
-    date:document.getElementById('mDate').value||null};
-  if(!payload.shares||!payload.price){ toast('请填写数量和价格'); return; }
-  try{ await api('/api/trade',{method:'POST',body:JSON.stringify(payload)}); toast('已记录');
-    document.getElementById('mShares').value=''; document.getElementById('mPrice').value=''; await loadAll(); }
-  catch(e){ toast(e.message); }
+  if(manualBusy) return;
+  const btn=document.getElementById('manualButton');
+  document.getElementById('manualError').classList.add('hidden');
+  try{
+    const action=document.getElementById('mAction').value, code=document.getElementById('mCode').value;
+    if(!['buy','sell'].includes(action)||!code) throw new Error('请选择实际成交方向和标的');
+    if(!document.getElementById('mEvidence').checked) throw new Error('请先核对交割单并勾选确认');
+    const date=document.getElementById('mDate').value;
+    const parsed=new Date(date+'T00:00:00Z');
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date)||Number.isNaN(parsed.getTime())||parsed.toISOString().slice(0,10)!==date||date>shanghaiToday())
+      throw new Error('请填写有效的实际成交日期，不可未来；早于账本最新交易日须专项重建');
+    const payload={action,code,...actualFill('m'),date,
+      historical_fill:document.getElementById('mHistorical').checked,
+      evidence_confirmed:document.getElementById('mEvidence').checked};
+    manualKey=manualKey||crypto.randomUUID(); payload.idempotency_key=manualKey;
+    manualBusy=true; btn.disabled=true;
+    await api('/api/trade',{method:'POST',body:JSON.stringify(payload)});
+    for(const field of ['Shares','Price','Fees','Date','Action','Code']) document.getElementById('m'+field).value='';
+    document.getElementById('mEvidence').checked=false;
+    document.getElementById('mHistorical').checked=false;
+    manualKey=null; fillEtfSelects(); toast('已登记事实，未下单');
+    try{ await loadAll(); }catch(e){ toast('已登记，但刷新失败，请刷新核对账本，勿重复登记'); }
+  }catch(e){ formError('manualError',e.message); }
+  finally{ manualBusy=false; btn.disabled=false; }
 }
 
 // 保存当前 pending 供确认时使用

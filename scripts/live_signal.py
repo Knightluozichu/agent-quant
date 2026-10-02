@@ -25,6 +25,7 @@ import contextlib
 import fcntl
 import hashlib
 import json
+import math
 import os
 import shutil
 import stat
@@ -33,6 +34,7 @@ import time
 from dataclasses import replace
 from datetime import date, datetime, timedelta, timezone, tzinfo
 from pathlib import Path
+from typing import Any
 from zoneinfo import ZoneInfo
 
 import pandas as pd
@@ -52,7 +54,7 @@ def _today_sh() -> date:
     return datetime.now(_SH_TZ).date()
 
 
-# === 保证与回测100%一致: 直接复用回测的核心逻辑 ===
+# === 复用基础选择逻辑；成交时点/费用/锁起算差异须单独披露 ===
 sys.path.insert(0, str(Path(__file__).parent))
 import qixing_v4 as v4  # noqa: E402
 from notify import load_config, push_bark, save_config, set_bark_key, test_push  # noqa: E402
@@ -64,7 +66,6 @@ from run_qixing_v3 import (  # noqa: E402
     DEFENSE,
     DROP_LOOKBACK,
     DROP_THRESHOLD,
-    ETF_POOL,
     FEE,
     MOM_PERIODS,
     MOM_WEIGHTS,
@@ -72,7 +73,12 @@ from run_qixing_v3 import (  # noqa: E402
     SLIPPAGE,
     calc_momentum_score,
     load_data,
-    select_target,
+)
+from run_qixing_v3 import (  # noqa: E402
+    ETF_POOL as ETF_CATALOG,
+)
+from run_qixing_v3 import (  # noqa: E402
+    select_target as select_base_target,
 )
 
 LIVE_DIR = DATA_DIR.parent / "live"
@@ -84,11 +90,33 @@ STRATEGY_MODE_FILE = LIVE_DIR / "strategy_mode.json"
 SNAPSHOT_DIR = LIVE_DIR / "decision_snapshots"
 MAX_BACKUPS = 7
 
-ALL_CODES = [*list(ETF_POOL.keys()), DEFENSE]
+# Historical data/calendar stay fixed; broker restrictions only narrow new candidates.
+ETF_POOL = {code: name for code, name in ETF_CATALOG.items() if code != "501018"}
+POOL_VERSION = "gf-20260916-" + hashlib.sha256(",".join(sorted(ETF_POOL)).encode()).hexdigest()[:12]
+ALL_CODES = [*list(ETF_CATALOG), DEFENSE]
+
+
+def select_target(
+    data: dict[str, Any], etf_data_at_date: dict[str, Any], holding: str | None
+) -> tuple[Any, ...]:
+    result: tuple[Any, ...] = select_base_target(data, etf_data_at_date, holding, pool=ETF_POOL)
+    return result
+
+
+def pending_block_reason(pending: dict[str, Any]) -> str:
+    if pending.get("has_manual_fills"):
+        return "已有手工成交，不可整单重复登记；请继续逐笔核对"
+    if pending.get("buy", {}) and pending["buy"].get("code") not in {*ETF_POOL, DEFENSE}:
+        return "目标不在当前可买池，旧信号不可确认"
+    if pending.get("pool_version") != POOL_VERSION:
+        return "资产池已变更，旧信号不可确认；已发生的成交请用手动记账核对"
+    if pending.get("date") != str(_today_sh()):
+        return "信号已过期，不可追单；已发生的成交请用手动记账核对"
+    return ""
 
 
 def name_of(code: str) -> str:
-    return ETF_POOL.get(code, "货币基金")
+    return ETF_CATALOG.get(code, "货币基金" if code == DEFENSE else code)
 
 
 def sina_symbol(code: str) -> str:
@@ -1011,7 +1039,9 @@ def evaluate_v4_overlay(
     raw_target = raw.target if raw.triggered else None
     runtime = state.get("v4_state", default_v4_state())
     history, signal_hits = v4.update_candidate_history(
-        runtime.get("candidate_history", []),
+        runtime.get("candidate_history", [])
+        if (state.get("last_decision") or {}).get("pool_version") == POOL_VERSION
+        else [],
         trade_date=td,
         raw_target=raw_target,
         trading_dates=trading_dates,
@@ -1077,6 +1107,7 @@ def _decision_snapshot(
 ) -> dict:
     factors = overlay["factors"]
     snapshot = {
+        "pool_version": POOL_VERSION,
         "strategy_name": v4.STRATEGY_NAME,
         "strategy_id": v4.STRATEGY_ID,
         "config_hash": v4.CONFIG_HASH,
@@ -1530,6 +1561,7 @@ def run(dry_run: bool = False) -> int:
                 :24
             ]
             st["pending_order"] = {
+                "pool_version": POOL_VERSION,
                 "order_id": order_id,
                 "decision_id": snapshot["decision_id"],
                 "expected_state_version": st.get("_version", 0) + 1,
@@ -1625,6 +1657,36 @@ def sync_only() -> int:
 # --------------------------------------------------------------------------- #
 # 网页确认成交 (实盘以用户填入的真实成交为准)
 # --------------------------------------------------------------------------- #
+def real_fill_amount(shares: int, price: float, fees: float | None, *, buy: bool) -> float:
+    """实际成交额加/减独立实际费用；未报费用暂不扣，日志必须标记未核实。"""
+    if isinstance(shares, bool) or shares <= 0 or int(shares) != shares:
+        raise ValueError("成交数量必须为正整数")
+    if not math.isfinite(price) or price <= 0:
+        raise ValueError("成交价格必须为有限正数")
+    if fees is not None and (not math.isfinite(fees) or fees < 0):
+        raise ValueError("实际费用必须为有限非负数")
+    gross = shares * price
+    amount = gross + (fees or 0.0) if buy else gross - (fees or 0.0)
+    if not math.isfinite(amount) or amount < 0:
+        raise ValueError("成交净额非法或费用超过成交额")
+    return amount
+
+
+def _execution_date(state: dict[str, Any], td: str) -> str:
+    try:
+        parsed = date.fromisoformat(td)
+    except (ValueError, TypeError) as exc:
+        raise ValueError("成交日期必须为YYYY-MM-DD") from exc
+    if parsed.isoformat() != td:
+        raise ValueError("成交日期必须为YYYY-MM-DD")
+    if parsed > _today_sh():
+        raise ValueError("不能登记未来成交")
+    latest = max((t.get("date", "") for t in state.get("trade_log", [])), default="")
+    if latest and td < latest:
+        raise ValueError("成交日期早于账本最新交易，需专项重建，不可直接倒序补录")
+    return td
+
+
 def confirm_order(
     real_sell: dict | None,
     real_buy: dict | None,
@@ -1632,17 +1694,18 @@ def confirm_order(
     order_id: str | None = None,
     expected_state_version: int | None = None,
     idempotency_key: str | None = None,
+    require_current_policy: bool = False,
 ) -> dict:
     """确认待确认订单, 用真实成交数据更新持仓状态.
 
-    real_sell: {"shares": int, "price": float} 或 None (卖出当前持仓)
-    real_buy:  {"code": str, "shares": int, "price": float} 或 None
+    real_sell: {"shares": int, "price": float, "fees": float | None} 或 None
+    real_buy:  {"code": str, "shares": int, "price": float, "fees": float | None} 或 None
 
     校验:
       - pending_order 必须存在且 status=pending
       - 卖出: code 必须匹配当前持仓, shares ≤ 持仓数, price > 0
       - 买入: code 必须匹配 pending_order 的 buy_code, shares > 0, price > 0, 现金充足
-      - 部分卖出: 保留剩余持仓, 不清零
+      - 整单确认必须完整退出当前持仓；部分成交通过独立事实记账入口逐笔记录
     """
     with state_transaction() as state:
         pending = state.get("pending_order")
@@ -1659,7 +1722,13 @@ def confirm_order(
         receipts = state.setdefault("confirm_receipts", {})
         if idempotency_key and idempotency_key in receipts:
             raise ValueError("重复提交 (该确认请求已处理)")
-        td = pending["date"]
+        if require_current_policy and (reason := pending_block_reason(pending)):
+            raise ValueError(reason)
+        if real_buy and real_buy.get("code") not in {*ETF_POOL, DEFENSE}:
+            raise ValueError("买入标的不在当前可买池")
+        if pending.get("has_manual_fills"):
+            raise ValueError("该计划已有手工成交，请逐笔核对后关闭旧计划，不可再次整单确认")
+        td = _execution_date(state, pending["date"])
 
         expected_sell = pending.get("sell")
         expected_buy = pending.get("buy")
@@ -1670,7 +1739,7 @@ def confirm_order(
             if state["holding"] != expected_sell.get("code"):
                 raise ValueError("当前持仓与待卖出资产不一致")
             code = state["holding"]
-            shares = int(real_sell["shares"])
+            shares = real_sell["shares"]
             price = float(real_sell["price"])
             if price <= 0:
                 raise ValueError(f"卖出价格必须 > 0, 实际: {price}")
@@ -1678,11 +1747,11 @@ def confirm_order(
                 raise ValueError(f"卖出数量必须 > 0, 实际: {shares}")
             if shares > state["shares"]:
                 raise ValueError(f"卖出数量 {shares} 超过持仓 {state['shares']}")
-            # 注: A股卖出允许零股一次性清仓, 不做整百校验;
-            # 下一行的完整成交校验 (shares == 待确认数量) 已兜底
-            if shares != int(expected_sell.get("shares", state["shares"])):
-                raise ValueError("换仓卖出必须按待确认订单数量完整成交")
-            amount = shares * price * (1 - FEE - SLIPPAGE)
+            # 计划数量是估算；整单确认以真实持仓完整退出为准，允许零股全卖。
+            if shares != state["shares"]:
+                raise ValueError("换仓卖出必须按实际持仓数量完整成交；部分成交请逐笔记账")
+            fees = real_sell.get("fees")
+            amount = real_fill_amount(shares, price, fees, buy=False)
             state["cash"] += amount
             state["trade_log"].append(
                 {
@@ -1693,6 +1762,10 @@ def confirm_order(
                     "shares": shares,
                     "price": price,
                     "amount": amount,
+                    "gross_amount": shares * price,
+                    "fees": fees,
+                    "fee_status": "reported" if fees is not None else "unreported",
+                    "source": "confirmed_execution",
                 }
             )
             # 部分卖出: 保留剩余持仓
@@ -1707,7 +1780,7 @@ def confirm_order(
 
         if real_buy and expected_buy:
             code = real_buy["code"]
-            shares = int(real_buy["shares"])
+            shares = real_buy["shares"]
             price = float(real_buy["price"])
             if price <= 0:
                 raise ValueError(f"买入价格必须 > 0, 实际: {price}")
@@ -1719,7 +1792,10 @@ def confirm_order(
             expected_code = expected_buy.get("code")
             if expected_code and code != expected_code:
                 raise ValueError(f"买入代码 {code} 与待确认订单 {expected_code} 不匹配")
-            amount = shares * price * (1 + FEE + SLIPPAGE)
+            if state.get("holding"):
+                raise ValueError("仍有持仓，不能整单买入另一资产")
+            fees = real_buy.get("fees")
+            amount = real_fill_amount(shares, price, fees, buy=True)
             if state["cash"] - amount < 0:
                 raise ValueError(f"现金不足: 需要 {amount:.2f}, 可用 {state['cash']:.2f}")
             state["cash"] -= amount
@@ -1736,6 +1812,10 @@ def confirm_order(
                     "shares": shares,
                     "price": price,
                     "amount": amount,
+                    "gross_amount": shares * price,
+                    "fees": fees,
+                    "fee_status": "reported" if fees is not None else "unreported",
+                    "source": "confirmed_execution",
                 }
             )
 
@@ -1748,9 +1828,7 @@ def confirm_order(
                 "order_id": pending.get("order_id"),
                 "confirmed_at": pending["confirmed_at"],
             }
-            if len(receipts) > 100:
-                for key in list(receipts)[:-100]:
-                    receipts.pop(key, None)
+            # 日频单账户保留幂等凭据，不能逐出事实补录键后再次入账。
     return state
 
 
@@ -1768,72 +1846,87 @@ def skip_pending() -> dict:
 
 
 def record_manual_trade(
-    action: str, code: str, shares: int, price: float, td: str | None = None
+    action: str,
+    code: str,
+    shares: int,
+    price: float,
+    td: str | None = None,
+    *,
+    fees: float | None = None,
+    historical_fill: bool = False,
+    evidence_confirmed: bool = False,
+    idempotency_key: str | None = None,
 ) -> dict:
-    """手动记录一笔成交 (用于修正或非信号交易).
+    """顺序追加成交事实，不下单；部分成交保留仓位，不凭记账授予产品准入。
 
-    校验:
-      - 卖出: code 必须匹配持仓, shares ≤ 持仓数, price > 0, 部分卖出保留剩余
-      - 买入: shares > 0, price > 0, 现金充足
+    受限历史买入须用户声明核对交割单、明确日期/费用及幂等键。
+    这是用户声明，不是系统已独立验证交割单；倒序历史须专项重建。
     """
     with state_transaction() as state:
-        td = td or str(_today_sh())
+        receipts = state.setdefault("confirm_receipts", {})
+        receipt_key = "manual:" + idempotency_key if idempotency_key else None
+        if receipt_key and receipt_key in receipts:
+            raise ValueError("重复提交 (该成交已记录)")
+        if historical_fill and not (
+            evidence_confirmed and td and fees is not None and idempotency_key
+        ):
+            raise ValueError("历史事实核对需要交割单确认、日期、实际费用和幂等标识")
+        td = _execution_date(state, td or str(_today_sh()))
+        if action not in ("buy", "sell"):
+            raise ValueError(f"未知操作: {action}")
+        amount = real_fill_amount(shares, price, fees, buy=action == "buy")
         shares = int(shares)
         price = float(price)
-        if price <= 0:
-            raise ValueError(f"价格必须 > 0, 实际: {price}")
-        if shares <= 0:
-            raise ValueError(f"数量必须 > 0, 实际: {shares}")
-
         if action == "sell":
             if state["holding"] != code:
                 raise ValueError(f"卖出代码 {code} 与持仓 {state['holding']} 不匹配")
             if shares > state["shares"]:
                 raise ValueError(f"卖出数量 {shares} 超过持仓 {state['shares']}")
-            amount = shares * price * (1 - FEE - SLIPPAGE)
             state["cash"] += amount
-            state["trade_log"].append(
-                {
-                    "date": td,
-                    "action": "sell",
-                    "code": code,
-                    "name": name_of(code),
-                    "shares": shares,
-                    "price": price,
-                    "amount": amount,
-                }
-            )
-            remaining = state["shares"] - shares
-            if remaining > 0:
-                state["shares"] = remaining
-            else:
+            state["shares"] -= shares
+            if state["shares"] == 0:
                 state["holding"] = None
-                state["shares"] = 0
                 state["entry_price"] = 0.0
-        elif action == "buy":
+        else:
+            allowed = ETF_CATALOG if historical_fill else ETF_POOL
+            if code not in {*allowed, DEFENSE}:
+                raise ValueError("买入标的不在当前可买池或已知历史目录")
             if shares % 100 != 0:
                 raise ValueError(f"买入股数必须是100的整数倍: {shares}")
-            amount = shares * price * (1 + FEE + SLIPPAGE)
-            if state["cash"] - amount < 0:
+            if state.get("holding") not in (None, code):
+                raise ValueError("已有不同持仓，请先按实际成交卖出；不能覆盖旧持仓")
+            if amount > state["cash"]:
                 raise ValueError(f"现金不足: 需要 {amount:.2f}, 可用 {state['cash']:.2f}")
+            old_shares = state["shares"] if state.get("holding") == code else 0
+            state["entry_price"] = (old_shares * state.get("entry_price", 0.0) + shares * price) / (
+                old_shares + shares
+            )
+            if not old_shares:
+                state["entry_date"] = td
             state["cash"] -= amount
             state["holding"] = code
-            state["shares"] = shares
-            state["entry_price"] = price
-            state["entry_date"] = td
-            state["trade_log"].append(
-                {
-                    "date": td,
-                    "action": "buy",
-                    "code": code,
-                    "name": name_of(code),
-                    "shares": shares,
-                    "price": price,
-                    "amount": amount,
-                }
-            )
-        else:
-            raise ValueError(f"未知操作: {action}")
+            state["shares"] = old_shares + shares
+        state["trade_log"].append(
+            {
+                "date": td,
+                "action": action,
+                "code": code,
+                "name": name_of(code),
+                "shares": shares,
+                "price": price,
+                "amount": amount,
+                "gross_amount": shares * price,
+                "fees": fees,
+                "fee_status": "reported" if fees is not None else "unreported",
+                "source": "user_attested_execution" if historical_fill else "manual_execution",
+                "evidence_confirmed": evidence_confirmed,
+            }
+        )
+        pending = state.get("pending_order")
+        if pending and pending.get("status") == "pending":
+            pending["has_manual_fills"] = True
+        if receipt_key:
+            receipts[receipt_key] = {"date": td, "kind": "manual_execution"}
     return state
 
 
@@ -1891,12 +1984,13 @@ def build_equity_curve(state: dict, data: dict) -> list[dict]:
         for t in trades_by_date.get(td_str, []):
             if t["action"] == "sell":
                 cash += t["amount"]
-                holding = None
-                shares = 0
+                shares -= t["shares"]
+                if shares == 0:
+                    holding = None
             elif t["action"] == "buy":
                 cash -= t["amount"]
                 holding = t["code"]
-                shares = t["shares"]
+                shares += t["shares"]
         value = cash
         if holding and holding in data:
             p = price_on(data, holding, td)

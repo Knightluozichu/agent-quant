@@ -160,7 +160,7 @@ def test_confirm_order_allows_odd_lot_full_sell(monkeypatch, tmp_path):
 
     confirmed = live_signal.confirm_order({"shares": 150, "price": 5.0}, None)
 
-    expected_cash = 150 * 5.0 * (1 - live_signal.FEE - live_signal.SLIPPAGE)
+    expected_cash = 150 * 5.0  # 真实成交不加模拟费/滑点；未报实际费用标为unreported
     assert confirmed["cash"] == pytest.approx(expected_cash)
     assert confirmed["holding"] is None
     assert confirmed["shares"] == 0
@@ -409,3 +409,54 @@ def test_pending_order_non_rebalance_day_records_risk(monkeypatch, tmp_path):
     saved = json.loads(state_file.read_text(encoding="utf-8"))
     assert saved.get("last_run_date") == str(trading_dates[-1])
     assert notify_calls == []
+
+
+# --------------------------------------------------------------------------- #
+# I-V4A-05 / 2026-09-01 事故回归: 真实成交不再双重扣费, 全清数量以实际持仓为准
+# --------------------------------------------------------------------------- #
+@pytest.mark.unit
+def test_confirm_real_fill_not_double_charged(monkeypatch, tmp_path):
+    """真实成交价已含一切费用, 不得再扣 FEE+SLIPPAGE (2026-09-01 事故根因)."""
+    state = live_signal.default_state(895.86)
+    state.update({"holding": "518880", "shares": 10900, "entry_price": 9.14, "cash": 895.86})
+    state["pending_order"] = {
+        "order_id": "order-real",
+        "date": "2026-09-01",
+        "status": "pending",
+        "sell": {"code": "518880", "shares": 10900, "price": 9.117},
+        "buy": {"code": "159985", "shares": 42000, "price": 2.359},
+    }
+    _patch_state_files(monkeypatch, tmp_path, state)
+
+    # 当日真实成交: 卖 10900@9.116 买 42400@2.363 —— 双重扣费下会误报现金不足
+    confirmed = live_signal.confirm_order(
+        {"shares": 10900, "price": 9.116},
+        {"code": "159985", "shares": 42400, "price": 2.363},
+    )
+    assert confirmed["cash"] == pytest.approx(895.86 + 10900 * 9.116 - 42400 * 2.363)
+    assert confirmed["holding"] == "159985"
+    assert confirmed["shares"] == 42400
+    assert confirmed["entry_price"] == 2.363
+
+
+@pytest.mark.unit
+def test_confirm_sell_full_exit_quantity_follows_actual_holding(monkeypatch, tmp_path):
+    """计划数量是理论值: 卖出数量以实际持仓全清为准, 允许与订单计划数不同."""
+    state = live_signal.default_state(0.0)
+    state.update({"holding": "518880", "shares": 10900, "entry_price": 9.14, "cash": 0.0})
+    state["pending_order"] = {
+        "order_id": "order-plan-drift",
+        "date": "2026-09-01",
+        "status": "pending",
+        "sell": {"code": "518880", "shares": 10200},  # 计划数与实际持仓不同
+        "buy": None,
+    }
+    _patch_state_files(monkeypatch, tmp_path, state)
+
+    # 部分卖出仍拒绝 (10900 持仓只卖 10200)
+    with pytest.raises(ValueError, match="完整成交"):
+        live_signal.confirm_order({"shares": 10200, "price": 9.116}, None)
+    # 全部清仓放行 (数量 = 实际持仓, 非计划数)
+    confirmed = live_signal.confirm_order({"shares": 10900, "price": 9.116}, None)
+    assert confirmed["holding"] is None
+    assert confirmed["cash"] == pytest.approx(10900 * 9.116)

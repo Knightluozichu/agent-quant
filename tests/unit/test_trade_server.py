@@ -397,3 +397,301 @@ def test_global_timeout_skips_non_http_scope():
     mw = ts._TimeoutMiddleware(lifespan_app)
     asyncio.run(mw({"type": "lifespan"}, None, None))
     assert called == ["lifespan"]
+
+
+# 2026-09-16: account-specific pool and truthful signal provenance.
+@pytest.mark.unit
+def test_live_pool_keeps_historical_catalog_and_calendar():
+    assert "501018" not in ls.ETF_POOL
+    assert "501018" in ls.ALL_CODES
+    assert ls.name_of("501018") == "南方原油"
+    assert "501018" in ts.rq.ETF_POOL  # frozen historical benchmark remains reproducible
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    "target,day,policy",
+    [
+        ("501018", "2026-09-16", "current"),
+        ("518880", "2026-09-15", "current"),
+        ("518880", "2026-09-16", "legacy"),
+    ],
+)
+def test_stale_or_ineligible_decision_is_not_current(
+    isolated_live, monkeypatch, target, day, policy
+):
+    from datetime import date
+
+    monkeypatch.setattr(ls, "_today_sh", lambda: date(2026, 9, 16))
+    monkeypatch.setattr(ts, "get_data", lambda: {})
+    monkeypatch.setattr(ls, "is_trading_day", lambda _: True)
+    _seed_token(isolated_live)
+    _seed_state(isolated_live)
+    path = isolated_live / "state.json"
+    state = json.loads(path.read_text())
+    state["last_decision"] = {
+        "trade_date": day,
+        "final_target": target,
+        "pool_version": getattr(ls, "POOL_VERSION", "missing") if policy == "current" else None,
+    }
+    path.write_text(json.dumps(state))
+    response = _authed_client().get("/api/signal").json()
+    assert response["status"] == "SNAPSHOT_INVALID"
+    assert not response["official"]
+    assert response["target"] is None
+    assert response["snapshot_date"] == day
+    assert not response["actionable"]
+
+
+@pytest.mark.unit
+def test_web_cannot_confirm_old_pending(isolated_live):
+    _seed_token(isolated_live)
+    _seed_state(isolated_live)
+    path = isolated_live / "state.json"
+    state = json.loads(path.read_text())
+    state["pending_order"] = {
+        "date": "2020-01-01",
+        "status": "pending",
+        "buy": {"code": "518880", "shares": 100},
+        "sell": None,
+    }
+    path.write_text(json.dumps(state))
+    before = path.read_bytes()
+    response = _authed_client().post(
+        "/api/confirm", json={"buy": {"code": "518880", "shares": 100, "price": 5.0}}
+    )
+    assert response.status_code == 400
+    assert path.read_bytes() == before
+
+
+@pytest.mark.unit
+def test_restricted_buy_rejected_by_ledger(isolated_live):
+    _seed_state(isolated_live)
+    with pytest.raises(ValueError, match="可买池"):
+        ls.record_manual_trade("buy", "501018", 100, 2.0)
+
+
+@pytest.mark.unit
+def test_restricted_asset_can_still_be_sold(isolated_live):
+    _seed_token(isolated_live)
+    _seed_state(isolated_live)
+    path = isolated_live / "state.json"
+    state = json.loads(path.read_text())
+    state.update(holding="501018", shares=100, entry_price=2.0)
+    path.write_text(json.dumps(state))
+    response = _authed_client().post(
+        "/api/trade", json={"action": "sell", "code": "501018", "shares": 100, "price": 2.0}
+    )
+    assert response.status_code == 200
+    assert response.json()["holding"] is None
+
+
+@pytest.mark.unit
+def test_current_snapshot_uses_persisted_factors_not_later_prices(isolated_live, monkeypatch):
+    from datetime import date
+
+    monkeypatch.setattr(ls, "_today_sh", lambda: date(2026, 9, 16))
+    monkeypatch.setattr(
+        ts,
+        "_market_context",
+        lambda: {"market_open": False, "market_status": "已收盘", "is_trading_day": True},
+    )
+    monkeypatch.setattr(ts, "get_data", lambda: pytest.fail("must not recompute official factors"))
+    _seed_token(isolated_live)
+    _seed_state(isolated_live)
+    path = isolated_live / "state.json"
+    state = json.loads(path.read_text())
+    state["last_decision"] = {
+        "trade_date": "2026-09-16",
+        "final_target": "518880",
+        "mode": ls.get_strategy_mode(),
+        "pool_version": ls.POOL_VERSION,
+        "config_hash": ls.v4.CONFIG_HASH,
+        "created_at": "2026-09-16T14:50:00+08:00",
+        "factors": {
+            "518880": {"slow_momentum": 0.02, "eligible": True},
+            "501018": {"slow_momentum": 0.99, "eligible": True},
+        },
+    }
+    path.write_text(json.dumps(state))
+    result = _authed_client().get("/api/signal").json()
+    assert result["official"]
+    assert not result["actionable"]
+    assert result["market_status"] == "已收盘"
+    assert [row["code"] for row in result["board"]] == ["518880"]
+    assert result["board"][0]["score"] == 2.0
+
+
+@pytest.mark.unit
+def test_live_selection_excludes_oil_without_mutating_research_pool(monkeypatch):
+    import numpy as np
+    import pandas as pd
+
+    data = {
+        code: pd.DataFrame({"close": np.linspace(1, end, 140), "volume": 1000})
+        for code, end in (("501018", 5), ("518880", 2))
+    }
+    monkeypatch.setattr(ts.rq, "USE_A_SHARE_FILTER", False)
+    indices = dict.fromkeys(data, 139)
+    assert ts.rq.select_target(data, indices, None)[0] == "501018"
+    target, candidates, *_ = ls.select_target(data, indices, "501018")
+    assert target == "518880"
+    assert "501018" not in dict(candidates)
+
+
+@pytest.mark.unit
+def test_no_data_has_no_target_and_no_server_error(isolated_live, monkeypatch):
+    _seed_token(isolated_live)
+    _seed_state(isolated_live)
+    monkeypatch.setattr(ts, "get_data", lambda: {})
+    monkeypatch.setattr(ts, "_market_context", lambda: {"market_open": False})
+    result = _authed_client().get("/api/signal").json()
+    assert result["status"] == "AWAITING_SNAPSHOT"
+    assert result["target"] is None
+    assert result["board"] == []
+
+
+def test_actual_fees_and_incremental_fills_api(isolated_live):
+    _seed_state(isolated_live)
+    _seed_token(isolated_live)
+    client = _authed_client()
+    payload = {"action": "buy", "code": "518880", "shares": 100, "price": 5, "fees": 2}
+    assert client.post("/api/trade", json=payload).json()["cash"] == 9498
+    payload.update(price=6, fees=3)
+    assert client.post("/api/trade", json=payload).json()["cash"] == 8895
+    state = ls.load_state()
+    assert state["shares"] == 200 and state["entry_price"] == 5.5
+    before = ls.STATE_FILE.read_bytes()
+    payload["code"] = "159985"
+    assert client.post("/api/trade", json=payload).status_code == 400
+    assert ls.STATE_FILE.read_bytes() == before
+
+
+def test_historical_restricted_fill_api_and_duplicate(isolated_live):
+    _seed_state(isolated_live)
+    _seed_token(isolated_live)
+    client = _authed_client()
+    payload = {
+        "action": "buy",
+        "code": "501018",
+        "shares": 100,
+        "price": 2,
+        "fees": 1,
+        "date": "2026-09-14",
+        "historical_fill": True,
+        "evidence_confirmed": True,
+        "idempotency_key": "historical-oil-api",
+    }
+    incomplete = dict(payload, evidence_confirmed=False)
+    assert client.post("/api/trade", json=incomplete).status_code == 400
+    assert client.post("/api/trade", json=payload).status_code == 200
+    before = ls.STATE_FILE.read_bytes()
+    assert client.post("/api/trade", json=payload).status_code == 409
+    assert ls.STATE_FILE.read_bytes() == before
+    assert "501018" not in ls.ETF_POOL
+
+
+@pytest.mark.parametrize("patch", [{"fees": -1}, {"date": "2099-01-01"}])
+def test_invalid_actual_fill_api_atomic(isolated_live, patch):
+    _seed_state(isolated_live)
+    _seed_token(isolated_live)
+    before = ls.STATE_FILE.read_bytes()
+    payload = {"action": "buy", "code": "518880", "shares": 100, "price": 5, **patch}
+    assert _authed_client().post("/api/trade", json=payload).status_code in (400, 422)
+    assert ls.STATE_FILE.read_bytes() == before
+
+
+def test_c5_is_profile_not_product_permission(isolated_live):
+    _seed_token(isolated_live)
+    data = _authed_client().get("/api/etfs").json()
+    assert data["account_profile"]["risk_grade"] == "C5"
+    assert data["account_profile"]["source"] == "user_reported"
+    assert "501018" not in {x["code"] for x in data["etfs"]}
+    assert "501018" in {x["code"] for x in data["recordable_etfs"]}
+
+
+def test_confirm_uses_actual_fees_not_plan_quantity(isolated_live):
+    _seed_state(isolated_live)
+    _seed_token(isolated_live)
+    state = ls.load_state()
+    state.update(
+        holding="518880",
+        shares=1000,
+        cash=100,
+        pending_order={
+            "date": str(ls._today_sh()),
+            "status": "pending",
+            "pool_version": ls.POOL_VERSION,
+            "sell": {"code": "518880", "shares": 900},
+            "buy": None,
+        },
+    )
+    ls.STATE_FILE.write_text(json.dumps(state))
+    response = _authed_client().post(
+        "/api/confirm",
+        json={
+            "sell": {"shares": 1000, "price": 5, "fees": 3},
+            "idempotency_key": "actual-full-exit",
+        },
+    )
+    assert response.status_code == 200, response.text
+    assert response.json()["cash"] == 5097
+    assert ls.load_state()["trade_log"][-1]["fees"] == 3
+
+
+def test_manual_fill_disables_pending_view(isolated_live):
+    _seed_state(isolated_live)
+    _seed_token(isolated_live)
+    state = ls.load_state()
+    state.update(
+        holding="518880",
+        shares=1000,
+        pending_order={
+            "date": str(ls._today_sh()),
+            "status": "pending",
+            "pool_version": ls.POOL_VERSION,
+            "sell": {"code": "518880", "shares": 1000},
+            "buy": None,
+        },
+    )
+    ls.STATE_FILE.write_text(json.dumps(state))
+    response = _authed_client().post(
+        "/api/trade",
+        json={"action": "sell", "code": "518880", "shares": 100, "price": 5, "fees": 0},
+    )
+    assert response.status_code == 200
+    view = ts._pending_view(ls.load_state()["pending_order"])
+    assert not view["confirmable"] and "手工成交" in view["blocked_reason"]
+
+
+@pytest.mark.parametrize(
+    "cash,shares,blocked", [(9498, 100, False), (9506, 100, True), (9498, 200, True)]
+)
+def test_equity_reports_ledger_gaps_without_mutating_facts(isolated_live, cash, shares, blocked):
+    _seed_state(isolated_live)
+    _seed_token(isolated_live)
+    state = ls.load_state()
+    state.update(
+        cash=cash,
+        shares=shares,
+        holding="518880",
+        trade_log=[
+            {
+                "date": "2026-09-14",
+                "action": "buy",
+                "code": "518880",
+                "shares": 100,
+                "amount": 502,
+                "price": 5,
+            }
+        ],
+    )
+    ls.STATE_FILE.write_text(json.dumps(state))
+    before = ls.STATE_FILE.read_bytes()
+    result = _authed_client().get("/api/equity")
+    assert result.status_code == 200
+    data = result.json()
+    assert data["needs_reconciliation"] is blocked
+    assert data["cash_gap"] == round(cash - 9498, 2)
+    assert data["shares_gap"] == shares - 100
+    assert ls.STATE_FILE.read_bytes() == before
