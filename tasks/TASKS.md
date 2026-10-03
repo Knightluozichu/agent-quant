@@ -466,3 +466,14 @@
       真实账户 97,684.45 (-2.32%) 作参照。缠论亏损集中在创业板一买单笔 -8.52%,
       与全历史"一买负贡献"一致。窗口仅 2 个月, 排序不构成方法优劣证据。
       结果 artifacts/entry_compare_20261002/compare.json。
+
+## 2026-10-03：ETF动量轮动+RSRS择时预注册回测 (H3)
+
+- [x] RSRS-1003-01 预注册写入 EXPERIMENTS.md (参数表+证伪标准+披露)。
+- [x] RSRS-1003-02 TDD: tests/unit/test_rsrs_momentum.py 覆盖 OLS 斜率正确性、
+      z 分数因果性 (只用 ≤T 数据)、T信号T+1成交、滞回行为、动量选股、成本记账; 10 项全绿。
+- [x] RSRS-1003-03 实现 scripts/exp_rsrs_momentum.py, 全量回测 1x/2x/3x 成本。
+- [x] RSRS-1003-04 入市窗口 (7/28-9/30) 与 V4 同口径对比, 报告+JSON 归档。
+- [x] RSRS-1003-05 H3 未证伪 (1x PF 1.375, 93 腿) 但被 V4 全面支配 (CAGR 16.6% vs 92.5%,
+      MDD -48.5% vs -28.6%): 不上线不进影子, 归档 reports/2026-10-03_rsrs动量轮动回测.md,
+      结果 data/qixing_results/rsrs_momentum_20261003.json。
