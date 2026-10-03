@@ -58,6 +58,7 @@ def run_full_pool_strategy(
     *,
     cost_multiplier: float = 1.0,
     protector: Any | None = None,
+    target_filter: Any | None = None,
 ) -> dict[str, Any]:
     """Replay canonical V3-G with an optional full-pool daily overlay."""
     dates = rr.common_dates(data)
@@ -165,6 +166,14 @@ def run_full_pool_strategy(
         target = risk.final_target or rq.DEFENSE
         if risk.action == ro.ACTION_EMERGENCY:
             is_rebalance = True
+        # V5 研究注入点 (H5, 默认 None 零行为变化): 对最终 target 施加外部过滤
+        # (如 RSRS 择时); 过滤改变 target 视同紧急退出, 非调仓日也强制成交.
+        if target_filter is not None:
+            filtered = target_filter(td, target, holding)
+            if filtered != target:
+                target = filtered or rq.DEFENSE
+                if target != holding:
+                    is_rebalance = True
 
         old_holding = holding
         trade_executed = False
