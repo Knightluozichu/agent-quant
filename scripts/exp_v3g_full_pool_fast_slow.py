@@ -59,11 +59,16 @@ def run_full_pool_strategy(
     cost_multiplier: float = 1.0,
     protector: Any | None = None,
     target_filter: Any | None = None,
+    start: Any | None = None,
 ) -> dict[str, Any]:
-    """Replay canonical V3-G with an optional full-pool daily overlay."""
+    """Replay canonical V3-G with an optional full-pool daily overlay.
+
+    start: 窗口起点 (date)。None = 全历史。窗口运行时账户以全新现金起步,
+    但调仓网格仍锚定全序列 (dates[WARMUP::5]), 与生产网格对齐。"""
     dates = rr.common_dates(data)
-    trading_dates = dates[WARMUP:]
-    rebalance_set = set(trading_dates[:: rq.REBALANCE_DAYS])
+    all_trading_dates = dates[WARMUP:]
+    rebalance_set = set(all_trading_dates[:: rq.REBALANCE_DAYS])
+    trading_dates = [d for d in all_trading_dates if start is None or d >= start]
     index_maps = rr.build_index_maps(data, dates)
     factor_codes = (*tuple(rq.ETF_POOL), rq.DEFENSE)
 
