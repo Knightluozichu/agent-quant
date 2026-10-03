@@ -49,6 +49,7 @@ def replay_next_open(
     cost_multiplier: float = 1.0,
     calendar: list[date] | None = None,
     mode: str = "V4",
+    protector: Any | None = None,
 ) -> dict[str, Any]:
     if mode not in {"V3-G", "V4"}:
         raise ValueError("Research mode must be V3-G or V4")
@@ -120,6 +121,22 @@ def replay_next_open(
             {"trade_date": td, "equity": equity, "cash": state["cash"], "holding": state["holding"]}
         )
         state["peak_equity"] = max(state["peak_equity"], equity)
+        # 账户级熔断 (H4 研究, 默认 None 零行为变化): T 收盘判定, T+1 开盘执行.
+        if protector is not None:
+            holding_value = (
+                state["shares"] * float(history[state["holding"]].iloc[-1].close)
+                if state["holding"]
+                else 0.0
+            )
+            fired = protector.on_close(
+                td, equity, state["holding"], holding_value, rq.DEFENSE
+            )
+            if fired:
+                if state["holding"] and state["holding"] != rq.DEFENSE:
+                    queued = (rq.DEFENSE, 1.0, False, td)
+                continue  # 熔断日: 信号层全部屏蔽
+            if not protector.entries_allowed(td):
+                continue  # 冷却期: 不生成新轮动信号
         target, candidates, _, _ = live.select_target(history, idx, state["holding"])
         # Mirror the production intraday -3% gate using the observable close return.
         dropped = set()

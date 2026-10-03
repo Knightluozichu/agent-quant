@@ -57,6 +57,7 @@ def run_full_pool_strategy(
     params: FullPoolParams,
     *,
     cost_multiplier: float = 1.0,
+    protector: Any | None = None,
 ) -> dict[str, Any]:
     """Replay canonical V3-G with an optional full-pool daily overlay."""
     dates = rr.common_dates(data)
@@ -167,6 +168,15 @@ def run_full_pool_strategy(
 
         old_holding = holding
         trade_executed = False
+        # 账户级熔断 (H4 研究, 默认 None 零行为变化): 冷却期屏蔽开风险仓.
+        if (
+            protector is not None
+            and is_rebalance
+            and target != holding
+            and target != rq.DEFENSE
+            and not protector.entries_allowed(td)
+        ):
+            is_rebalance = False
         if is_rebalance and target != holding:
             cash = float(state["cash"])
             if holding:
@@ -245,6 +255,57 @@ def run_full_pool_strategy(
         equity = float(state["cash"])
         if holding:
             equity += float(state["shares"]) * rr.price_at(data, holding, idx_map)
+        # 账户级熔断 (H4): T 收盘判定, 当日 ~14:50 成交价近似清为防御 (与本引擎
+        # "14:50 当日成交近似"口径一致; 用户实盘即 14:50 信号当日执行).
+        if (
+            protector is not None
+            and protector.on_close(
+                td,
+                equity,
+                holding,
+                (float(state["shares"]) * rr.price_at(data, holding, idx_map)) if holding else 0.0,
+                rq.DEFENSE,
+            )
+            and holding
+            and holding != rq.DEFENSE
+        ):
+            cost_rate = (rq.FEE + rq.SLIPPAGE) * cost_multiplier
+            cash = float(state["cash"])
+            sell_price = rr.price_at(data, holding, idx_map)
+            cash += float(state["shares"]) * sell_price * (1.0 - cost_rate)
+            trades.append(
+                {
+                    "date": str(td),
+                    "action": "sell",
+                    "code": holding,
+                    "price": sell_price,
+                    "amount": float(state["shares"]) * sell_price * (1.0 - cost_rate),
+                }
+            )
+            state["holding"] = None
+            state["shares"] = 0.0
+            state["entry_price"] = 0.0
+            buy_price = rr.price_at(data, rq.DEFENSE, idx_map)
+            shares = int(cash * 0.99 / buy_price / 100) * 100
+            if shares > 0:
+                cash -= shares * buy_price * (1.0 + cost_rate)
+                state["holding"] = rq.DEFENSE
+                state["shares"] = float(shares)
+                state["entry_price"] = buy_price
+                trades.append(
+                    {
+                        "date": str(td),
+                        "action": "buy",
+                        "code": rq.DEFENSE,
+                        "price": buy_price,
+                        "amount": shares * buy_price * (1.0 + cost_rate),
+                    }
+                )
+            state["cash"] = cash
+            holding = state["holding"]
+            equity = float(state["cash"])
+            if holding:
+                equity += float(state["shares"]) * rr.price_at(data, holding, idx_map)
         equity_rows.append(
             {
                 "trade_date": pd.Timestamp(td),

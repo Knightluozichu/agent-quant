@@ -477,3 +477,15 @@
 - [x] RSRS-1003-05 H3 未证伪 (1x PF 1.375, 93 腿) 但被 V4 全面支配 (CAGR 16.6% vs 92.5%,
       MDD -48.5% vs -28.6%): 不上线不进影子, 归档 reports/2026-10-03_rsrs动量轮动回测.md,
       结果 data/qixing_results/rsrs_momentum_20261003.json。
+
+## 2026-10-03：账户级熔断保护层 (H4) 预注册影子回测
+
+- [x] CB-1003-01 预注册写入 EXPERIMENTS.md (R1/R2/R3 规则表+裁决标准+前置证据披露)。
+- [x] CB-1003-02 TDD: tests/unit/test_circuit_breaker.py 覆盖三规则触发/不触发、
+      冷却期屏蔽、换仓峰值重置、两种口径成交因果 (next-open T+1 / same-close 当日)、
+      protector=None 基线回归、金标准复现归档 V4; 11 项全绿。
+- [x] CB-1003-03 replay_next_open 与 run_full_pool_strategy 双引擎加 protector 注入点
+      (默认 None 零行为变化); 口径修正: 主口径切 same-close (与实盘 14:50 执行一致),
+      金标准精确复现归档 5,587,053; 全量 1x/2x/3x + 回吐事件分析完成。
+- [x] CB-1003-04 H4 证伪 (1x CAGR 保留 -13%, MDD 恶化 42.6pp): 熔断与 V4 信号层根本
+      冲突; 报告 reports/2026-10-03_熔断保护层回测.md, 结果 circuit_breaker_20261003.json。
