@@ -247,3 +247,19 @@ assert.ok(el('chart').innerHTML.includes('历史账本待对账'));
 assert.ok(el('chart').innerHTML.includes('647.94'));
 assert.ok(!el('chart').innerHTML.includes('<svg'));
 """)
+
+
+def test_pool_counts_and_defense_are_not_candidate_ranks():
+    run_js("""
+renderSignal({candidate_count:7, defense_count:1, board:[
+ {code:'501018',name:'南方原油',score:6.32,eligible:true},
+ {code:'518880',name:'黄金ETF',score:null,eligible:false,data_missing:true},
+ {code:'511880',name:'货币基金',score:null,eligible:false,role:'defense'}]});
+assert.match(el('poolNotice').textContent,/7只轮动候选.*1只货币防御.*8只/);
+assert.match(el('board').innerHTML,/501018/);
+assert.match(el('board').innerHTML,/防御.*不参与轮动排名/);
+assert.match(el('board').innerHTML,/数据不足/);
+assert.doesNotMatch(el('board').innerHTML,/null%|NaN|>3<|不符合筛选/);
+renderSignal({candidate_count:6, defense_count:1, board:[]});
+assert.match(el('poolNotice').textContent,/6只轮动候选.*7只/);
+""")

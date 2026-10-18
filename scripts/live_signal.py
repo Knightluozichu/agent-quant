@@ -90,9 +90,10 @@ STRATEGY_MODE_FILE = LIVE_DIR / "strategy_mode.json"
 SNAPSHOT_DIR = LIVE_DIR / "decision_snapshots"
 MAX_BACKUPS = 7
 
-# Historical data/calendar stay fixed; broker restrictions only narrow new candidates.
-ETF_POOL = {code: name for code, name in ETF_CATALOG.items() if code != "501018"}
-POOL_VERSION = "gf-20260916-" + hashlib.sha256(",".join(sorted(ETF_POOL)).encode()).hexdigest()[:12]
+# Restore the original seven candidates on explicit user request (2026-10-18).
+# User-reported oil access is not independent broker verification or trading authorization.
+ETF_POOL = dict(ETF_CATALOG)
+POOL_VERSION = "gf-20261018-" + hashlib.sha256(",".join(sorted(ETF_POOL)).encode()).hexdigest()[:12]
 ALL_CODES = [*list(ETF_CATALOG), DEFENSE]
 
 
@@ -829,7 +830,7 @@ def check_data_availability(data: dict, td) -> tuple[bool, list[str]]:
     """检查所有 ETF_POOL 代码在 td 当日是否有数据 (R7, fail-closed).
 
     不允许静默缩小候选池: 任何一只 ETF 缺数据都视为数据不完整。
-    注意: 只检查 ETF_POOL (8只ETF), 不检查 DEFENSE (货币基金, 无需动量)。
+    注意: 只检查 ETF_POOL (7只轮动候选), 不检查 DEFENSE (货币基金, 无需动量)。
     """
     missing = []
     for code in ETF_POOL:
@@ -1930,16 +1931,34 @@ def record_manual_trade(
     return state
 
 
+def board_placeholder(code: str, holding: str | None, target: str) -> dict[str, Any]:
+    """Keep the full universe visible without inventing missing scores or ranking defense."""
+    defense = code == DEFENSE
+    return {
+        "code": code,
+        "name": name_of(code),
+        "role": "defense" if defense else "candidate",
+        "score": None,
+        "data_missing": not defense,
+        "eligible": False,
+        "dropped": False,
+        "is_holding": code == holding,
+        "is_target": code == target,
+    }
+
+
 def momentum_board_data(data: dict, td, holding: str | None, target: str) -> list[dict]:
     """动量排行 (返回结构化数据, 供网页显示)."""
-    idx_map = build_etf_data_at_date(data, td)
+    idx_map = build_etf_data_at_date(data, td) if td is not None else {}
     rows = []
     for code in ETF_POOL:
         if code not in idx_map:
+            rows.append(board_placeholder(code, holding, target))
             continue
         df = data[code]
         close = df["close"].values[: idx_map[code] + 1].astype(float)
         if len(close) < 121:
+            rows.append(board_placeholder(code, holding, target))
             continue
         score = calc_momentum_score(close)
         dropped = False
@@ -1950,6 +1969,8 @@ def momentum_board_data(data: dict, td, holding: str | None, target: str) -> lis
                 break
         rows.append(
             {
+                "role": "candidate",
+                "data_missing": False,
                 "code": code,
                 "name": name_of(code),
                 "score": round(float(score) * 100, 2),
@@ -1959,7 +1980,8 @@ def momentum_board_data(data: dict, td, holding: str | None, target: str) -> lis
                 "eligible": bool(score > 0) and not dropped,
             }
         )
-    rows.sort(key=lambda x: -x["score"])  # type: ignore[operator]
+    rows.sort(key=lambda x: (x["score"] is None, -(x["score"] or 0)))
+    rows.append(board_placeholder(DEFENSE, holding, target))
     return rows
 
 

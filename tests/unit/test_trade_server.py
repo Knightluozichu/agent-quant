@@ -402,7 +402,9 @@ def test_global_timeout_skips_non_http_scope():
 # 2026-09-16: account-specific pool and truthful signal provenance.
 @pytest.mark.unit
 def test_live_pool_keeps_historical_catalog_and_calendar():
-    assert "501018" not in ls.ETF_POOL
+    assert "501018" in ls.ETF_POOL
+    assert len(ls.ETF_POOL) == 7
+    assert ls.DEFENSE not in ls.ETF_POOL
     assert "501018" in ls.ALL_CODES
     assert ls.name_of("501018") == "南方原油"
     assert "501018" in ts.rq.ETF_POOL  # frozen historical benchmark remains reproducible
@@ -412,7 +414,7 @@ def test_live_pool_keeps_historical_catalog_and_calendar():
 @pytest.mark.parametrize(
     "target,day,policy",
     [
-        ("501018", "2026-09-16", "current"),
+        ("999999", "2026-09-16", "current"),
         ("518880", "2026-09-15", "current"),
         ("518880", "2026-09-16", "legacy"),
     ],
@@ -432,7 +434,9 @@ def test_stale_or_ineligible_decision_is_not_current(
     state["last_decision"] = {
         "trade_date": day,
         "final_target": target,
-        "pool_version": getattr(ls, "POOL_VERSION", "missing") if policy == "current" else None,
+        "pool_version": ls.POOL_VERSION if policy == "current" else "gf-20260916-old",
+        "mode": ls.get_strategy_mode(),
+        "config_hash": ls.v4.CONFIG_HASH,
     }
     path.write_text(json.dumps(state))
     response = _authed_client().get("/api/signal").json()
@@ -465,7 +469,8 @@ def test_web_cannot_confirm_old_pending(isolated_live):
 
 
 @pytest.mark.unit
-def test_restricted_buy_rejected_by_ledger(isolated_live):
+def test_restricted_buy_rejected_by_ledger(isolated_live, monkeypatch):
+    monkeypatch.setattr(ls, "ETF_POOL", {c: n for c, n in ls.ETF_POOL.items() if c != "501018"})
     _seed_state(isolated_live)
     with pytest.raises(ValueError, match="可买池"):
         ls.record_manual_trade("buy", "501018", 100, 2.0)
@@ -518,12 +523,15 @@ def test_current_snapshot_uses_persisted_factors_not_later_prices(isolated_live,
     assert result["official"]
     assert not result["actionable"]
     assert result["market_status"] == "已收盘"
-    assert [row["code"] for row in result["board"]] == ["518880"]
-    assert result["board"][0]["score"] == 2.0
+    assert len(result["board"]) == 8
+    assert [row["code"] for row in result["board"][:2]] == ["501018", "518880"]
+    assert result["board"][1]["score"] == 2.0
+    assert result["board"][2]["data_missing"]
+    assert result["board"][-1]["role"] == "defense"
 
 
 @pytest.mark.unit
-def test_live_selection_excludes_oil_without_mutating_research_pool(monkeypatch):
+def test_live_selection_restores_oil_without_mutating_research_pool(monkeypatch):
     import numpy as np
     import pandas as pd
 
@@ -535,8 +543,8 @@ def test_live_selection_excludes_oil_without_mutating_research_pool(monkeypatch)
     indices = dict.fromkeys(data, 139)
     assert ts.rq.select_target(data, indices, None)[0] == "501018"
     target, candidates, *_ = ls.select_target(data, indices, "501018")
-    assert target == "518880"
-    assert "501018" not in dict(candidates)
+    assert target == "501018"
+    assert "501018" in dict(candidates)
 
 
 @pytest.mark.unit
@@ -548,7 +556,9 @@ def test_no_data_has_no_target_and_no_server_error(isolated_live, monkeypatch):
     result = _authed_client().get("/api/signal").json()
     assert result["status"] == "AWAITING_SNAPSHOT"
     assert result["target"] is None
-    assert result["board"] == []
+    assert len(result["board"]) == 8
+    assert all(row["score"] is None for row in result["board"])
+    assert all(not row["eligible"] for row in result["board"])
 
 
 def test_actual_fees_and_incremental_fills_api(isolated_live):
@@ -567,7 +577,8 @@ def test_actual_fees_and_incremental_fills_api(isolated_live):
     assert ls.STATE_FILE.read_bytes() == before
 
 
-def test_historical_restricted_fill_api_and_duplicate(isolated_live):
+def test_historical_restricted_fill_api_and_duplicate(isolated_live, monkeypatch):
+    monkeypatch.setattr(ls, "ETF_POOL", {c: n for c, n in ls.ETF_POOL.items() if c != "501018"})
     _seed_state(isolated_live)
     _seed_token(isolated_live)
     client = _authed_client()
@@ -606,7 +617,9 @@ def test_c5_is_profile_not_product_permission(isolated_live):
     data = _authed_client().get("/api/etfs").json()
     assert data["account_profile"]["risk_grade"] == "C5"
     assert data["account_profile"]["source"] == "user_reported"
-    assert "501018" not in {x["code"] for x in data["etfs"]}
+    assert "501018" in {x["code"] for x in data["etfs"]}
+    assert len(data["etfs"]) == 8
+    assert all(x["eligibility"] == "unverified" for x in data["etfs"])
     assert "501018" in {x["code"] for x in data["recordable_etfs"]}
 
 
@@ -695,3 +708,46 @@ def test_equity_reports_ledger_gaps_without_mutating_facts(isolated_live, cash, 
     assert data["cash_gap"] == round(cash - 9498, 2)
     assert data["shares_gap"] == shares - 100
     assert ls.STATE_FILE.read_bytes() == before
+
+
+def test_restored_pool_invalidates_same_day_old_pool_pending(monkeypatch):
+    import hashlib
+    from datetime import date
+
+    monkeypatch.setattr(ls, "_today_sh", lambda: date(2026, 10, 18))
+    old_codes = sorted(c for c in ls.ETF_CATALOG if c != "501018")
+    old_version = "gf-20260916-" + hashlib.sha256(",".join(old_codes).encode()).hexdigest()[:12]
+    pending = {"date": "2026-10-18", "pool_version": old_version, "buy": {"code": "518880"}}
+    assert "资产池已变更" in ls.pending_block_reason(pending)
+
+
+def test_cached_board_has_seven_ranked_candidates_and_defense(monkeypatch):
+    from datetime import date
+
+    import numpy as np
+    import pandas as pd
+
+    td = date(2026, 10, 16)
+    dates = pd.bdate_range(end=td, periods=140).date
+    data = {
+        code: pd.DataFrame({"trade_date": dates, "close": np.linspace(1, 2, 140)})
+        for code in ls.ETF_CATALOG
+    }
+    # A future price must not leak into the reference board.
+    before = ls.momentum_board_data(data, td, ls.DEFENSE, ls.DEFENSE)
+    data["501018"] = pd.concat(
+        [data["501018"], pd.DataFrame({"trade_date": [date(2026, 10, 19)], "close": [999.0]})],
+        ignore_index=True,
+    )
+    assert ls.momentum_board_data(data, td, ls.DEFENSE, ls.DEFENSE) == before
+    assert len(before) == 8
+    assert {row["code"] for row in before[:-1]} == set(ls.ETF_CATALOG)
+    defense = before[-1]
+    assert defense["code"] == ls.DEFENSE and defense["role"] == "defense"
+    assert defense["score"] is None and not defense["eligible"]
+    assert defense["is_holding"] and defense["is_target"]
+    del data["501018"]
+    missing = next(
+        row for row in ls.momentum_board_data(data, td, None, "") if row["code"] == "501018"
+    )
+    assert missing["score"] is None and missing["data_missing"] and not missing["eligible"]

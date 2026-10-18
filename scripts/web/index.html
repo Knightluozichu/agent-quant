@@ -405,9 +405,11 @@ function renderSignal(sig){
     `${sig.market_status||'市场状态未知'} · 行情日期 ${sig.trade_date||'暂无'} · ${sig.board_source||'无数据'}`+
     (sig.created_at?` · 快照生成 ${sig.created_at.replace('T',' ')}`:
      sig.snapshot_date?` · 旧快照 ${sig.snapshot_date}`:'');
-  document.getElementById('poolNotice').textContent=
-    `候选池 6只 + 货币防御。${sig.notice||'券商准入未全部核实。'}`;
   const board=sig.board||[];
+  const candidates=sig.candidate_count??board.filter(b=>b.role!=='defense').length;
+  const defenses=sig.defense_count??board.filter(b=>b.role==='defense').length;
+  document.getElementById('poolNotice').textContent=
+    `${candidates}只轮动候选 + ${defenses}只货币防御，共${candidates+defenses}只。${sig.notice||'券商准入未全部核实。'}`;
   if(sig.target){
     const t=sig.target;
     const confirms=sig.confirmation_required?
@@ -419,17 +421,21 @@ function renderSignal(sig){
   }
   const html=`<div class="board-row" style="padding:4px 0 6px"><div style="width:20px"></div><div class="board-name muted" style="font-size:11px">ETF (代码)</div><div class="board-score muted" style="font-size:11px;font-weight:400">动量(10+20日)</div></div>`+
   board.map((b,i)=>{
-    const cls=b.score>=0?'up':'down';
-    const rank=i===0&&b.eligible?'board-rank top':'board-rank';
+    const defense=b.role==='defense';
+    const missing=b.score==null;
+    const cls=missing?'muted':b.score>=0?'up':'down';
+    const rank=!defense&&i===0&&b.eligible?'board-rank top':'board-rank';
     let mark='<span class="pill">准入未核实</span>';
     if(b.is_holding) mark+='<span class="tag hold">持仓</span>';
     if(b.is_target) mark+='<span class="tag">目标</span>';
-    if(b.dropped) mark+='<span class="pill">急跌过滤</span>';
+    if(defense) mark+='<span class="pill">防御 · 不参与轮动排名</span>';
+    else if(missing) mark+='<span class="pill">数据不足</span>';
+    else if(b.dropped) mark+='<span class="pill">急跌过滤</span>';
     else if(!b.eligible) mark+='<span class="pill">不符合筛选</span>';
     return `<div class="board-row">
-      <div class="${rank}">${i+1}</div>
+      <div class="${rank}">${defense||missing?'—':i+1}</div>
       <div class="board-name">${b.name}<br><span class="muted" style="font-size:11px">${b.code} ${mark}</span></div>
-      <div class="board-score ${cls}">${b.score>=0?'+':''}${b.score}%</div>
+      <div class="board-score ${cls}">${missing?'—':`${b.score>=0?'+':''}${b.score}%`}</div>
     </div>`;
   }).join('');
   document.getElementById('board').innerHTML=html;

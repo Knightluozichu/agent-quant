@@ -568,32 +568,33 @@ def api_signal(_: None = Depends(require_token)) -> dict:
         "strategy_mode": ls.get_strategy_mode(),
         "strategy_id": ls.v4.STRATEGY_ID,
         "pool_version": ls.POOL_VERSION,
+        "candidate_count": len(ls.ETF_POOL),
+        "defense_count": 1,
         "holding": state.get("holding"),
         "pending_order": _pending_view(state.get("pending_order")),
         "snapshot_date": decision.get("trade_date"),
         "created_at": decision.get("created_at"),
         "notice": (
-            "已移除不可买原油；其余品种准入及溢价仍需在广发易淘金核实。"
-            "研究门禁未通过，不构成买入指令。"
+            "已按用户确认恢复南方原油；产品准入及溢价仍需独立核实。研究门禁未通过，不构成买入指令。"
         ),
     }
     if valid:
         assert isinstance(target, str)
         # Persisted decision-time factors, NOT today's closing prices under a 14:50 label.
-        board = [
-            {
-                "code": code,
-                "name": ls.name_of(code),
-                "score": round(factor["slow_momentum"] * 100, 2),
-                "eligible": factor["eligible"],
-                "dropped": False,
-                "is_holding": code == state.get("holding"),
-                "is_target": code == target,
-            }
-            for code, factor in decision.get("factors", {}).items()
-            if code in ls.ETF_POOL
-        ]
-        board.sort(key=lambda row: -row["score"])
+        board = []
+        for code in ls.ETF_POOL:
+            row = ls.board_placeholder(code, state.get("holding"), target)
+            factor = decision.get("factors", {}).get(code, {})
+            score = factor.get("slow_momentum")
+            if score is not None:
+                row.update(
+                    score=round(score * 100, 2),
+                    eligible=factor["eligible"],
+                    data_missing=False,
+                )
+            board.append(row)
+        board.sort(key=lambda row: (row["score"] is None, -(row["score"] or 0)))
+        board.append(ls.board_placeholder(ls.DEFENSE, state.get("holding"), target))
         return {
             **common,
             "status": "OK",
@@ -610,7 +611,7 @@ def api_signal(_: None = Depends(require_token)) -> dict:
     data = get_data()
     dates = [day for day in ls.get_trading_dates(data) if day <= ls._today_sh()]
     td = dates[-1] if dates else None
-    board = ls.momentum_board_data(data, td, state.get("holding"), "") if td else []
+    board = ls.momentum_board_data(data, td, state.get("holding"), "")
     return {
         **common,
         "status": "SNAPSHOT_INVALID" if decision else "AWAITING_SNAPSHOT",
@@ -655,7 +656,12 @@ def api_etfs(_: None = Depends(require_token)) -> dict:
         ],
         "account_profile": profile,
         "pool_version": ls.POOL_VERSION,
-        "notice": "6只候选 + 货币防御；C5不代表单品准入，原油仍排除；历史事实登记不改变可买池",
+        "candidate_count": len(ls.ETF_POOL),
+        "defense_count": 1,
+        "notice": (
+            f"{len(ls.ETF_POOL)}只轮动候选 + 1只货币防御；已按用户确认恢复南方原油；"
+            "C5不代表单品准入，独立核验仍未完成；历史事实登记不改变可买池"
+        ),
     }
 
 

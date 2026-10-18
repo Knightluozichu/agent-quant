@@ -88,7 +88,8 @@ def test_different_holding_rejected_inside_transaction(account):
     assert ls.STATE_FILE.read_bytes() == before
 
 
-def test_historical_restricted_fill_is_fact_not_pool_permission(account):
+def test_historical_restricted_fill_is_fact_not_pool_permission(account, monkeypatch):
+    monkeypatch.setattr(ls, "ETF_POOL", {c: n for c, n in ls.ETF_POOL.items() if c != "501018"})
     account()
     kwargs = {
         "td": "2026-09-14",
