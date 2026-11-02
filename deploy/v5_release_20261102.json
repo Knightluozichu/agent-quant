@@ -7,12 +7,12 @@
   "files": {
     "scripts/qixing_v4.py": "dea4f4b503cd583ec528c5b45b7a3eae6a38b99583099ee0656b8e8d1509e77d",
     "scripts/qixing_v5.py": "26bcbbb83ed42bdce954bbe172d14cecf34add5e347e672bbc7399e527a56719",
-    "scripts/ticket.py": "ea39ca761ecfce053a36ebf1dff954557f2a26ad8ac942c15f7d7a219d2e9937",
+    "scripts/ticket.py": "91fa9128544c343e5a52b444f176cf85d13017644cdbaf167e6a7b98c80f2365",
     "scripts/remind_pending.py": "5c5ee3052c65f5ec32445adb1183662eb36da36825a1427b9ed2e239a133e687",
     "scripts/live_signal.py": "38b2699312a2948dd366edc749a438bfe61e86a0bcd16f0fbb3a4d5e2cf73bf5",
     "scripts/run_qixing_v3.py": "6dbfd91cdf8a73bac5df4f8aa60326613f62dc1251823d80b7f9d4a3480bef96",
     "scripts/risk_overrides.py": "f9f5fac476671aa3196e85b0d6b81a9fce13effddafe6c17fb207a8562081507"
   },
-  "created_at": "2026-11-02T14:58:00+08:00",
+  "created_at": "2026-11-02T15:02:00+08:00",
   "note": "V5 production, V4 shadow; semi-auto ticket/reminder files; no broker orders."
 }

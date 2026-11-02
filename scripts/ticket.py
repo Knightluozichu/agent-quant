@@ -137,7 +137,10 @@ def attach_ticket(
 ) -> dict[str, Any]:
     """Add/refresh ticket fields in place; safe to call on an old pending."""
     now = now or now_sh()
-    next_date = next_date or next_trading_day(signal_date)
+    if next_date is None:
+        existing = (pending.get("execution_windows") or {}).get("next_open") or {}
+        raw_next = existing.get("date")
+        next_date = pd_to_date(raw_next) if raw_next else next_trading_day(signal_date)
     pending["schema_version"] = 2
     pending.setdefault("ticket_id", ticket_id_for(pending, signal_date))
     pending.setdefault("signal_date", str(signal_date))
