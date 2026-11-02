@@ -1775,8 +1775,8 @@ def confirm_order(
         pending = state.get("pending_order")
         if not pending:
             raise ValueError("无待确认订单")
-        if pending.get("status") != "pending":
-            raise ValueError(f"订单状态非 pending: {pending.get('status')}")
+        if pending.get("status") not in {"pending", "expired_unresolved"}:
+            raise ValueError(f"订单状态不可跳过: {pending.get('status')}")
         if order_id and pending.get("order_id") != order_id:
             raise ValueError("待确认订单已变化, 请刷新页面后重试")
         if expected_state_version is not None and state.get("_version") != expected_state_version:
@@ -1906,8 +1906,8 @@ def skip_pending() -> dict:
         pending = state.get("pending_order")
         if not pending:
             raise ValueError("无待确认订单")
-        if pending.get("status") != "pending":
-            raise ValueError(f"订单状态非 pending: {pending.get('status')}")
+        if pending.get("status") not in {"pending", "expired_unresolved"}:
+            raise ValueError(f"订单状态不可跳过: {pending.get('status')}")
         pending["status"] = "skipped"
         pending["skipped_at"] = datetime.now(_SH_TZ).strftime("%Y-%m-%d %H:%M:%S")
         if pending.get("schema_version") == 2:
