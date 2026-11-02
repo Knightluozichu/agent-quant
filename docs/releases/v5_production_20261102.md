@@ -59,4 +59,7 @@
 - trade-web：active；systemd Description 已更新为七星V5；/ 返回 200
 - dry-run：通过。输出显示 `策略模式: V5`、目标南方原油、当前非调仓日；因 2026-10-22 pending 订单，新信号被抑制（未确认/未跳过）
 - 回滚备份目录：`/opt/quant/deploy/backups/20261102_1135/`（含 live_signal/trade_server/index/state/mode/unit/run_daily）
-- 未执行：确认/跳过 pending、任何买卖、账户/仓位修改
+- 2026-10-22 pending：用户确认**未成交**；2026-11-02 13:42:57 通过 `live_signal.skip_pending()` 标记为 `skipped`，未补造成交、未改 trade_log（仍 8 笔）、现金/持仓不变；跳过前备份 `state.json.pre_skip_20261102`。
+- 文件属主修复：迁移后 `state.json`/`strategy_mode.json` 曾为 root:root 0600，trade-web 以 quant 运行无法读写；已恢复 `quant:quant 0600`，并验证 quant 可读取 state。
+- 跳过 pending 后 dry-run：无 pending 抑制告警，V5 目标南方原油，今日非调仓日、无操作。
+- 未执行：任何买卖、账户/仓位修改
