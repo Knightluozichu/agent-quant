@@ -216,6 +216,22 @@
         <div id="ovHoldings"></div>
       </div>
 
+      <!-- 严格 14:50 全量 (购买 5 分钟数据) -->
+      <div class="card c7" id="strict1450Card">
+        <h2>严格 14:50 全量 <span class="pill">购买 5 分钟数据</span></h2>
+        <div class="muted" style="margin-bottom:8px">
+          2020-06-19 ~ 2026-10-26 · 1 万本金 · 14:50 信号+成交 · 1x 成本 · 不复用 next-open 曲线。
+        </div>
+        <div id="strict1450Metrics"><div class="muted">滚动到此处加载严格 14:50 结果…</div></div>
+        <div class="muted" style="font-size:12px;margin:12px 0 6px">严格 14:50 净值 (对数) 与回撤</div>
+        <div id="strict1450Equity"></div>
+        <div class="muted" style="font-size:12px;margin:12px 0 6px">严格 14:50 逐年收益</div>
+        <div id="strict1450Yearly"></div>
+        <div class="muted" style="font-size:11px;margin-top:8px">
+          V5 1x：+1212.4%，CAGR 50.0%，MDD -36.0%；V4 在此口径失效（-31.9%，MDD -87.5%）。不代表未来收益。
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
@@ -269,6 +285,7 @@ async function enterApp(){
     document.getElementById('mDate').max=shanghaiToday();
     await loadAll();
     watchOverview();
+    watchStrict1450();
   }catch(e){ toast(e.message); }
 }
 
@@ -577,9 +594,53 @@ function renderOverview(d){
   drawOvYearly(series);
   drawOvHoldings(liveSeries.dates,liveSeries.holdings,d.etf_names);
 }
+let strict1450Loaded=false;
+async function loadStrict1450(){
+  if(strict1450Loaded) return;
+  const box=document.getElementById('strict1450Metrics');
+  box.innerHTML='<div class="muted">正在加载严格 14:50 结果…</div>';
+  try{
+    const d=await api('/api/backtest-1450');
+    renderStrict1450(d); strict1450Loaded=true;
+  }catch(e){ box.innerHTML='<div class="muted">加载失败: '+e.message+'</div>'; }
+}
+function renderStrict1450(d){
+  const series=d.series||[];
+  if(!series.length){ document.getElementById('strict1450Metrics').innerHTML='<div class="muted">暂无可用的严格 14:50 曲线</div>'; return; }
+  const rows=[
+    ['累计收益',s=>fmtPct(s.metrics.total_return),true],
+    ['年化收益',s=>fmtPct(s.metrics.ann_return),true],
+    ['最大回撤',s=>s.metrics.max_drawdown+'%','down'],
+    ['夏普比率',s=>s.metrics.sharpe,''],
+    ['交易次数',s=>s.metrics.n_trades,''],
+    ['回测年限',s=>s.metrics.years+'年','']
+  ];
+  const head=series.map(s=>`<th style="color:${s.color}">${s.name}</th>`).join('');
+  const body=rows.map(([label,fn,cls])=>{
+    const cells=series.map(s=>{
+      const raw=fn(s);
+      const color=cls===true?(s.metrics.total_return>=0?'var(--up)':'var(--down)'):'';
+      return `<td class="${cls==='down'?'down':''}" style="${color?'color:'+color:''}">${raw}</td>`;
+    }).join('');
+    return `<tr><td class="muted">${label}</td>${cells}</tr>`;
+  }).join('');
+  document.getElementById('strict1450Metrics').innerHTML=
+    `<div class="scrollbox"><table><tr><th>指标</th>${head}</tr>${body}</table></div>`+
+    `<div class="muted" style="font-size:11px;margin-top:6px">${d.note||''}</div>`;
+  drawOvEquity(series,'strict1450Equity');
+  drawOvYearly(series,'strict1450Yearly');
+}
+function watchStrict1450(){
+  const card=document.getElementById('strict1450Card');
+  if(!card||!('IntersectionObserver' in window)) return;
+  const io=new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting && !strict1450Loaded){ loadStrict1450(); io.disconnect(); } });
+  },{rootMargin:'240px'});
+  io.observe(card);
+}
 function fmtPct(v){ return (v>=0?'+':'')+Number(v).toFixed(1)+'%'; }
-function drawOvEquity(series){
-  const el=document.getElementById('ovEquity');
+function drawOvEquity(series,targetId='ovEquity'){
+  const el=document.getElementById(targetId);
   const w=340,h=170,pad=8;
   const allDates=[...new Set(series.flatMap(s=>s.dates))].sort();
   const xMap=new Map(allDates.map((d,i)=>[d,i]));
@@ -613,8 +674,8 @@ function drawOvEquity(series){
     `<line x1="${pad}" y1="${(dh-pad).toFixed(1)}" x2="${w-pad}" y2="${(dh-pad).toFixed(1)}" stroke="#ddd" stroke-width="1"/>${ddLines}</svg>`+
     `<div class="chart-labels"><span>${allDates[0]}</span><span class="muted">回撤(最深 ${dmin.toFixed(1)}%)</span><span>${allDates[allDates.length-1]}</span></div>`;
 }
-function drawOvYearly(series){
-  const el=document.getElementById('ovYearly');
+function drawOvYearly(series,targetId='ovYearly'){
+  const el=document.getElementById(targetId);
   const years=[...new Set(series.flatMap(s=>(s.yearly||[]).map(y=>y.year)))].sort();
   if(!years.length){ el.innerHTML='<div class="muted">暂无年度数据</div>'; return; }
   const head=series.map(s=>`<th style="color:${s.color}">${s.name}</th>`).join('');

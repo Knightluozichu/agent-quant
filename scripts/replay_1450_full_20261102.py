@@ -201,7 +201,7 @@ def run(
         curve.append({"trade_date": td, "equity": equity, "holding": holding, "trades": trades})
     result = metrics(curve)
     result["mode"] = mode
-    return result
+    return result, curve
 
 
 def main() -> None:
@@ -211,11 +211,15 @@ def main() -> None:
     dates = [d for d in all_dates if d >= date(2020, 6, 19)]
     anchor = all_dates.index(date(2020, 6, 19))
     grid = set(all_dates[anchor::5])
-    results = {
-        f"{mode}_{mult}x": run(mode, deepcopy(data), dates, grid, cost_mult=mult)
-        for mode in ("V3-G", "V4", "V5")
-        for mult in (1.0, 2.0, 3.0)
-    }
+    results = {}
+    curves_dir = OUT / "curves"
+    curves_dir.mkdir(exist_ok=True)
+    for mode in ("V3-G", "V4", "V5"):
+        for mult in (1.0, 2.0, 3.0):
+            key = f"{mode}_{mult}x"
+            result, curve = run(mode, deepcopy(data), dates, grid, cost_mult=mult)
+            results[key] = result
+            pd.DataFrame(curve).to_csv(curves_dir / f"{key}.csv", index=False)
     payload = {
         "note": "Strict 14:50 full replay; signal and fill use 14:50; 2020-06-19..2026-10-26.",
         "data": "purchased 5-minute parquet, adjusted by adj_factor",

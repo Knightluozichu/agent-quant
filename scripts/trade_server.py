@@ -36,6 +36,7 @@ from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import numpy as np
+import pandas as pd
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -726,6 +727,42 @@ def api_backtest(_: None = Depends(require_token)) -> dict:
 
 
 _BACKTEST_LOCK = threading.Lock()
+
+
+@app.get("/api/backtest-1450")
+def api_backtest_1450(_: None = Depends(require_token)) -> dict:
+    """Strict 14:50 replay, 10k initial, purchased 5-minute data."""
+    base = Path(__file__).resolve().parents[1] / "artifacts/replay_1450_full_20261102/curves"
+    specs = [
+        ("V3-G", "V3-G 严格14:50", "#8a8f98"),
+        ("V4", "V4 严格14:50", "#c0392b"),
+        ("V5", "V5 严格14:50", "#1f7a4d"),
+    ]
+    series = []
+    for sid, name, color in specs:
+        path = base / f"{sid}_1.0x.csv"
+        if not path.exists():
+            continue
+        df = pd.read_csv(path)
+        holdings = [h if isinstance(h, str) else None for h in df.get("holding", [])]
+        series.append(
+            _series_payload(
+                series_id=sid,
+                name=name,
+                color=color,
+                dates=[str(item)[:10] for item in df.trade_date.tolist()],
+                equity=df.equity.tolist(),
+                holdings=holdings,
+                n_trades=int(df.trades.iloc[-1]) if "trades" in df and len(df) else 0,
+                initial=10_000.0,
+            )
+        )
+    return {
+        "basis": "strict_1450",
+        "note": "2020-06-19..2026-10-26, 1万, 14:50 signal+fill, 1x cost; V4 fails.",
+        "series": series,
+        "etf_names": {**rq.ETF_POOL, rq.DEFENSE: "货币基金"},
+    }
 
 
 def _load_replay_modules() -> tuple[Any, Any]:
