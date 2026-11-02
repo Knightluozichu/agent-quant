@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>七星V4 实盘记账</title>
+<title>七星V5 实盘记账</title>
 <style>
   :root{
     --bg:#f4f5f7; --card:#fdfdfd; --line:#e6e8ec; --txt:#1b1f26; --muted:#7d8590;
@@ -88,7 +88,7 @@
 
   <!-- 登录 -->
   <div id="login" class="login-wrap hidden">
-    <h1>七星V4 实盘记账</h1>
+    <h1>七星V5 实盘记账</h1>
     <div class="sub" style="margin:4px 0 14px">填入真实成交, 让持仓状态等于现实</div>
     <div class="card">
       <label>访问密码</label>
@@ -102,7 +102,7 @@
   <div id="app" class="hidden">
     <div class="row">
       <div>
-        <h1>七星V4 实盘记账</h1>
+        <h1>七星V5 实盘记账</h1>
         <div class="sub" id="dateLine">—</div>
       </div>
       <div><button class="ghost sm" onclick="loadAll().catch(e=>toast(e.message))">刷新</button> <button class="ghost sm" onclick="doLogout()">退出</button></div>
@@ -311,7 +311,7 @@ async function loadAll(){
   renderStatus(status); renderPending(status.pending_order);
   renderFeeSummary(history.trades);
   renderSignal(signal); renderHistory(history.trades); renderEquity(equity);
-  let dateTxt=(status.strategy_mode||'V4')+' · 数据截至 '+status.trade_date;
+  let dateTxt=(status.strategy_mode||'V5')+(status.strategy_id?` · ${status.strategy_id}`:'')+' · 数据截至 '+status.trade_date;
   if(status.holding){ dateTxt += status.realtime?' · 市值实时估算':' · 市值按收盘估算'; }
   document.getElementById('dateLine').textContent=dateTxt;
   }catch(e){
@@ -419,6 +419,10 @@ function renderSignal(sig){
   }else{
     line.textContent=sig.reason||'暂无正式信号，请勿按排行榜追单';
   }
+  if(sig.shadow_v4 && sig.shadow_v4.final_target){
+    const sh=sig.shadow_v4;
+    line.textContent += ` · V4影子：${sh.final_target} (${sh.action||'hold'})`;
+  }
   const html=`<div class="board-row" style="padding:4px 0 6px"><div style="width:20px"></div><div class="board-name muted" style="font-size:11px">ETF (代码)</div><div class="board-score muted" style="font-size:11px;font-weight:400">动量(10+20日)</div></div>`+
   board.map((b,i)=>{
     const defense=b.role==='defense';
@@ -506,7 +510,7 @@ function renderOverview(d){
   const scope=document.getElementById('ovScope');
   scope.innerHTML=
     `当前实盘：<b>${liveMode}</b>${liveId?` <span class="muted">(${liveId})</span>`:''}<br>`+
-    `下方历史图：<b>V3-G 基线回测</b>，包含已移除原油的原始研究池，仅作历史对照，不代表当前可买池或 V4 的收益；研究门禁未通过。`;
+    `下方历史图：<b>V3-G 基线回测</b>，包含已移除原油的原始研究池，仅作历史对照，不代表当前可买池或 V5 的收益；研究门禁未通过。`;
   scope.classList.remove('hidden');
   document.getElementById('ovPeriod').textContent=m.start+' ~ '+m.end+' · '+m.years+'年';
   document.getElementById('ovMetrics').innerHTML=

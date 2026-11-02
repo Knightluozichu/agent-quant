@@ -51,7 +51,7 @@ from starlette.responses import PlainTextResponse
 WEB_DIR = Path(__file__).parent / "web"
 
 app = FastAPI(
-    title="七星V4 实盘记账",
+    title="七星V5 实盘记账",
     docs_url=None,
     redoc_url=None,
     openapi_url=None,
@@ -442,11 +442,11 @@ def api_health(_: None = Depends(require_token)) -> dict:
     state = ls.load_state()
     return {
         "status": "ok" if state else "uninitialized",
-        "service": "qixing-v4",
-        "version": "4.0",
+        "service": "qixing-v5",
+        "version": "5.0",
         "strategy_mode": ls.get_strategy_mode(),
-        "strategy_id": ls.v4.STRATEGY_ID,
-        "config_hash": ls.v4.CONFIG_HASH,
+        "strategy_id": ls.active_strategy_id(),
+        "config_hash": ls.active_config_hash(),
         "has_state": state is not None,
         "data_files": len(list(ls.DATA_DIR.glob("*.parquet"))),
     }
@@ -512,8 +512,8 @@ def api_status(_: None = Depends(require_token)) -> dict:
         "return_pct": round(ret, 2),
         "pending_order": _pending_view(state.get("pending_order")),
         "strategy_mode": ls.get_strategy_mode(),
-        "strategy_id": ls.v4.STRATEGY_ID,
-        "config_hash": ls.v4.CONFIG_HASH,
+        "strategy_id": ls.active_strategy_id(),
+        "config_hash": ls.active_config_hash(),
         "last_decision": state.get("last_decision"),
     }
 
@@ -558,7 +558,7 @@ def api_signal(_: None = Depends(require_token)) -> dict:
         decision.get("trade_date") == str(ls._today_sh())
         and decision.get("pool_version") == ls.POOL_VERSION
         and target in {*ls.ETF_POOL, ls.DEFENSE}
-        and decision.get("config_hash") == ls.v4.CONFIG_HASH
+        and decision.get("config_hash") == ls.active_config_hash()
         and decision.get("mode") == ls.get_strategy_mode()
     )
     common = {
@@ -566,7 +566,7 @@ def api_signal(_: None = Depends(require_token)) -> dict:
         "official": valid,
         "actionable": False,
         "strategy_mode": ls.get_strategy_mode(),
-        "strategy_id": ls.v4.STRATEGY_ID,
+        "strategy_id": ls.active_strategy_id(),
         "pool_version": ls.POOL_VERSION,
         "candidate_count": len(ls.ETF_POOL),
         "defense_count": 1,
@@ -574,8 +574,9 @@ def api_signal(_: None = Depends(require_token)) -> dict:
         "pending_order": _pending_view(state.get("pending_order")),
         "snapshot_date": decision.get("trade_date"),
         "created_at": decision.get("created_at"),
+        "shadow_v4": decision.get("shadow_v4"),
         "notice": (
-            "已按用户确认恢复南方原油；产品准入及溢价仍需独立核实。研究门禁未通过，不构成买入指令。"
+            "V5 为生产，V4 为影子对照；产品准入及溢价仍需独立核实。研究门禁未通过，不构成买入指令。"
         ),
     }
     if valid:
@@ -950,7 +951,7 @@ def api_refresh(_: None = Depends(require_token)) -> dict:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="七星V4 实盘记账网页")
+    parser = argparse.ArgumentParser(description="七星V5 实盘记账网页")
     parser.add_argument("--port", type=int, default=8090, help="监听端口 (默认8090)")
     parser.add_argument("--host", default="127.0.0.1", help="监听地址 (默认 127.0.0.1, 仅本地访问)")
     parser.add_argument(
@@ -981,7 +982,7 @@ def main() -> None:
 
     import uvicorn
 
-    print(f"  🚀 七星V4 记账网页启动: http://{args.host}:{args.port}")
+    print(f"  🚀 七星V5 记账网页启动: http://{args.host}:{args.port}")
     print(f"     手机浏览器访问 http://<服务器IP>:{args.port}")
     uvicorn.run(app, host=args.host, port=args.port)
 

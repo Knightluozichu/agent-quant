@@ -2,6 +2,16 @@
 
 > 服务器: root@106.52.243.51:/opt/quant | 2026-08-07
 
+## 当前策略模式 (2026-11-02 起)
+
+- 生产: **V5** (`QIXING_V5_FULL_POOL_CONSENSUS_CB_RESET_20261102`)
+- 影子: **V4**（同信号、旧熔断逻辑；写入 `last_decision.shadow_v4`，不产生订单）
+- 模式文件: `/opt/quant/data/live/strategy_mode.json` = `{"mode":"V5"}`
+- 发布说明: `/opt/quant/docs/releases/v5_production_20261102.md`
+- 回滚: 模式文件改回 `V4`，恢复 `scripts/live_signal.py`、`scripts/trade_server.py`、
+  `scripts/web/index.html` 备份，`systemctl restart trade-web`，再跑 `live_signal.py --dry-run` 与
+  `health_check.sh`。回滚不还原账户/成交/资金账本。
+
 ## 依赖治理 (R2, 重要)
 
 - **禁止在服务器执行 `uv sync` / `uv add`**: 本地 uv.lock 已含研究依赖
@@ -18,6 +28,8 @@
 3. 若改动 live_signal.py (trade_server import 它) → `systemctl restart trade-web`
 4. cron 脚本 (live_signal/audit_risk) 无需重启, 下次运行自动加载
 5. 更新 `/opt/quant/deploy/.DEPLOYED_MANIFEST` (git_hash/code_hash/deploy_time)
+6. 若切换策略模式: 备份 `data/live/state.json` 与 `strategy_mode.json`，原子写入新模式，
+   再跑 `live_signal.py --dry-run`；不要自动确认/执行订单
 6. 验证: `live_signal.py --dry-run` + `health_check.sh` 第7/8项
 
 ## 定时任务 (每日核实)

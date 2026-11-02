@@ -1,0 +1,16 @@
+{
+  "strategy_mode": "V5",
+  "strategy_id": "QIXING_V5_FULL_POOL_CONSENSUS_CB_RESET_20261102",
+  "config_hash": "29469b65f42fdc74fe9937e32c724ed71fe9f245d4f5cfdb0452ae939584bb38",
+  "signal_strategy_id": "QIXING_V4_FULL_POOL_CONSENSUS_20260811",
+  "signal_config_hash": "c4c921f0c4f04a17eed17879598fd161d05265bd5db5a3f1869f29285027cf67",
+  "files": {
+    "scripts/qixing_v4.py": "dea4f4b503cd583ec528c5b45b7a3eae6a38b99583099ee0656b8e8d1509e77d",
+    "scripts/qixing_v5.py": "26bcbbb83ed42bdce954bbe172d14cecf34add5e347e672bbc7399e527a56719",
+    "scripts/live_signal.py": "325e5f6fbf407d48dd2b9244f9a0bb6974e6568dbc65684ce11bb53125bec5e8",
+    "scripts/run_qixing_v3.py": "6dbfd91cdf8a73bac5df4f8aa60326613f62dc1251823d80b7f9d4a3480bef96",
+    "scripts/risk_overrides.py": "f9f5fac476671aa3196e85b0d6b81a9fce13effddafe6c17fb207a8562081507"
+  },
+  "created_at": "2026-11-02T11:50:00+08:00",
+  "note": "V5 production, V4 shadow; no broker orders."
+}

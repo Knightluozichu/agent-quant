@@ -1,4 +1,4 @@
-"""七星 V3-G/V4 实盘信号生成器 (生产级).
+"""七星 V3-G/V4/V5 实盘信号生成器 (生产级；V5 为当前生产).
 
 核心保证: 直接 import run_qixing_v3 的 select_target, 实盘与回测逻辑100%一致.
 
@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import contextlib
+import copy
 import fcntl
 import hashlib
 import json
@@ -57,6 +58,7 @@ def _today_sh() -> date:
 # === 复用基础选择逻辑；成交时点/费用/锁起算差异须单独披露 ===
 sys.path.insert(0, str(Path(__file__).parent))
 import qixing_v4 as v4  # noqa: E402
+import qixing_v5 as v5  # noqa: E402
 from notify import load_config, push_bark, save_config, set_bark_key, test_push  # noqa: E402
 from risk_overrides import ACTION_EMERGENCY, RiskDecision  # noqa: E402
 from risk_overrides import assess as risk_assess  # noqa: E402
@@ -95,6 +97,30 @@ MAX_BACKUPS = 7
 ETF_POOL = dict(ETF_CATALOG)
 POOL_VERSION = "gf-20261018-" + hashlib.sha256(",".join(sorted(ETF_POOL)).encode()).hexdigest()[:12]
 ALL_CODES = [*list(ETF_CATALOG), DEFENSE]
+
+
+def strategy_identity(mode: str) -> tuple[str, str, str]:
+    """Return (name, id, config_hash) for the active mode.
+
+    V5 keeps the V4 signal layer but uses a different risk state machine and
+    therefore a different config hash.
+    """
+    normalized = mode.strip().upper()
+    if normalized == "V5":
+        return v5.STRATEGY_NAME, v5.STRATEGY_ID, v5.CONFIG_HASH
+    return v4.STRATEGY_NAME, v4.STRATEGY_ID, v4.CONFIG_HASH
+
+
+def active_strategy_identity() -> tuple[str, str, str]:
+    return strategy_identity(get_strategy_mode())
+
+
+def active_strategy_id() -> str:
+    return active_strategy_identity()[1]
+
+
+def active_config_hash() -> str:
+    return active_strategy_identity()[2]
 
 
 def select_target(
@@ -351,15 +377,15 @@ def get_strategy_mode() -> str:
             mode = str(json.load(f).get("mode", "")).strip().upper()
     if not mode:
         mode = "V3-G"
-    if mode not in {"V3-G", "V4_SHADOW", "V4"}:
+    if mode not in {"V3-G", "V4_SHADOW", "V4", "V5"}:
         raise ValueError(f"未知策略模式: {mode}")
     return mode
 
 
 def set_strategy_mode(mode: str) -> None:
     mode = mode.strip().upper()
-    if mode not in {"V3-G", "V4_SHADOW", "V4"}:
-        raise ValueError("策略模式必须为 V3-G、V4_SHADOW 或 V4")
+    if mode not in {"V3-G", "V4_SHADOW", "V4", "V5"}:
+        raise ValueError("策略模式必须为 V3-G、V4_SHADOW、V4 或 V5")
     STRATEGY_MODE_FILE.parent.mkdir(parents=True, exist_ok=True)
     temp = STRATEGY_MODE_FILE.with_suffix(".tmp")
     with open(temp, "w") as f:
@@ -650,7 +676,7 @@ def fmt_money(x: float) -> str:
 
 def print_header(td) -> None:
     print("\n" + "=" * 56)
-    print(f"  七星V4 实盘信号  |  {td}")
+    print(f"  七星V5 实盘信号  |  {td}")
     print("=" * 56)
 
 
@@ -1076,7 +1102,7 @@ def evaluate_v4_overlay(
             proposed_target = decision.target
             proposed_rebalance = True
 
-    active = mode == "V4"
+    active = mode in {"V4", "V5"}
     final_target = proposed_target if active else base_target
     final_rebalance = proposed_rebalance if active else scheduled_rebalance
     return {
@@ -1105,13 +1131,15 @@ def _decision_snapshot(
     risk: RiskDecision,
     final_target: str,
     spot_map: dict,
+    shadow_v4: dict | None = None,
 ) -> dict:
     factors = overlay["factors"]
+    strategy_name, strategy_id, config_hash = strategy_identity(overlay["mode"])
     snapshot = {
         "pool_version": POOL_VERSION,
-        "strategy_name": v4.STRATEGY_NAME,
-        "strategy_id": v4.STRATEGY_ID,
-        "config_hash": v4.CONFIG_HASH,
+        "strategy_name": strategy_name,
+        "strategy_id": strategy_id,
+        "config_hash": config_hash,
         "mode": overlay["mode"],
         "trade_date": str(td),
         "created_at": datetime.now(_SH_TZ).isoformat(timespec="seconds"),
@@ -1137,6 +1165,8 @@ def _decision_snapshot(
             json.dumps(spot_map, sort_keys=True, default=str).encode()
         ).hexdigest(),
     }
+    if shadow_v4 is not None:
+        snapshot["shadow_v4"] = shadow_v4
     identity = dict(snapshot)
     identity.pop("created_at")
     snapshot["decision_id"] = hashlib.sha256(
@@ -1147,10 +1177,11 @@ def _decision_snapshot(
 
 def _record_v4_state(state: dict, overlay: dict, snapshot: dict) -> None:
     runtime = state.setdefault("v4_state", default_v4_state())
+    _name, strategy_id, config_hash = strategy_identity(overlay["mode"])
     runtime["schema_version"] = v4.STATE_SCHEMA_VERSION
-    runtime["strategy_id"] = v4.STRATEGY_ID
-    runtime["config_hash"] = v4.CONFIG_HASH
-    if overlay["mode"] in {"V4", "V4_SHADOW"}:
+    runtime["strategy_id"] = strategy_id
+    runtime["config_hash"] = config_hash
+    if overlay["mode"] in {"V4", "V4_SHADOW", "V5"}:
         runtime["candidate_history"] = overlay["history"]
     state["last_decision"] = snapshot
 
@@ -1194,15 +1225,17 @@ def run(dry_run: bool = False) -> int:
         print("     风控监控照常运行; 请尽快在网页确认成交或明确跳过")
 
     mode = get_strategy_mode()
+    _active_name, active_id, active_hash = strategy_identity(mode)
     runtime = state.get("v4_state", default_v4_state())
-    if (
-        mode in {"V4", "V4_SHADOW"}
-        and runtime.get("candidate_history")
-        and runtime.get("config_hash") != v4.CONFIG_HASH
-    ):
-        print("  ❌ V4 参数哈希变化但确认历史非空, 拒绝混用状态")
-        return 1
-    print(f"  策略模式: {mode} ({v4.STRATEGY_ID})")
+    if mode in {"V4", "V4_SHADOW", "V5"} and runtime.get("candidate_history"):
+        if runtime.get("config_hash") not in {v4.CONFIG_HASH, v5.CONFIG_HASH}:
+            print("  ❌ 信号参数哈希变化但确认历史非空, 拒绝混用状态")
+            return 1
+        # V4 <-> V5 share the same signal layer; migrate only the identity.
+        if runtime.get("config_hash") != active_hash:
+            runtime["config_hash"] = active_hash
+            runtime["strategy_id"] = active_id
+    print(f"  策略模式: {mode} ({active_id})")
 
     print("  加载数据...")
     data = load_data()
@@ -1339,18 +1372,41 @@ def run(dry_run: bool = False) -> int:
             f"  V4共振候选: {name_of(overlay['raw_target'])} "
             f"({overlay['signal_hits']}/{v4.V4_PARAMS.confirmation_hits}日确认)"
         )
-    if overlay["scheduled_lock"] and mode == "V4":
+    if overlay["scheduled_lock"] and mode in {"V4", "V5"}:
         print("  🔒 V4提前轮动3交易日锁: 本次网格换仓保持原持仓")
     decision = overlay["decision"]
     if decision.triggered and decision.target:
-        verb = "执行" if mode == "V4" else "影子观察"
+        verb = "执行" if mode in {"V4", "V5"} else "影子观察"
         print(f"  ⚡ V4严格快慢共振{verb}: → {name_of(decision.target)}")
 
     # === V32 尾部风控层 (与回测 risk_overrides 同一纯函数, 零副作用) ===
     cur_val = account_value(state, data, td)
     if cur_val > state.get("peak_equity", 0.0):
         state["peak_equity"] = cur_val
-    risk = risk_assess(
+    # V5 production: execute V5 risk; V4 remains a shadow (no orders).
+    # Compute the V4 shadow on a deep copy BEFORE V5 mutates the peak.
+    shadow_v4 = None
+    if mode == "V5":
+        shadow_state = copy.deepcopy(state)
+        shadow_risk = risk_assess(
+            target=target,
+            holding=holding,
+            state=shadow_state,
+            data=data,
+            td=td,
+            idx_map=idx_map,
+            is_rebalance=is_rebalance,
+            common_dates=trading_dates,
+            spot_map=spot_map,
+        )
+        shadow_v4 = {
+            "final_target": shadow_risk.final_target,
+            "action": shadow_risk.action,
+            "exposure": shadow_risk.exposure,
+            "reason": shadow_risk.reason,
+        }
+    assess_fn = v5.assess_v5 if mode == "V5" else risk_assess
+    risk = assess_fn(
         target=target,
         holding=holding,
         state=state,
@@ -1379,6 +1435,7 @@ def run(dry_run: bool = False) -> int:
         risk=risk,
         final_target=target,
         spot_map=spot_map,
+        shadow_v4=shadow_v4,
     )
     snapshot["is_rebalance"] = is_rebalance
 
@@ -1454,7 +1511,7 @@ def run(dry_run: bool = False) -> int:
     cur = dict(candidates).get(holding, None) if holding else None
     if risk.action == ACTION_EMERGENCY:
         reason = f"组合回撤熔断, 强制切防御 {name_of(target)} (若来不及, 次日开盘执行亦可)"
-    elif decision.triggered and decision.target and mode == "V4":
+    elif decision.triggered and decision.target and mode in {"V4", "V5"}:
         reason = (
             f"V4全池严格快慢共振连续{overlay['signal_hits']}日确认, 提前换仓至 {name_of(target)}"
         )
@@ -1566,8 +1623,8 @@ def run(dry_run: bool = False) -> int:
                 "order_id": order_id,
                 "decision_id": snapshot["decision_id"],
                 "expected_state_version": st.get("_version", 0) + 1,
-                "strategy_id": v4.STRATEGY_ID,
-                "config_hash": v4.CONFIG_HASH,
+                "strategy_id": snapshot["strategy_id"],
+                "config_hash": snapshot["config_hash"],
                 "decision_kind": (
                     "v4_early_rotation"
                     if decision.triggered and not snapshot["scheduled_lock"]
@@ -1623,7 +1680,7 @@ def show_status() -> None:
     trading_dates = get_trading_dates(data)
     td = trading_dates[-1]
     print_header(td)
-    print(f"  策略模式: {get_strategy_mode()} | {v4.STRATEGY_ID}")
+    print(f"  策略模式: {get_strategy_mode()} | {active_strategy_id()}")
     print_account(state, data, td)
     log = state.get("trade_log", [])
     if log:
@@ -1631,7 +1688,7 @@ def show_status() -> None:
         for t in log[-6:]:
             arrow = "卖出" if t["action"] == "sell" else "买入"
             print(
-                f"    {t['date']}  {arrow} {t['name']} "
+                f"    {t['date']}  {arrow} {t.get('name') or name_of(t['code'])} "
                 f"{t['shares']}股 @ {t['price']:.3f} ≈ {fmt_money(t['amount'])}元"
             )
 
@@ -2035,7 +2092,7 @@ def init_account(capital: float) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="七星 V3-G/V4 实盘信号生成器")
+    parser = argparse.ArgumentParser(description="七星 V3-G/V4/V5 实盘信号生成器")
     parser.add_argument("--init", type=float, metavar="CAPITAL", help="初始化账户本金")
     parser.add_argument("--status", action="store_true", help="查看当前持仓状态")
     parser.add_argument("--dry-run", action="store_true", help="预演信号(不改动状态)")
@@ -2058,16 +2115,17 @@ def main() -> None:
     )
     parser.add_argument(
         "--strategy-mode",
-        choices=("V3-G", "V4_SHADOW", "V4"),
+        choices=("V3-G", "V4_SHADOW", "V4", "V5"),
         help="切换持久化策略模式",
     )
     args = parser.parse_args()
 
     if args.strategy_mode:
         set_strategy_mode(args.strategy_mode)
+        _name, selected_id, selected_hash = strategy_identity(args.strategy_mode)
         print(f"  ✓ 策略模式已切换为 {args.strategy_mode}")
-        print(f"    策略ID: {v4.STRATEGY_ID}")
-        print(f"    参数哈希: {v4.CONFIG_HASH}")
+        print(f"    策略ID: {selected_id}")
+        print(f"    参数哈希: {selected_hash}")
     elif args.bootstrap:
         bootstrap_data()
     elif args.set_bark:

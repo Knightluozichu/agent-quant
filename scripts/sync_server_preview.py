@@ -30,19 +30,24 @@ from typing import Any, cast
 
 import live_signal
 import qixing_v4
+import qixing_v5
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 LOCAL_LIVE_DIR = PROJECT_ROOT / "data" / "live"
 DEFAULT_SERVER = os.environ.get("QIXING_SERVER_SSH", "root@106.52.243.51")
 DEFAULT_REMOTE_DIR = os.environ.get("QIXING_REMOTE_DIR", "/opt/quant")
-REMOTE_RELEASE_FILE = "deploy/v4_release_20260811.json"
+REMOTE_RELEASE_FILES = {
+    "V4": "deploy/v4_release_20260811.json",
+    "V5": "deploy/v5_release_20261102.json",
+}
 PREVIEW_CORE_FILES = (
     "scripts/qixing_v4.py",
+    "scripts/qixing_v5.py",
     "scripts/live_signal.py",
     "scripts/run_qixing_v3.py",
     "scripts/risk_overrides.py",
 )
-VALID_MODES = {"V3-G", "V4_SHADOW", "V4"}
+VALID_MODES = {"V3-G", "V4_SHADOW", "V4", "V5"}
 _SERVER_RE = re.compile(r"^[A-Za-z0-9_.@-]+$")
 _REMOTE_DIR_RE = re.compile(r"^/[A-Za-z0-9_./-]+$")
 
@@ -86,13 +91,8 @@ def fetch_remote_snapshot(
         raise RuntimeError("本机未找到 scp，无法读取服务器状态")
 
     remote_root = remote_dir.rstrip("/")
-    sources = (
-        f"{server}:{remote_root}/data/live/state.json",
-        f"{server}:{remote_root}/data/live/strategy_mode.json",
-        f"{server}:{remote_root}/{REMOTE_RELEASE_FILE}",
-    )
-    with tempfile.TemporaryDirectory(prefix="qixing-server-state-") as tmp:
-        temp_dir = Path(tmp)
+
+    def fetch(paths: tuple[str, ...], destination: Path) -> None:
         command = [
             scp,
             "-q",
@@ -100,8 +100,8 @@ def fetch_remote_snapshot(
             "BatchMode=yes",
             "-o",
             f"ConnectTimeout={timeout_seconds}",
-            *sources,
-            str(temp_dir),
+            *(f"{server}:{remote_root}/{path}" for path in paths),
+            str(destination),
         ]
         try:
             result = subprocess.run(  # noqa: S603 - argv only; target/path validated above
@@ -117,10 +117,19 @@ def fetch_remote_snapshot(
             detail = result.stderr.strip() or "scp 返回非零状态"
             raise RuntimeError(f"读取服务器状态失败: {detail}")
 
+    with tempfile.TemporaryDirectory(prefix="qixing-server-state-") as tmp:
+        temp_dir = Path(tmp)
+        fetch(("data/live/state.json", "data/live/strategy_mode.json"), temp_dir)
+        mode = _load_json(temp_dir / "strategy_mode.json")
+        mode_name = str(mode.get("mode", "")).strip().upper()
+        release_path = REMOTE_RELEASE_FILES.get(mode_name)
+        if release_path is None:
+            raise ValueError(f"服务器策略模式无效: {mode_name or '(empty)'}")
+        fetch((release_path,), temp_dir)
         return RemoteSnapshot(
             state=_load_json(temp_dir / "state.json"),
-            mode=_load_json(temp_dir / "strategy_mode.json"),
-            release=_load_json(temp_dir / Path(REMOTE_RELEASE_FILE).name),
+            mode=mode,
+            release=_load_json(temp_dir / Path(release_path).name),
         )
 
 
@@ -151,15 +160,17 @@ def validate_snapshot(
     if mode not in VALID_MODES:
         raise ValueError(f"服务器策略模式无效: {mode or '(empty)'}")
 
+    expected_id = qixing_v5.STRATEGY_ID if mode == "V5" else qixing_v4.STRATEGY_ID
+    expected_hash = qixing_v5.CONFIG_HASH if mode == "V5" else qixing_v4.CONFIG_HASH
     release = snapshot.release
     if release.get("strategy_mode") != mode:
         raise ValueError(
             f"服务器模式与发布清单不一致: mode={mode}, release={release.get('strategy_mode')}"
         )
-    if release.get("strategy_id") != qixing_v4.STRATEGY_ID:
-        raise ValueError("服务器发布清单的 V4 策略 ID 与本地不一致")
-    if release.get("config_hash") != qixing_v4.CONFIG_HASH:
-        raise ValueError("服务器发布清单的 V4 配置哈希与本地不一致")
+    if release.get("strategy_id") != expected_id:
+        raise ValueError("服务器发布清单的策略 ID 与本地不一致")
+    if release.get("config_hash") != expected_hash:
+        raise ValueError("服务器发布清单的配置哈希与本地不一致")
 
     release_files = release.get("files")
     if not isinstance(release_files, dict):
@@ -211,9 +222,9 @@ def validate_snapshot(
         state.pop("v4_state", None)
     normalized = live_signal._normalize_state(state)
     runtime = normalized["v4_state"]
-    if runtime.get("strategy_id") != qixing_v4.STRATEGY_ID:
+    if runtime.get("strategy_id") != expected_id:
         raise ValueError("服务器 v4_state 策略 ID 与本地不一致")
-    if runtime.get("config_hash") != qixing_v4.CONFIG_HASH:
+    if runtime.get("config_hash") != expected_hash:
         raise ValueError("服务器 v4_state 配置哈希与本地不一致")
     if not isinstance(runtime.get("candidate_history"), list):
         raise ValueError("服务器 V4 确认历史必须是列表")
@@ -308,7 +319,9 @@ def run_preview(*, sync_market_data: bool = True) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="只读同步服务器实盘状态，并在本地执行 V4 盘中预演")
+    parser = argparse.ArgumentParser(
+        description="只读同步服务器实盘状态，并在本地执行 V5/V4 盘中预演"
+    )
     parser.add_argument("--server", default=DEFAULT_SERVER, help="SSH 目标，默认生产服务器")
     parser.add_argument(
         "--remote-dir", default=DEFAULT_REMOTE_DIR, help="服务器项目目录，默认 /opt/quant"
@@ -329,7 +342,7 @@ def main() -> int:
         print("❌ --timeout 必须大于 0")
         return 2
 
-    print("[1/3] 只读拉取服务器账户状态、策略模式和 V4 发布清单")
+    print("[1/3] 只读拉取服务器账户状态、策略模式和 V5/V4 发布清单")
     print(f"      来源: {args.server}:{args.remote_dir}")
     try:
         snapshot = fetch_remote_snapshot(args.server, args.remote_dir, timeout_seconds=args.timeout)
@@ -343,7 +356,12 @@ def main() -> int:
     holding_text = (
         f"{holding} {live_signal.name_of(holding)} {normalized['shares']}份" if holding else "空仓"
     )
-    print(f"      模式: {snapshot.mode['mode']} ({qixing_v4.STRATEGY_ID})")
+    active_id = (
+        qixing_v5.STRATEGY_ID
+        if str(snapshot.mode["mode"]).upper() == "V5"
+        else qixing_v4.STRATEGY_ID
+    )
+    print(f"      模式: {snapshot.mode['mode']} ({active_id})")
     print(f"      持仓: {holding_text}")
     print(f"      现金: {normalized['cash']:,.2f} 元")
     print(f"      状态版本: {normalized.get('_version', 0)}")
