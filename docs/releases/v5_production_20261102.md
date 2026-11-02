@@ -63,3 +63,11 @@
 - 文件属主修复：迁移后 `state.json`/`strategy_mode.json` 曾为 root:root 0600，trade-web 以 quant 运行无法读写；已恢复 `quant:quant 0600`，并验证 quant 可读取 state。
 - 跳过 pending 后 dry-run：无 pending 抑制告警，V5 目标南方原油，今日非调仓日、无操作。
 - 未执行：任何买卖、账户/仓位修改
+
+## 半自动执行 Phase 1/2（2026-11-02 同日上线）
+
+- 新增 `scripts/ticket.py`、`scripts/remind_pending.py`、`deploy/run_reminder.sh`；7 条提醒 cron：14:45 / 14:55 / 15:02 / 15:10 / 次日 09:15 / 09:25 / 09:35。
+- 每个信号有双窗口 ticket、参考价/限价带、复制指令、snooze、`status_history`；`expired_unresolved` 只标记漏单，不自动跳过。
+- 网页新增执行票卡和 `/api/ticket`、`/api/ticket/snooze`；确认/跳过仍只登记事实。
+- 不接券商、不存密码、不下单；`ALLOW_LIVE_TRADING=false` 不变。
+- 设计：`docs/design/semi_auto_execution_20261102.md`；测试：`tests/unit/test_ticket.py`、`tests/unit/test_remind_pending.py`。
