@@ -538,61 +538,97 @@ async function loadOverview(){
   catch(e){ box.innerHTML='<div class="muted">加载失败: '+e.message+'</div>'; }
 }
 function renderOverview(d){
-  const m=d.metrics;
+  const series=(d.series&&d.series.length)?d.series:[{
+    id:'V3-G',name:'V3-G 基线',color:'#8a8f98',dates:d.dates,values:d.values,
+    drawdown:d.drawdown,holdings:d.holdings,yearly:d.yearly,metrics:d.metrics
+  }];
+  const liveSeries=series.find(s=>s.id==='V5')||series[series.length-1];
   const liveMode=latestStatus&&latestStatus.strategy_mode?latestStatus.strategy_mode:'未知';
   const liveId=latestStatus&&latestStatus.strategy_id?latestStatus.strategy_id:'';
   const scope=document.getElementById('ovScope');
   scope.innerHTML=
     `当前实盘：<b>${liveMode}</b>${liveId?` <span class="muted">(${liveId})</span>`:''}<br>`+
-    `下方历史图：<b>V3-G 基线回测</b>，包含已移除原油的原始研究池，仅作历史对照，不代表当前可买池或 V5 的收益；研究门禁未通过。`;
+    `历史对比：<b>V3-G 基线 / V4 原熔断 / V5 熔断重置</b>，三策略同数据源、同起止日；`+
+    `V3-G 为旧池基线，V4/V5 为当前 8 标的池，仅作历史对照，不代表未来收益。`;
   scope.classList.remove('hidden');
+  const m=liveSeries.metrics;
   document.getElementById('ovPeriod').textContent=m.start+' ~ '+m.end+' · '+m.years+'年';
+  const rows=[
+    ['累计收益',s=>fmtPct(s.metrics.total_return),true],
+    ['年化收益',s=>fmtPct(s.metrics.ann_return),true],
+    ['最大回撤',s=>s.metrics.max_drawdown+'%','down'],
+    ['夏普比率',s=>s.metrics.sharpe,''],
+    ['交易次数',s=>s.metrics.n_trades,''],
+    ['回测年限',s=>s.metrics.years+'年','']
+  ];
+  const head=series.map(s=>`<th style="color:${s.color}">${s.name}</th>`).join('');
+  const body=rows.map(([label,fn,cls])=>{
+    const cells=series.map(s=>{
+      const raw=fn(s);
+      const color=cls===true?(s.metrics.total_return>=0?'var(--up)':'var(--down)'):'';
+      return `<td class="${cls==='down'?'down':''}" style="${color?'color:'+color:''}">${raw}</td>`;
+    }).join('');
+    return `<tr><td class="muted">${label}</td>${cells}</tr>`;
+  }).join('');
   document.getElementById('ovMetrics').innerHTML=
-    '<div class="grid2" style="grid-template-columns:repeat(3,1fr)">'+
-    cell('累计收益',(m.total_return>=0?'+':'')+m.total_return+'%',m.total_return>=0?'up':'down')+cell('年化收益',(m.ann_return>=0?'+':'')+m.ann_return+'%',m.ann_return>=0?'up':'down')+
-    cell('夏普比率',m.sharpe,'')+cell('最大回撤',m.max_drawdown+'%','down')+
-    cell('交易次数',m.n_trades,'')+cell('回测年限',m.years+'年','')+'</div>';
-  drawOvEquity(d.dates,d.values,d.drawdown);
-  drawOvYearly(d.yearly);
-  drawOvHoldings(d.dates,d.holdings,d.etf_names);
+    `<div class="scrollbox"><table><tr><th>指标</th>${head}</tr>${body}</table></div>`+
+    `<div class="muted" style="font-size:11px;margin-top:6px">V3-G 为旧研究池，V4/V5 为当前 8 标的池；三条曲线仅用于历史对照。</div>`;
+  drawOvEquity(series);
+  drawOvYearly(series);
+  drawOvHoldings(liveSeries.dates,liveSeries.holdings,d.etf_names);
 }
-function cell(label,val,cls){return '<div><div class="muted" style="font-size:12px">'+label+'</div><b class="'+cls+'" style="font-size:18px">'+val+'</b></div>';}
-function drawOvEquity(dates,values,dd){
+function fmtPct(v){ return (v>=0?'+':'')+Number(v).toFixed(1)+'%'; }
+function drawOvEquity(series){
   const el=document.getElementById('ovEquity');
-  const w=340,h=150,pad=8,n=values.length;
-  const lv=values.map(v=>Math.log10(v));
-  const lmin=Math.min(...lv),lmax=Math.max(...lv),lr=(lmax-lmin)||1;
-  const pts=values.map((v,i)=>(pad+(i/Math.max(n-1,1))*(w-2*pad)).toFixed(1)+','+(h-pad-((Math.log10(v)-lmin)/lr)*(h-2*pad)).toFixed(1));
-  const dh=46,dmin=Math.min(...dd,0),dr=(0-dmin)||1;
-  const baseY=(dh-pad-((0-dmin)/dr)*(dh-2*pad)).toFixed(1);
-  const dpts=dd.map((v,i)=>(pad+(i/Math.max(n-1,1))*(w-2*pad)).toFixed(1)+','+(dh-pad-((v-dmin)/dr)*(dh-2*pad)).toFixed(1));
-  el.innerHTML='<svg width="100%" viewBox="0 0 '+w+' '+h+'" preserveAspectRatio="none" style="display:block">'+
-    '<polyline fill="none" stroke="'+RED+'" stroke-width="1.8" points="'+pts.join(' ')+'"/></svg>'+
-    '<div class="chart-labels"><span>'+dates[0]+'</span><span class="muted">净值(对数)</span><span>'+dates[n-1]+'</span></div>'+
-    '<svg width="100%" viewBox="0 0 '+w+' '+dh+'" preserveAspectRatio="none" style="display:block;margin-top:4px">'+
-    '<line x1="'+pad+'" y1="'+baseY+'" x2="'+(w-pad)+'" y2="'+baseY+'" stroke="#ddd" stroke-width="1"/>'+
-    '<polygon fill="'+GREEN+'" fill-opacity="0.35" points="'+pad+','+baseY+' '+dpts.join(' ')+' '+(w-pad)+','+baseY+'"/></svg>'+
-    '<div class="chart-labels"><span></span><span class="muted">回撤(最深 '+Math.min(...dd).toFixed(1)+'%)</span><span></span></div>';
+  const w=340,h=170,pad=8;
+  const allDates=[...new Set(series.flatMap(s=>s.dates))].sort();
+  const xMap=new Map(allDates.map((d,i)=>[d,i]));
+  const allValues=series.flatMap(s=>s.values).filter(v=>Number.isFinite(v)&&v>0);
+  if(!allDates.length||!allValues.length){ el.innerHTML='<div class="muted">暂无回测数据</div>'; return; }
+  const lv=v=>Math.log10(v);
+  const lmin=Math.min(...allValues.map(lv)),lmax=Math.max(...allValues.map(lv)),lr=(lmax-lmin)||1;
+  const xFor=d=>pad+(xMap.get(d)/Math.max(allDates.length-1,1))*(w-2*pad);
+  const yFor=v=>h-pad-((lv(v)-lmin)/lr)*(h-2*pad);
+  const lines=series.map(s=>{
+    const pts=s.dates.map((d,i)=>xFor(d).toFixed(1)+','+yFor(s.values[i]).toFixed(1)).join(' ');
+    return `<polyline fill="none" stroke="${s.color}" stroke-width="1.7" points="${pts}"/>`;
+  }).join('');
+  const legend=series.map(s=>{
+    const last=s.values[s.values.length-1],ret=((last/s.values[0]-1)*100).toFixed(1);
+    return `<span style="display:inline-flex;align-items:center;margin:2px 10px 2px 0;font-size:11px">`+
+      `<span style="width:14px;height:3px;background:${s.color};display:inline-block;margin-right:4px"></span>`+
+      `${s.name} <span class="muted">${ret>=0?'+':''}${ret}%</span></span>`;
+  }).join('');
+  const ddAll=series.flatMap(s=>s.drawdown||[]);
+  const dmin=Math.min(0,...ddAll),dr=Math.abs(dmin)||1;
+  const dh=42;
+  const ddLines=series.map(s=>{
+    const pts=(s.drawdown||[]).map((v,i)=>xFor(s.dates[i]).toFixed(1)+','+(dh-pad-((v-dmin)/dr)*(dh-2*pad)).toFixed(1)).join(' ');
+    return `<polyline fill="none" stroke="${s.color}" stroke-width="1" opacity="0.8" points="${pts}"/>`;
+  }).join('');
+  el.innerHTML=`<svg width="100%" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" style="display:block">${lines}</svg>`+
+    `<div style="margin-top:6px;line-height:1.7">${legend}</div>`+
+    `<div class="muted" style="font-size:11px;margin-top:4px">净值(对数)</div>`+
+    `<svg width="100%" viewBox="0 0 ${w} ${dh}" preserveAspectRatio="none" style="display:block;margin-top:4px">`+
+    `<line x1="${pad}" y1="${(dh-pad).toFixed(1)}" x2="${w-pad}" y2="${(dh-pad).toFixed(1)}" stroke="#ddd" stroke-width="1"/>${ddLines}</svg>`+
+    `<div class="chart-labels"><span>${allDates[0]}</span><span class="muted">回撤(最深 ${dmin.toFixed(1)}%)</span><span>${allDates[allDates.length-1]}</span></div>`;
 }
-function drawOvYearly(yearly){
+function drawOvYearly(series){
   const el=document.getElementById('ovYearly');
-  const w=340,h=140,pad=18;
-  const rets=yearly.map(y=>y.return);
-  const max=Math.max(...rets,0),min=Math.min(...rets,0),range=(max-min)||1;
-  const bw=(w-2*pad)/yearly.length;
-  const zeroY=h-pad-((0-min)/range)*(h-2*pad);
-  let bars='';
-  yearly.forEach((y,i)=>{
-    const x=pad+i*bw+bw*0.15,bwid=bw*0.7;
-    const yv=h-pad-((y.return-min)/range)*(h-2*pad);
-    const top=Math.min(yv,zeroY),bh=Math.abs(yv-zeroY);
-    const color=y.return>=0?RED:GREEN;
-    bars+='<rect x="'+x.toFixed(1)+'" y="'+top.toFixed(1)+'" width="'+bwid.toFixed(1)+'" height="'+bh.toFixed(1)+'" fill="'+color+'"/>';
-    bars+='<text x="'+(x+bwid/2).toFixed(1)+'" y="'+(top-3).toFixed(1)+'" font-size="8" fill="#666" text-anchor="middle">'+(y.return>0?'+':'')+y.return+'</text>';
-    bars+='<text x="'+(x+bwid/2).toFixed(1)+'" y="'+(h-4)+'" font-size="8" fill="#999" text-anchor="middle">'+y.year+'</text>';
-  });
-  el.innerHTML='<svg width="100%" viewBox="0 0 '+w+' '+h+'" style="display:block">'+
-    '<line x1="'+pad+'" y1="'+zeroY.toFixed(1)+'" x2="'+(w-pad)+'" y2="'+zeroY.toFixed(1)+'" stroke="#ccc" stroke-width="1"/>'+bars+'</svg>';
+  const years=[...new Set(series.flatMap(s=>(s.yearly||[]).map(y=>y.year)))].sort();
+  if(!years.length){ el.innerHTML='<div class="muted">暂无年度数据</div>'; return; }
+  const head=series.map(s=>`<th style="color:${s.color}">${s.name}</th>`).join('');
+  const rows=years.map(year=>{
+    const cells=series.map(s=>{
+      const item=(s.yearly||[]).find(y=>y.year===year);
+      if(!item) return '<td class="muted">—</td>';
+      const cls=item.return>=0?'up':'down';
+      return `<td class="${cls}" title="年内最大回撤 ${item.max_dd}%">${item.return>=0?'+':''}${item.return}%</td>`;
+    }).join('');
+    return `<tr><td class="muted">${year}</td>${cells}</tr>`;
+  }).join('');
+  el.innerHTML=`<div class="scrollbox"><table><tr><th>年份</th>${head}</tr>${rows}</table></div>`+
+    `<div class="muted" style="font-size:11px">悬停/长按年度收益可看年内最大回撤；三策略同起止日。</div>`;
 }
 function drawOvHoldings(dates,holdings,names){
   const el=document.getElementById('ovHoldings');

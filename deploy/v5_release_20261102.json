@@ -11,8 +11,10 @@
     "scripts/remind_pending.py": "5c5ee3052c65f5ec32445adb1183662eb36da36825a1427b9ed2e239a133e687",
     "scripts/live_signal.py": "38b2699312a2948dd366edc749a438bfe61e86a0bcd16f0fbb3a4d5e2cf73bf5",
     "scripts/run_qixing_v3.py": "6dbfd91cdf8a73bac5df4f8aa60326613f62dc1251823d80b7f9d4a3480bef96",
-    "scripts/risk_overrides.py": "f9f5fac476671aa3196e85b0d6b81a9fce13effddafe6c17fb207a8562081507"
+    "scripts/risk_overrides.py": "f9f5fac476671aa3196e85b0d6b81a9fce13effddafe6c17fb207a8562081507",
+    "scripts/review_rotation_20260916.py": "ebf29adce89c34dfd1c00150d96de4d1c9ac5d029fb1049c7ec6f1c6866ccb2b",
+    "scripts/trade_server.py": "965763c730fd6aab7e0264d85f53b0f8144790418445ea1a213d4bb450292cb1"
   },
-  "created_at": "2026-11-02T15:02:00+08:00",
-  "note": "V5 production, V4 shadow; semi-auto ticket/reminder files; no broker orders."
+  "created_at": "2026-11-02T15:20:00+08:00",
+  "note": "V5 production; three-strategy V3-G/V4/V5 web comparison; semi-auto tickets; no broker orders."
 }

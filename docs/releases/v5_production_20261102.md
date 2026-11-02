@@ -71,3 +71,10 @@
 - 网页新增执行票卡和 `/api/ticket`、`/api/ticket/snooze`；确认/跳过仍只登记事实。
 - 不接券商、不存密码、不下单；`ALLOW_LIVE_TRADING=false` 不变。
 - 设计：`docs/design/semi_auto_execution_20261102.md`；测试：`tests/unit/test_ticket.py`、`tests/unit/test_remind_pending.py`。
+
+## 网页策略全景：V3-G / V4 / V5 三线对比（2026-11-02）
+
+- `/api/backtest` 从单一 V3-G 基线改为三策略同数据源、同起止日回测：V3-G 旧池基线、V4 原熔断、V5 熔断重置。
+- 网页策略全景改为三线净值图 + 三线回撤 + 三策略指标表 + 年度收益表；V5 持仓时间线保留。
+- 三策略口径：V3-G 用冻结旧池；V4/V5 用当前 8 标的池，次日开盘、1x 成本；V5 仅替换风险层。
+- 服务器实测（2026-10-30 数据）：V3-G +1193.5% / MDD -40.7%；V4 +25.0% / -64.5%；V5 +2471.7% / -32.5%。仅历史对照，不代表未来。

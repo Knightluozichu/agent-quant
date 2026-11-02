@@ -28,10 +28,14 @@ import math
 import os
 import secrets
 import sys
+import threading
 import time
 from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+from unittest.mock import patch
+
+import numpy as np
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -711,46 +715,184 @@ _BACKTEST_TIME: float = 0.0
 
 @app.get("/api/backtest")
 def api_backtest(_: None = Depends(require_token)) -> dict:
-    """返回 V3-G 基线回测结果 (供网页绘制基准全景图)."""
+    """V3-G / V4 / V5 full-history comparison for the overview chart."""
     global _BACKTEST_CACHE, _BACKTEST_TIME
     mtime = max((f.stat().st_mtime for f in ls.DATA_DIR.glob("*.parquet")), default=0.0)
-    if _BACKTEST_CACHE is None or mtime > _BACKTEST_TIME:
-        data = rq.load_data()
-        result = rq.run_qixing_v3_no_lookahead(data)
-        eq = result["equity_curve"]
-        cummax = eq["equity"].cummax()
-        dd = (eq["equity"] - cummax) / cummax * 100
-        span = (eq["trade_date"].iloc[-1] - eq["trade_date"].iloc[0]).days / 365.25
-        _BACKTEST_CACHE = {
-            "metrics": {
-                "total_return": round(result["total_return"] * 100, 1),
-                "ann_return": round(result["ann_return"] * 100, 1),
-                "sharpe": round(result["sharpe"], 2),
-                "max_drawdown": round(result["max_drawdown"] * 100, 1),
-                "n_trades": result["n_trades"],
-                "n_cancelled": result.get("n_cancelled", 0),
-                "start": str(eq["trade_date"].iloc[0])[:7],
-                "end": str(eq["trade_date"].iloc[-1])[:7],
-                "years": round(span, 1),
-                "param_hash": result.get("param_hash", ""),
-                "data_hash": result.get("data_hash", ""),
-            },
-            "dates": eq["trade_date"].dt.strftime("%Y-%m-%d").tolist(),
-            "values": [round(float(v), 0) for v in eq["equity"]],
-            "drawdown": [round(float(v), 2) for v in dd],
-            "holdings": eq["holding"].tolist(),
-            "yearly": [
+    with _BACKTEST_LOCK:
+        if _BACKTEST_CACHE is None or mtime > _BACKTEST_TIME:
+            _BACKTEST_CACHE = _build_backtest_comparison()
+            _BACKTEST_TIME = time.time()
+        return _BACKTEST_CACHE
+
+
+_BACKTEST_LOCK = threading.Lock()
+
+
+def _load_replay_modules() -> tuple[Any, Any]:
+    """Import the research replay without making scripts/ a hard import at boot."""
+    root = str(Path(__file__).resolve().parent.parent)
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    from scripts import qixing_v5 as v5
+    from scripts import review_rotation_20260916 as rr
+
+    return rr, v5
+
+
+def _series_payload(
+    *,
+    series_id: str,
+    name: str,
+    color: str,
+    dates: list[str],
+    equity: list[float],
+    holdings: list[Any],
+    n_trades: int,
+    initial: float = 100_000.0,
+) -> dict[str, Any]:
+    values = [round(float(item), 2) for item in equity]
+    path = np.r_[initial, np.asarray(values, dtype=float)]
+    returns = np.diff(path) / path[:-1]
+    years = 0.0
+    if dates:
+        span = datetime.strptime(dates[-1], "%Y-%m-%d") - datetime.strptime(dates[0], "%Y-%m-%d")
+        years = max(span.days / 365.25, 1.0 / 365.25)
+    total = float(values[-1] / initial - 1.0) if values else 0.0
+    cagr = float((values[-1] / initial) ** (1.0 / years) - 1.0) if years > 0 and values else 0.0
+    daily_std = float(returns.std(ddof=1)) if len(returns) > 1 else 0.0
+    sharpe = float(returns.mean() / daily_std * np.sqrt(252)) if daily_std else 0.0
+    drawdown = (path[1:] / np.maximum.accumulate(path)[1:] - 1.0) * 100.0
+
+    yearly: list[dict[str, Any]] = []
+    if dates:
+        by_year: dict[int, list[int]] = {}
+        for index, raw in enumerate(dates):
+            by_year.setdefault(int(raw[:4]), []).append(index)
+        previous_end = initial
+        for year in sorted(by_year):
+            indexes = by_year[year]
+            first, last = indexes[0], indexes[-1]
+            start_equity = previous_end if first == 0 else values[first - 1]
+            end_equity = values[last]
+            segment = np.r_[start_equity, np.asarray(values[first : last + 1], dtype=float)]
+            peak = np.maximum.accumulate(segment)
+            year_dd = float(np.min(segment / peak - 1.0) * 100.0) if len(segment) else 0.0
+            yearly.append(
                 {
-                    "year": y,
-                    "return": round(v["return"] * 100, 1),
-                    "max_dd": round(v["max_dd"] * 100, 1),
+                    "year": year,
+                    "return": round((end_equity / start_equity - 1.0) * 100.0, 1),
+                    "max_dd": round(year_dd, 1),
                 }
-                for y, v in sorted(result["yearly"].items())
-            ],
-            "etf_names": {**rq.ETF_POOL, rq.DEFENSE: "货币基金"},
-        }
-        _BACKTEST_TIME = time.time()
-    return _BACKTEST_CACHE
+            )
+            previous_end = end_equity
+
+    return {
+        "id": series_id,
+        "name": name,
+        "color": color,
+        "dates": dates,
+        "values": values,
+        "drawdown": [round(float(item), 2) for item in drawdown],
+        "holdings": holdings,
+        "yearly": yearly,
+        "metrics": {
+            "total_return": round(total * 100.0, 1),
+            "ann_return": round(cagr * 100.0, 1),
+            "sharpe": round(sharpe, 2),
+            "max_drawdown": round(float(np.min(drawdown)) if len(drawdown) else 0.0, 1),
+            "n_trades": n_trades,
+            "years": round(years, 1),
+            "start": dates[0][:7] if dates else "",
+            "end": dates[-1][:7] if dates else "",
+        },
+    }
+
+
+def _curve_dates(curve: Any) -> list[str]:
+    return [str(item)[:10] for item in curve["trade_date"].tolist()]
+
+
+def _build_backtest_comparison() -> dict[str, Any]:
+    data = rq.load_data()
+
+    # V3-G: frozen old-pool baseline (kept for historical contrast only).
+    v3 = rq.run_qixing_v3_no_lookahead(data)
+    v3_curve = v3["equity_curve"]
+    v3_series = _series_payload(
+        series_id="V3-G",
+        name="V3-G 基线",
+        color="#8a8f98",
+        dates=_curve_dates(v3_curve),
+        equity=v3_curve["equity"].tolist(),
+        holdings=v3_curve["holding"].tolist(),
+        n_trades=int(v3.get("n_trades", 0)),
+    )
+
+    # V4/V5: current 8-symbol pool, next-open replay. V5 only patches the risk layer.
+    rr, v5 = _load_replay_modules()
+    codes = [*rq.ETF_POOL, rq.DEFENSE]
+    dates = sorted(set.intersection(*(set(data[code]["trade_date"]) for code in codes)))
+    start = dates[130]
+    grid = set(dates[130 :: rq.REBALANCE_DAYS])
+    pool = dict(rq.ETF_POOL)
+
+    def run_one(mode: str) -> dict[str, Any]:
+        risk_patch = (
+            patch.object(rr.live, "risk_assess", v5.assess_v5)
+            if mode == "V5"
+            else contextlib.nullcontext()
+        )
+        with (
+            patch.object(rr.rq, "ETF_POOL", pool),
+            patch.object(rr.live, "ETF_POOL", pool),
+            patch.object(rr.live, "POOL_VERSION", f"web-{mode.lower()}"),
+            risk_patch,
+        ):
+            return rr.replay_next_open(
+                data,
+                start=start,
+                end=dates[-1],
+                grid=grid,
+                calendar=dates,
+                mode="V4",
+                cost_multiplier=1.0,
+            )
+
+    v4 = run_one("V4")
+    v5_result = run_one("V5")
+    series = [
+        v3_series,
+        _series_payload(
+            series_id="V4",
+            name="V4 原熔断",
+            color="#c0392b",
+            dates=_curve_dates(v4["curve"]),
+            equity=v4["curve"]["equity"].tolist(),
+            holdings=v4["curve"]["holding"].tolist(),
+            n_trades=len(v4["trades"]),
+        ),
+        _series_payload(
+            series_id="V5",
+            name="V5 熔断重置",
+            color="#1f7a4d",
+            dates=_curve_dates(v5_result["curve"]),
+            equity=v5_result["curve"]["equity"].tolist(),
+            holdings=v5_result["curve"]["holding"].tolist(),
+            n_trades=len(v5_result["trades"]),
+        ),
+    ]
+    live_series = series[-1]
+    return {
+        "metrics": live_series["metrics"],
+        "series": series,
+        # Legacy fields kept for older clients: point at V5.
+        "dates": live_series["dates"],
+        "values": live_series["values"],
+        "drawdown": live_series["drawdown"],
+        "holdings": live_series["holdings"],
+        "yearly": live_series["yearly"],
+        "etf_names": {**rq.ETF_POOL, rq.DEFENSE: "货币基金"},
+    }
 
 
 # --------------------------------------------------------------------------- #
