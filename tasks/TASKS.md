@@ -87,6 +87,7 @@
       原子替换、真实持仓/现金 dry-run、禁止同步秘密和写服务器）
 
 - [x] P3-E14 V5 生产化与 V4 影子（qixing_v5、live_signal V5 mode、trade_server/web、腾讯/新浪全量回测、发布文档；生产不下单）
+- [x] P3-E15 半自动执行 Phase 1/2（ticket 双窗口、7 个提醒 stage、网页执行票/复制/snooze、cron 自愈、测试与服务器 dry-run；不接券商不下单）
 ## Phase 4: 因子和状态识别
 
 - [x] P4-001 特征计算框架 (RegimeDetector)

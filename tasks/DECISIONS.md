@@ -314,3 +314,12 @@
 - 生产只改策略模式/信号/展示，不连接券商、不下单、不改账户/仓位/选品参数。V5 未完成 252 日真样本外；本次是用户风险偏好下的生产切换，不是研究证明。
 - V5 模式同时计算 V4 影子风控（深拷贝 state，写入 `last_decision.shadow_v4`），不产生影子订单；V4↔V5 切换保留同一份 V4 信号确认历史，仅迁移 identity。
 - 回滚：`strategy_mode.json` 改回 V4，恢复 live_signal/trade_server/web 备份，`systemctl restart trade-web`，复核 state/health。发布说明：`docs/releases/v5_production_20261102.md`。
+
+
+## 2026-11-02：半自动执行 Phase 1/2（不接券商）
+
+- 用户要求把半自动“做到极致”。设计不是多推通知，而是给每个信号一张可审计 ticket：同日 14:50–15:00 与次日 09:25–09:30 双窗口，14:45/14:55/15:02/15:10/次日 09:15/09:25/09:35 七段提醒。
+- 关键取舍：`expired_unresolved` 只标记漏单，不自动跳过、不伪造成交；确认/跳过/部分成交必须用户明确操作；所有提醒按 stage 幂等去重，确认/跳过后停止。
+- 服务器已部署 `ticket.py`/`remind_pending.py`、7 条 cron、`/api/ticket`/`/api/ticket/snooze`、网页执行票卡。仍不接券商、不存密码、不下单；`ALLOW_LIVE_TRADING=false` 不变。
+- 边界：Phase 1/2 只覆盖提醒/执行/跳过；部分成交、滑点/漏单周报、模型影子组合属 Phase 3；V5 252 日真样本外仍未完成。
+- 设计：`docs/design/semi_auto_execution_20261102.md`；交付记录：`reports/2026-11-02_PUA交付记录_半自动执行.md`。
