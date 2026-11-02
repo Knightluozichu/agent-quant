@@ -29,6 +29,16 @@ REQUIRED_CRONS=(
     "30 16 * * 1-5 /opt/quant/deploy/run_calibrate.sh"
     "30 21 * * 1-5 /opt/quant/deploy/run_data_sync.sh"
 )
+# 半自动执行提醒：按完整行匹配 (同一脚本多个 stage)
+REQUIRED_REMINDERS=(
+    "45 14 * * 1-5 /opt/quant/deploy/run_reminder.sh pre"
+    "55 14 * * 1-5 /opt/quant/deploy/run_reminder.sh same_day_warn"
+    "2 15 * * 1-5 /opt/quant/deploy/run_reminder.sh same_day_close"
+    "10 15 * * 1-5 /opt/quant/deploy/run_reminder.sh same_day_closed"
+    "15 9 * * 1-5 /opt/quant/deploy/run_reminder.sh next_open_warn"
+    "25 9 * * 1-5 /opt/quant/deploy/run_reminder.sh next_open_final"
+    "35 9 * * 1-5 /opt/quant/deploy/run_reminder.sh expired"
+)
 
 CURRENT=$(crontab -l 2>/dev/null || echo "")
 MISSING=()
@@ -37,6 +47,12 @@ for entry in "${REQUIRED_CRONS[@]}"; do
     # 按脚本路径匹配 (容忍时间字段被调整)
     script_path=$(echo "$entry" | awk '{print $NF}')
     if ! echo "$CURRENT" | grep -q "$script_path"; then
+        MISSING+=("$entry")
+    fi
+done
+for entry in "${REQUIRED_REMINDERS[@]}"; do
+    # 提醒任务按完整行匹配，避免同一个 run_reminder.sh 的多个 stage 互相掩盖
+    if ! echo "$CURRENT" | grep -Fq "$entry"; then
         MISSING+=("$entry")
     fi
 done
@@ -67,7 +83,7 @@ cd "$PROJECT_ROOT"
 $PYTHON -c "
 import sys; sys.path.insert(0, 'scripts')
 from notify import push_bark
-push_bark('⚠️ 七星V3 crontab曾被覆盖', f'${#MISSING[@]}个定时任务已自动恢复, 详见cron_guard.log')
+push_bark('⚠️ 七星V5 crontab曾被覆盖', f'${#MISSING[@]}个定时任务已自动恢复, 详见cron_guard.log')
 " 2>/dev/null || true
 
 exit 0

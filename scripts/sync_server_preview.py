@@ -43,6 +43,8 @@ REMOTE_RELEASE_FILES = {
 PREVIEW_CORE_FILES = (
     "scripts/qixing_v4.py",
     "scripts/qixing_v5.py",
+    "scripts/ticket.py",
+    "scripts/remind_pending.py",
     "scripts/live_signal.py",
     "scripts/run_qixing_v3.py",
     "scripts/risk_overrides.py",

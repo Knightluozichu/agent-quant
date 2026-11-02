@@ -511,6 +511,7 @@ def api_status(_: None = Depends(require_token)) -> dict:
         "initial_capital": state["initial_capital"],
         "return_pct": round(ret, 2),
         "pending_order": _pending_view(state.get("pending_order")),
+        "ticket": ls.ticket_engine.ticket_view(state.get("pending_order")),
         "strategy_mode": ls.get_strategy_mode(),
         "strategy_id": ls.active_strategy_id(),
         "config_hash": ls.active_config_hash(),
@@ -572,6 +573,7 @@ def api_signal(_: None = Depends(require_token)) -> dict:
         "defense_count": 1,
         "holding": state.get("holding"),
         "pending_order": _pending_view(state.get("pending_order")),
+        "ticket": ls.ticket_engine.ticket_view(state.get("pending_order")),
         "snapshot_date": decision.get("trade_date"),
         "created_at": decision.get("created_at"),
         "shadow_v4": decision.get("shadow_v4"),
@@ -894,6 +896,36 @@ def api_confirm(payload: ConfirmRequest, _: None = Depends(require_token)) -> di
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e)) from e
         return {"ok": True, "cash": round(state["cash"], 2), "holding": state["holding"]}
+
+
+@app.get("/api/ticket")
+def api_ticket(_: None = Depends(require_token)) -> dict:
+    state = ls.load_state()
+    if state is None:
+        return {"initialized": False, "ticket": None}
+    return {"initialized": True, "ticket": ls.ticket_engine.ticket_view(state.get("pending_order"))}
+
+
+@app.post("/api/ticket/snooze")
+def api_ticket_snooze(minutes: int = 10, _: None = Depends(require_token)) -> dict:
+    if not 1 <= minutes <= 30:
+        raise HTTPException(status_code=400, detail="minutes 必须在 1–30")
+    try:
+        with ls.state_transaction() as state:
+            pending = state.get("pending_order")
+            if not pending:
+                raise ValueError("无待确认订单")
+            if str(pending.get("status", "")).lower() not in {"pending", "partial"}:
+                raise ValueError(f"订单状态非 pending: {pending.get('status')}")
+            ls.ticket_engine.attach_ticket(
+                pending, ls.ticket_engine.pd_to_date(pending.get("date"))
+            )
+            if not ls.ticket_engine.snooze(pending, minutes):
+                raise ValueError("最多延后 2 次")
+            view = ls.ticket_engine.ticket_view(pending)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e)) from e
+    return {"ok": True, "ticket": view}
 
 
 @app.post("/api/skip")

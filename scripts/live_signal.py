@@ -59,6 +59,7 @@ def _today_sh() -> date:
 sys.path.insert(0, str(Path(__file__).parent))
 import qixing_v4 as v4  # noqa: E402
 import qixing_v5 as v5  # noqa: E402
+import ticket as ticket_engine  # noqa: E402
 from notify import load_config, push_bark, save_config, set_bark_key, test_push  # noqa: E402
 from risk_overrides import ACTION_EMERGENCY, RiskDecision  # noqa: E402
 from risk_overrides import assess as risk_assess  # noqa: E402
@@ -1618,7 +1619,7 @@ def run(dry_run: bool = False) -> int:
             order_id = hashlib.sha256(f"{snapshot['decision_id']}:{target}".encode()).hexdigest()[
                 :24
             ]
-            st["pending_order"] = {
+            pending: dict[str, Any] = {
                 "pool_version": POOL_VERSION,
                 "order_id": order_id,
                 "decision_id": snapshot["decision_id"],
@@ -1653,6 +1654,11 @@ def run(dry_run: bool = False) -> int:
                 "status": "pending",
                 "created_at": datetime.now(_SH_TZ).strftime("%Y-%m-%d %H:%M:%S"),
             }
+            try:
+                ticket_engine.attach_ticket(pending, td)
+            except Exception as exc:  # ticket metadata must not block the human flow
+                print(f"  ⚠️ 执行票生成失败, 保留旧 pending 结构: {exc}")
+            st["pending_order"] = pending
             st["last_rebalance_date"] = str(td)
             st["last_run_date"] = str(td)
             st["peak_equity"] = state.get("peak_equity", st["initial_capital"])
@@ -1879,6 +1885,10 @@ def confirm_order(
 
         pending["status"] = "confirmed"
         pending["confirmed_at"] = datetime.now(_SH_TZ).strftime("%Y-%m-%d %H:%M:%S")
+        if pending.get("schema_version") == 2:
+            ticket_engine.mark_status(
+                pending, "confirmed", actor="user", reason="execution_confirmed"
+            )
         if pending.get("decision_kind") == "v4_early_rotation" and real_buy:
             state["v4_state"]["last_early_rotation_date"] = td
         if idempotency_key:
@@ -1900,6 +1910,8 @@ def skip_pending() -> dict:
             raise ValueError(f"订单状态非 pending: {pending.get('status')}")
         pending["status"] = "skipped"
         pending["skipped_at"] = datetime.now(_SH_TZ).strftime("%Y-%m-%d %H:%M:%S")
+        if pending.get("schema_version") == 2:
+            ticket_engine.mark_status(pending, "skipped", actor="user", reason="user_skip")
     return state
 
 

@@ -112,8 +112,9 @@
 
       <!-- 待确认信号 (置顶, 全宽) -->
       <div id="pendingCard" class="card c12 pending-live hidden">
-        <h2>计划对应成交核对 <span class="tag pending" id="pendingDate"></span></h2>
+        <h2>V5 执行票 / 成交核对 <span class="tag pending" id="pendingDate"></span></h2>
         <div id="pendingReason" class="muted" style="margin-bottom:8px"></div>
+        <div id="ticketBox" class="hidden" style="margin:8px 0 12px"></div>
 
         <div id="sellBlock" class="hidden">
           <label class="chk"><input type="checkbox" id="sellOn"><b>① 已完成卖出 <span id="sellName"></span></b></label>
@@ -308,7 +309,7 @@ async function loadAll(){
   ]);
   latestStatus = status;
   fillEtfSelects();
-  renderStatus(status); renderPending(status.pending_order);
+  renderStatus(status); renderPending(status.pending_order, status.ticket);
   renderFeeSummary(history.trades);
   renderSignal(signal); renderHistory(history.trades); renderEquity(equity);
   let dateTxt=(status.strategy_mode||'V5')+(status.strategy_id?` · ${status.strategy_id}`:'')+' · 数据截至 '+status.trade_date;
@@ -370,19 +371,22 @@ function clearPendingFacts(){
   }
   document.getElementById('pendingEvidence').checked=false;
 }
-function renderPending(p){
+function renderPending(p, ticket){
   const identity=p?(p.order_id||`${p.date}:${p.expected_state_version}`):null;
   if(identity!==pendingIdentity){
     clearPendingFacts(); pendingIdentity=identity; confirmKey=null;
     document.getElementById('pendingError').classList.add('hidden');
   }
   const card=document.getElementById('pendingCard');
-  if(!p || p.status!=='pending'){ card.classList.add('hidden'); return; }
+  const st=p?String(p.status||'').toLowerCase():'';
+  const visible=p && ['pending','partial','expired_unresolved'].includes(st);
+  if(!visible){ card.classList.add('hidden'); return; }
   card.classList.remove('hidden');
   document.getElementById('pendingDate').textContent=p.date;
   document.getElementById('pendingReason').textContent=
     (p.blocked_reason||p.reason||'')+' · 只核对已成交事实，不代表允许买入，不下单。';
   document.getElementById('confirmButton').disabled=!p.confirmable||confirmBusy;
+  renderTicket(ticket,p);
   const sb=document.getElementById('sellBlock');
   if(p.sell){
     sb.classList.remove('hidden');
@@ -393,6 +397,36 @@ function renderPending(p){
     bb.classList.remove('hidden');
     document.getElementById('buyCode').value=p.buy.code;
   }else bb.classList.add('hidden');
+}
+
+function ticketLegText(leg){
+  const side=leg.side==='sell'?'卖出':'买入';
+  return `${leg.code} ${side} ${leg.shares}份 限价${Number(leg.limit_low).toFixed(3)}-${Number(leg.limit_high).toFixed(3)}`;
+}
+function copyTicket(text){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>toast('已复制: '+text)).catch(()=>toast(text));
+  }else{ toast(text); }
+}
+function renderTicket(ticket,p){
+  const box=document.getElementById('ticketBox');
+  if(!ticket || !ticket.legs || !ticket.legs.length){ box.classList.add('hidden'); return; }
+  box.classList.remove('hidden');
+  const legs=ticket.legs.map(leg=>{
+    const tr=ticketLegText(leg);
+    return `<div class="row" style="padding:4px 0"><span>${tr}</span>`+
+      `<button class="ghost sm" onclick='copyTicket(${JSON.stringify(tr)})'>复制</button></div>`;
+  }).join('');
+  const deadline=ticket.deadline?` · 截止 ${ticket.deadline}`:'';
+  const snooze=(ticket.snooze_count||0)<2 && ['PENDING','PARTIAL'].includes(ticket.status)?
+    `<button class="ghost sm" onclick="snoozeTicket()">10分钟后再提醒</button>`:'';
+  box.innerHTML=`<div class="alert" style="margin-bottom:6px"><b>${ticket.status}</b>${deadline}`+
+    `<div class="muted" style="font-size:12px">参考价为 14:50/信号价，限价带仅作展示；是否成交由你在券商端决定。</div></div>`+
+    `<div>${legs}</div><div style="margin-top:6px">${snooze}</div>`;
+}
+async function snoozeTicket(){
+  try{ await api('/api/ticket/snooze?minutes=10',{method:'POST'}); await loadAll(); toast('已延后 10 分钟'); }
+  catch(e){ toast(e.message); }
 }
 
 function renderSignal(sig){
