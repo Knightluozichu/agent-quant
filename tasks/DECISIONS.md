@@ -482,3 +482,11 @@
 - 来源 `data/v9_results/strict_v35_audit.json`：严格V3.5（strict V3 base + frozen V4 overlay）2020-06-19→2026-08-11，1x成本，100k→4,852,093.98，+4752.09%，CAGR88.1%，MDD-28.6%，221腿。
 - 但执行是 same-close 14:50 代理（非 next-open），`historical_oos_label_valid=false`，`live_oos_observations=0`，assessment=high_overfit_risk/research_candidate_only，3x成本总收益-85.4%/MDD-94.5%路径崩塌。不能直接和V5 next-open +2506%排名。
 - 结论：4500%是真实回测数字，但不是可部署收益；若要对齐，需next-open+同数据源+2x/3x成本+252日真OOS重跑。报告：`docs/research/strict_v35_4500_20261102.md`。
+
+
+## 2026-11-02：严格 14:50 全量回测（购买 5 分钟数据）
+
+- 数据：8只ETF/LOF 5分钟 parquet，2020-06-19→2026-10-26，1,649交易日；adj_factor复权；14:50价=14:55 bar open；信号只用14:50前partial bar；1万、无杠杆、单标的、100股整手。
+- 1x成本：V5 10,000→131,238.56（+1212.39%，CAGR49.98%，MDD-36.03%，105笔，76个月中11个月≥10%、6个月≥20%）；V3-G→110,455.71（+1004.56%，CAGR45.96%，MDD-46.17%）；V4→6,811.74（-31.88%，MDD-87.53%）。
+- 3x成本：V5→69,349.06（+593.49%，CAGR35.65%，MDD-43.16%）；V3-G→55,427.41（+454.27%，CAGR30.94%，MDD-54.76%）；V4仍不稳。
+- 结论：严格14:50口径V5最好，但月10%仍不成立（11/76），MDD-36%不是-10%；V4在此口径失效。+1212%不是+4752%；后者是V3.5 same-close 15:00代理，不可混用。报告：`docs/research/replay_1450_full_20261102.md`。
