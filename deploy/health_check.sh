@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ---------------------------------------------------------------------------
-# 七星V3 每日健康检查 (可由 cron 或手动运行)
+# 七星V5 每日健康检查 (可由 cron 或手动运行)
 #
 # 检查项:
 #   1. trade-web 服务状态 (systemd)
@@ -264,13 +264,13 @@ else
     RISK_DETAIL="$RISK_DETAIL" $PYTHON -c "
 import os, sys; sys.path.insert(0, 'scripts')
 from notify import push_bark
-push_bark('七星V3 风控状态异常', os.environ['RISK_DETAIL'])
+push_bark('七星V5 风控状态异常', os.environ['RISK_DETAIL'])
 " 2>&1 || echo "⚠️ 风控Bark推送失败"
 fi
 
 # 输出报告
 echo ""
-echo "=== 七星V3 健康检查 $(date '+%Y-%m-%d %H:%M:%S') ==="
+echo "=== 七星V5 健康检查 $(date '+%Y-%m-%d %H:%M:%S') ==="
 echo ""
 echo -e "$REPORT"
 TOTAL_CHECKS=7
@@ -281,7 +281,7 @@ if [ $FAILURES -gt 0 ] && [ "$SEND_BARK" = "--bark" ]; then
     $PYTHON -c "
 import sys; sys.path.insert(0, 'scripts')
 from notify import push_bark
-push_bark('七星V3 健康检查告警', '${FAILURES}项检查失败, 请查看 health_check 输出')
+push_bark('七星V5 健康检查告警', '${FAILURES}项检查失败, 请查看 health_check 输出')
 " 2>&1 || echo "⚠️ Bark 推送失败"
 fi
 
