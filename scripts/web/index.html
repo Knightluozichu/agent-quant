@@ -530,7 +530,7 @@ function renderEquity(eq){
 let ovLoaded=false;
 async function loadOverview(){
   const box=document.getElementById('ovMetrics');
-  box.innerHTML='<div class="muted">正在计算回测…</div>';
+  box.innerHTML='<div class="muted">正在计算三策略回测（首次约 15–20 秒，之后缓存）…</div>';
   try{
     const d=await api('/api/backtest');
     renderOverview(d); ovLoaded=true;
