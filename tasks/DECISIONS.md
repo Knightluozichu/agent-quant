@@ -475,3 +475,10 @@
 - 命名理由：600322 式模板的机会像潮汐成簇出现；有潮汐才做，没潮汐空仓。
 - 存档内容：C1–C11、行业强度/反转、缠论 skill/10年回测/6变体优化、600322案例库、月度10% no-go、机会型决策、全部产物索引。
 - 状态：research only，不接券商、不下单、不部署。存档：`docs/projects/tide/ARCHIVE.md`。
+
+
+## 2026-11-02：“4500%”溯源为严格 V3.5 研究结果
+
+- 来源 `data/v9_results/strict_v35_audit.json`：严格V3.5（strict V3 base + frozen V4 overlay）2020-06-19→2026-08-11，1x成本，100k→4,852,093.98，+4752.09%，CAGR88.1%，MDD-28.6%，221腿。
+- 但执行是 same-close 14:50 代理（非 next-open），`historical_oos_label_valid=false`，`live_oos_observations=0`，assessment=high_overfit_risk/research_candidate_only，3x成本总收益-85.4%/MDD-94.5%路径崩塌。不能直接和V5 next-open +2506%排名。
+- 结论：4500%是真实回测数字，但不是可部署收益；若要对齐，需next-open+同数据源+2x/3x成本+252日真OOS重跑。报告：`docs/research/strict_v35_4500_20261102.md`。
