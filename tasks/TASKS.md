@@ -88,6 +88,7 @@
 
 - [x] P3-E14 V5 生产化与 V4 影子（qixing_v5、live_signal V5 mode、trade_server/web、腾讯/新浪全量回测、发布文档；生产不下单）
 - [x] P3-E15 半自动执行 Phase 1/2（ticket 双窗口、7 个提醒 stage、网页执行票/复制/snooze、cron 自愈、测试与服务器 dry-run；不接券商不下单）
+- [x] P3-E16 V5 无杠杆迭代研究（8/10/12 标的对照、完美年度上限、扩展池回测；结论：无杠杆 100% 需新增年内 timing alpha，非参数问题）
 ## Phase 4: 因子和状态识别
 
 - [x] P4-001 特征计算框架 (RegimeDetector)
