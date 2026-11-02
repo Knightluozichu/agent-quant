@@ -87,3 +87,37 @@ def test_strategy_mode_v5_identity(tmp_path, monkeypatch: pytest.MonkeyPatch) ->
     assert live_signal.active_strategy_id() == v5.STRATEGY_ID
     assert live_signal.active_config_hash() == v5.CONFIG_HASH
     assert live_signal.strategy_identity("V4")[1] == live_signal.v4.STRATEGY_ID
+
+
+def test_v5_snapshot_identity_and_shadow() -> None:
+    from datetime import date
+
+    from scripts import live_signal, qixing_v4
+
+    overlay = {
+        "factors": {},
+        "mode": "V5",
+        "base_target": "511220",
+        "raw_target": None,
+        "signal_hits": 0,
+        "days_since_early_rotation": 0,
+        "scheduled_lock": False,
+        "decision": qixing_v4.FullPoolDecision(False),
+        "proposed_target": "511220",
+        "is_rebalance": False,
+    }
+    risk = ro.RiskDecision(final_target="501018", exposure=1.0, action="hold", reason="", events=[])
+    snapshot = live_signal._decision_snapshot(
+        td=date(2026, 11, 2),
+        holding=None,
+        candidates=[],
+        overlay=overlay,
+        risk=risk,
+        final_target="501018",
+        spot_map={},
+        shadow_v4={"final_target": "511220", "action": "hold"},
+    )
+    assert snapshot["strategy_id"] == v5.STRATEGY_ID
+    assert snapshot["config_hash"] == v5.CONFIG_HASH
+    assert snapshot["mode"] == "V5"
+    assert snapshot["shadow_v4"]["final_target"] == "511220"
