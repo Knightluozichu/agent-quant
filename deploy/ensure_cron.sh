@@ -29,18 +29,30 @@ REQUIRED_CRONS=(
     "30 16 * * 1-5 /opt/quant/deploy/run_calibrate.sh"
     "30 21 * * 1-5 /opt/quant/deploy/run_data_sync.sh"
 )
-# 半自动执行提醒：按完整行匹配 (同一脚本多个 stage)
+# 半自动执行提醒：只保留四个关键节点 (同一脚本多个 stage, 按完整行匹配)
 REQUIRED_REMINDERS=(
     "45 14 * * 1-5 /opt/quant/deploy/run_reminder.sh pre"
     "55 14 * * 1-5 /opt/quant/deploy/run_reminder.sh same_day_warn"
-    "2 15 * * 1-5 /opt/quant/deploy/run_reminder.sh same_day_close"
-    "10 15 * * 1-5 /opt/quant/deploy/run_reminder.sh same_day_closed"
-    "15 9 * * 1-5 /opt/quant/deploy/run_reminder.sh next_open_warn"
     "25 9 * * 1-5 /opt/quant/deploy/run_reminder.sh next_open_final"
     "35 9 * * 1-5 /opt/quant/deploy/run_reminder.sh expired"
 )
+# 已下线的中间提醒阶段, 自愈时一并清理, 防止旧 crontab 继续推送
+OBSOLETE_REMINDER_STAGES="same_day_close|same_day_closed|next_open_warn"
 
 CURRENT=$(crontab -l 2>/dev/null || echo "")
+
+# 清理过期提醒阶段, 并对 /opt/quant 任务去重 (保留首次出现)
+PRUNED=$(printf '%s\n' "$CURRENT" | awk -v pat="$OBSOLETE_REMINDER_STAGES" '
+    $0 ~ /\/opt\/quant\/deploy\/run_reminder\.sh / && $0 ~ pat { next }
+    $0 ~ /\/opt\/quant\// { if (seen[$0]++) next }
+    { print }
+')
+PRUNE_CHANGED=0
+if [ "$PRUNED" != "$CURRENT" ]; then
+    PRUNE_CHANGED=1
+    CURRENT="$PRUNED"
+fi
+
 MISSING=()
 
 for entry in "${REQUIRED_CRONS[@]}"; do
@@ -57,13 +69,13 @@ for entry in "${REQUIRED_REMINDERS[@]}"; do
     fi
 done
 
-if [ ${#MISSING[@]} -eq 0 ]; then
+if [ ${#MISSING[@]} -eq 0 ] && [ "$PRUNE_CHANGED" -eq 0 ]; then
     exit 0
 fi
 
-# 补回缺失任务
+# 补回缺失任务并写回清理后的 crontab
 {
-    echo "$CURRENT"
+    printf '%s\n' "$CURRENT"
     for entry in "${MISSING[@]}"; do
         echo "$entry"
     done
@@ -72,18 +84,20 @@ fi
 LOG="$PROJECT_ROOT/data/live/cron_guard.log"
 mkdir -p "$(dirname "$LOG")"
 {
-    echo "[cron-guard] $(date '+%Y-%m-%d %H:%M:%S %Z') 检测到 ${#MISSING[@]} 个定时任务丢失, 已自动恢复:"
+    echo "[cron-guard] $(date '+%Y-%m-%d %H:%M:%S %Z') 清理旧提醒/去重=${PRUNE_CHANGED}, 缺失任务=${#MISSING[@]}:"
     for entry in "${MISSING[@]}"; do
         echo "  + $entry"
     done
 } >> "$LOG"
 
-# Bark 告警
-cd "$PROJECT_ROOT"
-$PYTHON -c "
+# 仅在任务缺失时 Bark 告警; 单纯清理旧提醒不打扰用户
+if [ ${#MISSING[@]} -gt 0 ]; then
+    cd "$PROJECT_ROOT"
+    $PYTHON -c "
 import sys; sys.path.insert(0, 'scripts')
 from notify import push_bark
 push_bark('⚠️ 七星V5 crontab曾被覆盖', f'${#MISSING[@]}个定时任务已自动恢复, 详见cron_guard.log')
 " 2>/dev/null || true
+fi
 
 exit 0

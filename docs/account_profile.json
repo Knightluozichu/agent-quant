@@ -6,9 +6,7 @@
   "source": "user_reported",
   "confirmed_on": "2026-09-16",
   "product_eligibility_verified": false,
-  "known_restrictions": {
-    "501018": "用户此前报告无法购买，尚无解禁证据"
-  },
+  "known_restrictions": {},
   "loss_budget": {
     "willingness": "用户表示可接受本笔投资全部亏损",
     "willing_loss_fraction": 1.0,
@@ -22,5 +20,13 @@
     "years_greater_than": 10,
     "source": "user_reported",
     "confirmed_on": "2026-09-16"
+  },
+  "product_eligibility_reports": {
+    "501018": {
+      "eligible": true,
+      "source": "user_reported",
+      "confirmed_on": "2026-10-18",
+      "independently_verified": false
+    }
   }
 }

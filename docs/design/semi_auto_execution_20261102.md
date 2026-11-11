@@ -235,14 +235,11 @@ PENDING ──确认全部成交──▶ CONFIRMED
 ```cron
 45 14 * * 1-5  /opt/quant/deploy/run_reminder.sh pre
 55 14 * * 1-5  /opt/quant/deploy/run_reminder.sh same_day_warn
-2  15 * * 1-5  /opt/quant/deploy/run_reminder.sh same_day_close
-10 15 * * 1-5  /opt/quant/deploy/run_reminder.sh same_day_closed
-15 9  * * 1-5  /opt/quant/deploy/run_reminder.sh next_open_warn
 25 9  * * 1-5  /opt/quant/deploy/run_reminder.sh next_open_final
 35 9  * * 1-5  /opt/quant/deploy/run_reminder.sh expired
 ```
 
-`run_reminder.sh` 只做三件事：检查交易日、检查 ticket 状态、调用 `notify`；不生成信号、不改账户。14:50 的初始通知由 `run_daily.sh`/`live_signal` 发送，提醒脚本从 14:55 开始只做升级，避免和信号生成抢跑。
+`run_reminder.sh` 只做三件事：检查交易日、检查 ticket 状态、调用 `notify`；不生成信号、不改账户。14:50 的初始通知由 `run_daily.sh`/`live_signal` 发送，提醒脚本从 14:55 开始只做升级，避免和信号生成抢跑。15:02、15:10、09:15 三个中间阶段已移除，同一张票最多推送四次。
 
 ## 7. 网页交互
 

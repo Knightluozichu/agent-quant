@@ -33,12 +33,15 @@ def find_next_rebalance(trading_dates: list, last_rb_str: str | None):
         if d == last_rb:
             idx = i
             break
-    if idx is not None and idx + REBALANCE_DAYS < len(trading_dates):
-        nxt = trading_dates[idx + REBALANCE_DAYS]
-        # 距今交易日数
+    if idx is not None:
         latest_idx = len(trading_dates) - 1
-        days_left = (idx + REBALANCE_DAYS) - latest_idx
-        return nxt, days_left
+        offset = REBALANCE_DAYS
+        # last_rebalance_date 可能因待确认订单被抑制而落后, 不能把已过去的
+        # 网格日当成"今天"; 沿绝对网格向前推进到当前或未来。
+        while idx + offset < latest_idx:
+            offset += REBALANCE_DAYS
+        if idx + offset < len(trading_dates):
+            return trading_dates[idx + offset], idx + offset - latest_idx
     # 数据未覆盖下个调仓日 → 按日历估算(5交易日≈7自然日)
     est = last_rb + dt.timedelta(days=7)
     return est, None

@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import sys
 from datetime import date, datetime, timedelta
+from datetime import time as clock_time
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -460,3 +461,85 @@ def test_confirm_sell_full_exit_quantity_follows_actual_holding(monkeypatch, tmp
     confirmed = live_signal.confirm_order({"shares": 10900, "price": 9.116}, None)
     assert confirmed["holding"] is None
     assert confirmed["cash"] == pytest.approx(10900 * 9.116)
+
+
+# --------------------------------------------------------------------------- #
+# 16:30 收盘快照门禁: 15:00 收盘价在 16:30 仍有效, 隔日/盘中缓存必须拒绝
+# --------------------------------------------------------------------------- #
+def _close_spot(at: datetime, *, price: float = 1.0) -> dict:
+    return {
+        code: {"price": price, "prev_close": price, "ts": at.timestamp()}
+        for code in live_signal.ETF_POOL
+    }
+
+
+def _sh_time(day: date, hour: int, minute: int) -> datetime:
+    return datetime.combine(day, clock_time(hour, minute), tzinfo=live_signal._SH_TZ)
+
+
+@pytest.mark.unit
+def test_validate_close_snapshot_accepts_same_day_close():
+    today = live_signal._today_sh()
+    ok, reason = live_signal.validate_close_snapshot(_close_spot(_sh_time(today, 15, 0)))
+    assert ok, reason
+
+
+@pytest.mark.unit
+def test_validate_close_snapshot_rejects_pre_1450_quote():
+    today = live_signal._today_sh()
+    ok, reason = live_signal.validate_close_snapshot(_close_spot(_sh_time(today, 14, 0)))
+    assert not ok
+    assert "早于 14:50" in reason
+
+
+@pytest.mark.unit
+def test_validate_close_snapshot_rejects_yesterday_quote():
+    yesterday = live_signal._today_sh() - timedelta(days=1)
+    ok, reason = live_signal.validate_close_snapshot(_close_spot(_sh_time(yesterday, 15, 0)))
+    assert not ok
+    assert "不是当日收盘行情" in reason
+
+
+@pytest.mark.unit
+def test_validate_close_snapshot_rejects_missing_or_invalid():
+    today = live_signal._today_sh()
+    spot = _close_spot(_sh_time(today, 15, 0))
+    spot.pop("518880")
+    ok, reason = live_signal.validate_close_snapshot(spot)
+    assert not ok
+    assert "行情缺失" in reason
+
+    ok, reason = live_signal.validate_close_snapshot(_close_spot(_sh_time(today, 15, 0), price=0))
+    assert not ok
+    assert "价格无效" in reason
+
+
+@pytest.mark.unit
+def test_inject_realtime_after_close_uses_close_validator(monkeypatch):
+    """收盘后模式必须走 15:00 快照门禁, 不能复用 5 分钟盘中门禁."""
+    import pandas as pd
+
+    today = live_signal._today_sh()
+    yesterday = today - timedelta(days=1)
+    data = {
+        code: pd.DataFrame({"trade_date": [yesterday], "close": [1.0], "symbol": [code]})
+        for code in [*live_signal.ETF_POOL, live_signal.DEFENSE]
+    }
+    spot = _close_spot(_sh_time(today, 15, 0))
+    called: list[str] = []
+    monkeypatch.setattr(
+        live_signal,
+        "validate_close_snapshot",
+        lambda s: called.append("close") or (True, ""),
+    )
+    monkeypatch.setattr(
+        live_signal,
+        "validate_realtime_data",
+        lambda s: called.append("intraday") or (True, ""),
+    )
+    monkeypatch.setattr(live_signal, "cross_validate_data_sources", lambda d, s: (True, []))
+
+    result = live_signal.inject_realtime(data, spot, after_close=True)
+
+    assert called == ["close"]
+    assert result["518880"]["trade_date"].iloc[-1] == today

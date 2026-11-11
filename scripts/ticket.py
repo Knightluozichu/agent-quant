@@ -20,17 +20,16 @@ NEXT_OPEN_END = time(9, 30)
 GRID_ANCHOR = date(2020, 6, 19)
 REBALANCE_DAYS = 5
 
+# 只保留四个关键节点: 盘前预告 / 同日收尾 / 次日开盘最后机会 / 过期。
+# 15:02、15:10、09:15 三个中间阶段已移除, 避免同一张票反复推送。
 STAGE_TIMES: dict[str, time] = {
     "pre": time(14, 45),
     "same_day_warn": time(14, 55),
-    "same_day_close": time(15, 2),
-    "same_day_closed": time(15, 10),
-    "next_open_warn": time(9, 15),
     "next_open_final": time(9, 25),
     "expired": time(9, 35),
 }
-SAME_DAY_STAGES = {"same_day_warn", "same_day_close", "same_day_closed"}
-NEXT_OPEN_STAGES = {"next_open_warn", "next_open_final", "expired"}
+SAME_DAY_STAGES = {"same_day_warn"}
+NEXT_OPEN_STAGES = {"next_open_final", "expired"}
 
 _CALENDAR_CACHE: dict[str, Any] = {"at": 0.0, "dates": []}
 

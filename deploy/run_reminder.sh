@@ -3,7 +3,7 @@
 # 七星V5 半自动执行提醒 (由 cron 调用)
 #
 # 只读 ticket/状态并推送 Bark；不生成信号、不下单、不改账户。
-# 用法: run_reminder.sh pre|same_day_warn|same_day_close|same_day_closed|next_open_warn|next_open_final|expired
+# 用法: run_reminder.sh pre|same_day_warn|next_open_final|expired
 # ---------------------------------------------------------------------------
 set -uo pipefail
 export TZ=Asia/Shanghai
@@ -16,7 +16,7 @@ fi
 
 STAGE="${1:-}"
 case "$STAGE" in
-    pre|same_day_warn|same_day_close|same_day_closed|next_open_warn|next_open_final|expired) ;;
+    pre|same_day_warn|next_open_final|expired) ;;
     *)
         echo "run_reminder.sh: 未知 stage: ${STAGE:-<empty>}" >&2
         exit 2

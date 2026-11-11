@@ -870,14 +870,15 @@ def check_data_availability(data: dict, td) -> tuple[bool, list[str]]:
     return (len(missing) == 0, missing)
 
 
-def validate_realtime_data(spot_map: dict) -> tuple[bool, str]:
+def validate_realtime_data(spot_map: dict, *, max_age_s: float = 300.0) -> tuple[bool, str]:
     """校验实时行情数据有效性 (R8, 策略信号通道, fail-closed).
 
     展示通道 (/api/status) 允许昨收兜底并标记 stale=true,
     但策略信号通道要求: 8只ETF全部有效才允许计算信号。
-      1. 行情时间: spot 必须携带 ts 且在 5 分钟内 (非过期缓存)
+      1. 行情时间: spot 必须携带 ts 且在 max_age_s 内 (默认 5 分钟)
       2. 价格: price 为有限数且 > 0
     任何一项不满足 → fail-closed (不生成信号)。
+    收盘后校准可传 max_age_s 放宽时限, 但仍要求当日行情。
     """
     import math
 
@@ -889,8 +890,41 @@ def validate_realtime_data(spot_map: dict) -> tuple[bool, str]:
         if not info:
             return (False, f"{code} {name_of(code)} 实时行情缺失")
         ts = info.get("ts", 0)
-        if not ts or (now - ts) > 300:
+        if not ts or (now - ts) > max_age_s or ts > now + 60:
             return (False, f"{code} {name_of(code)} 行情时间过期")
+        price = info.get("price", 0)
+        try:
+            price = float(price)
+        except (TypeError, ValueError):
+            return (False, f"{code} {name_of(code)} 实时价格无效: {price}")
+        if not math.isfinite(price) or price <= 0:
+            return (False, f"{code} {name_of(code)} 实时价格无效: {price}")
+    return (True, "")
+
+
+def validate_close_snapshot(spot_map: dict) -> tuple[bool, str]:
+    """校验收盘后行情: 必须是当日 14:50 之后的收盘快照, 拒绝隔日缓存。
+
+    16:30 校准用。盘中 5 分钟门禁在这里不适用: 收盘后行情时间戳固定在
+    15:00, 到 16:30 已过去 90 分钟, 但仍是当天有效的最终收盘价。
+    """
+    import math
+
+    if not spot_map:
+        return (False, "实时行情为空")
+    today = _today_sh()
+    for code in ETF_POOL:
+        info = spot_map.get(code)
+        if not info:
+            return (False, f"{code} {name_of(code)} 实时行情缺失")
+        ts = info.get("ts", 0)
+        if not ts:
+            return (False, f"{code} {name_of(code)} 行情时间缺失")
+        quote_day = datetime.fromtimestamp(ts, _SH_TZ).date()
+        if quote_day != today:
+            return (False, f"{code} {name_of(code)} 不是当日收盘行情")
+        if ts < datetime(today.year, today.month, today.day, 14, 50, tzinfo=_SH_TZ).timestamp():
+            return (False, f"{code} {name_of(code)} 行情早于 14:50")
         price = info.get("price", 0)
         try:
             price = float(price)
@@ -958,7 +992,7 @@ def cross_validate_data_sources(data: dict, spot_map: dict) -> tuple[bool, list[
 # --------------------------------------------------------------------------- #
 # 实时行情注入 (解决14:50信号看不到当天数据的问题)
 # --------------------------------------------------------------------------- #
-def inject_realtime(data: dict, spot_map: dict | None = None) -> dict:
+def inject_realtime(data: dict, spot_map: dict | None = None, *, after_close: bool = False) -> dict:
     """将当日实时行情注入内存数据 (不写parquet, 仅用于信号计算).
 
     数据源: 腾讯行情接口 qt.gtimg.cn (免费/无认证/覆盖全部场内ETF+LOF+QDII).
@@ -966,6 +1000,7 @@ def inject_realtime(data: dict, spot_map: dict | None = None) -> dict:
 
     R8 策略信号通道: 8只ETF全部有效才注入, 任何一只缺失/无效则 fail-closed
     (不注入、不生成信号), 不用昨收填充。DEFENSE (货币基金) 仍用昨收 (非策略通道)。
+    after_close=True 时按当日收盘快照校验, 供 16:30 校准使用。
     """
     today = _today_sh()
 
@@ -987,7 +1022,10 @@ def inject_realtime(data: dict, spot_map: dict | None = None) -> dict:
         return data
 
     # R8 策略信号通道: 全部 ETF 有效才注入, 不用昨收填充
-    ok, reason = validate_realtime_data(spot_map)
+    if after_close:
+        ok, reason = validate_close_snapshot(spot_map)
+    else:
+        ok, reason = validate_realtime_data(spot_map)
     if not ok:
         print(f"  ⚠️  实时行情校验失败: {reason}, 未注入实时数据 (fail-closed)")
         return data

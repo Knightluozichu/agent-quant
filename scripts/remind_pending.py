@@ -1,8 +1,7 @@
 """Send one semi-automatic execution reminder stage. No broker access.
 
-Run by cron at:
-  14:45 pre, 14:55 same_day_warn, 15:02 same_day_close, 15:10 same_day_closed,
-  09:15 next_open_warn, 09:25 next_open_final, 09:35 expired.
+Run by cron at four key moments only:
+  14:45 pre, 14:55 same_day_warn, 09:25 next_open_final, 09:35 expired.
 """
 
 from __future__ import annotations
@@ -42,9 +41,6 @@ def _ticket_body(view: dict[str, Any], stage: str) -> tuple[str, str, str]:
     deadline = view.get("deadline") or "无"
     titles = {
         "same_day_warn": "V5 还有 5 分钟到同日窗口",
-        "same_day_close": "V5 同日窗口即将关闭",
-        "same_day_closed": "V5 同日窗口已关闭，明日开盘仍可执行",
-        "next_open_warn": "V5 昨日信号：今日开盘窗口",
         "next_open_final": "V5 最后 5 分钟：开盘窗口",
         "expired": "V5 已错过两个执行窗口",
     }
@@ -136,7 +132,7 @@ def run(stage: str, *, force: bool = False, dry_run: bool = False) -> int:
     if dry_run:
         print(f"[dry-run] {title}\n{body}")
         return 0
-    if not _send(title, body, urgent=stage in {"same_day_close", "next_open_final", "expired"}):
+    if not _send(title, body, urgent=stage in {"next_open_final", "expired"}):
         print("Bark 发送失败")
         return 1
 
