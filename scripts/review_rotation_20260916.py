@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import copy
 import json
-from dataclasses import asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -18,6 +18,7 @@ from scripts import live_signal as live
 from scripts import run_qixing_v3 as rq
 
 if TYPE_CHECKING:
+    from collections.abc import Callable
     from datetime import date
 
 OUT = Path(__file__).resolve().parents[1] / "artifacts/reconciliation_20260916"
@@ -40,6 +41,15 @@ def metrics(curve: pd.DataFrame) -> dict[str, Any]:
     }
 
 
+@dataclass(frozen=True)
+class DefensiveOverride:
+    """Research-only target veto; never permits an additional risk entry."""
+
+    target: str
+    force_rebalance: bool = False
+    reason: str = ""
+
+
 def replay_next_open(
     data: dict[str, pd.DataFrame],
     *,
@@ -50,6 +60,7 @@ def replay_next_open(
     calendar: list[date] | None = None,
     mode: str = "V4",
     protector: Any | None = None,
+    target_filter: Callable[[date, str | None, str, bool], DefensiveOverride] | None = None,
 ) -> dict[str, Any]:
     if mode not in {"V3-G", "V4"}:
         raise ValueError("Research mode must be V3-G or V4")
@@ -66,7 +77,7 @@ def replay_next_open(
     state = live.default_state(100000.0)
     initial_state = copy.deepcopy(state)
     queued = None
-    rows, trades, decisions = [], [], []
+    rows, trades, decisions, research_events = [], [], [], []
     for day_index, td in enumerate(dates):
         if td < start:
             continue
@@ -128,9 +139,7 @@ def replay_next_open(
                 if state["holding"]
                 else 0.0
             )
-            fired = protector.on_close(
-                td, equity, state["holding"], holding_value, rq.DEFENSE
-            )
+            fired = protector.on_close(td, equity, state["holding"], holding_value, rq.DEFENSE)
             if fired:
                 if state["holding"] and state["holding"] != rq.DEFENSE:
                     queued = (rq.DEFENSE, 1.0, False, td)
@@ -196,10 +205,31 @@ def replay_next_open(
         snapshot["created_at"] = f"{td}T15:00:00+08:00"
         live._record_v4_state(state, overlay, snapshot)
         decisions.append(snapshot)
-        if (overlay["is_rebalance"] or risk.action == live.ACTION_EMERGENCY) and target != state[
-            "holding"
-        ]:
-            queued = (target, risk.exposure, mode == "V4" and overlay["decision"].triggered, td)
+        allowed = overlay["is_rebalance"] or risk.action == live.ACTION_EMERGENCY
+        early = mode == "V4" and overlay["decision"].triggered
+        if target_filter is not None:
+            override = target_filter(td, state["holding"], target, allowed)
+            if (override.target not in {target, live.DEFENSE}) or (
+                override.force_rebalance and override.target != live.DEFENSE
+            ):
+                raise ValueError("Research target filter must be defensive only")
+            if override.reason:
+                research_events.append(
+                    {
+                        "date": str(td),
+                        "holding": state["holding"],
+                        "canonical_target": target,
+                        "canonical_allowed": bool(allowed),
+                        "target": override.target,
+                        "reason": override.reason,
+                    }
+                )
+            if override.target != target or override.force_rebalance:
+                early = False  # A protective exit is not a V4 early-rotation fill.
+            target = override.target
+            allowed = allowed or override.force_rebalance
+        if allowed and target != state["holding"]:
+            queued = (target, risk.exposure, early, td)
         state["risk_exposure"] = risk.exposure
         state["cooldown_until"] = str(risk.cooldown_until) if risk.cooldown_until else None
     curve = pd.DataFrame(rows)
@@ -209,6 +239,7 @@ def replay_next_open(
         "metrics": metrics(curve),
         "unfilled_next_open": queued,
         "decisions": decisions,
+        "research_events": research_events,
         "initial_state": initial_state,
         "final_state": state,
     }

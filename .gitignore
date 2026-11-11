@@ -32,6 +32,8 @@ ENV/
 
 # 实盘运行时状态与密钥 (Bark key, 账户持仓) — 不提交
 data/live/
+# 百度网盘分享抓取产物 (含 cookies.txt) — 不提交
+data/baidu_share/
 
 # ---------------------------------------------------------------------------
 # IDE
@@ -73,6 +75,9 @@ data/stock_cache/
 !data/fixtures/**
 !data/manifests/
 !data/manifests/**
+# 8 只 ETF 的 5 分钟原始行情 (多周期动量研究底座, 约 28MB)
+!data/etf_5min/
+!data/etf_5min/*.parquet
 
 # ---------------------------------------------------------------------------
 # Artifacts & reports — generated, not committed

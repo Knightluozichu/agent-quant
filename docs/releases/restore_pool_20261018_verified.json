@@ -1,0 +1,53 @@
+{
+  "source_commit": "ff8679158e02dc4ab7d9853802f082ea80f19e8b",
+  "scope": "restore original 7 candidates plus 1 defensive asset",
+  "files": {
+    "scripts/live_signal.py": {
+      "before": "0a6eab3e35e3c2e19ac4c98c794f09e990a376ee7a4a2de7bb8f0177ebc01486",
+      "after": "194144a3fa59841f292a87ca494905a9df7b30d593fc86578bfd221642f0e9b0"
+    },
+    "scripts/trade_server.py": {
+      "before": "177e28545bae522c20ba4bccf911ff06cf4c2928fccf2f2a95dcf0e37fb61e1c",
+      "after": "f31795974d4a63dfa810094317f3193b1432f037774d40513b952de918fe3899"
+    },
+    "scripts/web/index.html": {
+      "before": "a5887f44278a8fefe793f93a904248278626f2d87b98de44097c8ba17639a6c7",
+      "after": "ca4c80d445581386dc1c4d541a052ca1a6aefa9ca8a47c2958f182af6e823390"
+    }
+  },
+  "deployed_at": "2026-10-18T16:10:10.503743+08:00",
+  "backup_directory": "/opt/quant/deploy/backup/restore_pool_20261018_161007",
+  "state_sha256_before": "c46d7cf1564e3903befa3a8bc48c8fe4c4c894773c89c0543e1232e28ebdc920",
+  "state_sha256_after": "c46d7cf1564e3903befa3a8bc48c8fe4c4c894773c89c0543e1232e28ebdc920",
+  "state_unchanged": true,
+  "service": "active",
+  "unauthenticated_status": 401,
+  "candidate_count": 7,
+  "defense_count": 1,
+  "board_codes": [
+    "501018",
+    "513100",
+    "511220",
+    "518880",
+    "159985",
+    "161226",
+    "159915",
+    "511880"
+  ],
+  "trade_date": "2026-10-16",
+  "pool_version": "gf-20261018-9fd3913d6eee",
+  "signal_status": "SNAPSHOT_INVALID",
+  "actionable": false,
+  "old_release_manifest_restored": false,
+  "public_https_verified": true,
+  "public_board_codes": [
+    "501018",
+    "513100",
+    "511220",
+    "518880",
+    "159985",
+    "161226",
+    "159915",
+    "511880"
+  ]
+}
